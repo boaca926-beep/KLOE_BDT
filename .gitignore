@@ -9,7 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# path_folder
+# path_folder, headers
 path_chain/
 
 # Backup files
