@@ -11,3 +11,6 @@ wheels/
 
 # path_folder
 path_chain/
+
+# Backup files
+*~
