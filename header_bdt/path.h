@@ -7,6 +7,6 @@ const TString outputHist = "../../input_bdt_TDATA_chain/hist/";
 const TString outputSfw2D = "../../input_bdt_TDATA_chain/sfw2d/";
 const TString outputSfw1D = "../../input_bdt_TDATA_chain/sfw1d/";
 const TString outputOmega = "../../input_bdt_TDATA_chain/omega_fit/";
-const TString data_type = "ufo";
+const TString data_type = "eeg";
 const TString exp_type = "TDATA";
 double gsf = 1;
