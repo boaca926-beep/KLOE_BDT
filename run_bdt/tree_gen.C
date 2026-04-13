@@ -1,4 +1,4 @@
-#include "../header/path.h"
+#include "../header_bdt/path.h"
 
 int tree_gen(){
 
