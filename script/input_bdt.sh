@@ -192,7 +192,7 @@ echo "Selection cuts applied!"
 tree_gen_script=tree_gen_script.C
 echo '#include <iostream>' > $tree_gen_script
 echo "void tree_gen_script() {" >> $tree_gen_script
-echo 'gROOT->ProcessLine(".L ../run/tree_gen.C");' >> $tree_gen_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/tree_gen.C");' >> $tree_gen_script
 echo 'gROOT->ProcessLine("tree_gen()");' >> $tree_gen_script
 echo '}' >> $tree_gen_script
 root -l -n -q -b $tree_gen_script
