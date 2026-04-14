@@ -1,9 +1,5 @@
 #include "../header_bdt/cut_para.h"
 
-//const TString data_type = "eeg";
-//const TString sampleFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/input/eeg";
-//const TString outputCut = "/home/kloe/Desktop/KLOE_BDT/kloe_sample_chain.root";
-
 TLorentzVector Get4vector(double E, double px, double py, double pz) {
 
   //given a cluster index returns the 4-mom of a photon
@@ -17,22 +13,25 @@ TLorentzVector Get4vector(double E, double px, double py, double pz) {
 
 }
 
-int get_bdt_sample(const TString data_type = "sig", const TString br_type = "TISR3PI_SIG", const TString inputFolder = "/home/kloe/Desktop/input_bdt_TDATA_chain/input/eeg", const TString outputCut = "/home/kloe/Desktop/KLOE_BDT/kloe_sample_chain.root") {
+int get_bdt_sample(const TString data_type = "sig", const TString br_type = "TISR3PI_SIG", const TString inputFolder = "/home/kloe/Desktop/input_bdt_TDATA_chain/input/", const TString outputFolder = "/home/kloe/Desktop/KLOE_BDT/dataset/") {
 
   // from e+ e- -> omega gamma get 3 photon final state 4-momentum
 
   // Proceed.C
-  //TString sampleFile = "/home/bo/Desktop/analysis_root_v6/" + data_type + ".root";
-  TString sampleFile = "/home/kloe/Desktop/" + data_type + ".root";
+  TString sampleFile = inputFolder + data_type + ".root";
+  //TString sampleFile = "/home/kloe/Desktop/" + data_type + ".root";
   
-  cout << "Input root file: " << sampleFile << endl;
-
   TFile *f_input = new TFile(sampleFile);
 
   TTree *ALLCHAIN_CUT = (TTree*)f_input -> Get("ALLCHAIN_CUT");
 
-  TFile *f_output = new TFile("../../" + data_type + "_sample.root", "recreate");
+  TFile *f_output = new TFile(outputFolder + data_type + "_bdt.root", "recreate");
 
+  cout << "Creating BDT data ../n"
+       << "Input root file: " << sampleFile << "\n"
+       << "Output root file: " << outputFolder << f_output->GetName() << endl;
+  
+  
   const int list_size = 1;
   const TString TNM[list_size] = {br_type};
 
@@ -224,10 +223,10 @@ int get_bdt_sample(const TString data_type = "sig", const TString br_type = "TIS
 
     
   }
-
-  hm3pi -> Draw();
-  hm3pi_good -> Draw("HistSame");
-  hm3pi_bad -> Draw("HistSame");
+  
+  //hm3pi -> Draw();
+  //hm3pi_good -> Draw("HistSame");
+  //hm3pi_bad -> Draw("HistSame");
   
   // save
   TTList[0]-> Write();
