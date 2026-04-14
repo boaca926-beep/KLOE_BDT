@@ -1,0 +1,11 @@
+Symbol	Meaning	Windows	Mac	Linux
+✅	Success/Complete	Win + . → search "check"	Ctrl + Cmd + Space	Ctrl + .
+❌	Failed/Error	Win + . → search "cross"	Ctrl + Cmd + Space	Ctrl + .
+⏳	In Progress	Win + . → search "hourglass"	Ctrl + Cmd + Space	Ctrl + .
+⏰	Pending/Waiting	Win + . → search "alarm"	Ctrl + Cmd + Space	Ctrl + .
+🚀	Deployed/Released	Win + . → search "rocket"	Ctrl + Cmd + Space	Ctrl + .
+🐛	Bug/Issue	Win + . → search "bug"	Ctrl + Cmd + Space	Ctrl + .
+💡	Idea/Suggestion	Win + . → search "bulb"	Ctrl + Cmd + Space	Ctrl + .
+📝	Documentation	Win + . → search "memo"	Ctrl + Cmd + Space	Ctrl + .
+🔧	Maintenance	Win + . → search "wrench"	Ctrl + Cmd + Space	Ctrl + .
+🎉	Milestone/Celebration	Win + . → search "party"	Ctrl + Cmd + Space	Ctrl + .
