@@ -1,6 +1,6 @@
 # 📄 KLOE Analysis (Standard)
 ## 💡 Description
-- ROOT framework based analysis.
+- ROOT framework based analysis
 
 - Study of $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma\to\pi^{+}\pi^{-}\gamma\gamma\gamma$ ISR process.
 
@@ -21,7 +21,7 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
 ## 💡 Description
 - Re-analyze KLOE analysis using BDT dataset.
 
-- Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using BDT selection. 
+- Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using BDT selection
 
 **Related repository:** https://github.com/boaca926-beep/KLOE_BDT.git    
         
@@ -44,7 +44,7 @@ run_bdt/script/input_bdt.sh (analysis, large samples)
 **Scripts:**
 ```
 run_bdt/get_bdt_sample.C        # prompt, small samples 
-script/get_bdt_sample.sh        # analysis,large samplese samples
+script/get_bdt_sample.sh        # analysis, large samples samples
 ```
 
 **Outputs:**
