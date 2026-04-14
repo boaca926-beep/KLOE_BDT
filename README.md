@@ -8,10 +8,10 @@
 
 **📖 Thesis Reference:**  
 This analysis is based on the methodology described in:  
-> *A Study of the $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}$ Process Using Initial State Radiation*
-> Author: Bo Cao
-> Institution: Uppsala University
-> DiVA: https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484
+> *A Study of the $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}$ Process Using Initial State Radiation*  
+> Author: Bo Cao 
+> Institution: Uppsala University  
+> DiVA: https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484  
 
 ### $\pi^{0}$ Reconstruction using $\chi^{2}$ Selection
 Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using chi-square selection: 
@@ -41,7 +41,7 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
 > **🚀 Quick start:** `uv sync && uv run main_initialize_kloe_opti.py`
 
 ### 1. Input Raw Data Files
-**Scripts**
+**Scripts:**
 ```
 script/listpath.sh # listing path of raw data root files stored as a text input file  
 ```
@@ -52,7 +52,7 @@ path_chain/*
 ```
 
 ### 2. Create ROOT files (for both analysis and BDT training)
-**Scripts**
+**Scripts:**
 ```
 run_bdt/Process.C (prompt, small samples)
 run_bdt/script/input_bdt.sh (analysis, large samples)
@@ -68,7 +68,7 @@ run_bdt/script/input_bdt.sh (analysis, large samples)
 **Scripts:**
 ```
 run_bdt/get_bdt_sample.C        # prompt, small samples 
-script/get_bdt_sample.sh        # analysis, large samples samples
+script/get_bdt_sample.sh        # analysis, large samples
 ```
 
 **Outputs:**
@@ -83,28 +83,39 @@ XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
 
 ### Workflow Steps 
 0. Setup Enviroment
-    - Using UV pyproject.toml ```uv sync```
-    
-    - Using requirements.txt ```uv add -r requirements.txt```
-
-    - Working Space ```/home/kloe/Desktop/KLOE_BDT/bdt```
-
+    - Using UV pyproject.toml 
+        ```bash 
+        uv sync
+    - Using requirements.txt 
+        ```bash
+        uv add -r requirements.txt
+    - Working Space 
+        ```bash 
+        /home/kloe/Desktop/KLOE_BDT/bdt
 1. Data preparation
     **Scripts:**
-    ```
-    # Spliting dataset to training, validate and test
-    uv run main_initialize_kloe_opti.py \
-        --input /home/kloe/Desktop/KLOE_BDT/dataset/kloe_bdt.root \
-        --chunk-size 50000 \
-        --output-dir /home/kloe/Desktop/KLOE_BDT/dataset_bdt
-    ```
+        ```bash
+        # Splitting dataset to training, validation, and test
+        uv run main_initialize_kloe_opti.py /
+            --input /home/kloe/Desktop/KLOE_BDT/dataset/kloe_bdt.root / --chunk-size 50000 --output-dir /home/kloe/Desktop/KLOE_BDT/dataset_bdt```
 
-    **Outputs:**
-    ```
-    dataset_bdt/*
-    ```
+    **Outputs:** 
+        ```dataset_bdt/* ```
 
 2. Inspect features - photons and photon pairs
+
+    **Photon Pair Analysis Features**
+
+    | Feature | Formula | Implementation | Range |
+    |:--------|:--------|:---------------|:------|
+    | **Invariant Mass** | `m = √((E₁+E₂)² - \|p₁+p₂\|²)` | `inv_mass_4vector(γᵢ, γⱼ)` | > 0 |
+    | **Opening Angle** | `θ = arccos((p₁·p₂)/(\|p₁\|\|p₂\|))` | `np.arccos(np.clip(cosθ, -1, 1))` | [0, π] |
+    | **Energy Asymmetry** | `A = \|E₁-E₂\|/(E₁+E₂)` | `np.abs(e1-e2)/(e1+e2+1e-10)` | [0, 1] |
+    | **Energy Ratio** | `R = min(E₁,E₂)/max(E₁,E₂)` | `min(e1,e2)/max(e1,e2)` | [0, 1] |
+    | **Energy Difference** | `ΔE = \|E₁-E₂\|` | `np.abs(e1-e2)` | ≥ 0 |
+    | **Min Energy × Angle** | `min(E₁,E₂) × θ` | `min(e1,e2) * theta` | ≥ 0 |
+    | **Asymmetry × Angle** | `A × θ` | `e_asym * theta` | ≥ 0 |
+
     **Scripts:**
     ```
     # Inspecting photon features and features of all paired-photon combinations
@@ -147,6 +158,16 @@ XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
     
 
 3. Training - hyperparameter tuning
+    **Scripts:**
+    ```
+    # Train BDT model
+    uv run main_training_gpu.py
+    ```
+
+    **Outputs:**
+    ```
+    /home/kloe/Desktop/KLOE_BDT/models
+    ```
 
 4. Validate and test
     

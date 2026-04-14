@@ -13,8 +13,9 @@ wheels/
 path_chain/
 
 # output folders
-dataset
-dataset_bdt
+dataset/
+dataset_bdt/
+plots_inspect/
 
 # Backup files
 *~
