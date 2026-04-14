@@ -21,7 +21,7 @@ if [[ -d "$input_path" ]]; then
     #rm -rf $input_path
 fi    
 
-cut_file="${cut_path}kloe_samples.root"
+cut_file="${cut_path}kloe_bdt.root"
 if [[ -f "$cut_file" ]]; then
     echo "$cut_file exists"
     rm -rf $cut_file
