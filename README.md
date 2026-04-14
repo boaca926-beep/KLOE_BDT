@@ -70,14 +70,11 @@ XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
 
 ### Workflow Steps 
 0. Setup Enviroment
-    - Use UV, pyproject.toml
-    ```
-    uv sync
-    ```
-    - Use requirements.txt
-    ```
-    uv add -r requirements.txt
-    ```
+    - Using UV pyproject.toml ```uv sync```
+    
+    - Using requirements.txt ```uv add -r requirements.txt```
+
+    - Working Space ```/home/kloe/Desktop/KLOE_BDT/bdt```
 
 1. Data preparation
     **Scripts:**
