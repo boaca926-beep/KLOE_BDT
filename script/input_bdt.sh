@@ -197,3 +197,8 @@ echo 'gROOT->ProcessLine("tree_gen()");' >> $tree_gen_script
 echo '}' >> $tree_gen_script
 root -l -n -q -b $tree_gen_script
 echo "Signal MC is generated!"
+
+rm $run_script
+rm $tree_cut_script
+rm $tree_gen_script
+
