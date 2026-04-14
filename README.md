@@ -1,8 +1,17 @@
 # 📄 KLOE Analysis (Standard)
+[![Thesis](https://img.shields.io/badge/DiVA-Thesis-blue?logo=readthedocs)](https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484)
+
 ## 💡 Description
 - ROOT framework based analysis
 
 - Study of $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma\to\pi^{+}\pi^{-}\gamma\gamma\gamma$ ISR process.
+
+**📖 Thesis Reference:**  
+This analysis is based on the methodology described in:  
+> *A Study of the $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}$ Process Using Initial State Radiation*
+> Author: Bo Cao
+> Institution: Uppsala University
+> DiVA: https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484
 
 ### $\pi^{0}$ Reconstruction using $\chi^{2}$ Selection
 Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using chi-square selection: 
@@ -26,6 +35,10 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
 **Related repository:** https://github.com/boaca926-beep/KLOE_BDT.git    
         
 ## 🚀  Data Preparation for BDT Selection
+> **🎯 What:** BDT-based π⁰ reconstruction replacing traditional χ² selection  
+> **⚙️ How:** XGBoost with CUDA acceleration on ROOT data from KLOE experiment  
+> **📈 Key improvement:** Better signal/background separation for $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$  
+> **🚀 Quick start:** `uv sync && uv run main_initialize_kloe_opti.py`
 
 ### 1. Input Raw Data Files
 **Scripts**
@@ -94,7 +107,7 @@ XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
 2. Inspect features - photons and photon pairs
     **Scripts:**
     ```
-    # Inspecting photon features and features of all paried-photon combinations
+    # Inspecting photon features and features of all paired-photon combinations
     uv run main_inspect.py
     ```
 
@@ -129,7 +142,7 @@ XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
     <img src="plots_inspect/pos_pi0_mass_TCOMB.png" width="500" alt="Pi0 Mass"/>
     <br/>
     <em>Figure 4: Reconstructed π⁰ mass peak at nominal value (135 MeV/c²)</em>
-    
+
     </div>
     
 
