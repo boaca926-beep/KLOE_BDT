@@ -27,7 +27,9 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
         
 ## 🚀  Data Preparation for BDT Selection
 
-### 1. Create ROOT files (for both analysis and BDT training)
+### 1.
+
+### 2. Create ROOT files (for both analysis and BDT training)
 **Scripts**
 ```
 run_bdt/Process.C (prompt, small samples)
@@ -40,7 +42,7 @@ run_bdt/script/input_bdt.sh (analysis, large samples)
 /home/bo/Desktop/analysis_root_v6/input_bdt_TDATA_chain/input/sig.root (analysis)
 ```
 
-### 2. Convert ROOT files to input for BDT training
+### 3. Convert ROOT files to input for BDT training
 **Scripts:**
 ```
 run_bdt/get_bdt_sample.C        # prompt, small samples 
