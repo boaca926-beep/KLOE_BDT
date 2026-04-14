@@ -12,5 +12,8 @@ wheels/
 # path_folder, headers
 path_chain/
 
+# output folders
+dataset
+
 # Backup files
 *~
