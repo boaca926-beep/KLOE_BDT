@@ -1,0 +1,14 @@
+awkward
+joblib
+matplotlib
+numpy
+pandas
+psutil
+pyarrow
+root
+scikit-learn
+scikit-optimize
+seaborn
+uproot
+xgboost
+

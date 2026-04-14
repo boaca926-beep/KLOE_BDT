@@ -27,7 +27,16 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
         
 ## 🚀  Data Preparation for BDT Selection
 
-### 1.
+### 1. Input Raw Data Files
+**Scripts**
+```
+script/listpath.sh # listing path of raw data root files stored as a text input file  
+```
+
+**Outputs**
+```
+path_chain/*
+```
 
 ### 2. Create ROOT files (for both analysis and BDT training)
 **Scripts**
@@ -60,7 +69,30 @@ dataset/kloe_bdt.root
 XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
 
 ### Workflow Steps 
+0. Setup Enviroment
+    - Use UV, pyproject.toml
+    ```
+    uv sync
+    ```
+    - Use requirements.txt
+    ```
+    uv add -r requirements.txt
+    ```
+
 1. Data preparation
+    **Scripts:**
+    ```
+    # Spliting dataset to training, validate and test
+    uv run main_initialize_kloe_opti.py \
+        --input /home/kloe/Desktop/KLOE_BDT/dataset/kloe_bdt.root \
+        --chunk-size 50000 \
+        --output-dir /home/kloe/Desktop/KLOE_BDT/dataset_bdt
+    ```
+
+    **Outputs:**
+    ```
+    dataset_bdt/*
+    ```
 
 2. Inspect features - photons and photon pairs
 
@@ -69,7 +101,7 @@ XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
 4. Validate and test
     
     - Confusion matrix, 
-    
+                   
     - ROC and AUC plots. 
     
     - Best threshold determination

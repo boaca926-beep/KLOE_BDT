@@ -14,6 +14,7 @@ path_chain/
 
 # output folders
 dataset
+dataset_bdt
 
 # Backup files
 *~
