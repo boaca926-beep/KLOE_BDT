@@ -92,14 +92,54 @@ XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
     ```
 
 2. Inspect features - photons and photon pairs
+    **Scripts:**
+    ```
+    # Inspecting photon features and features of all paried-photon combinations
+    uv run main_inspect.py
+    ```
+
+    **Outputs:**
+    ```
+    /home/kloe/Desktop/KLOE_BDT/plots_inspect
+    ```
+    <!-- ![Kinematic Comparison: Photon vs Photon Pair Variables](plots_inspect/Kine_compr_TCOMB.png)
+    *Figure 1: Comparison of kinematic variables between single photons and photon pairs from π⁰ decay*
+    -->
+
+    **Inspection Plots:**
+    <div align="center">
+    <img src="plots_inspect/Kine_compr_TCOMB.png" width="500" alt="Kinematic Variables"/>
+    <br/>
+    <em>Figure 1: Kinematic variables distribution after selection cuts</em>
+
+    <br/><br/>
+
+    <img src="plots_inspect/Photon_4-momentum_compr_TCOMB.png" width="500" alt="Photon Features"/>
+    <br/>
+    <em>Figure 2: 4-momentum features of photons in the final state</em>
+
+    <br/><br/>
+
+    <img src="plots_inspect/Pi0_compr_TCOMB.png" width="500" alt="Paired Photon Features"/>
+    <br/>
+    <em>Figure 3: Features of paired-photon combinations for π⁰ reconstruction</em>
+
+    <br/><br/>
+
+    <img src="plots_inspect/pos_pi0_mass_TCOMB.png" width="500" alt="Pi0 Mass"/>
+    <br/>
+    <em>Figure 4: Reconstructed π⁰ mass peak at nominal value (135 MeV/c²)</em>
+    
+    </div>
+    
 
 3. Training - hyperparameter tuning
 
 4. Validate and test
     
-    - Confusion matrix, 
+    - Confusion matrix 
                    
-    - ROC and AUC plots. 
+    - ROC and AUC plots
     
     - Best threshold determination
 
