@@ -27,9 +27,9 @@ int get_bdt_sample(const TString data_type = "sig", const TString br_type = "TIS
 
   TFile *f_output = new TFile(outputFolder + data_type + "_bdt.root", "recreate");
 
-  cout << "Creating BDT data ../n"
+  cout << "Creating BDT data ..\n"
        << "Input root file: " << sampleFile << "\n"
-       << "Output root file: " << outputFolder << f_output->GetName() << endl;
+       << "Output root file: " << f_output->GetName() << endl;
   
   
   const int list_size = 1;
