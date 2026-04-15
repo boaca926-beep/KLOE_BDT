@@ -193,7 +193,7 @@ uv run main_inspect.py
 
 <br/><br/>
 
-<img src="plots_inspect/SC_correlation_TCOMB.png" width="500" alt="Pi0 Mass"/>
+<img src="plots_inspect/SC_correlation_TCOMB.png" width="500" alt="Correlations of Paired Photon Features"/>
 <br/>
 <em>Figure 5: Correlation of Features of paired-photon combinations for $\pi^{0}$ reconstruction</em>
 
