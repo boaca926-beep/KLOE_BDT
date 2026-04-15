@@ -15,9 +15,9 @@ PROJECT_ROOT = (Path(__file__).parent.absolute()).parent.absolute()
 # Data directories
 DATA_DIR = PROJECT_ROOT / 'dataset_bdt'
 PLOTS_INSPECT_DIR = PROJECT_ROOT / 'plots_inspect'
+PLOT_VAL_DIR = PROJECT_ROOT / 'plots_val'
 MODEL_DIR = PROJECT_ROOT / 'models'
 
-#PLOT_DIR_VAL = PROJECT_ROOT / 'validation' / 'plots'
 #PLOT_DIR_APP = PROJECT_ROOT / 'application' / 'plots'
 
 
