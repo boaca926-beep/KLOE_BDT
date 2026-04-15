@@ -191,11 +191,13 @@ uv run main_inspect.py
 <br/>
 <em>Figure 4: Reconstructed $\pi^{0}$ mass peak at nominal value (135 MeV/c²)</em>
 
+<!-->
 <br/><br/>
 
 <img src="plots_inspect/SC_correlation_TCOMB.jpg" width="500" alt="Correlations of Paired Photon Features"/>
 <br/>
 <em>Figure 5: Correlation of Features of paired-photon combinations for $\pi^{0}$ reconstruction</em>
+-->
 
 </div>
     
