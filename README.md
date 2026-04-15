@@ -80,7 +80,7 @@ This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted
 
 | Class | Definition | Label | Example |
 |:------|:-----------|:------|:---------|
-| **Signal** | Correct $\pi^{0}$ photon pair that matches Monte Carlo truth, identified as the pair with minimum $\chi^{2}_{M_{\gamma\gamma}}$ value | 1 | True $\pi^{0}\to\gamma\gamma$ decay from $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ and $e^{+}e^{-}\to\phi\to\eta\gamma\to\pi^{+}\pi^{-}\pi^{0}\gamma$|
+| **Signal** | Correct $\pi^{0}$ photon pair that matches Monte Carlo truth, identified as the pair with minimum $\chi^{2}_{M_{\gamma\gamma}}$ value $\chi^2_{M_{\gamma\gamma}}$ | 1 | True $\pi^{0}\to\gamma\gamma$ decay from $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ and $e^{+}e^{-}\to\phi\to\eta\gamma\to\pi^{+}\pi^{-}\pi^{0}\gamma$|
 | **Background** | • **Combinatorial**: Wrong photon pairing (e.g., photons from different $\pi^{0}$ decays or ISR) <br> • **Physical channel**: Events from other processes ($e^{+}e^{-}\to\omega\pi^{0}\to\pi^{+}\pi^{-}\pi^{0}\gamma\gamma$, $e^{+}e^{-}\to e^{+}e^{-}\gamma$, etc.) | 0 | Two uncorrelated photons misidentified as $\pi^{0}$ |
 
 **Training/Validation/Test Split:** 70% / 15% / 15%
