@@ -48,10 +48,8 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
 ## 🤖 BDT Analysis
 **Related repository:** [KLOE_REPO](https://github.com/boaca926-beep/KLOE_BDT.git)    
 
-## 💡 Description
-- Re-analyze KLOE analysis using BDT dataset.
-
-- Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using BDT selection
+## 💡 Overview
+This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted Decision Tree (BDT) approach using XGBoost, incorporating multiple kinematic variables for improved π⁰ reconstruction.
 
 ### Key Features for BDT
 <!--
@@ -125,10 +123,20 @@ script/get_bdt_sample.sh        # analysis, large samples
 ## 🚀 BDT Training & Evaluation
 ### Enviroment Setup
 ```bash 
+# Install UV if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone repository
+git clone https://github.com/boaca926-beep/KLOE_BDT.git
+cd KLOE_BDT
+
 # Using UV (recommended)
 uv sync
 
-# Or using pip with requirements
+# Activate environment
+source .venv/bin/activate
+
+# Or using pip/uv with requirements
 uv add -r requirements.txt
 
 # Working Space 
@@ -217,7 +225,7 @@ uv run main_inspect.py
 ```bash
 # Run training with hyperparameter search
 uv run main_training_gpu.py
-# Output: /home/kloe/Desktop/KLOE_BDT/models/bdt_model.json
+# Output: /home/kloe/Desktop/KLOE_BDT/models/pi0_classifier_model_TCOMB.pkl
 ```
 
 ### Step 4. Model Evaluation
@@ -237,3 +245,65 @@ uv run main_training_gpu.py
 - Confusion matrix
 
 - Optimized threshold selection
+
+## 📝 Citation
+
+If you use this code in your research, please cite:
+
+```bibtex
+@thesis{cao2024kloe,
+  author = {Bo Cao},
+  title = {A Study of the $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}$ Process Using Initial State Radiation},
+  institution = {Uppsala University},
+  year = {2024},
+  url = {https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484}
+}
+```
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+### Summary of MIT License
+- ✅ Commercial use allowed
+- ✅ Modification allowed
+- ✅ Distribution allowed
+- ✅ Private use allowed
+- ❌ No warranty or liability
+- ❌ Must include copyright notice
+
+For full license text, see the [LICENSE](LICENSE) file in the repository root.
+
+## 🙏 Acknowledgments
+
+### Institutional Support
+- **KLOE Collaboration** - For providing experimental data, detector expertise, and physics validation
+- **Uppsala University** - Department of Physics and Astronomy for academic support and resources
+- **INFN Laboratori Nazionali di Frascati** - For operating the KLOE detector
+
+### Software & Tools
+- **XGBoost Contributors** - For the gradient boosting framework with CUDA support
+- **CERN ROOT Team** - For the data analysis framework used throughout this project
+- **Optuna Developers** - For hyperparameter optimization framework
+- **NumPy/SciPy Community** - For fundamental scientific computing tools
+- **scikit-learn Team** - For machine learning utilities and metrics
+
+### Academic Guidance
+- **Thesis Supervisor(s)** - For guidance on physics analysis methodology
+- **KLOE Analysis Group** - For valuable discussions and feedback
+
+### Open Source Community
+- **GitHub** - For hosting and version control
+- **UV Development Team** - For Python package management
+
+---
+
+## 📧 Contact & Support
+
+- **Author:** Bo Cao ([GitHub](https://github.com/boaca926-beep))
+- **Issues:** [GitHub Issues](https://github.com/boaca926-beep/KLOE_BDT/issues)
+- **Thesis Questions:** Refer to the DiVA thesis link above
+
+---
+
+**Happy analyzing! ⚛️**
