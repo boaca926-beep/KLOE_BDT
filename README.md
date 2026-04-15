@@ -24,7 +24,8 @@ This project re-analyzes the KLOE experiment's $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{
 
 **📖 Thesis Reference:**  
 This analysis is based on the methodology described in:  
-> *A Study of the $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}$ Process Using Initial State Radiation*  
+
+> *A Study of the e⁺e⁻ → π⁺π⁻π⁰ Process Using Initial State Radiation*  
 > Author: Bo Cao 
 > Institution: Uppsala University  
 > DiVA: https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484  
