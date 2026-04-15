@@ -184,19 +184,25 @@ uv run main_inspect.py
 
 <img src="plots_inspect/Pi0_compr_TCOMB.png" width="500" alt="Paired Photon Features"/>
 <br/>
-<em>Figure 3: Features of paired-photon combinations for $\pi^{0}$ reconstruction</em>
+<em>Figure 3: Features of paired-photon combinations for π⁰ reconstruction</em>
 
 <br/><br/>
 
 <img src="plots_inspect/pos_pi0_mass_TCOMB.png" width="500" alt="Pi0 Mass"/>
 <br/>
-<em>Figure 4: Reconstructed $\pi^{0}$ mass peak at nominal value (135 MeV/c²)</em>
+<em>Figure 4: Reconstructed π⁰ mass peak at nominal value (135 MeV/c²)</em>
 
 <br/><br/>
 
 <img src="plots_inspect/SC_correlation_TCOMB.jpg" width="500" alt="test"/>
 <br/>
-<em>Figure 5</em>
+<em>Figure 5: Correlations of features of paired-photon combinations for π⁰ reconstruction</em>
+
+<br/><br/>
+
+<img src="plots_inspect/feature_target_correlation_TCOMB.png" width="500" alt="test"/>
+<br/>
+<em>Figure 6: Feature-target correlations of paired-photon combinations for π⁰ reconstruction</em>
 
 </div>
     
