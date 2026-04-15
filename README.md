@@ -2,10 +2,11 @@
 [![Thesis](https://img.shields.io/badge/DiVA-Thesis-blue?logo=readthedocs)](https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484)
 [![XGBoost](https://img.shields.io/badge/XGBoost-CUDA-green?logo=xgboost)](https://xgboost.ai)
 [![ROOT](https://img.shields.io/badge/ROOT-6.30-orange?logo=cern)](https://root.cern)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 📚 Table of Contents
 - [Overview](#-overview)
-- [Standard Analysis (χ²)](#-standard-analysis-χ)
+- [Standard Analysis ($\chi^{2}$)](#-standard-analysis-χ)
 - [BDT Analysis](#-bdt-analysis)
 - [Data Preparation](#-data-preparation)
 - [BDT Training & Evaluation](#-bdt-training--evaluation)
@@ -16,7 +17,7 @@
 ## 💡 Description
 This project re-analyzes the KLOE experiment's $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ ISR process, comparing traditional $\chi^{2}$-based $\pi^{0}$ reconstruction with a modern **XGBoost BDT** approach.
 
-| Aspect | χ² Method | BDT Method |
+| Aspect | $\chi^{2}$ Method | BDT Method |
 |:-------|:----------|:------------|
 | **Approach** | Analytical minimization | Machine learning |
 | **Input features** | Mass difference only | 7+ kinematic variables |
@@ -30,7 +31,7 @@ This analysis is based on the methodology described in:
 
 ---
 
-## 📐 Standard Analysis (χ²)
+## 📐 Standard Analysis ($\chi^{2}$)
 
 ### Method
 Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using chi-square selection: 
@@ -49,7 +50,7 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
 **Related repository:** [KLOE_REPO](https://github.com/boaca926-beep/KLOE_BDT.git)    
 
 ## 💡 Overview
-This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted Decision Tree (BDT) approach using XGBoost, incorporating multiple kinematic variables for improved π⁰ reconstruction.
+This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted Decision Tree (BDT) approach using XGBoost, incorporating multiple kinematic variables for improved $\pi^{0}$ reconstruction.
 
 ### Key Features for BDT
 <!--
@@ -66,8 +67,8 @@ This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted
 
 | Feature | Formula | Physical Meaning |
 |:--------|:--------|:------------------|
-| **Invariant Mass** | $M_{\gamma\gamma} = \sqrt{(E_1+E_2)^2 - \|\mathbf{p}_1+\mathbf{p}_2\|^2}$ | π⁰ mass constraint |
-| **Opening Angle** | $\theta = \arccos\left(\frac{\mathbf{p}_1\cdot\mathbf{p}_2}{\|\mathbf{p}_1\|\|\mathbf{p}_2\|}\right)$ | π⁰ decay angular distribution |
+| **Invariant Mass** | $M_{\gamma\gamma} = \sqrt{(E_1+E_2)^2 - \|\mathbf{p}_1+\mathbf{p}_2\|^2}$ | $\pi^{0}$ mass constraint |
+| **Opening Angle** | $\theta = \arccos\left(\frac{\mathbf{p}_1\cdot\mathbf{p}_2}{\|\mathbf{p}_1\|\|\mathbf{p}_2\|}\right)$ | $\pi^{0}$ decay angular distribution |
 | **Energy Asymmetry** | $A = \frac{\|E_1-E_2\|}{E_1+E_2}$ | Symmetry of decay |
 | **Energy Ratio** | $R = \frac{\min(E_1,E_2)}{\max(E_1,E_2)}$ | Energy balance |
 | **Energy Difference** | $\Delta E = \|E_1-E_2\|$ | Absolute energy asymmetry |
@@ -78,30 +79,24 @@ This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted
 
 | Class | Definition | Label | Example |
 |:------|:-----------|:------|:---------|
-| **Signal** | Correct π⁰ photon pair that matches Monte Carlo truth, identified as the pair with minimum $\chi^{2}_{M_{\gamma\gamma}}$ value | 1 | True $\pi^{0}\to\gamma\gamma$ decay from $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ and $e^{+}e^{-}\to\phi\to\eta\gamma\to\pi^{+}\pi^{-}\pi^{0}\gamma$|
-| **Background** | • **Combinatorial**: Wrong photon pairing (e.g., photons from different π⁰ decays or ISR) <br> • **Physical channel**: Events from other processes ($e^{+}e^{-}\to\omega\pi^{0}\to\pi^{+}\pi^{-}\pi^{0}\gamma\gamma$, $e^{+}e^{-}\to e^{+}e^{-}\gamma$, etc.) | 0 | Two uncorrelated photons misidentified as $\pi^{0}$ |
+| **Signal** | Correct $\pi^{0}$ photon pair that matches Monte Carlo truth, identified as the pair with minimum $\chi^{2}_{M_{\gamma\gamma}}$ value | 1 | True $\pi^{0}\to\gamma\gamma$ decay from $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ and $e^{+}e^{-}\to\phi\to\eta\gamma\to\pi^{+}\pi^{-}\pi^{0}\gamma$|
+| **Background** | • **Combinatorial**: Wrong photon pairing (e.g., photons from different $\pi^{0}$ decays or ISR) <br> • **Physical channel**: Events from other processes ($e^{+}e^{-}\to\omega\pi^{0}\to\pi^{+}\pi^{-}\pi^{0}\gamma\gamma$, $e^{+}e^{-}\to e^{+}e^{-}\gamma$, etc.) | 0 | Two uncorrelated photons misidentified as $\pi^{0}$ |
 
 **Training/Validation/Test Split:** 70% / 15% / 15%
         
 ## 🚀  Data Preparation
-> **🎯 What:** BDT-based π⁰ reconstruction replacing traditional χ² selection  
+> **🎯 What:** BDT-based $\pi^{0}$ reconstruction replacing traditional $\chi^{2}$ selection  
 > **⚙️ How:** XGBoost with CUDA acceleration on ROOT data from KLOE experiment  
 > **📈 Key improvement:** Better signal/background separation for $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$  
 > **🚀 Quick start:** `uv sync && uv run main_initialize_kloe_opti.py`
 
 ### 1. Input Raw Data 
-**Scripts:**
-```
+```bash
 script/listpath.sh # listing path of raw data root files stored as a text input file  
-```
-
-**Outputs**
-```
-path_chain/*
+# Outputs: path_chain/*
 ```
 
 ### 2. Create ROOT Files 
-**Scripts:**
 ```bash
 root -l -b -q run_bdt/Process.C #prompt, small samples
 # Outputs: /home/bo/Desktop/sig.root
@@ -111,7 +106,6 @@ root -l -b -q run_bdt/Process.C #prompt, small samples
 ```
 
 ### 3. Convert to BDT Format
-**Scripts:**
 ```bash
 root -l -b -q run_bdt/get_bdt_sample.C # prompt, small samples
 # Outputs: KLOE_BDT/dataset/sig_bdt.root
@@ -170,7 +164,7 @@ uv run main_inspect.py
 ```
 
 <!-- ![Kinematic Comparison: Photon vs Photon Pair Variables](plots_inspect/Kine_compr_TCOMB.png)
-*Figure 1: Comparison of kinematic variables between single photons and photon pairs from π⁰ decay*
+*Figure 1: Comparison of kinematic variables between single photons and photon pairs from $\pi^{0}$ decay*
 -->
 
 **Diagnostic Plots:**
@@ -189,17 +183,19 @@ uv run main_inspect.py
 
 <img src="plots_inspect/Pi0_compr_TCOMB.png" width="500" alt="Paired Photon Features"/>
 <br/>
-<em>Figure 3: Features of paired-photon combinations for π⁰ reconstruction</em>
+<em>Figure 3: Features of paired-photon combinations for $\pi^{0}$ reconstruction</em>
 
 <br/><br/>
 
 <img src="plots_inspect/pos_pi0_mass_TCOMB.png" width="500" alt="Pi0 Mass"/>
 <br/>
-<em>Figure 4: Reconstructed π⁰ mass peak at nominal value (135 MeV/c²)</em>
+<em>Figure 4: Reconstructed $\pi^{0}$ mass peak at nominal value (135 MeV/c²)</em>
+
+<br/><br/>
 
 <img src="plots_inspect/SC_correlation_TCOMB.png" width="500" alt="Pi0 Mass"/>
 <br/>
-<em>Figure 5: Correlation of Features of paired-photon combinations for π⁰ reconstruction</em>
+<em>Figure 5: Correlation of Features of paired-photon combinations for $\pi^{0}$ reconstruction</em>
 
 </div>
     
@@ -306,4 +302,6 @@ For full license text, see the [LICENSE](LICENSE) file in the repository root.
 
 ---
 
-**Happy analyzing! ⚛️**
+<div align="center">
+Made with ⚛️ for the KLOE experiment
+</div>
