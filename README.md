@@ -14,7 +14,7 @@
 - [Repository Structure](#-repository-structure)
 
 ## 💡 Description
-This project re-analyzes the KLOE experiment's $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ ISR process, comparing traditional $\chi^{2}$-based π⁰ reconstruction with a modern **XGBoost BDT** approach.
+This project re-analyzes the KLOE experiment's $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ ISR process, comparing traditional $\chi^{2}$-based $\pi^{0}$ reconstruction with a modern **XGBoost BDT** approach.
 
 | Aspect | χ² Method | BDT Method |
 |:-------|:----------|:------------|
@@ -122,11 +122,8 @@ script/get_bdt_sample.sh        # analysis, large samples
 # Outputs: KLOE_BDT/dataset/kloe_bdt.root
 ```
 
-## 🚀 Obtain BDT Model (CUDA-boosted)
-### Key Words
-XGBoost, training, validation, test, model, ROC, AUC, confusion matrix
-
-### Enviroment Steps  
+## 🚀 BDT Training & Evaluation
+### Enviroment Setup
 ```bash 
 # Using UV (recommended)
 uv sync
@@ -161,14 +158,14 @@ uv run main_initialize_kloe_opti.py /
 ```bash
 # Inspecting photon features and features of all paired-photon combinations
 uv run main_inspect.py
-# Outputs: /home/kloe/Desktop/KLOE_BDT/plots_inspect/
+# Generates plot in /home/kloe/Desktop/KLOE_BDT/plots_inspect/
 ```
 
 <!-- ![Kinematic Comparison: Photon vs Photon Pair Variables](plots_inspect/Kine_compr_TCOMB.png)
 *Figure 1: Comparison of kinematic variables between single photons and photon pairs from π⁰ decay*
 -->
 
-**Inspection Plots:**
+**Diagnostic Plots:**
 <div align="center">
 <img src="plots_inspect/Kine_compr_TCOMB.png" width="500" alt="Kinematic Variables"/>
 <br/>
@@ -199,14 +196,31 @@ uv run main_inspect.py
 </div>
     
 
-### Step 3. Training - hyperparameter tuning
+### Step 3. Hyperparameter Tuning
+
+**Search Space:**
+| Parameter | Description | Search Range | Script Default | Optimized From Bayesian |
+|:----------|:------------|:-------------|:---------------|:------------------------|
+| `n_estimators` | Number of boosting rounds | 100 - 1000 | N/A (set in baye_opti) | ✓ |
+| `max_depth` | Maximum tree depth | 3 - 10 | 10 | ✓ |
+| `learning_rate` | Boosting learning rate | 0.01 - 0.3 | 0.1 | ✓ |
+| `subsample` | Fraction of samples per tree | 0.6 - 1.0 | 0.8 | ✓ |
+| `colsample_bytree` | Fraction of features per tree | 0.6 - 1.0 | 0.8 | ✓ |
+| `gamma` | Minimum loss reduction for split | 0 - 5 | 0 | ✓ |
+| `reg_alpha` | L1 regularization (alpha) | 0 - 1 | 0 | ✓ |
+| `reg_lambda` | L2 regularization (lambda) | 0 - 2 | 1 | ✓ |
+| `min_child_weight` | Minimum sum instance weights in child | 1 - 10 | 1 | ✓ |
+| `max_bin` | Maximum bins for histogram | 256 - 1024 | 512 | Fixed |
+| `early_stopping_rounds` | Early stopping patience | 20 - 100 | 50 | Fixed |
+| `nthread` | Number of CPU threads | 1 - max_cores | 12 | Fixed |
+
 ```bash
-# Train BDT model
+# Run training with hyperparameter search
 uv run main_training_gpu.py
-#Outputs: /home/kloe/Desktop/KLOE_BDT/models
+# Output: /home/kloe/Desktop/KLOE_BDT/models/bdt_model.json
 ```
 
-### Step 4. Validate and test
+### Step 4. Model Evaluation
     
 - Confusion matrix 
                    
