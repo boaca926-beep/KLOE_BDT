@@ -231,7 +231,7 @@ uv run main_training_gpu.py
 # Output: /home/kloe/Desktop/KLOE_BDT/models/pi0_classifier_model_TCOMB.pkl
 ```
 
-## Step 4. Validation Metrics
+### Step 4. Validation Metrics
 
 | Metric | Value |
 |--------|-------|
