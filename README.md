@@ -231,13 +231,45 @@ uv run main_training_gpu.py
 # Output: /home/kloe/Desktop/KLOE_BDT/models/pi0_classifier_model_TCOMB.pkl
 ```
 
-### Step 4. Model Evaluation
-    
-- Confusion matrix 
-                   
-- ROC and AUC plots
-    
-- Best threshold determination
+## Step 4. Validation Metrics
+
+| Metric | Value |
+|--------|-------|
+| AUC | 0.987 |
+| Accuracy | 0.950 |
+| Train-Val Gap | 0.001 |
+
+**Confusion Matrix:**
+
+| True \ Pred | Background | Signal |
+|-------------|------------|--------|
+| Background | 297,190 | 12,383 |
+| Signal | 6,500 | 86,362 |
+
+**Per-Class:**
+
+| Class | Precision | Recall | F1 |
+|-------|-----------|--------|-----|
+| Background | 0.98 | 0.96 | 0.97 |
+| Signal | 0.86 | 0.93 | 0.89 |
+
+**ROC Curve and AUC Score:**
+
+<div align="center">
+<img src="plots_val/roc_curv_TCOMB.png" width="500" alt="ROC & AUC"/>
+<br/>
+<em>Figure 7: ROC curve and AUC score</em>
+
+</div>
+
+**Learning Curves:**
+
+<div align="center">
+<img src="plots_val/learning_curves_TCOMB.png" width="500" alt="Learning Curves"/>
+<br/>
+<em>Figure 8: Learning curves</em>
+
+</div>
 
 ### Step 5. Final testing
 

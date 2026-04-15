@@ -23,7 +23,7 @@
     "reg_lambda": 1.5552064648767434
   },
   "n_features": 10,
-  "training_time_minutes": 0.03192716439565023,
-  "peak_memory_percent": 24.3,
+  "training_time_minutes": 0.0333732803662618,
+  "peak_memory_percent": 23.2,
   "gpu_enabled": true
 }
