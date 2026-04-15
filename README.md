@@ -193,7 +193,7 @@ uv run main_inspect.py
 
 <br/><br/>
 
-<img src="plots_inspect/SC_correlation_TCOMB.png" width="500" alt="test"/>
+<img src="plots_inspect/SC_correlation_TCOMB.jpg" width="500" alt="test"/>
 <br/>
 <em>Figure 5</em>
 
