@@ -1,13 +1,10 @@
 {
-  "auc": 0.9867221339390323,
+  "auc": 0.9867178763788689,
   "best_iteration": 99,
-  "best_score": 0.05047523202504752,
+  "best_score": 0.05046032278504603,
   "params": {
+    "nthread": -1,
     "tree_method": "hist",
-    "device": "cuda",
-    "nthread": 12,
-    "max_bin": 512,
-    "early_stopping_rounds": 50,
     "eval_metric": [
       "auc",
       "error"
@@ -23,7 +20,6 @@
     "reg_lambda": 1.5552064648767434
   },
   "n_features": 10,
-  "training_time_minutes": 0.0333732803662618,
-  "peak_memory_percent": 23.2,
-  "gpu_enabled": true
+  "training_time_minutes": 0.21802035172780354,
+  "external_memory": false
 }

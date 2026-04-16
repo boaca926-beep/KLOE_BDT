@@ -227,7 +227,8 @@ uv run main_inspect.py
 
 ```bash
 # Run training with hyperparameter search
-uv run main_training_gpu.py
+uv run main_training_gpu.py # With gpu boosted, fast
+uv run main_training_chunked.py # Works with arbitrarily large dataset, and insufficient RAM size
 # Output: /home/kloe/Desktop/KLOE_BDT/models/pi0_classifier_model_TCOMB.pkl
 ```
 
