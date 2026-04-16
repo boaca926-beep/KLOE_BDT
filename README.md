@@ -116,7 +116,7 @@ script/get_bdt_sample.sh        # analysis, large samples
 ```
 
 ## 🚀 BDT Training & Evaluation
-### Enviroment Setup
+### Environment Setup
 ```bash 
 # Install UV if not already installed
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -253,6 +253,16 @@ uv run main_training_gpu.py
 | Background | 0.98 | 0.96 | 0.97 |
 | Signal | 0.86 | 0.93 | 0.89 |
 
+**Feature Importance (Top 5):**
+
+| Feature | Importance |
+|---------|------------|
+| Invariant Mass (m_gg) | 0.612 |
+| min(E) × angle | 0.159 |
+| Third photon energy (E3) | 0.071 |
+| Asymmetry × angle | 0.039 |
+| Energy difference | 0.038 |
+
 **ROC Curve and AUC Score:**
 
 <div align="center">
@@ -271,15 +281,15 @@ uv run main_training_gpu.py
 
 </div>
 
-### Step 5. Final testing
+### Step 5. Final Testing
 
 ## 📊 Performance Metrics
 
-- ROC curve and AUC score
-
-- Confusion matrix
-
-- Optimized threshold selection
+```bash
+# Run final evaluation on test dataset
+uv run main_application.py
+# Outputs: plots_app/* (test set performance plots)
+```
 
 ## 📝 Citation
 
@@ -324,7 +334,8 @@ For full license text, see the [LICENSE](LICENSE) file in the repository root.
 - **scikit-learn Team** - For machine learning utilities and metrics
 
 ### Academic Guidance
-- **Thesis Supervisor(s)** - For guidance on physics analysis methodology
+- **Thesis Supervisor(s):** *Dr. Antonio De Santis*, *Dr. Andrzej Kupsc* and *Dr. Magnus Wolke*  - For guidance on physics analysis methodology
+- **ML Supervisor:** *Dr. William Lejon* - For guidance on ML methodology
 - **KLOE Analysis Group** - For valuable discussions and feedback
 
 ### Open Source Community
