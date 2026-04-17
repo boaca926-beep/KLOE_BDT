@@ -16,6 +16,7 @@ path_chain/
 dataset/
 dataset_bdt/
 plots_inspect/
+plots_app/
 
 # Backup files
 *~
