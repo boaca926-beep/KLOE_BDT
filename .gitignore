@@ -9,9 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
-# path_folder, headers
-path_chain/
-
 # output folders
 dataset/
 dataset_bdt/
