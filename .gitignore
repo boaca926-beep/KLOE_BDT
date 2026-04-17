@@ -19,3 +19,4 @@ plots_inspect/
 
 # Backup files
 *~
+*.csv
