@@ -74,6 +74,6 @@ done
 #root -l -n -q -b $plot_compr_script
 
 
-#rm $plot_script
+rm $plot_script
 #rm $plot_compr_script
 #ls $plot_folder
