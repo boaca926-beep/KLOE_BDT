@@ -223,7 +223,7 @@ int sfw1d(){
   cout << "chisq = " << amin << ", fit_indx = " << fit_indx << ", chisq rel. = " << amin / (fit_indx - 1)  << "\n";
 
   ofstream myfile;
-  TString myfile_nm = "../header/sfw1d.txt";
+  TString myfile_nm = "../header_bdt/sfw1d.txt";
   myfile.open(myfile_nm);
   myfile << "const double sig_sfw = " << sig_sfw << ";\n";
   myfile.close();

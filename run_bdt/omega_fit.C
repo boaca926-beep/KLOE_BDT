@@ -1,7 +1,7 @@
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
-//#include "../header/sfw2d.txt"
-//#include "../header/sfw1d.txt" 
+//#include "../header_bdt/sfw2d.txt"
+//#include "../header_bdt/sfw1d.txt" 
 #include "../header_bdt/method.h"
 #include "../header_bdt/omega_fit.h"
 #include "../header_bdt/cut_para.h"
@@ -301,7 +301,7 @@ int omega_fit(){
   int ndf_crx3pi = residul_size_crx3pi - para_nb_crx3pi;
 
   ofstream myfile;
-  TString myfile_nm = "omega_fit.txt";
+  TString myfile_nm = "../header_bdt/omega_fit.txt";
   myfile.open(myfile_nm);
   
   myfile << "\nFit Results Summary\n"

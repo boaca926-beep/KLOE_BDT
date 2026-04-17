@@ -214,7 +214,7 @@ echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
 echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
 echo '}' >> $sfw2d_script
 root -l -n -q -b $sfw2d_script >> ${log_sfw2d}
-#cp ../header/sfw2d.txt ${outputSfw2D}
+#cp ../header_bdt/sfw2d.txt ${outputSfw2D}
 #ls ${outputSfw2D}
 echo "MC normalization!"
 
@@ -225,7 +225,7 @@ echo 'gROOT->ProcessLine(".L ../run_bdt/sfw1d.C");' >> $sfw1d_script
 echo 'gROOT->ProcessLine("sfw1d()");' >> $sfw1d_script
 echo '}' >> $sfw1d_script
 root -l -n -q -b $sfw1d_script >> ${log_sfw1d}
-#cp ../header/sfw1d.txt ${outputSfw1D}
+#cp ../header_bdt/sfw1d.txt ${outputSfw1D}
 #ls ${outputSfw1D}
 echo "MC signal tuning!"
 

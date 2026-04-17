@@ -14,7 +14,10 @@ dataset/
 dataset_bdt/
 plots_inspect/
 plots_app/
+plot_val/
+plots_omega/
 
 # Backup files
 *~
 *.csv
+*.root
