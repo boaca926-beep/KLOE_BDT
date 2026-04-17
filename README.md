@@ -240,7 +240,7 @@ uv run main_training_chunked.py # Works with arbitrarily large dataset, and insu
 | Accuracy | 0.950 |
 | Train-Val Gap | 0.001 |
 
-**Confusion Matrix:**
+**Confusion Matrix:** On paired-photon basis
 
 | True \ Pred | Background | Signal |
 |-------------|------------|--------|
@@ -283,6 +283,68 @@ uv run main_training_chunked.py # Works with arbitrarily large dataset, and insu
 </div>
 
 ### Step 5. Final Testing
+
+### Event-Level Performance Details (on event basis)
+
+The BDT uses the `any` strategy: an event is classified as **signal** if *any* photon pair exceeds the classification threshold.
+
+**Optimal Threshold:** 0.35 (vs default 0.5)
+
+**Strategy:** `any` (event = signal if any pair exceeds threshold)
+
+**Confusion Matrix (Event-Level):**
+
+<div align="center">
+<img src="plots_app/event_cm_TCOMB_opt.png" width="800" alt="Confusion matrix"/>
+<br/>
+<em>Figure 9: Confusion matrix</em>
+    
+<br/><br/>
+</div>
+
+**Per-Class Metrics:**
+
+| Class | Precision | Recall | F1 | Support |
+|-------|-----------|--------|-----|---------|
+| Background | 0.868 | 0.607 | 0.714 | 27,911 |
+| Signal | 0.875 | 0.968 | 0.919 | 79,605 |
+
+<!--
+Metric	Your table	Calculated from the output
+Signal Precision	0.875	77037/(77037+10969) = 0.875	✅
+Signal Recall	0.968	77037/(77037+2568) = 0.968	✅
+Signal Support	79,605	79,605 (true signal events)	✅
+Background Precision	0.868	16942/(16942+2568) = 0.868	✅
+Background Recall	0.607	16942/(16942+10969) = 0.607	✅
+Background Support	27,911	27,911 (true background events)
+-->
+
+**Overall:**
+- Accuracy: 0.874
+- Signal efficiency (recall): **96.8%** — only 2,568 signal events missed out of 79,605
+- Background contamination: 10,969 false positives out of 88,006 predicted signal events (12.5% fake rate)
+
+> The lower background recall (60.7%) is a deliberate trade-off to maximize π⁰ detection completeness, as required for the cross-section measurement.
+
+**ROC Curve and AUC Score:**
+<div align="center">
+<img src="plots_app/roc_curv_TCOMB.png" width="500" alt="Confusion matrix"/>
+<br/>
+<em>Figure 10: ROC curve and AUC score</em>
+    
+<br/><br/>
+
+</div>
+
+**Learning Curves:**
+<div align="center">
+<img src="plots_app/pi0_mass_score_TCOMB.png" width="800" alt="Confusion matrix"/>
+<br/>
+<em>Figure 11: Learning curve</em>
+    
+<br/><br/>
+
+</div>
 
 ## 📊 Performance Metrics
 
