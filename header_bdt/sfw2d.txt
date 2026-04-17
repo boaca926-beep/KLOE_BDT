@@ -1,0 +1,29 @@
+const double nb_data_sum = 7.06528e+06;
+const double nb_eeg_sum = 507808;
+const double nb_omegapi_sum = 934461;
+const double nb_ksl_sum = 2.07319e+06;
+const double nb_etagam_sum = 3.13765e+06;
+const double nb_isr3pi_sum = 1.58463e+07;
+const double nb_mcrest_sum = 334126;
+const double nb_mcsum = 2.28336e+07;
+
+const double feeg = 0.0220423;
+const double fisr3pi = 0.0364633;
+const double fomegapi = 0.195746;
+const double fetagam = 0.448613;
+const double fksl = 0.223174;
+const double fmcrest = 0.0741486;
+
+const double feeg_err = 7.50816e-05;
+const double fisr3pi_err = 0.000164514;
+const double fomegapi_err = 0.000256354;
+const double fetagam_err = 0.000213224;
+const double fksl_err = 0.000242135;
+const double fmcrest_err = 0.000238192;
+
+const double eeg_sfw = 0.30668;
+const double isr3pi_sfw = 0.0162576;
+const double omegapi_sfw = 1.48;
+const double etagam_sfw = 1.01018;
+const double ksl_sfw = 0.76056;
+const double mcrest_sfw = 1.56791;

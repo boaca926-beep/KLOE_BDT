@@ -30,7 +30,8 @@ else
     #exit 1
 fi    
 
-mkdir ${input_path} # result folder
+mkdir ${cut_path} # result folder
+
 
 path_header=../header_bdt/path_sample.h
 echo -e 'const TString data_type = "";' > $path_header
