@@ -86,7 +86,7 @@ log_path=${result_path}/log/
 
 if [[ -d "$result_path" ]]; then
     echo "${result_path} ..."
-    #rm -rf $result_path
+    rm -rf $result_path
 fi    
 
 mkdir ${result_path} # result folder
@@ -173,7 +173,7 @@ for ((i=0;i<${#DATA_TYPE[@]};++i)); do
     echo '  gROOT->ProcessLine(".L ../run_bdt/Analys_class.C");' >> $run_script
     echo '  gROOT->ProcessLine("Analys_class(rootFile, sampleFile)");' >> $run_script
     echo '}' >> $run_script
-    #root -l -n -q -b $run_script >> ${log_input}
+    root -l -n -q -b $run_script >> ${log_input}
     
     ## Selection cuts
     sed -i 's|\(const TString outputCut =\)\(.*\)|\1 "'"${cut_path}"'";|' "$path_header"
@@ -184,7 +184,7 @@ for ((i=0;i<${#DATA_TYPE[@]};++i)); do
     echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut.C");' >> $tree_cut_script
     echo 'gROOT->ProcessLine("tree_cut()");' >> $tree_cut_script
     echo '}' >> $tree_cut_script
-    #root -l -n -q -b $tree_cut_script >> ${log_cut}
+    root -l -n -q -b $tree_cut_script >> ${log_cut}
 done
 echo "Selection cuts applied!"
 
@@ -195,7 +195,7 @@ echo "void tree_gen_script() {" >> $tree_gen_script
 echo 'gROOT->ProcessLine(".L ../run_bdt/tree_gen.C");' >> $tree_gen_script
 echo 'gROOT->ProcessLine("tree_gen()");' >> $tree_gen_script
 echo '}' >> $tree_gen_script
-#root -l -n -q -b $tree_gen_script
+root -l -n -q -b $tree_gen_script
 echo "Signal MC is generated!"
 
 ## Histos
@@ -204,7 +204,7 @@ echo "void hist_script() {" >> $hist_script
 echo 'gROOT->ProcessLine(".L ../run_bdt/gethist.C");' >> $hist_script
 echo 'gROOT->ProcessLine("gethist()");' >> $hist_script
 echo '}' >> $hist_script
-#root -l -n -q -b $hist_script >> ${log_hist}
+root -l -n -q -b $hist_script >> ${log_hist}
 echo "Histos are created!"
 
 ## Normalization
@@ -213,7 +213,7 @@ echo "void sfw2d_script() {" >> $sfw2d_script
 echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
 echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
 echo '}' >> $sfw2d_script
-#root -l -n -q -b $sfw2d_script >> ${log_sfw2d}
+root -l -n -q -b $sfw2d_script >> ${log_sfw2d}
 #cp ../header/sfw2d.txt ${outputSfw2D}
 #ls ${outputSfw2D}
 echo "MC normalization!"
@@ -224,7 +224,7 @@ echo "void sfw1d_script() {" >> $sfw1d_script
 echo 'gROOT->ProcessLine(".L ../run_bdt/sfw1d.C");' >> $sfw1d_script
 echo 'gROOT->ProcessLine("sfw1d()");' >> $sfw1d_script
 echo '}' >> $sfw1d_script
-#root -l -n -q -b $sfw1d_script >> ${log_sfw1d}
+root -l -n -q -b $sfw1d_script >> ${log_sfw1d}
 #cp ../header/sfw1d.txt ${outputSfw1D}
 #ls ${outputSfw1D}
 echo "MC signal tuning!"
