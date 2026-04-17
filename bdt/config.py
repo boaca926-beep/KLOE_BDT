@@ -1,7 +1,6 @@
 """
 Simple configuration management for pi0-gamma-pairing project
 """
-
 import os
 from pathlib import Path
 import pandas as pd
@@ -16,11 +15,8 @@ PROJECT_ROOT = (Path(__file__).parent.absolute()).parent.absolute()
 DATA_DIR = PROJECT_ROOT / 'dataset_bdt'
 PLOTS_INSPECT_DIR = PROJECT_ROOT / 'plots_inspect'
 PLOT_VAL_DIR = PROJECT_ROOT / 'plots_val'
+PLOT_APP_DIR = PROJECT_ROOT / 'plots_app'
 MODEL_DIR = PROJECT_ROOT / 'models'
-
-#PLOT_DIR_APP = PROJECT_ROOT / 'application' / 'plots'
-
-
 
 # Initializing configuration
 REQUIRED_BR = ['Br_E1', 'Br_px1', 'Br_py1', 'Br_pz1', 
