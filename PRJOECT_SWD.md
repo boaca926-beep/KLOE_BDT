@@ -29,10 +29,6 @@ Project/
 sudo apt install mysql-server mysql-client
 sudo mysql_secure_installation
 
-# macOS
-brew install mysql
-brew services start mysql
-
 # Docker (easiest)
 docker run --name mysql-kloe -e MYSQL_ROOT_PASSWORD=secret -p 3306:3306 -d mysql:8
 ```
@@ -398,43 +394,30 @@ DELIMITER ;
 #### Installation
 **Check if MySQL is Installed**
 ```bash
-# Method 1: Check package status
+# Check package status
 dpkg -l | grep mysql-server
 # Or
 apt list --installed | grep mysql-server
 
-# Method 2: Check binary location
+# Check binary location
 which mysql
 # Output: /usr/bin/mysql (if installed)
 
-# Method 3: Check version
+# Check version
 mysql --version
 # Output: mysql  Ver 8.0.36-0ubuntu0.22.04.1 for Linux on x86_64
 
-# Method 4: Check all MySQL packages
+# Check all MySQL packages
 dpkg -l | grep -E "mysql|mariadb"
 ```
 
 **Check if MySQL is Running (Activated)**
 ```bash
-# Method 1: Systemctl (most common)
+# Systemctl (most common)
 sudo systemctl status mysql
 # Look for: active (running)
 
-# Method 2: Check process
-ps aux | grep mysql
-# Output shows mysqld process if running
-
-# Method 3: Check port (default 3306)
-sudo netstat -tlnp | grep 3306
-# Or
-sudo ss -tlnp | grep mysql
-
-# Method 4: Try connecting
-mysqladmin -u root -p status
-# Enter password - if connected, shows uptime
-
-# Method 5: Check service
+# Check service
 sudo service mysql status
 ```
 
