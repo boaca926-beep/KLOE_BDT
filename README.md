@@ -32,7 +32,9 @@ This analysis is based on the methodology described in:
 
 ---
 
-## 📐 Standard Analysis ($\chi^{2}$)
+## 📐 Standard Analysis ($\chi^{2}$) 
+
+See [README_KLOE.md](README_KLOE.md) for details.
 
 ### Method
 Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using chi-square selection: 
@@ -48,7 +50,9 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
 -->
 
 ## 🤖 BDT Analysis
+<!--
 **Related repository:** [KLOE_REPO](https://github.com/boaca926-beep/KLOE_BDT.git)    
+-->
 
 ## 💡 Overview
 This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted Decision Tree (BDT) approach using XGBoost, incorporating multiple kinematic variables for improved $\pi^{0}$ reconstruction.
