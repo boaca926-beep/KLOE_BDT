@@ -19,8 +19,25 @@ This project analyzes the $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ ISR process
 </div>
 
 ## 🚀 Quick Start {#-quick-start}
-> **Quick start:** `uv sync && uv run main_initialize_kloe_opti.py`
+> **BDT test mode:** `root -l -q $HOME/run_bdt/test_bdt.C #Outputs: $HOME/Desktop/input_bdt_TDATA_norm/`
+> **BDT analysis:** `root - l -q $HOME/input_bdt.sh #Output: $HOME/Destop/KLOE_BDT/plots_bdt/` 
+
 
 ## 📐 Analysis Flow
 
+### 1.Data Preparation
+#### Input Raw Data 
+```bash
+script/listpath_norm.sh # listing path of raw data root files stored as a text input file. Or listpath_chain.sh for smaller data samples
+# Outputs: $HOME/Destop/KLOE_BDT/path_norm/*
+```
+
+#### Create ROOT Files 
+```bash
+root -l -b -q run_bdt/Process.C #prompt, small samples
+# Outputs: $HOME/Desktop/sig.root
+
+./run_bdt/script/input_bdt.sh (analysis, large samples)
+# Outputs: $HOME/Desktop/input_bdt_TDATA_chain/* (analysis)
+```
 

@@ -128,16 +128,16 @@ root -l -b -q run_bdt/Process.C #prompt, small samples
 # Outputs: $HOME/Desktop/sig.root
 
 ./run_bdt/script/input_bdt.sh (analysis, large samples)
-# Outputs: input_bdt_TDATA_chain/input/sig.root (analysis)
+# Outputs: $HOME/Desktop/input_bdt_TDATA_chain/* (analysis)
 ```
 
 ### 3. Convert to BDT Format
 ```bash
 root -l -b -q run_bdt/get_bdt_sample.C # prompt, small samples
-# Outputs: KLOE_BDT/dataset/sig_bdt.root
+# Outputs: $HOME/Desktop/KLOE_BDT/dataset/sig_bdt.root
 
 script/get_bdt_sample.sh        # analysis, large samples
-# Outputs: KLOE_BDT/dataset/kloe_bdt.root
+# Outputs: $HOME/Desktop/KLOE_BDT/dataset/kloe_bdt.root
 ```
 
 ## BDT Training & Evaluation
