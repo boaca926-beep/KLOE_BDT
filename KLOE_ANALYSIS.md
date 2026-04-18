@@ -28,7 +28,7 @@ This project analyzes the $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ ISR process
 ### 1.Data Preparation
 #### Input Raw Data 
 ```bash
-script/listpath_norm.sh # listing path of raw data root files stored as a text input file. Or listpath_chain.sh for smaller data samples
+script/listpath_chain.sh # listing path of raw data root files stored as a text input file. Or listpath_norm.sh for larger data samples
 # Outputs: $HOME/Destop/KLOE_BDT/path_norm/*
 ```
 
@@ -37,7 +37,7 @@ script/listpath_norm.sh # listing path of raw data root files stored as a text i
 root -l -b -q run_bdt/Process.C #prompt, small samples
 # Outputs: $HOME/Desktop/sig.root
 
-./run_bdt/script/input_bdt.sh (analysis, large samples)
-# Outputs: $HOME/Desktop/input_bdt_TDATA_chain/* (analysis)
+./run_bdt/script/input_bdt.sh 
+# Outputs: $HOME/Desktop/input_bdt_TDATA_chain/*
 ```
 

@@ -37,7 +37,7 @@ This analysis is based on the methodology described in:
 
 ## Standard Analysis ($\chi^{2}$) 
 
-See [README_KLOE.md](README_KLOE.md) for details.
+See [KLOE_ANALYSIS](KLOE_ANALYSIS.md) for details.
 
 ### Method
 Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using chi-square selection: 
