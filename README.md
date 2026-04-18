@@ -5,16 +5,19 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 📚 Table of Contents
-- [Overview](#-overview)
-- [Standard Analysis ($\chi^{2}$)](#-standard-analysis-χ)
-- [BDT Analysis](#-bdt-analysis)
-- [Data Preparation](#-data-preparation)
-- [BDT Training & Evaluation](#-bdt-training--evaluation)
-- [Performance Metrics](#-performance-metrics)
-- [Quick Start](#-quick-start)
-- [Repository Structure](#-repository-structure)
+- [Description](#description)
+- [Standard Analysis ($\chi^{2}$)](#standard-analysis-χ)
+- [BDT Analysis](#bdt-analysis)
+- [Data Preparation](#data-preparation)
+- [BDT Training & Evaluation](#bdt-training--evaluation)
+- [Performance Metrics](#performance-metrics)
+- [Quick Start](#quick-start)
+- [Repository Structure](#repository-structure)
+- [Citation](#citation)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
-## 💡 Description
+## Description
 This project re-analyzes the KLOE experiment's $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ ISR process, comparing traditional $\chi^{2}$-based $\pi^{0}$ reconstruction with a modern **XGBoost BDT** approach.
 
 | Aspect | $\chi^{2}$ Method | BDT Method |
@@ -32,7 +35,7 @@ This analysis is based on the methodology described in:
 
 ---
 
-## 📐 Standard Analysis ($\chi^{2}$) 
+## Standard Analysis ($\chi^{2}$) 
 
 See [README_KLOE.md](README_KLOE.md) for details.
 
@@ -49,12 +52,12 @@ The $\chi^{2}$-test is performed on event-by-event basis, and the energy-depende
 <!--**📂 Reference:** [KLOE_REPO](https://github.com/boaca926-beep/KLOE_REPO.git)
 -->
 
-## 🤖 BDT Analysis
+## BDT Analysis
 <!--
 **Related repository:** [KLOE_REPO](https://github.com/boaca926-beep/KLOE_BDT.git)    
 -->
 
-## 💡 Overview
+## Overview
 This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted Decision Tree (BDT) approach using XGBoost, incorporating multiple kinematic variables for improved $\pi^{0}$ reconstruction.
 
 ### Key Features for BDT
@@ -89,12 +92,30 @@ This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted
 
 **Training/Validation/Test Split:** 70% / 15% / 15%
         
-## 🚀  Data Preparation
+
+## Quick Start {#-quick-start}
 > **🎯 What:** BDT-based $\pi^{0}$ reconstruction replacing traditional $\chi^{2}$ selection  
 > **⚙️ How:** XGBoost with CUDA acceleration on ROOT data from KLOE experiment  
 > **📈 Key improvement:** Better signal/background separation for $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$  
 > **🚀 Quick start:** `uv sync && uv run main_initialize_kloe_opti.py`
 
+## Repository Structure
+
+| Path | Description |
+|------|-------------|
+| `bdt/` | Main BDT Python scripts (training, inference, inspection) |
+| `run_bdt/` | ROOT processing scripts for data preparation |
+| `dataset/` | Input ROOT files (generated) |
+| `dataset_bdt/` | Split train/val/test datasets (generated) |
+| `models/` | Trained XGBoost models (generated) |
+| `plots_*/` | Generated figures for inspection, validation, and testing |
+
+**Key scripts:**
+- `main_initialize_kloe_opti.py` - Data splitting
+- `main_training_gpu.py` - GPU-accelerated training
+- `main_application.py` - Final evaluation on test set
+
+## Data Preparation
 ### 1. Input Raw Data 
 ```bash
 script/listpath.sh # listing path of raw data root files stored as a text input file  
@@ -104,7 +125,7 @@ script/listpath.sh # listing path of raw data root files stored as a text input 
 ### 2. Create ROOT Files 
 ```bash
 root -l -b -q run_bdt/Process.C #prompt, small samples
-# Outputs: /home/bo/Desktop/sig.root
+# Outputs: $HOME/Desktop/sig.root
 
 ./run_bdt/script/input_bdt.sh (analysis, large samples)
 # Outputs: input_bdt_TDATA_chain/input/sig.root (analysis)
@@ -119,7 +140,7 @@ script/get_bdt_sample.sh        # analysis, large samples
 # Outputs: KLOE_BDT/dataset/kloe_bdt.root
 ```
 
-## 🚀 BDT Training & Evaluation
+## BDT Training & Evaluation
 ### Environment Setup
 ```bash 
 # Install UV if not already installed
@@ -139,7 +160,7 @@ source .venv/bin/activate
 uv add -r requirements.txt
 
 # Working Space 
-cd /home/kloe/Desktop/KLOE_BDT/bdt
+cd $HOME/Desktop/KLOE_BDT/bdt
 ```
 
 #### Requirements:
@@ -155,9 +176,10 @@ cd /home/kloe/Desktop/KLOE_BDT/bdt
 ### Step 1. Data Splitting
 ```bash
 # Splitting dataset to training, validation, and test
-uv run main_initialize_kloe_opti.py /
-    --input /home/kloe/Desktop/KLOE_BDT/dataset/kloe_bdt.root / --chunk-size 50000 /
-    --output-dir /home/kloe/Desktop/KLOE_BDT/dataset_bdt
+uv run main_initialize_kloe_opti.py \
+    --input $HOME/Desktop/KLOE_BDT/dataset/kloe_bdt.root \
+    --chunk-size 50000 \
+    --output-dir $HOME/Desktop/KLOE_BDT/dataset_bdt
 # Outputs: dataset_bdt/*
 ```
 
@@ -165,7 +187,7 @@ uv run main_initialize_kloe_opti.py /
 ```bash
 # Inspecting photon features and features of all paired-photon combinations
 uv run main_inspect.py
-# Generates plot in /home/kloe/Desktop/KLOE_BDT/plots_inspect/
+# Generates plot in $HOME/Desktop/KLOE_BDT/plots_inspect/
 ```
 
 <!-- ![Kinematic Comparison: Photon vs Photon Pair Variables](plots_inspect/Kine_compr_TCOMB.png)
@@ -233,7 +255,7 @@ uv run main_inspect.py
 # Run training with hyperparameter search
 uv run main_training_gpu.py # With gpu boosted, fast
 uv run main_training_chunked.py # Works with arbitrarily large dataset, and insufficient RAM size
-# Output: /home/kloe/Desktop/KLOE_BDT/models/pi0_classifier_model_TCOMB.pkl
+# Output: $HOME/Desktop/KLOE_BDT/models/pi0_classifier_model_TCOMB.pkl
 ```
 
 ### Step 4. Validation Metrics
@@ -288,7 +310,7 @@ uv run main_training_chunked.py # Works with arbitrarily large dataset, and insu
 
 ### Step 5. Final Testing
 
-### Event-Level Performance Details (on event basis)
+#### Event-Level Performance Details (on event basis)
 
 The BDT uses the `any` strategy: an event is classified as **signal** if *any* photon pair exceeds the classification threshold.
 
@@ -358,7 +380,7 @@ uv run main_application.py
 # Outputs: plots_app/* (test set performance plots)
 ```
 
-## 📝 Citation
+## Citation
 
 If you use this code in your research, please cite:
 
@@ -372,7 +394,7 @@ If you use this code in your research, please cite:
 }
 ```
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
@@ -386,7 +408,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 For full license text, see the [LICENSE](LICENSE) file in the repository root.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 ### Institutional Support
 - **KLOE Collaboration** - For providing experimental data, detector expertise, and physics validation
