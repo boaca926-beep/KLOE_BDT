@@ -1,5 +1,27 @@
 ## 📊 MySQL Implementation
 
+## 📚 Table of Contents
+- [Overview](#-overview)
+
+## 💡 Overview
+```text
+Project/
+├── mysql_db.py           # Database layer (persistence)
+├── api_mysql.py          # API layer (business logic)
+├── models/
+│   └── pi0_classifier_model_TCOMB.pkl  # Trained ML model
+├── docker-compose.mysql.yml  # Container orchestration
+└── PRJOECT_SWD.md        # Documentation
+```
+<div align="center">
+<img src="plots_ref/deployment_schema.png" width="500" alt="ROC & AUC"/>
+<br/>
+<em></em>
+
+</div>
+
+## 🚀 Work Flow
+
 ### 1. Install and Setup
 
 ```bash
@@ -370,4 +392,98 @@ DELIMITER ;
 - API Development: FastAPI, RESTful design, async endpoints
 - ML Engineering: XGBoost, GPU acceleration, model deployment
 - DevOps: Docker, docker-compose, MySQL replication
+```
+## Note
+### MySQL 
+#### Installation
+**Check if MySQL is Installed**
+```bash
+# Method 1: Check package status
+dpkg -l | grep mysql-server
+# Or
+apt list --installed | grep mysql-server
+
+# Method 2: Check binary location
+which mysql
+# Output: /usr/bin/mysql (if installed)
+
+# Method 3: Check version
+mysql --version
+# Output: mysql  Ver 8.0.36-0ubuntu0.22.04.1 for Linux on x86_64
+
+# Method 4: Check all MySQL packages
+dpkg -l | grep -E "mysql|mariadb"
+```
+
+**Check if MySQL is Running (Activated)**
+```bash
+# Method 1: Systemctl (most common)
+sudo systemctl status mysql
+# Look for: active (running)
+
+# Method 2: Check process
+ps aux | grep mysql
+# Output shows mysqld process if running
+
+# Method 3: Check port (default 3306)
+sudo netstat -tlnp | grep 3306
+# Or
+sudo ss -tlnp | grep mysql
+
+# Method 4: Try connecting
+mysqladmin -u root -p status
+# Enter password - if connected, shows uptime
+
+# Method 5: Check service
+sudo service mysql status
+```
+
+**Start/Stop MySQL if Needed**
+```bash
+# Start MySQL
+sudo systemctl start mysql
+sudo service mysql start
+
+# Stop MySQL
+sudo systemctl stop mysql
+
+# Restart
+sudo systemctl restart mysql
+
+# Enable auto-start on boot
+sudo systemctl enable mysql
+```
+
+#### Setup
+**Found MySQL Credentials**
+```bash
+sudo cat /etc/mysql/debian.cnf
+# DO NOT use debian-sys-maint for your application! This is an internal maintenance account that Debian/Ubuntu uses for system tasks.
+```
+
+**Setup Private User**
+- Login with debian-sys-maint to set up root/user
+```bash
+mysql -u debian-sys-maint -p 
+# Enter password obtained from sudo cat /etc/mysql/debian.cnf
+```
+
+- Set root password (if not set)
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'secret';
+FLUSH PRIVILEGES;
+
+CREATE DATABASE IF NOT EXISTS kloe_bdt;
+
+CREATE USER IF NOT EXISTS 'kloe_user'@'localhost' IDENTIFIED BY 'kloe_password';
+
+GRANT ALL PRIVILEGES ON kloe_bdt.* TO 'kloe_user'@'localhost';
+
+FLUSH PRIVILEGES;
+
+SHOW DATABASES;
+SELECT user, host FROM mysql.user;
+SHOW GRANTS FOR 'kloe_user'@'localhost';
+
+EXIT;
 ```

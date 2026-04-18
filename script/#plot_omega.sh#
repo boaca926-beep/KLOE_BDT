@@ -1,0 +1,66 @@
+#!/bin/bash
+
+#FILE_TYPE=("vertex" "norm" "vmd_norm")
+#FILE_TYPE=("vmd_mini" "mini")
+#FILE_TYPE=("norm" "vmd_norm" "isrlumi_norm")
+FILE_TYPE=("chain")
+#FILE_TYPE=("norm")
+#FILE_TYPE=("mini")
+#FILE_TYPE=("vertex" "efficy_norm" "norm" "vmd_norm" "vmd_efficy_corr_norm")
+#FILE_TYPE=("efficy_norm")
+#FILE_TYPE=("efficy_norm")
+#FILE_TYPE=("norm")
+#FILE_TYPE=("isrlumi_norm" "norm")
+#FILE_TYPE=("vmd_norm" "norm" "efficy_norm" "isrlumi_norm")
+
+#sample_size="mini"
+file_type1=${FILE_TYPE[0]}
+file_type2=${FILE_TYPE[1]}
+
+# Plot main folder
+plot_folder=../../plot_omega/
+if [[ -d "$plot_folder" ]]; then
+    ls $plot_folder
+    echo "Remove plot folder"
+    rm -rf $plot_folder
+else
+    echo "Create ${plot_folder}"
+fi
+mkdir $plot_folder
+
+
+header="../header/plot_omega.h"
+output_path="../../plot_omega/"
+
+if [[ -d "$result_path" ]]; then
+    
+    rm -rf $result_path
+fi    
+
+mkdir ${result_path} # result folder
+
+sed -i 's|\(const TString outputPlot =\)\(.*\)|\1 "'"${output_path}"'";|' "$header"
+
+for ((i=0; i<${#FILE_TYPE[@]}; ++i)); do
+
+    file_type=${FILE_TYPE[i]}
+    
+    file_indx=$(echo "$i  " | bc)
+    echo $file_indx $file_type
+    
+    input_file="../../input_bdt_${file_type}_TDATA/omega_fit/omega_fit.root"
+    
+    sed -i 's|\(const TString input_file =\)\(.*\)|\1 "'"${input_file}"'";|' "$header"
+    sed -i 's|\(const TString file_type =\)\(.*\)|\1 "'"${file_type}"'";|' "$header"
+    sed -i 's|\(const TString outputPlot =\)\(.*\)|\1 "'"${plot_folder}"'";|' "$header"
+    
+    plot_script=plot_script.C
+    echo '#include <iostream>' > $plot_script
+    echo "void plot_script() {" >> $plot_script
+    echo '  gROOT->ProcessLine(".L ../run_plot/plot_omega.C");' >> $plot_script
+    echo '  gROOT->ProcessLine("plot_omega()");' >> $plot_script
+    echo '}' >> $plot_script
+    root -l -n -q -b $plot_script
+
+done
+
