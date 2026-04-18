@@ -1,5 +1,5 @@
-const TString input_file = "../../input_bdt_TDATA_chain/omega_fit/omega_fit.root";
-const TString file_type = "chain";
+const TString input_file = "../../input_bdt_TDATA_norm/omega_fit/omega_fit.root";
+const TString file_type = "norm";
 
 const TString outputPlot = "../plots_omega/";
 
