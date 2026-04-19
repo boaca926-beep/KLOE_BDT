@@ -10,7 +10,7 @@ class MySQLKLOEDB:
         # user = 'root', password = 'secret' or user = 'kloe_user', password = 'kloe_password'
         self.config = {
             'host': host,
-            'database': database,
+            #'database': database,
             'user': user,
             'password': password,
             'raise_on_warnings': True
@@ -43,7 +43,6 @@ class MySQLKLOEDB:
                 # Database already exists
                 print("ℹ️ Database already exists, continuing...")
                 # Still need to USE the database
-                cursor = self.conn.cursor()
                 cursor.execute("USE kloe_bdt")
             else:
                 raise # Re-rasie if it's a different error
@@ -56,8 +55,8 @@ class MySQLKLOEDB:
         """
         cursor = self.conn.cursor()
 
+        # Events table
         try:
-            # Events table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS events (
                     event_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -83,8 +82,31 @@ class MySQLKLOEDB:
 
         #print columns
         for column in columns:
-            print(f"\tColumn: {column[0]}, \tType: {column[1]}, \tNullable: {columns[2]}")
+            print(f"\tColumn: {column[0]}, \tType: {column[1]}, \tNullable: {column[2]}")
         
+        
+        # Photon pairs table
+        try:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS photon_pairs (
+                    pair_id INT AUTO_INCREMENT PRIMARY KEY,
+                    event_id INT NOT NULL,
+                    invariant_mass DECIMAL(10,3)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            print("\tPhoton pair table is created!")
+        except mysql.connector.errors.DatabaseError as e:
+            if "already exists" in str(e):
+                # Table already exists
+                print("ℹ️ Table 'photon pairs' already exists, continuing...")
+            else:
+                raise e
+            
+        cursor.execute("""SHOW COLUMNS FROM photon_pairs""") # Return rows 
+        columns = cursor.fetchall() 
+        for column in columns:
+            print(f"\tColumn: {column[0]}, \tType: {column[1]}, \tNullable: {column[2]}")
+
         self.conn.commit()
           
     def insert_event(self, run_number: int, event_number: int, bdt_score: float, is_signal: bool) -> int:
@@ -99,6 +121,22 @@ class MySQLKLOEDB:
         """, (run_number, event_number, bdt_score, is_signal)) # %s is a placeholder
         self.conn.commit()
         return cursor.lastrowid
+    
+    def insert_photon_pair(self, event_id: int, features: Dict):
+        """
+        Insert photon pair features
+        """
+        print("Insert photon pair features")
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT INTO photon_pairs (
+                event_id, invariant_mass                 
+            ) VALUES (%s, %s)
+        """, (
+            event_id,
+            features.get('invariant_mass')            
+        ))
+        self.conn.commit()
 
     def close(self):
         if self.conn: # Is there a connection object?
@@ -110,7 +148,3 @@ class MySQLKLOEDB:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-# Usage
-with MySQLKLOEDB() as db:
-    db.create_database()
-    db.create_tables()
