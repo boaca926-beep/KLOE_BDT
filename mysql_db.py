@@ -32,21 +32,23 @@ class MySQLKLOEDB:
         """
         Create database if not exists
         """
+        cursor = self.conn.cursor()
         try:
-            cursor = self.conn.cursor() # This creates a cursor object - a tool that lets you execute SQL commands and fetch results from the database.
+             # This creates a cursor object - a tool that lets you execute SQL commands and fetch results from the database.
             cursor.execute("CREATE DATABASE IF NOT EXISTS kloe_bdt")
             cursor.execute("USE kloe_bdt")
-            self.conn.commit()
             print("Create database if not exists")
         except mysql.connector.errors.DatabaseError as e:
-            if "" in str(e):
+            if "atabase exists" in str(e) or "already exists" in str(e):
                 # Database already exists
                 print("ℹ️ Database already exists, continuing...")
                 # Still need to USE the database
-                ursor = self.conn.cursor()
+                cursor = self.conn.cursor()
                 cursor.execute("USE kloe_bdt")
             else:
                 raise # Re-rasie if it's a different error
+        
+        self.conn.commit()
 
     def create_tables(self):
         """
@@ -54,20 +56,49 @@ class MySQLKLOEDB:
         """
         cursor = self.conn.cursor()
 
-        # Events table
+        try:
+            # Events table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS events (
+                    event_id INT AUTO_INCREMENT PRIMARY KEY,
+                    run_number INT NOT NULL,
+                    event_number INT NOT NULL,
+                    is_signal BOOLEAN DEFAULT FALSE,
+                    bdt_score DECIMAL(6,5),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_signal (is_signal),
+                    INDEX idx_score (bdt_score)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            print("\tEvents table is created!")
+        except mysql.connector.errors.DatabaseError as e:
+            if "already exists" in str(e):
+                # Table already exists
+                print("ℹ️ Table 'events' already exists, continuing...")
+            else:
+                raise e
+        
+        cursor.execute("""SHOW COLUMNS FROM events""") # Return rows and must fetch!
+        columns = cursor.fetchall() # CONSUME the results
+
+        #print columns
+        for column in columns:
+            print(f"\tColumn: {column[0]}, \tType: {column[1]}, \tNullable: {columns[2]}")
+        
+        self.conn.commit()
+          
+    def insert_event(self, run_number: int, event_number: int, bdt_score: float, is_signal: bool) -> int:
+        """
+        Insert event and return event_id
+        """
+        print("Insert event and return event_id")
+        cursor = self.conn.cursor()
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS events (
-                event_id INT AUTO_INCREMENT PRIMARY KEY,
-                run_number INT NOT NULL,
-                event_number INT NOT NULL,
-                is_signal BOOLEAN DEFAULT FALSE,
-                bdt_score DECIMAL(6,5),
-                create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_signal (is_signal),
-                INDEX idx_score (bdt_score)
-            ) ENGINE=InnoDB DEFAULT CHARSET = utf8mb4
-        """)
-        print("\tEvents table is created!")
+            INSERT INTO events (run_number, event_number, bdt_score, is_signal)
+            VALUES (%s, %s, %s, %s)               
+        """, (run_number, event_number, bdt_score, is_signal)) # %s is a placeholder
+        self.conn.commit()
+        return cursor.lastrowid
 
     def close(self):
         if self.conn: # Is there a connection object?
