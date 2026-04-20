@@ -31,11 +31,10 @@ def check_database_exists():
                     print(f"Tables in {db[0]}")
                     for table in tables:
                         table_name = table[0]
-                        print(f"\t- {table_name}")
+                        print(f"\t- {table_name}; Table content:")
                         # Show table structrue
                         cursor.execute(f"SELECT * FROM {db[0]}.{table_name}")
                         content = cursor.fetchall()
-                        print(f"\t Table content:")
                         if content:
                             # Get column names
                             cursor.execute(f"DESCRIBE {db[0]}.{table_name}")
@@ -43,12 +42,11 @@ def check_database_exists():
                             col_names = [col[0] for col in columns]
 
                             # Print column headers
-                            print(f"\t Columns: {', '.join(col_names)}")
-                            print(f"\t columns: {type(columns)}, columns[0]: {type(columns[0])}")
+                            print(f"\t\t Columns: {', '.join(col_names)}, {type(columns)}, columns[0]: {type(columns[0])}")
 
                             # Print each row
                             for i, row in enumerate(content, 1):
-                                print(f"\t Row {i}: {row}")
+                                print(f"\t\t Row {i}: {row}")
 
 
                 cursor.close()
@@ -121,7 +119,14 @@ if __name__ == '__main__':
                 # Insert data
                 event_id = db.insert_event(12345, 67890, 0.95, True)
                 db.insert_photon_pair(event_id,{
-                    'invariant_mass': 135.2
+                    'invariant_mass': 135.2,
+                    'opening_angle': 0.85,
+                    'energy_asymmetry': 0.12,
+                    'energy_ratio': 0.88,
+                    'energy_difference': 15.3,
+                    'min_energy_angle': 42.1,
+                    'asymmetry_angle': 0.10,
+                    'bdt_prediction': 0.96
                 })
 
                 db_status = check_database_exists()

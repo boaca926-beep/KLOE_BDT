@@ -93,11 +93,22 @@ class MySQLKLOEDB:
         try:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS photon_pairs (
-                    pair_id INT AUTO_INCREMENT PRIMARY KEY,
-                    event_id INT NOT NULL,
-                    invariant_mass DECIMAL(10,3)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                           pair_id INT AUTO_INCREMENT PRIMARY KEY,
+                           event_id INT NOT NULL,
+                           invariant_mass DECIMAL(10,3),
+                           opening_angle DECIMAL(6,4),
+                           energy_asymmetry DECIMAL(6,4),
+                           energy_ratio DECIMAL(6,4),
+                           energy_difference DECIMAL(10,3),
+                           min_energy_angle DECIMAL(10,3),
+                           asymmetry_angle DECIMAL(10,3),
+                           bdt_prediction DECIMAL(6,5),
+                           FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE,
+                           INDEX idx_event (event_id),
+                           INDEX idx_prediction (bdt_prediction)
+                ) ENGINE=InnoDB 
             """)
+            # ON DELETE CASCADE: If an event is deleted from the events table, all related photon pairs will be automatically deleted
             print("\tPhoton pair table is created!")
         except mysql.connector.errors.DatabaseError as e:
             if "already exists" in str(e):
@@ -111,8 +122,13 @@ class MySQLKLOEDB:
         for column in columns:
             print(f"\tColumn: {column[0]}, \tType: {column[1]}, \tNullable: {column[2]}")
 
+        # Features table (for ML traning)
+
+        # Model metadata table
+        
         self.conn.commit()
-          
+        print(f"✅ Tables created")
+
     def insert_event(self, run_number: int, event_number: int, bdt_score: float, is_signal: bool) -> int:
         """
         Insert event and return event_id
@@ -138,11 +154,25 @@ class MySQLKLOEDB:
         cursor.execute("""
             INSERT INTO photon_pairs (
                        event_id, 
-                       invariant_mass                 
-            ) VALUES (%s, %s)
+                       invariant_mass,
+                       opening_angle,
+                       energy_asymmetry,
+                       energy_ratio,
+                       energy_difference,
+                       min_energy_angle,
+                       asymmetry_angle,
+                       bdt_prediction
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             event_id,
-            features.get('invariant_mass')            
+            features.get('invariant_mass'),  
+            features.get('opening_angle'),     
+            features.get('energy_asymmetry'),
+            features.get('energy_ratio'),      
+            features.get('energy_difference'),
+            features.get('min_energy_angle'),
+            features.get('asymmetry_angle'),
+            features.get('bdt_prediction')
         ))
         self.conn.commit()
 
