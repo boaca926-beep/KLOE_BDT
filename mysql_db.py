@@ -5,8 +5,12 @@ import pandas as pd
 from typing import List, Dict, Optional
 
 class MySQLKLOEDB:
-    def __init__(self, host='localhost', database='kloe_bdt', 
-                 user='kloe_user', password='kloe_password'):
+    #def __init__(self, host='localhost', database='kloe_bdt', 
+    #             user='kloe_user', password='kloe_password'):
+    def __init__(self, 
+                 host='localhost', 
+                 user='kloe_user', 
+                 password='kloe_password'):
         # user = 'root', password = 'secret' or user = 'kloe_user', password = 'kloe_password'
         self.config = {
             'host': host,
@@ -116,7 +120,10 @@ class MySQLKLOEDB:
         print("Insert event and return event_id")
         cursor = self.conn.cursor()
         cursor.execute("""
-            INSERT INTO events (run_number, event_number, bdt_score, is_signal)
+            INSERT INTO events (run_number, 
+                       event_number, 
+                       bdt_score, 
+                       is_signal)
             VALUES (%s, %s, %s, %s)               
         """, (run_number, event_number, bdt_score, is_signal)) # %s is a placeholder
         self.conn.commit()
@@ -130,7 +137,8 @@ class MySQLKLOEDB:
         cursor = self.conn.cursor()
         cursor.execute("""
             INSERT INTO photon_pairs (
-                event_id, invariant_mass                 
+                       event_id, 
+                       invariant_mass                 
             ) VALUES (%s, %s)
         """, (
             event_id,

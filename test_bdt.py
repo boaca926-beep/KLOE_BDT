@@ -22,6 +22,35 @@ def check_database_exists():
         for db in databases:
             if db[0] == 'kloe_bdt':
                 print(f"Database {db[0]} EXISTS")
+
+                # To see tables in the database
+                cursor.execute(f"SHOW TABLES FROM {db[0]}")
+                tables = cursor.fetchall()
+
+                if tables:
+                    print(f"Tables in {db[0]}")
+                    for table in tables:
+                        table_name = table[0]
+                        print(f"\t- {table_name}")
+                        # Show table structrue
+                        cursor.execute(f"SELECT * FROM {db[0]}.{table_name}")
+                        content = cursor.fetchall()
+                        print(f"\t Table content:")
+                        if content:
+                            # Get column names
+                            cursor.execute(f"DESCRIBE {db[0]}.{table_name}")
+                            columns = cursor.fetchall()
+                            col_names = [col[0] for col in columns]
+
+                            # Print column headers
+                            print(f"\t Columns: {', '.join(col_names)}")
+                            print(f"\t columns: {type(columns)}, columns[0]: {type(columns[0])}")
+
+                            # Print each row
+                            for i, row in enumerate(content, 1):
+                                print(f"\t Row {i}: {row}")
+
+
                 cursor.close()
                 conn.close()
                 return True
@@ -71,13 +100,16 @@ if __name__ == '__main__':
 
             drop_database_via_root()
 
-            check_database_exists()
+            #check_database_exists()
         else:
+
             print("Operation cancelled")
+        
+        check_database_exists()
     
     else:
         #print("Database 'kloe_bdt' doesn't exist!")
-        confirm = input ("Type 'YES' to initialize 'kloe_bdt' database : ")
+        confirm = input("Type 'YES' to initialize 'kloe_bdt' database : ")
 
         if confirm == "YES":
 
@@ -92,7 +124,8 @@ if __name__ == '__main__':
                     'invariant_mass': 135.2
                 })
 
-                check_database_exists()
+                db_status = check_database_exists()
+                #print(db_status)
 
         else:
             print("❌ Quit")
