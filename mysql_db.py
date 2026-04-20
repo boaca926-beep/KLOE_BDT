@@ -1,3 +1,10 @@
+import sys
+import warnings
+
+# Suppress pandas DBAPI2 warning
+if not sys.warnoptions:
+    warnings.simplefilter("ignore")
+
 # Database layer (persistence)
 import mysql.connector # mysql-connector-python
 from mysql.connector import Error
@@ -175,6 +182,32 @@ class MySQLKLOEDB:
             features.get('bdt_prediction')
         ))
         self.conn.commit()
+
+    def query_signal_events(self, min_score: float = 0.8, limit: int = 100) -> pd.DataFrame:
+        """
+        Query high-confidence signal events
+        """
+        query = """
+            SELECT e.event_id,
+                e.run_number, 
+                e.event_number, 
+                e.bdt_score,
+                e.is_signal,
+                p.invariant_mass,
+                p.opening_angle,
+                p.energy_asymmetry,
+                p.energy_ratio,
+                p.energy_difference,
+                p.min_energy_angle,
+                p.asymmetry_angle,
+                p.bdt_prediction
+            FROM events e
+            JOIN photon_pairs p ON e.event_id = p.event_id
+            WHERE e.bdt_score > %s AND e.is_signal = 1
+            ORDER BY e.bdt_score DESC
+            LIMIT %s
+        """
+        return pd.read_sql(query, self.conn, params=[min_score, limit])
 
     def close(self):
         if self.conn: # Is there a connection object?
