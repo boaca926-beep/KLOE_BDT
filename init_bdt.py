@@ -3,6 +3,8 @@ import mysql.connector # mysql-connector-python
 from mysql.connector import Error
 import pandas as pd
 
+def load_model_metadata(db):
+    pass
 
 def check_database_exists():
     """Check if kloe_bdt database exists"""
@@ -107,7 +109,7 @@ if __name__ == '__main__':
 
         if confirm == "YES":
 
-            # FIXED: Initialize database with explicit parameters
+            # Initialize database with explicit parameters
             print("\nInitializing database...")
             with MySQLKLOEDB(
                 host='localhost',
@@ -117,6 +119,9 @@ if __name__ == '__main__':
                 # Create database and tables
                 db.create_database()
                 db.create_tables()
+
+                # Insert model metadata
+                load_model_metadata(db)
 
                 # Insert multiple events with their photon pairs
                 events_with_pairs = [

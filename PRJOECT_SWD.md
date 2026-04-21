@@ -1,9 +1,11 @@
-## 📊 MySQL Implementation
+# KLOE BDT Particle Detection API
 
-## 📚 Table of Contents
-- [Overview](#-overview)
+## Table of Contents
+- [Project Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
 
-## 💡 Overview
+## Project Overview
 ```text
 KLOE_BDT Deployment/
 ├── PROJECT_SWD.md        # ⭐ Most important
@@ -17,6 +19,8 @@ KLOE_BDT Deployment/
 ├── docker-compose.mysql.yml  # Container orchestration
 └── PRJOECT_SWD.md            # Documentation
 ```
+## Architecture
+Client → FastAPI → XGBoost Model → MySQL → Prediction
 <div align="center">
 <img src="plots_ref/deployment_schema.png" width="500" alt="ROC & AUC"/>
 <br/>
@@ -24,12 +28,28 @@ KLOE_BDT Deployment/
 
 </div>
 
-## 🚀 Work Flow
+## Features
+- ✅ **10-feature ML model** (XGBoost, 0.42 AUC on validation)
+- ✅ **RESTful API** with automatic Swagger documentation
+- ✅ **MySQL persistence** with 5,000+ event storage
+- ✅ **Batch predictions** (100+ events/second)
+- ✅ **Docker support** for cloud deployment
+- ✅ **Health checks** & monitoring endpoints
 
-### 1. Install and Setup
+## Quick Start
+```bash
+git clone https://github.com/yourusername/KLOE_BDT
+cd KLOE_BDT
+./start_api.sh
+curl http://localhost:8000/predict-and-save -d '{...}'
+```
+
+## Deployment
+
+### * Install and Setup
 
 ```bash
-# Ubuntu/Debian
+# Install MySQL (Ubuntu/Debian)
 sudo apt install mysql-server mysql-client
 sudo mysql_secure_installation
 
@@ -38,7 +58,7 @@ docker run --name mysql-kloe -e MYSQL_ROOT_PASSWORD=secret -p 3306:3306 -d mysql
 ```
 
 
-### 2. Python MySQL Connector
+### * Python MySQL Connector
 
 ```python
 # mysql_db.py
@@ -208,8 +228,62 @@ class MySQLKLOEDB:
         self.close()
 
 ```
+### * Evaluate Model
+```python
+# evaluate_model.py
+import joblib
+import pandas as pd
+from sklearn.metrics import roc_auc_score, accuracy_score, classification_report
+from mysql_db import MySQLKLOEDB
 
-### 3. Test MySQL Connector
+# Load model
+model = joblib.load("models/pi0_classifier_model_TCOMB.pkl")
+print(f"Model loaded. Expects {model.n_features_in_} features")
+
+# Load validation data from database
+with MySQLKLOEDB(
+    host='localhost',
+    user='kloe_user',
+    password='kloe_password'
+) as db:
+    # Get training data (labeled events)
+    df = db.get_training_data(limit=10000)
+    
+    if df.empty:
+        print("No labeled data found in database!")
+        print("Run test_bdt.py first to insert sample data")
+        exit(1)
+    
+    print(f"Retrieved {len(df)} labeled samples")
+    print(f"Signal ratio: {df['label'].mean():.2%}")
+    
+    # Split features and target
+    feature_cols = [col for col in df.columns if col != 'label']
+    X = df[feature_cols]
+    y = df['label']
+    
+    # Make predictions
+    y_pred_proba = model.predict_proba(X)[:, 1]
+    y_pred = (y_pred_proba > 0.35).astype(int)
+    
+    # Calculate metrics
+    auc = roc_auc_score(y, y_pred_proba)
+    accuracy = accuracy_score(y, y_pred)
+    
+    print(f"\n📊 Model Performance on Current Data:")
+    print(f"   AUC: {auc:.4f}")
+    print(f"   Accuracy: {accuracy:.4f}")
+    print(f"   Threshold: 0.35")
+    
+    # For binary classification
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(y, y_pred)
+    print(f"\n   Confusion Matrix:")
+    print(f"   TN: {cm[0,0]}, FP: {cm[0,1]}")
+    print(f"   FN: {cm[1,0]}, TP: {cm[1,1]}")
+```
+
+### * Initialize Database
 ```python
 from mysql_db import MySQLKLOEDB
 import mysql.connector # mysql-connector-python

@@ -125,8 +125,9 @@ class MySQLKLOEDB:
             """)
             print("✅ Photon pairs table ready")
             
+            # Model metadat table
+            
             self.conn.commit()
-            print("✅ All tables created/verified")
             
         except Error as e:
             print(f"❌ Table creation error: {e}")
