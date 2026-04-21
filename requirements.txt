@@ -1,14 +1,17 @@
 awkward
+fastapi
+grip
 joblib
 matplotlib
+mysql-connector-python
 numpy
 pandas
 psutil
 pyarrow
-root
 scikit-learn
 scikit-optimize
 seaborn
 uproot
+uvicorn
 xgboost
 

@@ -34,7 +34,7 @@ def check_database_exists():
                     for table in tables:
                         table_name = table[0]
                         print(f"\t- {table_name}; Table content:")
-                        # Show table structrue
+                        # Show table structure
                         cursor.execute(f"SELECT * FROM {db[0]}.{table_name}")
                         content = cursor.fetchall()
                         if content:
@@ -44,7 +44,7 @@ def check_database_exists():
                             col_names = [col[0] for col in columns]
 
                             # Print column headers
-                            print(f"\t\t Columns: {', '.join(col_names)}, {type(columns)}, columns[0]: {type(columns[0])}")
+                            print(f"\t\t Columns: {', '.join(col_names)}")
 
                             # Print each row
                             for i, row in enumerate(content, 1):
@@ -89,7 +89,6 @@ def drop_database_via_root():
 if __name__ == '__main__':
 
     kloe_db_status = check_database_exists()
-    #print(f"{kloe_db_status}")
 
     if kloe_db_status:
         print("\n All data in kloe_bdt will be deleted!")
@@ -97,40 +96,27 @@ if __name__ == '__main__':
 
         if confirm == 'DROP':
             print("Dropping 'kloe_bdt' database")
-
             drop_database_via_root()
-
         else:
-
             print("Operation cancelled")
         
         check_database_exists()
     
     else:
-        #print("Database 'kloe_bdt' doesn't exist!")
         confirm = input("Type 'YES' to initialize 'kloe_bdt' database : ")
 
         if confirm == "YES":
 
-            # initialize database
-            with MySQLKLOEDB() as db:
+            # FIXED: Initialize database with explicit parameters
+            print("\nInitializing database...")
+            with MySQLKLOEDB(
+                host='localhost',
+                user='kloe_user',
+                password='kloe_password'
+            ) as db:
+                # Create database and tables
                 db.create_database()
                 db.create_tables()
-
-                # Insert data
-                r''' Single events with photon_pair
-                event_id = db.insert_event(12345, 67890, 0.95, True)
-                db.insert_photon_pair(event_id,{
-                    'invariant_mass': 135.2,
-                    'opening_angle': 0.85,
-                    'energy_asymmetry': 0.12,
-                    'energy_ratio': 0.88,
-                    'energy_difference': 15.3,
-                    'min_energy_angle': 42.1,
-                    'asymmetry_angle': 0.10,
-                    'bdt_prediction': 0.96
-                })
-                '''
 
                 # Insert multiple events with their photon pairs
                 events_with_pairs = [
@@ -172,43 +158,75 @@ if __name__ == '__main__':
                             'asymmetry_angle': 0.13,
                             'bdt_prediction': 0.89
                         }
+                    },
+                    # ========== TWO UNLABELED DATA POINTS (NULL) ==========
+                    {
+                        'event': (12346, 10001, 0.45, None),  # NULL/Unlabeled
+                        'photon_pair': {
+                            'invariant_mass': 140.5,
+                            'opening_angle': 0.65,
+                            'energy_asymmetry': 0.25,
+                            'energy_ratio': 0.75,
+                            'energy_difference': 25.3,
+                            'min_energy_angle': 55.1,
+                            'asymmetry_angle': 0.22,
+                            'bdt_prediction': 0.45
+                        }
+                    },
+                    {
+                        'event': (12346, 10002, 0.38, None),  # NULL/Unlabeled
+                        'photon_pair': {
+                            'invariant_mass': 142.1,
+                            'opening_angle': 0.58,
+                            'energy_asymmetry': 0.31,
+                            'energy_ratio': 0.69,
+                            'energy_difference': 30.8,
+                            'min_energy_angle': 62.3,
+                            'asymmetry_angle': 0.28,
+                            'bdt_prediction': 0.38
+                        }
                     }
                 ]
                 
+                print("\nInserting events...")
                 for data in events_with_pairs:
-                    event_id = db.insert_event(*data['event']) # Unpack tuple *, ** for dirctionaries
+                    event_id = db.insert_event(*data['event'])
                     db.insert_photon_pair(event_id, data['photon_pair'])
-                    print(f"Inserted event {event_id} with BDT score {data['event'][2]}")
+                    print(f"  Inserted event {event_id} with BDT score {data['event'][2]}")
 
-                db_status = check_database_exists()
-                #print(db_status)
-
-                # Query results
+                # Testing query results
+                print("\n\n* TESTING QUERY RESULTS ...")
+                
                 # See all events
-                bdt_score=0.9
-
-                print(f"SELECTED EVENTS WITH BDT_SCORE > {bdt_score}")
                 all_events = pd.read_sql("SELECT * FROM events", db.conn)
-                print("\t=== All Events ===")
-                print(all_events)
+                print("\n=== All Events ===")
+                print(all_events.to_string())
 
                 # See all photon pairs
                 all_pairs = pd.read_sql("SELECT * FROM photon_pairs", db.conn)
-                print("\t=== All Photon Pairs ===")
-                print(all_pairs)
+                print("\n=== All Photon Pairs ===")
+                print(all_pairs.to_string())
 
-                # Join query
-                
+                # Join query for high score events
+                bdt_score = 0.9
+                print(f"\n=== SELECTED EVENTS WITH BDT_SCORE > {bdt_score} ===")
                 results = db.query_signal_events(min_score=0.9)
-                print(results.to_string())
+                if not results.empty:
+                    print(results.to_string())
+                else:
+                    print("No events found with BDT score > 0.9")
+
+                # Test get_training_data
+                print("\n\n* TESTING GET TRAINING DATA (EXCLUDE NULL SIGNAL TYPE) ...")
+                training_data = db.get_training_data(limit=100)
+                print(f"Retrieved {len(training_data)} training samples")
+                if not training_data.empty:
+                    print("\nTraining data sample:")
+                    print(training_data.head())
+                    print(f"\nLabel distribution:")
+                    print(training_data['label'].value_counts())
+                else:
+                    print("No training data found (only unlabeled events?)")
 
         else:
             print("❌ Quit")
-
-    
-
-    
-    
-    
-
-    
