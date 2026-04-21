@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Start the API (it will handle the case if already running)
+./start_api.sh
+
+# Send prediction request
+echo "Sending prediction request..."
 curl -X POST "http://localhost:8000/predict-and-save" \
   -H "Content-Type: application/json" \
   -d '{
@@ -33,4 +38,5 @@ curl -X POST "http://localhost:8000/predict-and-save" \
     ]
   }' | python3 -m json.tool
 
-  sudo pkill -f uvicorn
+echo -e "\n✅ Prediction complete! Server is still running for more requests."
+echo "To stop the server, run: ./stop_api.sh"

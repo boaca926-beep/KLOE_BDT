@@ -6,6 +6,7 @@
 
 # Start API
 #uvicorn api_mysql:app --reload --host 0.0.0.0 --port 8000 &
+./start_api.sh
 
 # Wait a moment
 sleep 3
@@ -30,3 +31,6 @@ curl -X POST "http://localhost:8000/predict-and-save" \
       }
     ]
   }' | python3 -m json.tool
+
+echo -e "\n✅ Prediction complete! Server is still running for more requests."
+echo "To stop the server, run: ./stop_api.sh"
