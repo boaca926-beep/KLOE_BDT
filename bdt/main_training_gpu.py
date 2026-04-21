@@ -295,6 +295,7 @@ if __name__ == '__main__':
          'best_score': model.best_score,
          'params': params,
          'n_features': len(training_cols),
+         'feature_names': training_cols,
          'training_time_minutes': training_time / 60,
          'peak_memory_percent': peak_memory if memory_log else None,
          'gpu_enabled': has_gpu  # ADDED: track if GPU was used

@@ -128,8 +128,11 @@ class MySQLKLOEDB:
             # Model metadata table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS model_metadata (
-                           id INT AUTO_INCREMENT PRIMARY KEY,
-                           model_name VARCHAR(100) NOT NULL
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    model_name VARCHAR(100) NOT NULL,
+                    model_version VARCHAR(20) NOT NULL,
+                    is_active BOOLEAN DEFAULT FALSE,
+                    training_date TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
             print("✅ Model metadata ready")

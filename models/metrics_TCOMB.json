@@ -23,7 +23,19 @@
     "reg_lambda": 1.5552064648767434
   },
   "n_features": 10,
-  "training_time_minutes": 0.03239604632059733,
-  "peak_memory_percent": 26.3,
+  "feature_names": [
+    "m_gg",
+    "opening_angle",
+    "cos_theta",
+    "E_asym",
+    "e_min_x_angle",
+    "E1",
+    "E2",
+    "E3",
+    "asym_x_angle",
+    "E_diff"
+  ],
+  "training_time_minutes": 0.03723865350087484,
+  "peak_memory_percent": 29.0,
   "gpu_enabled": true
 }

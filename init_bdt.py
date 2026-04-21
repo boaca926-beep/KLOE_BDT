@@ -19,45 +19,105 @@ def load_model_metadata(db):
         print("   Skipping metadata insertion")
         return
 
-    # Error handling
-    try:
-        # Loac the model to extract info
-        model = joblib.load(model_path)
+    with MySQLKLOEDB(
+        host='localhost',
+        user='kloe_user',
+        password='kloe_password'
+    ) as db:
+        try:
+            # Loac the model to extract info
+            model = joblib.load(model_path)
 
-        # Get model info
-        n_features = model.n_features_in_ if hasattr(model, 'n_features_in_') else 0 # Number of features
-        feature_names = model.feature_names_in_.tolist() if hasattr(model, 'feature_names_in_') else []
-        print(f"{n_features} features:\n {feature_names}")
-        
-        # Check if model is XGBoost
-        model_type = type(model).__name__
+            # Get model info
+            n_features = model.n_features_in_ if hasattr(model, 'n_features_in_') else 0 # Number of features
+            feature_names = []
+            if hasattr(model, 'feature_names_in_'):
+                feature_names = model.feature_names_in_.tolist()            
+            training_time = getattr(model, 'training_time_minutes_in_', 0)
+            #print(f"{n_features} features:\n {feature_names}")
+            
+            # Check if model is XGBoost
+            model_type = type(model).__name__
 
-        # Get model performance metric if it exists
-        auc_score = None
-        accuracy = None
-        threshold = 0,5 # Default threshold
+            # Get model performance metric if it exists
+            auc_score = None
+            accuracy = None
+            threshold = 0.5 # Default threshold
 
-        # Load metric file
-        metrics_path = "models/metrics_TCOMB.json"
-        if os.path.exists(metrics_path):
-            import json
-            with open(metrics_path, 'r') as f:
-                metrics = json.load(f)
-                auc_score = metrics.get('auc')
-                accuracy = metrics.get('accuracy')
+            # Load metric file
+            metrics_path = "models/metrics_TCOMB.json"
+            if os.path.exists(metrics_path):
+                import json
+                with open(metrics_path, 'r') as f:
+                    metrics = json.load(f)
+                    auc_score = metrics.get('auc')
+                    accuracy = metrics.get('accuracy')
+                    gpu_enabled = metrics.get('gpu_enabled', False)  # ✅ Get from metrics or default False
+                    metrics_feature_names = metrics.get('feature_names', [])
 
-        #print(f"accuracy: {accuracy}; auc: {auc_score}")
-        
-        db.conn.commit()
-        print(f"✅ Model metadata inserted:")
-        print(f"    - Model: pi0_classifier v1.0")
-        print(f"    - Type: {model_type}")
-        if auc_score:
-            print(f"    - AUC: {auc_score:.4f}")
-        
+                    # Use feature names from metrics if not in model
+                    if not feature_names and metrics_feature_names:
+                        feature_names = metrics_feature_names
 
-    except Exception as e:
-        print(f"❌ Error loading model metadata: {e}")
+                    #if training_time == 0:
+                    #    training_time = metrics.get('training_time_minutes', 0)
+                    
+                    print(f"    Load metrics from {metrics_path}")
+                    print(f"    All keys: {list(metrics.keys())}")
+                    print(f"    GPU from metrics: {gpu_enabled}")
+                    print(f"    Feature names: {metrics_feature_names}")
+                    print(f"    Training time from metrics: {training_time:.1f} minutes")
+
+            else:
+                print(f"    ⚠️  Metrics file not found at {metrics_path}")
+
+            #print(f"accuracy: {accuracy}; auc: {auc_score}")
+
+            # Check if metadata already exists
+            cursor = db.conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM model_metadata WHERE model_name = 'pi0_classifier'")
+            count = cursor.fetchone()[0]
+            #print(count)
+
+            if count > 0:
+                print("ℹ️  Updating existing metadata ...")
+                cursor.execute("""
+                    UPDATE model_metadata
+                    SET model_version = 'v1.1',
+                        n_features = %s,
+                        feature_names = %s,
+                        auc_score = %s,
+                        accuracy = %s,
+                        updated_at = NOW()
+                    WHERE model_name = 'pi0_classifier'
+                """, (n_features, ','.join(feature_names), auc_score, accuracy))
+            else:
+                print("ℹ️  Inserting new metadata ...")
+                cursor.execute("""
+                    INSERT INTO model_metadata (
+                        model_name, model_version,
+                        is_active, training_date
+                    ) VALUES (%s, %s, %s, NOW())
+                """, (
+                    'pi0_classifier', 'v1.0',
+                    True
+                ))
+            
+            db.conn.commit()
+            print(f"\n✅ Model metadata inserted:")
+            print(f"    - Model: pi0_classifier v1.0")
+            print(f"    - Type: {model_type}")
+
+            if feature_names:
+                print(f"    - Feature list: {', '.join(feature_names[:5])}...")
+            if auc_score:
+                print(f"    - AUC: {auc_score:.4f}")
+            if accuracy:
+                print(f"    - Accuracy: {accuracy:.4f}")
+            
+
+        except Exception as e:
+            print(f"❌ Error loading model metadata: {e}")
     
 
 def check_database_exists():
