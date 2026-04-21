@@ -39,7 +39,7 @@ class MySQLKLOEDB:
             return True
         except Error as e:
             if "Unknown database" in str(e):
-                print(f"ℹ️ Database '{self.database}' doesn't exist yet")
+                print(f"ℹ️  Database '{self.database}' doesn't exist yet")
                 return False
             else:
                 print(f"❌ Connection Error: {e}")
@@ -125,8 +125,15 @@ class MySQLKLOEDB:
             """)
             print("✅ Photon pairs table ready")
             
-            # Model metadat table
-            
+            # Model metadata table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS model_metadata (
+                           id INT AUTO_INCREMENT PRIMARY KEY,
+                           model_name VARCHAR(100) NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            print("✅ Model metadata ready")
+
             self.conn.commit()
             
         except Error as e:

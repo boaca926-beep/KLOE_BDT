@@ -157,7 +157,7 @@ class MySQLKLOEDB:
         """)
         
         self.conn.commit()
-        print("✅ Tables created")
+        
     
     def insert_event(self, run_number: int, event_number: int, bdt_score: float, is_signal: bool) -> int:
         """Insert event and return event_id"""

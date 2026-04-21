@@ -4,7 +4,61 @@ from mysql.connector import Error
 import pandas as pd
 
 def load_model_metadata(db):
-    pass
+    """Load model metadata into database"""
+
+    import joblib
+    import os
+    from datetime import datetime
+
+    # Path to the ML model
+    model_path = "models/pi0_classifier_model_TCOMB.pkl"
+    print(f"\n\nℹ️  Loading the model '{model_path}'")
+
+    if not os.path.exists(model_path):
+        print(f"⚠️  Model not found at {model_path}")
+        print("   Skipping metadata insertion")
+        return
+
+    # Error handling
+    try:
+        # Loac the model to extract info
+        model = joblib.load(model_path)
+
+        # Get model info
+        n_features = model.n_features_in_ if hasattr(model, 'n_features_in_') else 0 # Number of features
+        feature_names = model.feature_names_in_.tolist() if hasattr(model, 'feature_names_in_') else []
+        print(f"{n_features} features:\n {feature_names}")
+        
+        # Check if model is XGBoost
+        model_type = type(model).__name__
+
+        # Get model performance metric if it exists
+        auc_score = None
+        accuracy = None
+        threshold = 0,5 # Default threshold
+
+        # Load metric file
+        metrics_path = "models/metrics_TCOMB.json"
+        if os.path.exists(metrics_path):
+            import json
+            with open(metrics_path, 'r') as f:
+                metrics = json.load(f)
+                auc_score = metrics.get('auc')
+                accuracy = metrics.get('accuracy')
+
+        #print(f"accuracy: {accuracy}; auc: {auc_score}")
+        
+        db.conn.commit()
+        print(f"✅ Model metadata inserted:")
+        print(f"    - Model: pi0_classifier v1.0")
+        print(f"    - Type: {model_type}")
+        if auc_score:
+            print(f"    - AUC: {auc_score:.4f}")
+        
+
+    except Exception as e:
+        print(f"❌ Error loading model metadata: {e}")
+    
 
 def check_database_exists():
     """Check if kloe_bdt database exists"""
@@ -110,7 +164,7 @@ if __name__ == '__main__':
         if confirm == "YES":
 
             # Initialize database with explicit parameters
-            print("\nInitializing database...")
+            print("\n\nℹ️  INITIALIZING KLOE_BDT DATABASE...")
             with MySQLKLOEDB(
                 host='localhost',
                 user='kloe_user',
@@ -193,28 +247,25 @@ if __name__ == '__main__':
                     }
                 ]
                 
-                print("\nInserting events...")
+                print(f"\n\nℹ️  INSERTING TEST EVENTS...")
                 for data in events_with_pairs:
                     event_id = db.insert_event(*data['event'])
                     db.insert_photon_pair(event_id, data['photon_pair'])
                     print(f"  Inserted event {event_id} with BDT score {data['event'][2]}")
-
-                # Testing query results
-                print("\n\n* TESTING QUERY RESULTS ...")
                 
                 # See all events
                 all_events = pd.read_sql("SELECT * FROM events", db.conn)
-                print("\n=== All Events ===")
+                print("\n\t\t=== All Events ===")
                 print(all_events.to_string())
 
                 # See all photon pairs
                 all_pairs = pd.read_sql("SELECT * FROM photon_pairs", db.conn)
-                print("\n=== All Photon Pairs ===")
+                print("\n\t\t=== All Photon Pairs ===")
                 print(all_pairs.to_string())
 
                 # Join query for high score events
                 bdt_score = 0.9
-                print(f"\n=== SELECTED EVENTS WITH BDT_SCORE > {bdt_score} ===")
+                print(f"\n\t\t=== SELECTED EVENTS WITH BDT_SCORE > {bdt_score} ===")
                 results = db.query_signal_events(min_score=0.9)
                 if not results.empty:
                     print(results.to_string())
@@ -222,9 +273,9 @@ if __name__ == '__main__':
                     print("No events found with BDT score > 0.9")
 
                 # Test get_training_data
-                print("\n\n* TESTING GET TRAINING DATA (EXCLUDE NULL SIGNAL TYPE) ...")
+                print(f"\n\nℹ️  TESTING GET TRAINING DATA (EXCLUDE NULL SIGNAL TYPE) ...")
                 training_data = db.get_training_data(limit=100)
-                print(f"Retrieved {len(training_data)} training samples")
+                print(f"Retrieved {len(training_data)} training events passed the selection")
                 if not training_data.empty:
                     print("\nTraining data sample:")
                     print(training_data.head())
