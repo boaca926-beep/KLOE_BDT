@@ -132,7 +132,16 @@ class MySQLKLOEDB:
                     model_name VARCHAR(100) NOT NULL,
                     model_version VARCHAR(20) NOT NULL,
                     is_active BOOLEAN DEFAULT FALSE,
-                    training_date TIMESTAMP
+                    training_date TIMESTAMP NULL,
+                    n_features INT DEFAULT 0,
+                    feature_names TEXT,
+                    auc_score FLOAT DEFAULT NULL,
+                    accuracy FLOAT DEFAULT NULL,
+                    gpu_enabled BOOLEAN DEFAULT FALSE,
+                    training_time_minutes FLOAT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY unique_model_name (model_name)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
             print("✅ Model metadata ready")
