@@ -15,11 +15,14 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
       timeout: 10s
       retries: 5
+      start_period: 30s  # Give MySQL time to initialize
     networks:
       - kloe-network
+    command: --default-authentication-plugin=mysql_native_password  # Better compatibility
 
   api:
     build: .
@@ -34,7 +37,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    healthcheck:                                    # ← Add this
+    healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
@@ -43,6 +46,27 @@ services:
     networks:
       - kloe-network
     restart: unless-stopped
+
+  # Optional: Add an init service to run init_bdt.py automatically
+  init-db:
+    build: .
+    container_name: kloe-init
+    command: python init_bdt.py
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - kloe-network
+    volumes:
+      - ./models:/app/models  # Mount models directory if needed
+    profiles:
+      - init  # Only run when explicitly requested
 
 volumes:
   mysql_data:
