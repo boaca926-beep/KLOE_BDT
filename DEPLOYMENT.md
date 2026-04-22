@@ -355,8 +355,10 @@ docker compose exec mysql bash
 
 # Update deployment（after git pushed）
 git pull
-docker compose build
-docker compose up -d
+docker compose build (build)
+docker compose up -d (start)
+Or:
+docker compose up -d --build (combined)
 ```
 
 <!--
@@ -406,6 +408,18 @@ sudo systemctl restart mysql
 
 # Enable auto-start on boot
 sudo systemctl enable mysql
+
+# List all containers
+sudo docer ps -a
+
+# See only a specific project container
+sudo docker ps -a | grep <container_name>
+
+# Stop a container
+sudo docker stop <container_name>
+
+# Remove a container
+sudo docker rm <container_name>
 ```
 
 **Found MySQL Credentials**

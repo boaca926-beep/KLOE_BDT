@@ -1,8 +1,10 @@
 # Dockerfile
-FROM python:3.12-slim # slim = smaller size, fewer pre-installed packages
+# slim = smaller size, fewer pre-installed packages
+FROM python:3.12-slim 
 
 # Set working directory
-WORKDIR /app # Creates and switches to /app directory inside container
+# Creates and switches to /app directory inside container
+WORKDIR /app 
 
 # Installs system packages needed for Python MySQL libraries
 # gcc: C compiler (compiles MySQL Python package)
