@@ -6,8 +6,6 @@
 [![Docker](https://img.shields.io/badge/Docker-24.0+-blue.svg)](https://docker.com/)
 
 ## Table of Contents
-...
-## Table of Contents
 - [Project Overview](#project-overview)
 - [Architecture](#architecture)
 - [Features](#features)
@@ -105,11 +103,134 @@ uv run api_mysql.py
 ```
 
 ### 4. Docker Deployment
-```bash
-docker build -t kloe-bdt-api .
+#### 4.1 Create a Dockerfile
+```dockerfile
+# Dockerfile
+FROM python:3.12-slim
 
-# Run with docker-compose
-docker-compose -f docker-compose.mysql.yml up
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first (for better caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY api_mysql.py .
+COPY mysql_db.py .
+COPY models/ ./models/
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Run the application
+CMD ["uvicorn", "api_mysql:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+#### 4.2 Create requirements.txt
+```text
+awkward
+fastapi
+grip
+joblib
+matplotlib
+mysql-connector-python
+numpy
+pandas
+psutil
+pyarrow
+scikit-learn
+scikit-optimize
+seaborn
+uproot
+uvicorn
+xgboost
+```
+
+#### 4.3 Create docker-compose.yml (includes MySQL)
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: kloe-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: kloe_bdt
+      MYSQL_USER: kloe_user
+      MYSQL_PASSWORD: kloe_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+    networks:
+      - kloe-network
+
+  api:
+    build: .
+    container_name: kloe-api
+    ports:
+      - "8000:8000"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: kloe_user
+      MYSQL_PASSWORD: kloe_password
+      MYSQL_DATABASE: kloe_bdt
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - kloe-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  kloe-network:
+    driver: bridge
+```
+
+#### 4.4 Update api_mysql.py for Docker
+```text
+Modify your api_mysql.py to read database host from environment
+```
+
+#### 4.5 Build and Run with Docker Compose
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in detached mode (background)
+docker-compose up -d --build
+```
+
+#### 4.6 Verify Everthin is Runing
+```text
+Modify multi_pred.sh and signle_pred.sh add:
+
+# Check container status
+docker-compose ps
+
+# Check logs
+docker-compose logs api
 ```
 
 <!--
