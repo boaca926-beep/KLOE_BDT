@@ -1,0 +1,9 @@
+{
+    "python.defaultInterpreterPath": "python3",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "files.associations": {
+        "Dockerfile": "dockerfile",
+        "docker-compose.yml": "yaml"
+    }
+}

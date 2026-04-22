@@ -185,6 +185,13 @@ CMD ["uvicorn", "api_mysql:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 #### 4.3 Create docker-compose.yml (includes MySQL)
+version: (implied, modern Compose)
+├── services:
+│   ├── mysql (database)
+│   ├── api (web application)
+│   └── init-db (one-time setup)
+├── volumes: (persistent storage)
+└── networks: (communication bridge)
 ```yaml
 # docker-compose.yml
 services:
@@ -305,16 +312,17 @@ ls -la models/pi0_classifier_model_TCOMB.pkl
 
 # 4. Activate Docker container（one-line）
 ./docker_user.sh
-docker compose up -d
+docker-compose --profile init up init-db
 
 # 5. Inspection
 docker compose ps
 docker compose logs api
+# Application running at http://localhost:8000
 
 # 6. Test API
 curl http://localhost:8000/health
 
-# 7. Initialize（if needed）
+# 7. Initialize manually（if needed）
 docker compose exec api python init_bdt.py
 
 # 8. Exit
