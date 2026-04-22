@@ -1,5 +1,4 @@
 # docker-compose.yml
-version: '3.8'
 
 services:
   mysql:
@@ -22,7 +21,7 @@ services:
       start_period: 30s  # Give MySQL time to initialize
     networks:
       - kloe-network
-    command: --default-authentication-plugin=mysql_native_password  # Better compatibility
+    command: --mysql-native-password=ON  # Better compatibility
 
   api:
     build: .

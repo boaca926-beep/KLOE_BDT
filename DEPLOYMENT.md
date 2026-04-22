@@ -268,6 +268,7 @@ cp .env.example .env
 ls -la models/pi0_classifier_model_TCOMB.pkl
 
 # 4. Activate Docker container（one-line）
+./docker_user.sh
 docker compose up -d
 
 # 5. Inspection
@@ -279,6 +280,13 @@ curl http://localhost:8000/health
 
 # 7. Initialize（if needed）
 docker compose exec api python init_bdt.py
+
+# 8. Exit
+# When you're done for now
+docker compose down
+
+# Later when you want to start again
+docker compose up
 ```
 
 
