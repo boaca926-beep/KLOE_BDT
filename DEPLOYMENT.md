@@ -117,6 +117,16 @@ KLOE_BDT/
 ├── models/                 # Trained model
 │   └── pi0_classifier_model_TCOMB.pkl
 └── start_api.sh            # Starting script (optional)
+
+# .env file (inluded in .gitignore)
+MYSQL_ROOT_PASSWORD=your-root_password
+MYSQL_DATABASE=your-database-name
+MYSQL_USER=your-user-name
+MYSQL_PASSWORD=your-user-password
+MYSQL_HOST=your-host-name
+
+# ./docker_user.sh
+
 ```
 
 #### 4.1 Create a Dockerfile
@@ -231,7 +241,7 @@ networks:
 Modify your api_mysql.py to read database host from environment
 ```
 
-#### 4.5 Creat Environment File (.env)
+#### 4.5 Create Environment File (.env)
 ```bash
 # .env file（included in .gitignore）
 MYSQL_ROOT_PASSWORD=secret
