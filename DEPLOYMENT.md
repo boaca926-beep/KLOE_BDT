@@ -128,8 +128,27 @@ MYSQL_HOST=your-host-name
 # ./docker_user.sh
 
 ```
+#### 4.1 Create requirements.txt
+```text
+awkward
+fastapi
+grip
+joblib
+matplotlib
+mysql-connector-python
+numpy
+pandas
+psutil
+pyarrow
+scikit-learn
+scikit-optimize
+seaborn
+uproot
+uvicorn
+xgboost
+```
 
-#### 4.1 Create a Dockerfile
+#### 4.2 Create a Dockerfile
 ```dockerfile
 # Dockerfile
 FROM python:3.12-slim
@@ -137,7 +156,6 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     default-libmysqlclient-dev \
@@ -166,50 +184,31 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 CMD ["uvicorn", "api_mysql:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-#### 4.2 Create requirements.txt
-```text
-awkward
-fastapi
-grip
-joblib
-matplotlib
-mysql-connector-python
-numpy
-pandas
-psutil
-pyarrow
-scikit-learn
-scikit-optimize
-seaborn
-uproot
-uvicorn
-xgboost
-```
-
 #### 4.3 Create docker-compose.yml (includes MySQL)
 ```yaml
 # docker-compose.yml
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8
     container_name: kloe-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-secret}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-kloe_bdt}
-      MYSQL_USER: ${MYSQL_USER:-kloe_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-kloe_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
       timeout: 10s
       retries: 5
+      start_period: 30s  # Give MySQL time to initialize
     networks:
       - kloe-network
+    command: --mysql-native-password=ON  # Better compatibility
 
   api:
     build: .
@@ -218,15 +217,42 @@ services:
       - "8000:8000"
     environment:
       MYSQL_HOST: mysql
-      MYSQL_USER: kloe_user
-      MYSQL_PASSWORD: kloe_password
-      MYSQL_DATABASE: kloe_bdt
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - kloe-network
+    restart: unless-stopped
+
+  # Optional: Add an init service to run init_bdt.py automatically
+  init-db:
+    build: .
+    container_name: kloe-init
+    command: python init_bdt.py
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     depends_on:
       mysql:
         condition: service_healthy
     networks:
       - kloe-network
-    restart: unless-stopped
+    volumes:
+      - ./models:/app/models  # Mount models directory if needed
+    profiles:
+      - init  # Only run when explicitly requested
 
 volumes:
   mysql_data:
