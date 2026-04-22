@@ -4,6 +4,8 @@
 [![ROOT](https://img.shields.io/badge/ROOT-6.30-orange?logo=cern)](https://root.cern)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+> **For API deployment and operations**, see [DEPLOYMENT.md](DEPLOYMENT.md)
+
 ## 📚 Table of Contents
 - [Description](#description)
 - [Standard Analysis ($\chi^{2}$)](#standard-analysis-χ)

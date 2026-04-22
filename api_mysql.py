@@ -7,6 +7,7 @@ import joblib
 import pandas as pd
 import numpy as np
 from mysql_db import MySQLKLOEDB
+import os
 
 app = FastAPI(title="KLOE BDT API (MySQL)")
 
@@ -23,9 +24,9 @@ except Exception as e:
 # Database dependency
 def get_db():
     db = MySQLKLOEDB(
-        host='localhost',
-        user='kloe_user', 
-        password='kloe_password'
+        host=os.getenv('MYSQL_HOST', 'localhost'),  
+        user=os.getenv('MYSQL_USER', 'kloe_user'),  
+        password=os.getenv('MYSQL_PASSWORD', 'kloe_password')  
     )
     try:
         cursor = db.conn.cursor()

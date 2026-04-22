@@ -1,147 +1,143 @@
 from mysql_db import MySQLKLOEDB
-import mysql.connector # mysql-connector-python
+import mysql.connector
 from mysql.connector import Error
 import pandas as pd
+import os  # ADD THIS
+
+# Database connection parameters - support both local and Docker
+DB_HOST = os.getenv('MYSQL_HOST', 'localhost')
+DB_USER = os.getenv('MYSQL_USER', 'kloe_user')
+DB_PASSWORD = os.getenv('MYSQL_PASSWORD', 'kloe_password')
+DB_ROOT_PASSWORD = os.getenv('MYSQL_ROOT_PASSWORD', 'secret')
+
 
 def load_model_metadata(db):
     """Load model metadata into database"""
-
     import joblib
-    import os
+    import os as os_module
+    import json
     from datetime import datetime
 
     # Path to the ML model
     model_path = "models/pi0_classifier_model_TCOMB.pkl"
     print(f"\n\nℹ️  Loading the model '{model_path}'")
 
-    if not os.path.exists(model_path):
+    if not os_module.path.exists(model_path):
         print(f"⚠️  Model not found at {model_path}")
         print("   Skipping metadata insertion")
         return
 
-    with MySQLKLOEDB(
-        host='localhost',
-        user='kloe_user',
-        password='kloe_password'
-    ) as db:
-        try:
-            # Loac the model to extract info
-            model = joblib.load(model_path)
+    try:
+        # Load the model to extract info (FIXED: removed duplicate with block)
+        model = joblib.load(model_path)
 
-            # Get model info
-            n_features = model.n_features_in_ if hasattr(model, 'n_features_in_') else 0 # Number of features
-            feature_names = []
-            if hasattr(model, 'feature_names_in_'):
-                feature_names = model.feature_names_in_.tolist()            
-            training_time = getattr(model, 'training_time_minutes_in_', 0)
-            #print(f"{n_features} features:\n {feature_names}")
-            
-            # Check if model is XGBoost
-            model_type = type(model).__name__
+        # Get model info
+        n_features = model.n_features_in_ if hasattr(model, 'n_features_in_') else 0
+        feature_names = []
+        if hasattr(model, 'feature_names_in_'):
+            feature_names = model.feature_names_in_.tolist()
+        training_time = getattr(model, 'training_time_minutes_in_', 0)
+        model_type = type(model).__name__
 
-            # Get model performance metric if it exists
-            auc_score = None
-            accuracy = None
-            threshold = 0.5 # Default threshold
+        # Get model performance metrics
+        auc_score = None
+        accuracy = None
+        gpu_enabled = False
+        threshold = 0.5
 
-            # Load metric file
-            metrics_path = "models/metrics_TCOMB.json"
-            if os.path.exists(metrics_path):
-                import json
-                with open(metrics_path, 'r') as f:
-                    metrics = json.load(f)
-                    auc_score = metrics.get('auc')
-                    accuracy = metrics.get('accuracy')
-                    gpu_enabled = metrics.get('gpu_enabled', False)  # ✅ Get from metrics or default False
-                    metrics_feature_names = metrics.get('feature_names', [])
+        # Load metric file
+        metrics_path = "models/metrics_TCOMB.json"
+        if os_module.path.exists(metrics_path):
+            with open(metrics_path, 'r') as f:
+                metrics = json.load(f)
+                auc_score = metrics.get('auc')
+                accuracy = metrics.get('accuracy')
+                gpu_enabled = metrics.get('gpu_enabled', False)
+                metrics_feature_names = metrics.get('feature_names', [])
+                if training_time == 0:
+                    training_time = metrics.get('training_time_minutes', 0)
 
-                    # Use feature names from metrics if not in model
-                    if not feature_names and metrics_feature_names:
-                        feature_names = metrics_feature_names
+                # Use feature names from metrics if not in model
+                if not feature_names and metrics_feature_names:
+                    feature_names = metrics_feature_names
 
-                    #if training_time == 0:
-                    #    training_time = metrics.get('training_time_minutes', 0)
-                    
-                    print(f"    Load metrics from {metrics_path}")
-                    print(f"    All keys: {list(metrics.keys())}")
-                    print(f"    GPU from metrics: {gpu_enabled}")
-                    print(f"    Feature names: {metrics_feature_names}")
-                    print(f"    Training time from metrics: {training_time:.1f} minutes")
+                print(f"    Loaded metrics from {metrics_path}")
+                print(f"    All keys: {list(metrics.keys())}")
+                print(f"    GPU from metrics: {gpu_enabled}")
+                print(f"    Training time: {training_time:.2f} minutes")
+        else:
+            print(f"    ⚠️  Metrics file not found at {metrics_path}")
 
-            else:
-                print(f"    ⚠️  Metrics file not found at {metrics_path}")
+        # Check if metadata already exists
+        cursor = db.conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM model_metadata WHERE model_name = 'pi0_classifier'")
+        count = cursor.fetchone()[0]
 
-            #print(f"accuracy: {accuracy}; auc: {auc_score}")
+        if count > 0:
+            print("ℹ️  Updating existing metadata ...")
+            cursor.execute("""
+                UPDATE model_metadata
+                SET model_version = 'v1.1',
+                    n_features = %s,
+                    feature_names = %s,
+                    auc_score = %s,
+                    accuracy = %s,
+                    gpu_enabled = %s,
+                    training_time_minutes = %s,
+                    updated_at = NOW()
+                WHERE model_name = 'pi0_classifier'
+            """, (n_features, ','.join(feature_names), auc_score, accuracy, 
+                  gpu_enabled, training_time))
+        else:
+            print("ℹ️  Inserting new metadata ...")
+            cursor.execute("""
+                INSERT INTO model_metadata (
+                    model_name, model_version, is_active, training_date,
+                    n_features, feature_names, auc_score, accuracy,
+                    gpu_enabled, training_time_minutes
+                ) VALUES (%s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s)
+            """, ('pi0_classifier', 'v1.0', True, n_features,
+                  ','.join(feature_names), auc_score, accuracy,
+                  gpu_enabled, training_time))
 
-            # Check if metadata already exists
-            cursor = db.conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM model_metadata WHERE model_name = 'pi0_classifier'")
-            count = cursor.fetchone()[0]
-            #print(count)
+        db.conn.commit()
+        print(f"\n✅ Model metadata inserted:")
+        print(f"    - Model: pi0_classifier v1.0")
+        print(f"    - Type: {model_type}")
+        print(f"    - GPU enabled: {gpu_enabled}")
 
-            if count > 0:
-                print("ℹ️  Updating existing metadata ...")
-                cursor.execute("""
-                    UPDATE model_metadata
-                    SET model_version = 'v1.1',
-                        n_features = %s,
-                        feature_names = %s,
-                        auc_score = %s,
-                        accuracy = %s,
-                        updated_at = NOW()
-                    WHERE model_name = 'pi0_classifier'
-                """, (n_features, ','.join(feature_names), auc_score, accuracy))
-            else:
-                print("ℹ️  Inserting new metadata ...")
-                cursor.execute("""
-                    INSERT INTO model_metadata (
-                        model_name, model_version,
-                        is_active, training_date
-                    ) VALUES (%s, %s, %s, NOW())
-                """, (
-                    'pi0_classifier', 'v1.0',
-                    True
-                ))
-            
-            db.conn.commit()
-            print(f"\n✅ Model metadata inserted:")
-            print(f"    - Model: pi0_classifier v1.0")
-            print(f"    - Type: {model_type}")
+        if feature_names:
+            preview = ', '.join(feature_names[:5])
+            if len(feature_names) > 5:
+                preview += "..."
+            print(f"    - Features: {preview} ({len(feature_names)} total)")
+        if auc_score:
+            print(f"    - AUC: {auc_score:.4f}")
+        if accuracy:
+            print(f"    - Accuracy: {accuracy:.4f}")
 
-            if feature_names:
-                print(f"    - Feature list: {', '.join(feature_names[:5])}...")
-            if auc_score:
-                print(f"    - AUC: {auc_score:.4f}")
-            if accuracy:
-                print(f"    - Accuracy: {accuracy:.4f}")
-            
+    except Exception as e:
+        print(f"❌ Error loading model metadata: {e}")
+        import traceback
+        traceback.print_exc()
 
-        except Exception as e:
-            print(f"❌ Error loading model metadata: {e}")
-    
 
 def check_database_exists():
     """Check if kloe_bdt database exists"""
-
     try:
-        # Connect without specifying database
         conn = mysql.connector.connect(
-            host='localhost',
-            user='kloe_user',
-            password='kloe_password'
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD
         )
         cursor = conn.cursor()
 
-        # Get all databases
         cursor.execute("SHOW DATABASES")
         databases = cursor.fetchall()
 
-        # Check if kloe_bdt exists
         for db in databases:
             if db[0] == 'kloe_bdt':
                 print(f"Database {db[0]} EXISTS")
-
-                # To see tables in the database
                 cursor.execute(f"SHOW TABLES FROM {db[0]}")
                 tables = cursor.fetchall()
 
@@ -149,46 +145,33 @@ def check_database_exists():
                     print(f"Tables in {db[0]}")
                     for table in tables:
                         table_name = table[0]
-                        print(f"\t- {table_name}; Table content:")
-                        # Show table structure
-                        cursor.execute(f"SELECT * FROM {db[0]}.{table_name}")
-                        content = cursor.fetchall()
-                        if content:
-                            # Get column names
-                            cursor.execute(f"DESCRIBE {db[0]}.{table_name}")
-                            columns = cursor.fetchall()
-                            col_names = [col[0] for col in columns]
-
-                            # Print column headers
-                            print(f"\t\t Columns: {', '.join(col_names)}")
-
-                            # Print each row
-                            for i, row in enumerate(content, 1):
-                                print(f"\t\t Row {i}: {row}")
-
+                        print(f"\t- {table_name}")
+                        cursor.execute(f"DESCRIBE {db[0]}.{table_name}")
+                        columns = cursor.fetchall()
+                        col_names = [col[0] for col in columns]
+                        print(f"\t\t Columns: {', '.join(col_names)}")
 
                 cursor.close()
                 conn.close()
                 return True
-        
+
         print(f"Database 'kloe_bdt' does NOT exist")
         cursor.close()
         conn.close()
         return False
-    
+
     except Error as e:
         print(f"Error checking database: {e}")
         return False
-    
+
+
 def drop_database_via_root():
-    """
-    Drop database using root (more privileges)
-    """
+    """Drop database using root (more privileges)"""
     try:
         conn = mysql.connector.connect(
-            host='localhost',
+            host=DB_HOST,
             user='root',
-            password='secret' # root password
+            password=DB_ROOT_PASSWORD
         )
         cursor = conn.cursor()
         cursor.execute('DROP DATABASE IF EXISTS kloe_bdt')
@@ -200,14 +183,13 @@ def drop_database_via_root():
     except Exception as e:
         print(f"Error: {e}")
         return False
-    
+
 
 if __name__ == '__main__':
-
     kloe_db_status = check_database_exists()
 
     if kloe_db_status:
-        print("\n All data in kloe_bdt will be deleted!")
+        print("\n⚠️  All data in kloe_bdt will be deleted!")
         confirm = input("Type 'DROP' to delete: ")
 
         if confirm == 'DROP':
@@ -215,20 +197,18 @@ if __name__ == '__main__':
             drop_database_via_root()
         else:
             print("Operation cancelled")
-        
+
         check_database_exists()
-    
+
     else:
-        confirm = input("Type 'YES' to initialize 'kloe_bdt' database : ")
+        confirm = input("Type 'YES' to initialize 'kloe_bdt' database: ")
 
         if confirm == "YES":
-
-            # Initialize database with explicit parameters
             print("\n\nℹ️  INITIALIZING KLOE_BDT DATABASE...")
             with MySQLKLOEDB(
-                host='localhost',
-                user='kloe_user',
-                password='kloe_password'
+                host=DB_HOST,
+                user=DB_USER,
+                password=DB_PASSWORD
             ) as db:
                 # Create database and tables
                 db.create_database()
@@ -278,9 +258,9 @@ if __name__ == '__main__':
                             'bdt_prediction': 0.89
                         }
                     },
-                    # ========== TWO UNLABELED DATA POINTS (NULL) ==========
+                    # Unlabeled data points (signal_type = NULL)
                     {
-                        'event': (12346, 10001, 0.45, None),  # NULL/Unlabeled
+                        'event': (12346, 10001, 0.45, None),
                         'photon_pair': {
                             'invariant_mass': 140.5,
                             'opening_angle': 0.65,
@@ -293,7 +273,7 @@ if __name__ == '__main__':
                         }
                     },
                     {
-                        'event': (12346, 10002, 0.38, None),  # NULL/Unlabeled
+                        'event': (12346, 10002, 0.38, None),
                         'photon_pair': {
                             'invariant_mass': 142.1,
                             'opening_angle': 0.58,
@@ -306,13 +286,13 @@ if __name__ == '__main__':
                         }
                     }
                 ]
-                
+
                 print(f"\n\nℹ️  INSERTING TEST EVENTS...")
                 for data in events_with_pairs:
                     event_id = db.insert_event(*data['event'])
                     db.insert_photon_pair(event_id, data['photon_pair'])
                     print(f"  Inserted event {event_id} with BDT score {data['event'][2]}")
-                
+
                 # See all events
                 all_events = pd.read_sql("SELECT * FROM events", db.conn)
                 print("\n\t\t=== All Events ===")
@@ -324,8 +304,7 @@ if __name__ == '__main__':
                 print(all_pairs.to_string())
 
                 # Join query for high score events
-                bdt_score = 0.9
-                print(f"\n\t\t=== SELECTED EVENTS WITH BDT_SCORE > {bdt_score} ===")
+                print(f"\n\t\t=== SELECTED EVENTS WITH BDT_SCORE > 0.9 ===")
                 results = db.query_signal_events(min_score=0.9)
                 if not results.empty:
                     print(results.to_string())

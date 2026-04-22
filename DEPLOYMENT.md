@@ -5,6 +5,8 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://mysql.com/)
 [![Docker](https://img.shields.io/badge/Docker-24.0+-blue.svg)](https://docker.com/)
 
+> **For research methodology and BDT training**, see [README.md](README.md)
+
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [Architecture](#architecture)
@@ -103,6 +105,20 @@ uv run api_mysql.py
 ```
 
 ### 4. Docker Deployment
+#### 4.0 File check
+```text
+KLOE_BDT/
+├── Dockerfile              # Docker file
+├── docker-compose.yml      # Multi-container arrangement (API + MySQL)
+├── requirements.txt        # Python dependencies
+├── api_mysql.py            # FastAPI application
+├── mysql_db.py             # Database module
+├── init_bdt.py             # Database initialization
+├── models/                 # Trained model
+│   └── pi0_classifier_model_TCOMB.pkl
+└── start_api.sh            # Starting script (optional)
+```
+
 #### 4.1 Create a Dockerfile
 ```dockerfile
 # Dockerfile
@@ -116,6 +132,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (for better caching)
@@ -125,6 +142,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY api_mysql.py .
 COPY mysql_db.py .
+COPY init_bdt.py .
 COPY models/ ./models/
 
 # Expose port
@@ -168,10 +186,10 @@ services:
     image: mysql:8
     container_name: kloe-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: kloe_bdt
-      MYSQL_USER: kloe_user
-      MYSQL_PASSWORD: kloe_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-secret}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-kloe_bdt}
+      MYSQL_USER: ${MYSQL_USER:-kloe_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-kloe_password}
     ports:
       - "3306:3306"
     volumes:
@@ -213,24 +231,80 @@ networks:
 Modify your api_mysql.py to read database host from environment
 ```
 
-#### 4.5 Build and Run with Docker Compose
+#### 4.5 Creat Environment File (.env)
 ```bash
-# Build and start all services
-docker-compose up --build
-
-# Or run in detached mode (background)
-docker-compose up -d --build
+# .env file（included in .gitignore）
+MYSQL_ROOT_PASSWORD=secret
+MYSQL_DATABASE=kloe_bdt
+MYSQL_USER=kloe_user
+MYSQL_PASSWORD=your_db_password
 ```
 
-#### 4.6 Verify Everthin is Runing
+#### 4.6 Build and Run with Docker Compose on Other Devices
+**Installations on the target device**
+```bash
+# 1. Install Docker:
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# 2. Install Docker Compose
+sudo apt install docker-compose-plugin
+
+# 3. Add user to docker（avoid using sudo every time）
+sudo usermod -aG docker $USER
+# Re-login validation
+```
+**Step-by-step deployment:**
+```bash
+# 1. Copy to the target device
+git clone https://github.com/yourusername/KLOE_BDT.git
+cd KLOE_BDT
+
+# 2. Create .env 文件（set password）
+cp .env.example .env
+# Edit .env password setting
+
+# 3. Make sure the model exists
+ls -la models/pi0_classifier_model_TCOMB.pkl
+
+# 4. Activate Docker container（one-line）
+docker compose up -d
+
+# 5. Inspection
+docker compose ps
+docker compose logs api
+
+# 6. Test API
+curl http://localhost:8000/health
+
+# 7. Initialize（if needed）
+docker compose exec api python init_bdt.py
+```
+
+
+#### 4.7 Additional commands after the deployment
 ```text
-Modify multi_pred.sh and signle_pred.sh add:
+# Check log
+docker compose logs -f api
+docker compose logs -f mysql
 
-# Check container status
-docker-compose ps
+# Reboot
+docker compose restart api
 
-# Check logs
-docker-compose logs api
+# Stop Docker
+docker compose down
+
+# Stop and delete data（complete clean）
+docker compose down -v
+
+# Enter the container and tune
+docker compose exec api bash
+docker compose exec mysql bash
+
+# Update deployment（after git pushed）
+git pull
+docker compose build
+docker compose up -d
 ```
 
 <!--
