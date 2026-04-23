@@ -11,3 +11,7 @@ INFO:     127.0.0.1:45752 - "GET /health HTTP/1.1" 200 OK
 ✅ Database connection closed
 ✅ Connected to MySQL database: kloe_bdt
 INFO:     127.0.0.1:42786 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [197970]
