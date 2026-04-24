@@ -64,7 +64,8 @@ chmod +x start_api.sh stop_api.sh multi_pred.sh
 ./start_api.sh
 
 # In another terminal, make a prediction
-./multi_pred.sh
+./single_photon_pair.sh # single paired-photon
+./multi_photon_pair.sh # multiple paired-photon accociated to the same event
 
 # Or use curl directly
 curl -X POST "http://localhost:8000/predict-and-save" \

@@ -19,7 +19,7 @@ sleep 2
 
 # Step 3: Start API
 echo -e "\n🚀 Starting API server..."
-nohup uvicorn api_mysql:app --host 0.0.0.0 --port 8000 > api.log 2>&1 & # Runing API in background
+nohup uv run uvicorn api_mysql:app --host 0.0.0.0 --port 8000 > api.log 2>&1 & # Runing API in background
 echo $! > api.pid
 echo "✅ API started with PID: $(cat api.pid)"
 

@@ -217,7 +217,10 @@ if __name__ == '__main__':
                 # Insert model metadata
                 load_model_metadata(db)
 
-                # Insert multiple events with their photon pairs
+                
+                r"""
+                # TEST EVENTS - COMMENTED OUT FOR PRODUCTION
+                # Insert multiple events with their photon pairs for test
                 events_with_pairs = [
                     {
                         'event': (12345, 67890, 0.95, True),
@@ -292,6 +295,7 @@ if __name__ == '__main__':
                     event_id = db.insert_event(*data['event'])
                     db.insert_photon_pair(event_id, data['photon_pair'])
                     print(f"  Inserted event {event_id} with BDT score {data['event'][2]}")
+                """
 
                 # See all events
                 all_events = pd.read_sql("SELECT * FROM events", db.conn)
