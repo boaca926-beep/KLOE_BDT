@@ -525,7 +525,8 @@ void test_bdt(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/models/b
       TPaveText *pt1 = new TPaveText(0.11, 0.87, 0.80, 0.89, "NDC");
     
       PteAttr(pt1); pt1 -> SetTextSize(0.03); pt1 -> SetTextColor(kBlack);
-    
+
+      cout << "BDT selected events = " << evnt_good << endl;
       pt1 -> AddText(Form("Events=%d, BDT Selected=%d, Discarded=%d", evnt_KLOE, evnt_good, evnt_bad));
     
     

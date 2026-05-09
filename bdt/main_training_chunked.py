@@ -107,7 +107,9 @@ if __name__ == '__main__':
 
     import shutil
     if os.path.exists(model_dir):
-        shutil.rmtree(model_dir)
+        print(f"Model directory exists: {model_dir}")
+        # FIXED: Commented out to prevent accidental deletion
+        # shutil.rmtree(model_dir)
 
     os.makedirs(model_dir, exist_ok=True)
 
@@ -157,7 +159,6 @@ if __name__ == '__main__':
     params = {
          'nthread': -1,
          'tree_method': 'hist',
-         #'early_stopping_rounds': 50,
          'eval_metric': ['auc', 'error'],
          'verbosity': 1,
          'max_depth': optimized_params.get('max_depth', 10),
@@ -193,18 +194,9 @@ if __name__ == '__main__':
         y_val_chunks = sorted(glob.glob(os.path.join(input_data_dir, f'y_val_{br_type}_chunk_*.npy')))
         
         # FIX: Create a single pattern string for external memory
-        # XGBoost expects a string with wildcards, not a list of strings
-        # The pattern should match all chunk files
         train_pattern = os.path.join(input_data_dir, f'X_train_{br_type}_chunk_*.npy')
         
-        # For external memory with separate label files, we need to use the libsvm format
-        # or create a temporary directory with the correct structure
-        # Simpler approach: Create a single file list using the correct URI format for each chunk
-        # but XGBoost expects a single string with # symbol for multiple files
-        
-        # ALTERNATIVE: Use DMatrix with custom iterator (works with XGBoost 1.7+)
-        # Let's use the DataIter approach which is more reliable
-        
+        # Use DataIter approach which is more reliable
         from xgboost import DataIter
         
         class ChunkedDataIter(DataIter):
@@ -342,16 +334,20 @@ if __name__ == '__main__':
         print(f"AUC: {metrics['auc']:.4f}")
 
     # Save to ROOT format
-    import ROOT._pythonization._tmva._tree_inference as tree_inference
-    tree_inference.get_basescore = patched_get_basescore
+    try:
+        import ROOT._pythonization._tmva._tree_inference as tree_inference
+        tree_inference.get_basescore = patched_get_basescore
+    except:
+        print("Note: get_basescore patching not needed")
 
     # Get the booster for ROOT saving
     if not has_chunks:
         booster = model.get_booster()
     
+    # FIXED: Use booster for saving instead of model
     try:
         ROOT.TMVA.Experimental.SaveXGBoost(
-            model,  # ← This is XGBClassifier, which has .objective attribute
+            booster,  # Use booster instead of model
             "BDT_pi0", 
             f"{model_dir}/bdt_pi0_{br_type}.root", 
             num_inputs=n_features
@@ -359,6 +355,17 @@ if __name__ == '__main__':
         print(f"✓ Model saved to {model_dir}/bdt_pi0_{br_type}.root")
     except Exception as e:
         print(f"✗ Failed to save ROOT model: {e}")
+        # Try alternative with model
+        try:
+            ROOT.TMVA.Experimental.SaveXGBoost(
+                model,
+                "BDT_pi0", 
+                f"{model_dir}/bdt_pi0_{br_type}.root", 
+                num_inputs=n_features
+            )
+            print(f"✓ Model saved to {model_dir}/bdt_pi0_{br_type}.root (using model)")
+        except Exception as e2:
+            print(f"✗ Alternative also failed: {e2}")
 
     # Memory cleanup
     gc.collect()

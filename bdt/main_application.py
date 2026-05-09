@@ -6,19 +6,16 @@ import joblib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import matplotlib.pyplot as plt
-from plots import plot_var_score, plot_roc, plot_nm
+from plots import plot_var_score, plot_roc, plot_nm  # Fixed import
 from metrics import event_performance
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-import matplotlib.pyplot as plt
 
 from config import DATA_DIR, PLOT_APP_DIR, MODEL_DIR
 
 def event_wise_prediction(all_df_test, X_test, y_test_pair, model, threshold=0.5):
     """
     Convert pair-wise predictions to event-wise decisions
-    
-    FIX: Properly handles the mapping between photons and their pairs
     """
     
     # Get pair predictions from model
@@ -63,7 +60,6 @@ def event_wise_prediction(all_df_test, X_test, y_test_pair, model, threshold=0.5
         photon_preds = y_pred_pair[start_idx:end_idx]
         
         # Check if this photon is part of a true π⁰ pair
-        # FIX: Check the actual pair labels for this photon
         has_true_pi0 = False
         true_pair_count = 0
         for pair_offset in range(n_pairs_per_photon):
@@ -87,34 +83,21 @@ def event_wise_prediction(all_df_test, X_test, y_test_pair, model, threshold=0.5
     photon_df = pd.DataFrame(photon_data)
     
     # ============ EVENT-LEVEL AGGREGATION ============
-    # FIX: Use the correct truth definition based on your data
-    # Since we have events with 0, 1, or 2 signal photons, we need to define
-    # what constitutes a signal event based on the pair labels
-    
     event_results = []
     
     for event_id, group in photon_df.groupby('event_id'):
         n_photons_in_event = len(group)
         
         # TRUE LABEL: Based on pair-level truth
-        # An event is signal if it contains at least one true π⁰ pair
         true_signal = int(group['has_true_pi0'].sum() > 0)
         
         # Track how many true π⁰ pairs in this event
         total_true_pairs = group['true_pair_count'].sum()
         
         # PREDICTIONS:
-        # Strategy 1: Event is signal if ANY photon has a predicted π⁰ pair
         pred_any = int(group['has_pred_pi0_pair'].sum() > 0)
-        
-        # Strategy 2: Event is signal if at least 2 photons have predicted π⁰ pairs
-        # (This is more physically motivated for π⁰ → γγ)
         pred_min2 = int(group['has_pred_pi0_pair'].sum() >= 2)
-        
-        # Strategy 3: Use max probability
         pred_max = int(group['max_proba'].max() >= threshold)
-        
-        # Strategy 4: Use mean probability
         pred_mean = int(group['mean_proba'].mean() >= threshold)
         
         event_results.append({
@@ -144,14 +127,6 @@ def event_wise_prediction(all_df_test, X_test, y_test_pair, model, threshold=0.5
     true_signal_count = event_df['true_signal'].sum()
     print(f"  Signal events: {true_signal_count}")
     print(f"  Background events: {len(event_df) - true_signal_count}")
-    print(f"  Average true π⁰ pairs per signal event: {event_df[event_df['true_signal']==1]['total_true_pairs'].mean():.2f}")
-    
-    # Check correlation with photon-level signal
-    print(f"\nCorrelation with photon-level signal:")
-    events_with_2_signal = (event_df['n_signal_photons'] == 2).sum()
-    events_with_true_pairs_and_2_signal = ((event_df['n_signal_photons'] == 2) & (event_df['true_signal'] == 1)).sum()
-    print(f"  Events with exactly 2 signal photons: {events_with_2_signal}")
-    print(f"  ...that are signal by pair definition: {events_with_true_pairs_and_2_signal}")
     
     # Evaluate strategies
     strategies = [
@@ -161,10 +136,9 @@ def event_wise_prediction(all_df_test, X_test, y_test_pair, model, threshold=0.5
         ('mean', 'pred_mean')
     ]
     
-    print(f"\nStrategy Performance:")
+    print(f"\nStrategy Performance (threshold={threshold}):")
     best_f1 = 0
     best_strategy = 'any'
-    best_threshold_for_strategy = threshold
     
     for strategy_name, col in strategies:
         tp = ((event_df['true_signal'] == 1) & (event_df[col] == 1)).sum()
@@ -185,30 +159,19 @@ def event_wise_prediction(all_df_test, X_test, y_test_pair, model, threshold=0.5
             if f1 > best_f1:
                 best_f1 = f1
                 best_strategy = strategy_name
-                best_threshold_for_strategy = threshold
     
     print(f"\n✓ Best strategy at threshold={threshold}: '{best_strategy}' (F1 = {best_f1:.4f})")
     
     # Add the best strategy as default for this threshold
     event_df['pred_signal'] = event_df[f'pred_{best_strategy}']
     
-    return event_df
+    return event_df, best_strategy, best_f1
+
 
 def plot_event_confusion_matrix(event_results, data_type, plot_dir):
-    """
-    Plot confusion matrix for event-wise classification
-    """
+    """Plot confusion matrix for event-wise classification"""
     
-    # Use the correct column name 'true_signal' instead of 'true_signal_pair_based'
-    # Check if the column exists, if not, use the correct one
-    true_col = 'true_signal' if 'true_signal' in event_results.columns else 'true_signal_pair_based'
-    pred_col = 'pred_signal' if 'pred_signal' in event_results.columns else 'pred_signal'
-    
-    # Calculate confusion matrix
-    cm = confusion_matrix(event_results[true_col], 
-                          event_results[pred_col])
-    
-    # Calculate percentages
+    cm = confusion_matrix(event_results['true_signal'], event_results['pred_signal'])
     cm_percent = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis] * 100
     
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -252,93 +215,6 @@ def plot_event_confusion_matrix(event_results, data_type, plot_dir):
     
     return fig
 
-def analyze_threshold_impact(event_results, data_type, plot_dir):
-    """
-    Analyze how different thresholds affect event-wise classification
-    """
-    thresholds = np.arange(0.05, 1.0, 0.05)
-    results = []
-    
-    for threshold in thresholds:
-        row_results = {'threshold': threshold}
-        
-        # Recalculate predictions with new threshold
-        # Note: 'any' cannot be properly recalculated here without per-photon predictions
-        # So we use max_proba as a proxy (same as 'max')
-        pred_any = (event_results['max_proba'] >= threshold).astype(int)
-        pred_max = (event_results['max_proba'] >= threshold).astype(int)
-        pred_mean = (event_results['mean_proba'] >= threshold).astype(int)
-        pred_min2 = (event_results['n_photons_with_pred_pi0'] >= 2).astype(int)
-        
-        for strategy, pred in [('any', pred_any), ('min2', pred_min2), 
-                                ('max', pred_max), ('mean', pred_mean)]:
-            tp = ((event_results['true_signal'] == 1) & (pred == 1)).sum()
-            fp = ((event_results['true_signal'] == 0) & (pred == 1)).sum()
-            fn = ((event_results['true_signal'] == 1) & (pred == 0)).sum()
-            
-            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
-            
-            row_results[f'{strategy}_precision'] = precision
-            row_results[f'{strategy}_recall'] = recall
-            row_results[f'{strategy}_f1'] = f1
-        
-        results.append(row_results)
-    
-    results_df = pd.DataFrame(results)
-    
-    # Find best strategy and threshold
-    best_overall_f1 = 0
-    best_strategy = 'any'
-    best_threshold = 0.5
-    
-    strategy_type = ['any', 'min2', 'max', 'mean']
-    for strategy in strategy_type:
-        f1_col = f'{strategy}_f1'
-        if f1_col in results_df.columns:
-            max_idx = results_df[f1_col].idxmax()
-            best_f1 = results_df.loc[max_idx, f1_col]
-            if best_f1 > best_overall_f1:
-                best_overall_f1 = best_f1
-                best_strategy = strategy
-                best_threshold = results_df.loc[max_idx, 'threshold']
-    
-    # Plot - only 3 subplots (no empty 4th)
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-    
-    for strategy in strategy_type:
-        prec_col = f'{strategy}_precision'
-        recall_col = f'{strategy}_recall'
-        f1_col = f'{strategy}_f1'
-        
-        if prec_col in results_df.columns:
-            axes[0, 0].plot(results_df['threshold'], results_df[prec_col], linewidth=2, label=strategy)
-        if recall_col in results_df.columns:
-            axes[0, 1].plot(results_df['threshold'], results_df[recall_col], linewidth=2, label=strategy)
-        if f1_col in results_df.columns:
-            axes[1, 0].plot(results_df['threshold'], results_df[f1_col], linewidth=2, label=strategy)
-    
-    axes[0, 0].set_ylabel('Precision')
-    axes[0, 1].set_ylabel('Recall')
-    axes[1, 0].set_ylabel('F1 Score')
-    axes[1, 1].axis('off')
-    
-    for ax in [axes[0, 0], axes[0, 1], axes[1, 0]]:
-        ax.set_xlabel('Threshold')
-        ax.grid(True, alpha=0.3)
-        handles, labels = ax.get_legend_handles_labels()
-        if labels:
-            ax.legend()
-    
-    plt.suptitle(f'Threshold Impact Analysis - {data_type}')
-    plt.tight_layout()
-    plt.savefig(f'{plot_dir}/threshold_analysis_{data_type}.png', dpi=300, bbox_inches='tight')
-    plt.close(fig)
-    
-    print(f"\nBest overall: Strategy '{best_strategy}' at threshold {best_threshold:.3f} (F1 = {best_overall_f1:.4f})")
-    
-    return results_df, best_strategy, best_threshold
 
 if __name__ == '__main__':
     
@@ -347,7 +223,7 @@ if __name__ == '__main__':
     input_data_dir = DATA_DIR
     input_model_dir = MODEL_DIR
     
-    category_type = 'TCOMB'  # Use your category
+    category_type = 'TCOMB'
     
     # Create output folder
     plot_dir = PLOT_APP_DIR
@@ -370,7 +246,7 @@ if __name__ == '__main__':
         
         if data_type == category_type:
             
-            # Load data (FIX: Pass directories)
+            # Load data
             all_df = joblib.load(os.path.join(input_data_dir, f'all_df_{data_type}.pkl'))
             all_df_test = joblib.load(os.path.join(input_data_dir, f'all_df_test_{data_type}.pkl'))
             X_test = joblib.load(os.path.join(input_data_dir, f'X_test_{data_type}.pkl'))
@@ -380,26 +256,40 @@ if __name__ == '__main__':
             print(f"Loaded: {len(all_df_test)} photons, {len(X_test)} pairs")
             
             # Get event-wise prediction
-            event_results = event_wise_prediction(
-                all_df_test, X_test, y_test, model, threshold=0.5
-            )
+            #event_results, best_strategy, best_f1 = event_wise_prediction(
+            #    all_df_test, X_test, y_test, model, threshold=0.5
+            #)
+
+            # Analyze threshold impact
+            thresholds = np.arange(0.05, 1.0, 0.05)
+            best_f1 = 0.0
+            best_thr = 0.5
+            best_strat = 'any'
+            best_event_df = None
+
+            for thr in thresholds:
+                event_df, strat, f1 = event_wise_prediction(
+                all_df_test, X_test, y_test, model, threshold=thr
+                )
+                if f1 > best_f1:
+                    best_f1 = f1
+                    best_thr = thr
+                    best_strat = strat
+                    best_event_df = event_df
+
+            print(f"\n{'='*60}")
+            print(f"OPTIMAL CONFIGURATION")
+            print(f"{'='*60}")
+            print(f"Threshold  : {best_thr:.2f}")
+            print(f"Strategy   : '{best_strat}'")
+            print(f"F1 score   : {best_f1:.4f}")
+
+            # Use best_event_df for plotting and saving
+            event_results = best_event_df
+
             
             # Plot event confusion matrix
             plot_event_confusion_matrix(event_results, data_type, plot_dir)
-            
-            # Analyze threshold impact
-            threshold_results, best_strategy, best_threshold = analyze_threshold_impact(
-                event_results, data_type, plot_dir
-            )
-            
-            # Re-run with best threshold if needed
-            if best_threshold != 0.5:
-                print(f"\nRe-running with optimal threshold: {best_threshold:.3f}")
-                event_results_optimal = event_wise_prediction(
-                    all_df_test, X_test, y_test, model, threshold=best_threshold
-                )
-                plot_event_confusion_matrix(event_results_optimal, f"{data_type}_opt", plot_dir)
-                event_results_optimal.to_csv(f'{plot_dir}/event_results_{data_type}_opt.csv', index=False)
             
             # Save results
             event_results.to_csv(f'{plot_dir}/event_results_{data_type}.csv', index=False)
@@ -409,12 +299,8 @@ if __name__ == '__main__':
             fig_cm.savefig(f'{plot_dir}/cm_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_cm)
             
-            # Plot ROC
+            # Plot ROC and mass-score
             score_list, var_list, var_str = event_performance(all_df, model)
-            fig_var_score = plot_var_score(var_list, score_list, var_str, f"Mass and Score (test, {br_title})")
-            fig_var_score.savefig(f'{plot_dir}/pi0_mass_score_{data_type}.png', dpi=300, bbox_inches='tight')
-            plt.close(fig_var_score)
-            
             fig_roc = plot_roc(score_list, rf'ROC Curve - $\pi^{0}$ Classifier (test, {br_title})')
             fig_roc.savefig(f'{plot_dir}/roc_curv_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_roc)
@@ -423,4 +309,3 @@ if __name__ == '__main__':
         
         else:
             print(f"Skipping {data_type} - not target category")
-            

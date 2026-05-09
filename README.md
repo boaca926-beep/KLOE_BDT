@@ -261,6 +261,13 @@ uv run main_training_chunked.py # Works with arbitrarily large dataset, and insu
 ```
 
 ### Step 4. Validation Metrics
+```bash
+# Run validation script
+uv run main_validation.py
+# USE_TEST_SET = True to use 20% test sample
+# USE_TEST_SET = False to use 40% validation sample 
+# Output: $HOME/Desktop/KLOE_BDT/plots_val/*.png
+```
 
 | Metric | Value |
 |--------|-------|

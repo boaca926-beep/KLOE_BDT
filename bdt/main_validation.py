@@ -4,14 +4,14 @@ import sys
 import joblib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#import xgboost as xgb
+import xgboost as xgb
 from plots import plot_learning_curves, plot_roc, plot_nm, plot_var_score
 from metrics import eval_performance, event_performance
 
 import matplotlib
-matplotlib.use('TkAgg')  # or 'Qt5Agg' if you have Qt installed
+matplotlib.use('Agg')  # Changed from 'TkAgg' to 'Agg' for non-interactive
 import matplotlib.pyplot as plt
-plt.show(block=False)
+# plt.show(block=False)  # Commented out
 import pandas as pd
 
 
@@ -21,32 +21,42 @@ from config import (
     MODEL_DIR
 )
 
-def load_data():
+# ========== ADD THIS LINE - CHOOSE DATASET ==========
+USE_TEST_SET = False  # Set to False for validation, True for test set
+# ====================================================
+
+def load_data(br_nm, input_data_dir):  # ADDED parameters
     """
     Load validation data and models
     """
+    
+    # ========== MODIFIED: Choose between val and test ==========
+    if USE_TEST_SET:
+        data_type = 'test'
+        print(f"\n📊 Loading TEST set (20% hold-out)...")
+    else:
+        data_type = 'val'
+        print(f"\n📊 Loading VALIDATION set...")
+    # ============================================================
 
     # ADDED: Convert to parquet on first run
-    parquet_x = os.path.join(input_data_dir, f'X_val_{br_nm}.parquet')
+    parquet_x = os.path.join(input_data_dir, f'X_{data_type}_{br_nm}.parquet')
     if not os.path.exists(parquet_x):
         print("Converting to parquet (one-time conversion for faster future loads)...")
-        for f in ['X_val', 'y_val', 'all_df_val']:
+        for f in [f'X_{data_type}', f'y_{data_type}', f'all_df_{data_type}']:
             pkl_file = os.path.join(input_data_dir, f'{f}_{br_nm}.pkl')
             parquet_file = os.path.join(input_data_dir, f'{f}_{br_nm}.parquet')
             if os.path.exists(pkl_file) and not os.path.exists(parquet_file):
                 try:
-                    # Use joblib to load (since files were saved with joblib)
                     print(f"  Reading {f}_{br_nm}.pkl...")
                     data = joblib.load(pkl_file)
                         
-                    # Convert to DataFrame if needed
                     if not isinstance(data, pd.DataFrame):
                         if isinstance(data, pd.Series):
                             data = data.to_frame()
                         else:
                             data = pd.DataFrame(data)
                         
-                    # Save as parquet
                     data.to_parquet(parquet_file, compression='snappy')
                         
                     old_size = os.path.getsize(pkl_file) / 1024**2
@@ -54,31 +64,26 @@ def load_data():
                     print(f"  Converted {f}_{br_nm}.pkl: {old_size:.1f}MB → {new_size:.1f}MB")
                 except Exception as e:
                     print(f"  Error converting {f}_{br_nm}.pkl: {e}")
-                    print(f"  Will use pickle format for this file")
 
     # Load parquet if exists, otherwise load pickle
     if os.path.exists(parquet_x):
-        X_val = pd.read_parquet(os.path.join(input_data_dir, f'X_val_{br_nm}.parquet'))
-        y_val = pd.read_parquet(os.path.join(input_data_dir, f'y_val_{br_nm}.parquet'))
-        all_df = pd.read_parquet(os.path.join(input_data_dir, f'all_df_val_{br_nm}.parquet'))
-        if isinstance(y_val, pd.DataFrame):
-            y_val = y_val.iloc[:, 0]
+        X = pd.read_parquet(os.path.join(input_data_dir, f'X_{data_type}_{br_nm}.parquet'))
+        y = pd.read_parquet(os.path.join(input_data_dir, f'y_{data_type}_{br_nm}.parquet'))
+        all_df = pd.read_parquet(os.path.join(input_data_dir, f'all_df_{data_type}_{br_nm}.parquet'))
+        if isinstance(y, pd.DataFrame):
+            y = y.iloc[:, 0]
     else:
-        X_val = joblib.load(os.path.join(input_data_dir, f'X_val_{br_nm}.pkl'))
-        y_val = joblib.load(os.path.join(input_data_dir, f'y_val_{br_nm}.pkl'))
-        all_df = joblib.load(os.path.join(input_data_dir, f'all_df_val_{br_nm}.pkl'))
-
-    # Load validation dataset
-    #X_val = joblib.load(os.path.join(input_data_dir, f'X_val_{br_nm}.pkl'))
-    #y_val = joblib.load(os.path.join(input_data_dir, f'y_val_{br_nm}.pkl'))
-    #all_df = joblib.load(os.path.join(input_data_dir, f'all_df_val_{br_nm}.pkl'))
+        X = joblib.load(os.path.join(input_data_dir, f'X_{data_type}_{br_nm}.pkl'))
+        y = joblib.load(os.path.join(input_data_dir, f'y_{data_type}_{br_nm}.pkl'))
+        all_df = joblib.load(os.path.join(input_data_dir, f'all_df_{data_type}_{br_nm}.pkl'))
     
-    return X_val, y_val, all_df
+    print(f"Loaded {len(X)} events, signal fraction: {y.mean():.4f}")
+    
+    return X, y, all_df
 
 if __name__ == '__main__':
     print(f"Validation ...")
 
-    #input_data_dir = os.path.join(project_root, f'analysis/dataset')
     input_data_dir = DATA_DIR
     phys_map = joblib.load(os.path.join(input_data_dir, f'phys_map.pkl'))
     
@@ -86,21 +91,13 @@ if __name__ == '__main__':
 
     ## Load dataset
     phys_ch = ['TCOMB', 'combined']
-    #phys_ch = ['TISR3PI_SIG', 'signal']
-    #phys_ch = ['TETAGAM', 'signal']
-    #data_type = 'TISR3PI_SIG' #'TETAGAM', 'TISR3PI_SIG', 'TKSL'd
-    #input_data_dir = os.path.join(project_root, f'output_data_{input_str}')
-    #input_data_dir = '../analysis/dataset'
-
-    # Load phys_map
-    #phys_map = joblib.load(os.path.join(input_data_dir, 'phys_map.pkl'))
     br_nm = phys_ch[0]
     info = phys_map.get(br_nm, "")
     print(info)
     br_title = info['br_title']
 
-    X_val, y_val, all_df = load_data()
-    model = joblib.load(os.path.join(MODEL_DIR, f'pi0_classifier_model_{br_nm}.pkl')                 )
+    X_val, y_val, all_df = load_data(br_nm, input_data_dir)  # FIXED: Added parameters
+    model = joblib.load(os.path.join(MODEL_DIR, f'pi0_classifier_model_{br_nm}.pkl'))
     print(f"Loading model from: {model}")
     
     plot_dir = PLOT_VAL_DIR
@@ -110,12 +107,11 @@ if __name__ == '__main__':
     os.makedirs(plot_dir, exist_ok=True)
 
     features = X_val.columns
-    #print(model.get_params())
 
     ## Evaluate validation set
     eval_performance(model, X_val, y_val)
 
-    ## Feature importance -  check hat m_gg and opening_angle are top
+    ## Feature importance
     importance = model.feature_importances_
     for f, imp in zip(features, importance):
         print(f"    {f}: {imp:.03f}")
@@ -123,11 +119,12 @@ if __name__ == '__main__':
     ## Learning curves
     fig_learning = plot_learning_curves(model, rf'Learning Curve (validation, {br_title})')
     fig_learning.savefig(f'{plot_dir}/learning_curves_{br_nm}.png', dpi=300, bbox_inches='tight')
+    plt.close(fig_learning)
 
-    ## Plot confusion matrix (photon features)
+    ## Plot confusion matrix
     fig_cm = plot_nm(X_val, y_val, model, br_title)
     fig_cm.savefig(f'{plot_dir}/cm_{br_nm}.png', dpi=300, bbox_inches='tight')
-    #plt.close(fig_cm)
+    plt.close(fig_cm)
         
     ## Accuracy metrics, event basis
     score_list, var_list, var_str = event_performance(all_df, model)
@@ -135,6 +132,4 @@ if __name__ == '__main__':
     ## ROC plot
     fig_roc = plot_roc(score_list, rf'ROC Curve - $\pi^{0}$ Classifier (validation, {br_title})')
     fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
-    
-    
-    
+    plt.close(fig_roc)

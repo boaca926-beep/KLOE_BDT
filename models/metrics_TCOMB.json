@@ -1,7 +1,7 @@
 {
-  "auc": 0.9869062540579158,
-  "best_iteration": 98,
-  "best_score": 0.05036341272503634,
+  "auc": 0.9910053570253128,
+  "best_iteration": 142,
+  "best_score": 0.04051450189155107,
   "params": {
     "tree_method": "hist",
     "device": "cuda",
@@ -14,13 +14,13 @@
     ],
     "verbosity": 1,
     "max_depth": 9,
-    "learning_rate": 0.03390942329293072,
-    "subsample": 0.8935529941075223,
-    "colsample_bytree": 0.8468317434009265,
+    "learning_rate": 0.07645185888630145,
+    "subsample": 0.9647715446027535,
+    "colsample_bytree": 0.9249583953429453,
     "min_child_weight": 6,
-    "gamma": 0.3876821894139413,
-    "reg_alpha": 1.2975550194074517,
-    "reg_lambda": 1.5552064648767434
+    "gamma": 0.08593578069828035,
+    "reg_alpha": 1.5116010656717631,
+    "reg_lambda": 2.681575883274855
   },
   "n_features": 10,
   "feature_names": [
@@ -35,7 +35,7 @@
     "asym_x_angle",
     "E_diff"
   ],
-  "training_time_minutes": 0.03723865350087484,
-  "peak_memory_percent": 29.0,
+  "training_time_minutes": 0.03317870299021403,
+  "peak_memory_percent": 49.7,
   "gpu_enabled": true
 }

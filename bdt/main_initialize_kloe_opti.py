@@ -1,17 +1,25 @@
+#!/usr/bin/env python3
+"""
+BDT Training pipeline for KLOE data
+"""
+
 import sys
 import os
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(project_root)
+from pathlib import Path
+import math                     # added for exp() in get_fbeta
+
+# Third-party imports
 import joblib
 import uproot
 import numpy as np
 import pandas as pd
-#from plots import plot_compr_hist, plot_var, plot_feature_pairs, plot_feature_target
-from training_config import prepare_3photon_paris
 from sklearn.model_selection import train_test_split
 import random
 import awkward as ak
-import gc  # garbage collection
+import gc
+
+# Local import (same directory)
+from training_config import prepare_3photon_paris
 
 """
 python main_initialize_kloe_opti.py \
@@ -27,6 +35,23 @@ uv run main_initialize_kloe_opti.py \
     --output-dir /home/kloe/Desktop/KLOE_BDT/dataset_bdt
 """
 
+# ========== ADDED: Cut constants (matching C++ header_bdt/cut_para.h) ==========
+CHI2_CUT = 43.0
+ANGLE_CUT = 138.0          # degrees
+DELTAE_CUT = -150.0        # MeV
+BETA_CUT = 1.98
+C0 = 0.11
+C1 = 0.8
+
+def get_fbeta(a1, b1, c1, m2pi):
+    """Same as C++ GetFBeta"""
+    m2pi = m2pi / 1000.0                     # convert from MeV to GeV
+    arg = (m2pi - c1) / b1
+    if arg > 700:                            # avoid overflow
+        return a1
+    else:
+        return a1 + 1.0 / (math.exp(arg) - 1.0)
+# =============================================================================
 
 def create_dataset(df, category): # For photon 4-momentum
     print(f'\n✅ Creating dataset ...')
@@ -43,14 +68,33 @@ def create_dataset(df, category): # For photon 4-momentum
     if len(available_cols) < len(br_nm):
         print(f"  Note: Using {len(available_cols)}/{len(br_nm)} available columns")
     
-    # Selection cut, ensure physical region
-    cut_region = (df['Br_lagvalue_min_7C'] < 100) if 'Br_lagvalue_min_7C' in df.columns else pd.Series(True, index=df.index)
-    phys_region = ((df['Br_betapi0'] < 1) & (df['Br_betapi0'] > 0)) if 'Br_betapi0' in df.columns else pd.Series(True, index=df.index)
+    # ---------- REPLACED CUT BLOCK (minimal adaptation) ----------
+    # Build a single mask that includes all selection criteria.
+    mask = pd.Series(True, index=df.index)
 
-    #df = df[(df['Br_lagvalue_min_7C'] < 100) & (df['Br_betapi0'] < 1) & (df['Br_betapi0'] > 0)][br_nm]
-    # Apply filters and create a proper copy
-    df_filtered = df[cut_region & phys_region][available_cols].copy()
-    df = df_filtered  # Now df is a clean copy
+    # 1. χ² cut (lagvalue_min_7C)
+    if 'Br_lagvalue_min_7C' in df.columns:
+        mask &= (df['Br_lagvalue_min_7C'] <= CHI2_CUT)
+
+    # 2. ΔE cut
+    if 'Br_deltaE' in df.columns:
+        mask &= (df['Br_deltaE'] <= DELTAE_CUT)
+
+    # 3. Opening angle of π⁰ and γ cut
+    if 'Br_angle_pi0gam12' in df.columns:
+        mask &= (df['Br_angle_pi0gam12'] <= ANGLE_CUT)
+
+    # 4. Beta cut (physical region 0<β<1 + β ≤ fβ(ppIM))
+    if 'Br_betapi0' in df.columns:
+        #mask &= (df['Br_betapi0'] > 0) & (df['Br_betapi0'] < 1)   # physical range
+        if 'Br_ppIM' in df.columns:
+            fbeta_vals = df['Br_ppIM'].apply(lambda ppIM: get_fbeta(BETA_CUT, C0, C1, ppIM))
+            mask &= (df['Br_betapi0'] <= fbeta_vals)
+
+    # Apply the mask and keep only available columns
+    df_filtered = df[mask][available_cols].copy()
+    df = df_filtered
+    # -------------------------------------------------------------
 
     # Create all_df, pos_df, neg_df for signal and background events
     if len(available_cols): # Check para length and br_nm length are consistent
@@ -223,6 +267,11 @@ if __name__ == '__main__':
         # Skip if already processed (in case of multiple cycles)
         if base_br_nm in phys_map:
             print(f"Skippin duplicate: {br_nm} (already have {base_br_nm})")
+            continue
+
+        # SKIP TDATA - real data, no truth labels for training
+        if base_br_nm == "TDATA":
+            print(f"Skipping {base_br_nm} - real data (no truth labels), use for inference only")
             continue
 
         #print(base_br_nm)

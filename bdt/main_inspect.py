@@ -1,19 +1,17 @@
 import joblib
 import sys
 import os
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(project_root)
-print(project_root)
+from pathlib import Path
 
-from plots import plot_compr_hist, plot_var, plot_feature_pairs, plot_feature_target
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 
+# Get project root (parent of bdt directory)
+project_root = Path(__file__).parent.parent.absolute()
+sys.path.append(str(project_root))
 
-from config import (
-    DATA_DIR, PLOTS_INSPECT_DIR
-)
+# Import from local modules (not bdt. prefix since we're in bdt directory)
+from plots import plot_compr_hist, plot_var, plot_feature_pairs, plot_feature_target
+from config import DATA_DIR, PLOTS_INSPECT_DIR
 
 # Inspect features and correlations
 

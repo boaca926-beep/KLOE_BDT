@@ -109,7 +109,7 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
     #plt.title(plot_title)
     plt.tight_layout()
     #plt.savefig('./plots/' + plot_nm + '_compr.png', dpi=300, bbox_inches='tight')
-    plt.show(block=False)
+    #plt.show(block=False)
     #plt.show()
     #plt.close()
 
@@ -141,7 +141,7 @@ def plot_var(array, var_nm, phys_ch):
     plt.legend(loc='best', fontsize=14, frameon=True, fancybox=True, shadow=True)
     plt.grid(True, alpha=0.3)
     #plt.savefig('./plots/signal_pi0.png')
-    plt.show(block=False)
+    #plt.show(block=False)
     #plt.show()
     #plt.close()
 
@@ -165,7 +165,7 @@ def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp):
     g.figure.suptitle(plot_title, y=1.02, fontsize=14)
     plt.tight_layout()
     #plt.savefig('./plots/' + plot_nm, dpi=300, bbox_inches='tight')
-    plt.show(block=False)
+    #plt.show(block=False)
     #plt.show()
     #plt.close()
 
@@ -199,7 +199,7 @@ def plot_feature_target(target_corr, plot_title):
         
     plt.tight_layout()
     #plt.savefig('./plots/' + plot_nm + '.png', dpi=300, bbox_inches='tight')
-    plt.show(block=False)
+    #plt.show(block=False)
     #plt.close()
 
     return fig
@@ -259,7 +259,7 @@ def plot_var_score(var_list, score_list, var_str, plot_title):
 
     plt.tight_layout()
     #plt.savefig(rf'./plots/{plot_nm}.png')
-    plt.show(block=False)
+    #plt.show(block=False)
     #plt.close()
 
     return fig
@@ -307,7 +307,7 @@ def plot_roc(score_list, plot_title):
              alpha=0.3))
     plt.tight_layout()
     #plt.savefig(f'./plots/{plot_nm}.png', dpi=300)
-    plt.show(block=False)
+    #plt.show(block=False)
     #plt.close()
 
     return fig
@@ -356,7 +356,7 @@ def plot_learning_curves(model, plot_title):
     plt.suptitle(plot_title, fontsize=14)
     plt.tight_layout()
     #plt.savefig(f'./plots/{plot_nm}.png', dpi=300)
-    plt.show(block=False)
+    #plt.show(block=False)
     #plt.close()
 
     # Print diagnostics
@@ -406,7 +406,7 @@ def plot_nm(X_test, y_test, model, phys_ch):
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
             plt.text(j, i, str(cm[i, j]), ha='center', va='center', color='red')
-    plt.show(block=False)
+    #plt.show(block=False)
 
     # Get detailed metrics
     print("\nClassification Report:")

@@ -60,24 +60,23 @@ def check_gpu():
     return False
 # ==============================================
 
-def load_dataset_optimized(br_type):
+def load_dataset_optimized(br_type, input_data_dir):
     """
     Load train, val dataset with memory optimization
+    FIXED: Added input_data_dir parameter
     """
-    input_data_dir_local = input_data_dir
-    
     # Load with memory optimization
     print("Loading X_train...")
-    X_train = joblib.load(os.path.join(input_data_dir_local, f'X_train_{br_type}.pkl'))
+    X_train = joblib.load(os.path.join(input_data_dir, f'X_train_{br_type}.pkl'))
     
     print("Loading y_train...")
-    y_train = joblib.load(os.path.join(input_data_dir_local, f'y_train_{br_type}.pkl'))
+    y_train = joblib.load(os.path.join(input_data_dir, f'y_train_{br_type}.pkl'))
     
     print("Loading X_val...")
-    X_val = joblib.load(os.path.join(input_data_dir_local, f'X_val_{br_type}.pkl'))
+    X_val = joblib.load(os.path.join(input_data_dir, f'X_val_{br_type}.pkl'))
     
     print("Loading y_val...")
-    y_val = joblib.load(os.path.join(input_data_dir_local, f'y_val_{br_type}.pkl'))
+    y_val = joblib.load(os.path.join(input_data_dir, f'y_val_{br_type}.pkl'))
     
     # Convert to more memory-efficient types if needed
     for col in X_train.select_dtypes(include=['float64']).columns:
@@ -117,7 +116,9 @@ if __name__ == '__main__':
 
     import shutil
     if os.path.exists(model_dir):
-        shutil.rmtree(model_dir)
+        print(f"Model directory exists: {model_dir}")
+        # FIXED: Commented out to prevent accidental deletion
+        # shutil.rmtree(model_dir)
 
     os.makedirs(model_dir, exist_ok=True)
 
@@ -136,7 +137,8 @@ if __name__ == '__main__':
     print("="*60)
 
     # Load dataset with memory optimization
-    X_train, y_train, X_val, y_val = load_dataset_optimized(br_type)
+    # FIXED: Pass input_data_dir parameter
+    X_train, y_train, X_val, y_val = load_dataset_optimized(br_type, input_data_dir)
     
     # Check memory after loading
     mem_after_load = free_memory()
@@ -155,13 +157,11 @@ if __name__ == '__main__':
     # ========== MODIFIED: Parameters with GPU support ==========
     params = {
         # GPU settings optimized for 35 GPU
-        #'tree_method': 'gpu_hist' if has_gpu else 'hist',  # GPU if available
+        # FIXED: Use 'hist' instead of deprecated 'gpu_hist'
         'tree_method': 'hist',  # 'hist' automatically uses GPU when device='cuda'
         'device': 'cuda' if has_gpu else 'cpu',            # Explicit device
-        #'gpu_id': 0, # XGBoost Version < 3.0
         'nthread': 12,                      # -1: Use all available threads, don't oversubscribe on low-power GPU
-        'max_bin': 512,                    # Reduce meomory footrpint
-        #'gpu_hist_use_bfloat16': True,     # Use half-precision for efficiency, XGBoost auto-optimizes this
+        'max_bin': 512,                    # Reduce memory footrpint
 
         # Training settings
         'early_stopping_rounds': 50,        # Early stopping
@@ -212,7 +212,7 @@ if __name__ == '__main__':
     model = xgb.XGBClassifier(
         **params,
         max_cat_to_onehot=1,  # Helps with categorical features
-        #use_label_encoder=False  # Saves memory, deprecated parameters have been removed
+        n_estimators=500,     # Number of trees
     )
     
     print(f"Model will use: {model.get_params().get('nthread', 'default')} threads")
@@ -227,6 +227,7 @@ if __name__ == '__main__':
     # Setup memory monitoring thread (optional, for info only)
     import threading
     memory_log = []
+    training_in_progress = True
     
     def log_memory():
         while training_in_progress:
@@ -234,7 +235,6 @@ if __name__ == '__main__':
             memory_log.append((time.time(), mem.percent))
             time.sleep(10)
     
-    training_in_progress = True
     monitor_thread = threading.Thread(target=log_memory, daemon=True)
     monitor_thread.start()
     
@@ -310,8 +310,11 @@ if __name__ == '__main__':
     booster = model.get_booster()
 
     # Import the module and patch it
-    import ROOT._pythonization._tmva._tree_inference as tree_inference
-    tree_inference.get_basescore = patched_get_basescore
+    try:
+        import ROOT._pythonization._tmva._tree_inference as tree_inference
+        tree_inference.get_basescore = patched_get_basescore
+    except:
+        print("Note: get_basescore patching not needed")
 
     # Save to ROOT
     try:
