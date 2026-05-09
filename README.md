@@ -255,9 +255,10 @@ uv run main_inspect.py
 
 ```bash
 # Run training with hyperparameter search
-uv run main_training_gpu.py # With gpu boosted, fast
-uv run main_training_chunked.py # Works with arbitrarily large dataset, and insufficient RAM size
+uv run main_training_gpu.py # With gpu boosted, fast, in-memory, for development.
+uv run main_training_chunked.py # Works with arbitrarily large dataset, and insufficient RAM size, but only for gpu.
 # Output: $HOME/Desktop/KLOE_BDT/models/pi0_classifier_model_TCOMB.pkl
+uv run main_training_chunked.py # Works with arbitrarily large dataset, and gpu-boosted.
 ```
 
 ### Step 4. Validation Metrics

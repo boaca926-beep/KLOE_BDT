@@ -14,14 +14,15 @@ DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
 #DATA_TYPE=("sig")
 
 cut_path=/home/kloe/Desktop/KLOE_BDT/dataset/
-input_path=/home/kloe/Desktop/input_bdt_TDATA_chain/input/
+#input_path=/home/kloe/Desktop/input_bdt_TDATA_chain/input/
+input_path=/home/kloe/Desktop/input_bdt_TDATA_norm/input/
 
 if [[ -d "$input_path" ]]; then
     echo "${input_path} exists"
     #rm -rf $input_path
 fi    
 
-cut_file="${cut_path}kloe_bdt.root"
+cut_file="${cut_path}kloe_bdt_norm.root"
 if [[ -f "$cut_file" ]]; then
     echo "$cut_file exists"
     rm -rf $cut_file
