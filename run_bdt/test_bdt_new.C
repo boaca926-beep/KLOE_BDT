@@ -393,7 +393,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         cv0->SetBottomMargin(0.1);
         cv0->Divide(2, 3);
         
-        // First pad - E1
+        // Energy of gamma 1: E1
         cv0->cd(1);
         double ymax_e1 = hE1_BDT->GetBinContent(hE1_BDT->GetMaximumBin());
         double ymax_e2 = hE2_BDT->GetBinContent(hE2_BDT->GetMaximumBin());
@@ -403,18 +403,20 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         PteAttr(pt1);
         pt1->SetTextSize(0.03);
         pt1->SetTextColor(kBlack);
-        pt1->AddText(Form("Events=%d, BDT Selected=%d, Discarded=%d", evnt_KLOE, n_found, evnt_KLOE - n_found));
+        pt1->AddText(Form("Events=%d, BDT Cut Value=%.1f, BDT Selected=%d, Discarded=%d", evnt_KLOE, BDT_CUT_VALUE, n_found, evnt_KLOE - n_found));
         
         format_h(hE1, 1, 2);
-        format_h(hE1_good, 4, 1);
-        format_h(hE1_bad, 2, 1);
+	format_h(hE1_BDT, 1, 1);
+        //format_h(hE1_good, 4, 1);
+        //format_h(hE1_bad, 2, 1);
         formatfill_h(hE1_BDT_good, 3, 3001);
         formatfill_h(hE1_BDT_bad, 2, 3001);
-        format_h(hE1_BDT, 1, 2);
         
         hE1_BDT->GetYaxis()->SetNdivisions(505);
         hE1_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e1 * 1.2);
-        hE1_BDT->GetXaxis()->SetTitle("E_{1} [MeV]");
+	hE1_BDT->GetYaxis()->SetTitle("Entries");
+	hE1_BDT->GetYaxis()->CenterTitle();
+ 	hE1_BDT->GetXaxis()->SetTitle("E_{1} [MeV]");
         hE1_BDT->GetXaxis()->CenterTitle();
         hE1_BDT->GetXaxis()->SetTitleSize(0.04);
         
@@ -423,28 +425,30 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hE1_BDT_bad->Draw("Same");
         pt1->Draw("Same");
         
-        TLegend* legd_cv = new TLegend(0.5, 0.7, 0.9, 0.85);
+        TLegend* legd_cv = new TLegend(0.6, 0.6, 0.9, 0.85);
         legd_cv->SetTextFont(132);
         legd_cv->SetFillStyle(0);
         legd_cv->SetBorderSize(0);
         legd_cv->SetNColumns(1);
         legd_cv->AddEntry(hE1_BDT, "BDT Sum", "l");
-        legd_cv->AddEntry(hE1_BDT_good, "BDT Selected", "l");
+        legd_cv->AddEntry(hE1_BDT_good, "BDT Selected", "f");
         legd_cv->AddEntry(hE1_BDT_bad, "BDT Discarded", "f");
         legd_cv->Draw("Same");
         legtextsize(legd_cv, 0.04);
         
-        // Second pad - E2
+        // Energy of gamma 2: E2
         cv0->cd(2);
         format_h(hE2, 1, 2);
-        format_h(hE2_BDT, 1, 2);
-        format_h(hE2_good, 4, 1);
-        format_h(hE2_bad, 2, 1);
+        format_h(hE2_BDT, 1, 1);
+        //format_h(hE2_good, 4, 1);
+        //format_h(hE2_bad, 2, 1);
         formatfill_h(hE2_BDT_good, 3, 3001);
         formatfill_h(hE2_BDT_bad, 2, 3001);
         
         hE2_BDT->GetYaxis()->SetNdivisions(505);
         hE2_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e2 * 1.2);
+	hE2_BDT->GetYaxis()->SetTitle("Entries");
+	hE2_BDT->GetYaxis()->CenterTitle();
         hE2_BDT->GetXaxis()->SetTitle("E_{2} [MeV]");
         hE2_BDT->GetXaxis()->CenterTitle();
         hE2_BDT->GetXaxis()->SetTitleSize(0.04);
@@ -453,14 +457,16 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hE2_BDT_good->Draw("Same");
         hE2_BDT_bad->Draw("Same");
         
-        // Third pad - E3
+        // Energy of gamma3: E3
         cv0->cd(3);
-        format_h(hE3_BDT, 1, 2);
+        format_h(hE3_BDT, 1, 1);
         formatfill_h(hE3_BDT_good, 3, 3001);
         formatfill_h(hE3_BDT_bad, 2, 3001);
         
         hE3_BDT->GetYaxis()->SetNdivisions(505);
         hE3_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e3 * 1.2);
+	hE3_BDT->GetYaxis()->SetTitle("Entries");
+	hE3_BDT->GetYaxis()->CenterTitle();
         hE3_BDT->GetXaxis()->SetTitle("E_{3} [MeV]");
         hE3_BDT->GetXaxis()->CenterTitle();
         hE3_BDT->GetXaxis()->SetTitleSize(0.04);
@@ -469,49 +475,33 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hE3_BDT_good->Draw("Same");
         hE3_BDT_bad->Draw("Same");
         
-        // Invariant mass canvas
-        //TCanvas* cv01 = new TCanvas("cv01", "BDT Selection (" + ch_nm + ")", 1000, 600);
-        //cv01->SetLeftMargin(0.1);
-        //cv01->SetBottomMargin(0.1);
-        //cv01->Divide(2, 2);
-        
-        // First pad - M_gg
+        // Invariant mass of gamma gamma: M_gg
         cv0->cd(4);
         double ymax_m_gg = hM_gg_BDT->GetBinContent(hM_gg_BDT->GetMaximumBin());
         
-        format_h(hM_gg_BDT, 1, 2);
-        format_h(hM_gg_BDT_good, 3, 2);
+        format_h(hM_gg_BDT, 1, 1);
+        formatfill_h(hM_gg_BDT_good, 3, 3001);
         formatfill_h(hM_gg_BDT_bad, 2, 3001);
         
         hM_gg_BDT->GetYaxis()->SetNdivisions(505);
         hM_gg_BDT->GetYaxis()->SetRangeUser(0.1, ymax_m_gg * 1.2);
-        hM_gg_BDT->GetXaxis()->SetTitle("M(#gamma_{1}#gamma_{2}) [MeV/c^{2}]");
+	hM_gg_BDT->GetYaxis()->SetTitle("Entries");
+	hM_gg_BDT->GetYaxis()->CenterTitle();
+        hM_gg_BDT->GetXaxis()->SetTitle("M(#gamma#gamma) [MeV/c^{2}]");
         hM_gg_BDT->GetXaxis()->CenterTitle();
         hM_gg_BDT->GetXaxis()->SetTitleSize(0.04);
         
         hM_gg_BDT->Draw();
         hM_gg_BDT_good->Draw("Same");
         hM_gg_BDT_bad->Draw("Same");
-
-	/*
-        TLegend* legd1 = new TLegend(0.2, 0.6, 0.5, 0.9);
-        legd1->SetTextFont(132);
-        legd1->SetFillStyle(0);
-        legd1->SetBorderSize(0);
-        legd1->SetNColumns(1);
-        legd1->AddEntry(hM_gg_BDT, "BDT Sum", "l");
-        legd1->AddEntry(hM_gg_BDT_good, "BDT Selected", "l");
-        legd1->AddEntry(hM_gg_BDT_bad, "BDT Discarded", "f");
-        legd1->Draw("Same");
-        legtextsize(legd1, 0.03);
-        */
-	
-        // Second pad - M_3pi
+	gPad->SetLogy(1);
+        
+        // Invariant mass of 3pi:  M_3pi
         cv0->cd(5);
         double ymax_m3pi = hM3pi_BDT->GetBinContent(hM3pi_BDT->GetMaximumBin());
         
         format_h(hM3pi, 1, 2);
-	format_h(hM3pi_BDT, 1, 2);
+	format_h(hM3pi_BDT, 1, 1);
         //format_h(hM3pi_good, 4, 1);
         //format_h(hM3pi_bad, 2, 1);
         formatfill_h(hM3pi_BDT_good, 3, 3001);
@@ -519,6 +509,8 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         
         hM3pi_BDT->GetYaxis()->SetNdivisions(505);
         hM3pi_BDT->GetYaxis()->SetRangeUser(0.1, ymax_m3pi * 1.5);
+	hM3pi_BDT->GetYaxis()->SetTitle("Entries");
+	hM3pi_BDT->GetYaxis()->CenterTitle();
         hM3pi_BDT->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
         hM3pi_BDT->GetXaxis()->CenterTitle();
         hM3pi_BDT->GetXaxis()->SetTitleSize(0.04);
@@ -528,7 +520,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         //hM3pi_bad->Draw("Same");
         hM3pi_BDT_good->Draw("Same");
         hM3pi_BDT_bad->Draw("Same");
-        //gPad->SetLogy(1);
+        gPad->SetLogy(1);
         
         // Save canvases
         cv0->SaveAs(Form("../plots_bdt/bdt_spectra_%s.pdf", ch_nm.Data()));
