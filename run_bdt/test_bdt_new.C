@@ -25,10 +25,12 @@ constexpr double ENERGY_THRESHOLD = 5.0;        // MeV
 constexpr double BDT_CUT_VALUE = 0.4;           // BDT score threshold
 constexpr int N_BINS_ENERGY = 200;
 constexpr int N_BINS_MASS = 200;
+constexpr int N_BINS_CHI2 = 100;
 constexpr double ENERGY_RANGE_MAX = 500.0;      // MeV
 constexpr double MASS_RANGE_MAX = 1000.0;       // MeV/c²
 constexpr double MASS_GG_RANGE_MAX = 200.0;     // MeV/c²
 constexpr double MASS_GG_RANGE_MIN = 50.0;      // MeV/c²
+constexpr double CHI2_RANGE_MAX = 0.0;      
 constexpr double COS_THETA_RANGE_MIN = -1.0;
 constexpr double COS_THETA_RANGE_MAX = 1.0;
 constexpr double PI = TMath::Pi();
@@ -126,9 +128,9 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
     
     std::cout << "✓ Model loaded successfully!" << std::endl;
 
-    //const TString phys_ch[2] = {"TDATA", "Data"};
+    const TString phys_ch[2] = {"TDATA", "Data"};
     //const TString phys_ch[2] = {"TETAGAM", "Etagam"};
-    const TString phys_ch[2] = {"TISR3PI_SIG", "Signal"};
+    //const TString phys_ch[2] = {"TISR3PI_SIG", "Signal"};
     
     const TString ch_nm = phys_ch[0];
     const TString ch_type = phys_ch[1];
@@ -149,7 +151,11 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
     TH1D* hE_diff = hists.create("hE_diff", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hasym_x_angle = hists.create("hasym_x_angle", "", N_BINS_ENERGY, 0, PI);
     
-    // Mass histograms for BDT selection
+    // Histograms for BDT selection
+    TH1D* hchi2_BDT_good = hists.create("hchi2_BDT_good", "", N_BINS_CHI2, 0, CHI2_RANGE_MAX);
+    TH1D* hchi2_BDT_bad = hists.create("hchi2_BDT_bad", "", N_BINS_CHI2, 0, CHI2_RANGE_MAX);
+    TH1D* hchi2_BDT = hists.create("hchi2_BDT", "", N_BINS_CHI2, 0, CHI2_RANGE_MAX);
+    
     TH1D* hM3pi_BDT_good = hists.create("hM3pi_BDT_good", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
     TH1D* hM3pi_BDT_bad = hists.create("hM3pi_BDT_bad", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
     TH1D* hM3pi_BDT = hists.create("hM3pi_BDT", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
@@ -339,6 +345,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
             // BDT selection
             if (bdt_score > BDT_CUT_VALUE) {
                 n_found++;
+		hchi2_BDT_good->Fill(lagvalue_min_7C);
                 hE1_BDT_good->Fill(e1_bdt);
                 hE2_BDT_good->Fill(e2_bdt);
                 hE3_BDT_good->Fill(e3_bdt);
@@ -346,6 +353,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
                 hM3pi_BDT_good->Fill(m3pi_bdt);
             } else {
                 n_discarded++;
+		hchi2_BDT_bad->Fill(lagvalue_min_7C);
                 hE1_BDT_bad->Fill(e1_bdt);
                 hE2_BDT_bad->Fill(e2_bdt);
                 hE3_BDT_bad->Fill(e3_bdt);
@@ -354,6 +362,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
             }
 
             // Fill total histograms
+	    hchi2_BDT->Fill(lagvalue_min_7C);
             hE1_BDT->Fill(e1_bdt);
             hE2_BDT->Fill(e2_bdt);
             hE3_BDT->Fill(e3_bdt);
@@ -389,8 +398,8 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
     if (evnt_KLOE > 0) {
         // Original raw counts canvas
         TCanvas* cv0 = new TCanvas("c1", "BDT Selection (" + ch_nm + ")", 1800, 1200);
-        cv0->SetLeftMargin(0.1);
-        cv0->SetBottomMargin(0.1);
+        //cv0->SetLeftMargin(0.1);
+        //cv0->SetBottomMargin(0.1);
         cv0->Divide(2, 3);
         
         // Energy of gamma 1: E1
@@ -421,7 +430,9 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hE1_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e1 * 1.2);
 	hE1_BDT->GetYaxis()->SetTitle("Entries");
 	hE1_BDT->GetYaxis()->CenterTitle();
- 	hE1_BDT->GetXaxis()->SetTitle("E_{1} [MeV]");
+	hE1_BDT->GetYaxis()->SetTitleSize(0.04);
+        
+	hE1_BDT->GetXaxis()->SetTitle("E_{1} [MeV]");
         hE1_BDT->GetXaxis()->CenterTitle();
         hE1_BDT->GetXaxis()->SetTitleSize(0.04);
         
@@ -540,6 +551,32 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hM3pi_BDT_good->Draw("Same");
         hM3pi_BDT_bad->Draw("Same");
         gPad->SetLogy(1);
+
+	// Chi2
+        cv0->cd(6);
+        double ymax_chi2 = hchi2_BDT->GetBinContent(hchi2_BDT->GetMaximumBin());
+        
+        format_h(hchi2_BDT, 1, 1);
+        formatfill_h(hchi2_BDT_good, 3, 3001);
+        formatfill_h(hchi2_BDT_bad, 2, 3001);
+
+	hchi2_BDT_good->SetLineColor(kGreen+2);
+        hchi2_BDT_good->SetFillColorAlpha(kGreen+1, 0.4);
+        hchi2_BDT_bad->SetLineColor(kRed+2);
+        hchi2_BDT_bad->SetFillColorAlpha(kRed+1, 0.4);
+        
+        hchi2_BDT->GetYaxis()->SetNdivisions(505);
+        hchi2_BDT->GetYaxis()->SetRangeUser(0.1, ymax_chi2 * 1.5);
+	hchi2_BDT->GetYaxis()->SetTitle("Entries");
+	hchi2_BDT->GetYaxis()->CenterTitle();
+        hchi2_BDT->GetXaxis()->SetTitle("#chi^{2}");
+        hchi2_BDT->GetXaxis()->CenterTitle();
+        hchi2_BDT->GetXaxis()->SetTitleSize(0.04);
+        
+        hchi2_BDT->Draw();
+        hchi2_BDT_good->Draw("Same");
+        hchi2_BDT_bad->Draw("Same");
+        //gPad->SetLogy(1);
         
         cv0->SaveAs(Form("../plots_bdt/bdt_spectra_%s.pdf", ch_nm.Data()));
         delete cv0;
