@@ -222,7 +222,7 @@ uv run main_inspect.py
 
 <br/><br/>
 
-<img src="plots_inspect/SC_correlation_TCOMB.jpg" width="500" alt="test"/>
+<img src="plots_ref/SC_correlation_TCOMB_small.jpg" width="500" alt="test"/>
 <br/>
 <em>Figure 5: Correlations of features of paired-photon combinations for π⁰ reconstruction</em>
 
@@ -272,23 +272,23 @@ uv run main_validation.py
 
 | Metric | Value |
 |--------|-------|
-| AUC | 0.987 |
-| Accuracy | 0.950 |
+| AUC | 0.991 |
+| Accuracy | 0.960 |
 | Train-Val Gap | 0.001 |
 
 **Confusion Matrix:** On paired-photon basis
 
 | True \ Pred | Background | Signal |
 |-------------|------------|--------|
-| Background | 297,190 | 12,383 |
-| Signal | 6,500 | 86,362 |
+| Background | 2,830,000 | 154,281 |
+| Signal | 34,000 | 1,108,510 |
 
 **Per-Class:**
 
 | Class | Precision | Recall | F1 |
 |-------|-----------|--------|-----|
-| Background | 0.98 | 0.96 | 0.97 |
-| Signal | 0.86 | 0.93 | 0.89 |
+| Background | 0.99 | 0.95 | 0.97 |
+| Signal | 0.89 | 0.97 | 0.93 |
 
 **Feature Importance (Top 5):**
 
@@ -318,32 +318,39 @@ uv run main_validation.py
 
 </div>
 
-### Step 5. Final Testing
+## 📊 Performance Metrics
 
-#### Event-Level Performance Details (on event basis)
+```bash
+# Run final evaluation on test dataset
+uv run main_application.py # Check performance on the test sample, for small sample development
+
+uv run main_applicaiton_vector.py # For large samples. Vectorized, fast, produce consistent results
+```
+
+### Event-Level Performance Details (on event basis)
 
 The BDT uses the `any` strategy: an event is classified as **signal** if *any* photon pair exceeds the classification threshold.
 
-**Optimal Threshold:** 0.35 (vs default 0.5)
+**Optimal Threshold:** 0.40 (vs default 0.5)
 
 **Strategy:** `any` (event = signal if any pair exceeds threshold)
 
 **Confusion Matrix (Event-Level):**
 
 <div align="center">
-<img src="plots_app/event_cm_TCOMB_opt.png" width="800" alt="Confusion matrix"/>
+<img src="plots_ref/event_cm_TCOMB.png" width="800" alt="Confusion matrix"/>
 <br/>
 <em>Figure 9: Confusion matrix</em>
     
 <br/><br/>
 </div>
 
-**Per-Class Metrics:**
+**Event‑level Metrics (threshold = 0.40, strategy = 'any'):**
 
 | Class | Precision | Recall | F1 | Support |
 |-------|-----------|--------|-----|---------|
-| Background | 0.868 | 0.607 | 0.714 | 27,911 |
-| Signal | 0.875 | 0.968 | 0.919 | 79,605 |
+| Background | 0.906 | 0.402 | 0.557 | 171,199 |
+| Signal | 0.906 | 0.986 | 0.944 | 996,539 |
 
 <!--
 Metric	Your table	Calculated from the output
@@ -356,15 +363,17 @@ Background Support	27,911	27,911 (true background events)
 -->
 
 **Overall:**
-- Accuracy: 0.874
-- Signal efficiency (recall): **96.8%** — only 2,568 signal events missed out of 79,605
-- Background contamination: 10,969 false positives out of 88,006 predicted signal events (12.5% fake rate)
+- Accuracy: 0.900
+
+- Signal recall (efficiency): 98.6% (only 14,181 signal events missed)
+
+- Background fake rate: 9.4% (102,388 false positives out of 1,084,746 predicted signal events)
 
 > The lower background recall (60.7%) is a deliberate trade-off to maximize π⁰ detection completeness, as required for the cross-section measurement.
 
 **ROC Curve and AUC Score:**
 <div align="center">
-<img src="plots_app/roc_curv_TCOMB.png" width="500" alt="Confusion matrix"/>
+<img src="plots_ref/roc_curv_TCOMB.png" width="500" alt="Confusion matrix"/>
 <br/>
 <em>Figure 10: ROC curve and AUC score</em>
     
@@ -372,23 +381,8 @@ Background Support	27,911	27,911 (true background events)
 
 </div>
 
-**Learning Curves:**
-<div align="center">
-<img src="plots_app/pi0_mass_score_TCOMB.png" width="800" alt="Confusion matrix"/>
-<br/>
-<em>Figure 11: Learning curve</em>
-    
-<br/><br/>
 
-</div>
 
-## 📊 Performance Metrics
-
-```bash
-# Run final evaluation on test dataset
-uv run main_application.py
-# Outputs: plots_app/* (test set performance plots)
-```
 
 ## Citation
 

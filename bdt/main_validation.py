@@ -140,4 +140,3 @@ if __name__ == '__main__':
     fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
     plt.close(fig_roc)
 
-    
