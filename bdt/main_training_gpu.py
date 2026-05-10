@@ -158,9 +158,10 @@ if __name__ == '__main__':
     params = {
         # GPU settings optimized for 35 GPU
         # FIXED: Use 'hist' instead of deprecated 'gpu_hist'
+        'objective': 'binary:logistic',   # explicit
         'tree_method': 'hist',  # 'hist' automatically uses GPU when device='cuda'
         'device': 'cuda' if has_gpu else 'cpu',            # Explicit device
-        'nthread': 12,                      # -1: Use all available threads, don't oversubscribe on low-power GPU
+        'nthread': -1,                      # -1: Use all available threads, don't oversubscribe on low-power GPU
         'max_bin': 512,                    # Reduce memory footrpint
 
         # Training settings

@@ -7,6 +7,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import xgboost as xgb
 from plots import plot_learning_curves, plot_roc, plot_nm, plot_var_score
 from metrics import eval_performance, event_performance
+from sklearn.metrics import roc_auc_score, roc_curve, auc
 
 import matplotlib
 matplotlib.use('Agg')  # Changed from 'TkAgg' to 'Agg' for non-interactive
@@ -127,9 +128,16 @@ if __name__ == '__main__':
     plt.close(fig_cm)
         
     ## Accuracy metrics, event basis
-    score_list, var_list, var_str = event_performance(all_df, model)
+    #score_list, var_list, var_str = event_performance(all_df, model)
 
     ## ROC plot
-    fig_roc = plot_roc(score_list, rf'ROC Curve - $\pi^{0}$ Classifier (validation, {br_title})')
+    #fig_roc = plot_roc(score_list, rf'ROC Curve - $\pi^{0}$ Classifier (validation, {br_title})')
+    #fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
+    #plt.close(fig_roc)
+
+    y_score = model.predict_proba(X_val)[:, 1]
+    fig_roc = plot_roc(y_val, y_score, rf'ROC Curve - π⁰ Classifier (validation, {br_title})')
     fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
     plt.close(fig_roc)
+
+    

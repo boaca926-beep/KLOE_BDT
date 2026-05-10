@@ -13,13 +13,13 @@ import seaborn as sns
 
 from config import DATA_DIR, PLOT_APP_DIR, MODEL_DIR
 
-def event_wise_prediction(all_df_test, X_test, y_test_pair, model, threshold=0.5):
+
+def event_wise_prediction_fast(all_df_test, y_pred_proba, y_test_pair, threshold=0.5):
     """
-    Convert pair-wise predictions to event-wise decisions
+    Convert pair-wise predictions to event-wise decisions.
+    Uses precomputed probabilities to avoid repeated model inference.
     """
-    
-    # Get pair predictions from model
-    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    # Get pair predictions from precomputed probabilities
     y_pred_pair = (y_pred_proba >= threshold).astype(int)
     
     # ============ CRITICAL FIX: Verify data alignment ============
@@ -255,12 +255,12 @@ if __name__ == '__main__':
             
             print(f"Loaded: {len(all_df_test)} photons, {len(X_test)} pairs")
             
-            # Get event-wise prediction
-            #event_results, best_strategy, best_f1 = event_wise_prediction(
-            #    all_df_test, X_test, y_test, model, threshold=0.5
-            #)
-
-            # Analyze threshold impact
+            # ========== OPTIMIZATION: Compute probabilities once ==========
+            print("\nComputing pair-level probabilities (once)...")
+            y_pred_proba = model.predict_proba(X_test)[:, 1]
+            print(f"Done. Probabilities shape: {y_pred_proba.shape}")
+            
+            # Analyze threshold impact using precomputed probabilities
             thresholds = np.arange(0.05, 1.0, 0.05)
             best_f1 = 0.0
             best_thr = 0.5
@@ -268,8 +268,8 @@ if __name__ == '__main__':
             best_event_df = None
 
             for thr in thresholds:
-                event_df, strat, f1 = event_wise_prediction(
-                all_df_test, X_test, y_test, model, threshold=thr
+                event_df, strat, f1 = event_wise_prediction_fast(
+                    all_df_test, y_pred_proba, y_test, threshold=thr
                 )
                 if f1 > best_f1:
                     best_f1 = f1
@@ -287,7 +287,6 @@ if __name__ == '__main__':
             # Use best_event_df for plotting and saving
             event_results = best_event_df
 
-            
             # Plot event confusion matrix
             plot_event_confusion_matrix(event_results, data_type, plot_dir)
             
@@ -299,9 +298,10 @@ if __name__ == '__main__':
             fig_cm.savefig(f'{plot_dir}/cm_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_cm)
             
-            # Plot ROC and mass-score
+            # Plot ROC and mass-score (using precomputed probabilities for consistency)
+            # Note: event_performance may still be needed for other plots; we keep it as is
             score_list, var_list, var_str = event_performance(all_df, model)
-            fig_roc = plot_roc(score_list, rf'ROC Curve - $\pi^{0}$ Classifier (test, {br_title})')
+            fig_roc = plot_roc(y_test, y_pred_proba, rf'ROC Curve - $\pi^{0}$ Classifier (test, {br_title})')
             fig_roc.savefig(f'{plot_dir}/roc_curv_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_roc)
             

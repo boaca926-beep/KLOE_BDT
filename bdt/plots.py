@@ -267,49 +267,32 @@ def plot_var_score(var_list, score_list, var_str, plot_title):
 # =================================================================
 # Plot ROC curve (Performance)
 # =================================================================
-def plot_roc(score_list, plot_title):
-    print("Plotting ROC curv ...")
+def plot_roc(y_true, y_score, plot_title):
     """
-    - score_pos: scores from positive class (correctly identified pi0)
-    - score_neg: scores from negative class (wrongly identified pi0)
+    Plot ROC curve from true labels and predicted scores (probabilities).
+    y_true: array-like of true binary labels (0/1)
+    y_score: array-like of predicted probabilities for class 1 (signal)
     """
-    score_pos = score_list[0]
-    score_neg = score_list[1]
-    y_true = [1] * len(score_pos) + [0] * len(score_neg)
-    y_score = score_pos + score_neg
-    #print(len(y_true), y_true)
-    #print(y_score)
-
-    # Calculate ROC curve
-    fpr, tpr, thresholds = roc_curve(y_true, y_score)
+    print("Plotting ROC curve...")
+    fpr, tpr, _ = roc_curve(y_true, y_score)
     roc_auc = auc(fpr, tpr)
 
     fig, ax = plt.subplots(figsize=(10, 8))
+    ax.plot(fpr, tpr, lw=2, label=f'ROC AUC: {roc_auc:.4f}')
+    ax.plot([0, 1], [0, 1], 'r--', label='Random')
+    ax.set_xlabel('False Positive Rate', fontsize=14)
+    ax.set_ylabel('True Positive Rate', fontsize=14)
+    ax.set_title(plot_title)
+    ax.legend(loc='best', fontsize=14)
+    ax.grid(True, alpha=0.3)
 
-    plt.plot(fpr,
-             tpr,
-             color='black',
-             lw=2,
-             label=f'ROC AUC: {roc_auc:.4f}'
-             )
-    plt.plot([0, 1], [0, 1], 'r--', label='Random')
-    plt.xlabel('False Positive Rate', fontsize=14)
-    plt.ylabel('True Positive Rate', fontsize=14)
-    plt.title(plot_title)
-    plt.legend(loc='best', fontsize=14)
-    plt.grid(True, alpha=0.3)
-
-    # Add statistics
-    textstr = f'Positive: {len(score_pos)} events\nBackground: {len(score_neg)} events'
-    plt.text(0.6, 0.2, textstr, fontsize=14,
-             bbox=dict(boxstyle="round,pad=0.5",
-             facecolor='yellow',
-             alpha=0.3))
+    # Optional: add counts
+    n_pos = sum(y_true)
+    n_neg = len(y_true) - n_pos
+    textstr = f'Positive: {n_pos} events\nBackground: {n_neg} events'
+    ax.text(0.6, 0.2, textstr, fontsize=14,
+            bbox=dict(boxstyle="round,pad=0.5", facecolor='yellow', alpha=0.3))
     plt.tight_layout()
-    #plt.savefig(f'./plots/{plot_nm}.png', dpi=300)
-    #plt.show(block=False)
-    #plt.close()
-
     return fig
 
 # =================================================================

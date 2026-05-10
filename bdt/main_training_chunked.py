@@ -40,15 +40,12 @@ Dataset Size    RAM Required    Works?
 1 TB            16 GB RAM       ✅ Yes (chunked)
 '''
 
-def load_dataset(br_type):
+def load_dataset(br_type, input_data_dir):
     """
     Load train, val dataset - MODIFIED to handle chunked data
     """
-    global input_data_dir
-    input_data_dir_local = input_data_dir
-    
     # Check if chunked data exists
-    chunk_pattern = os.path.join(input_data_dir_local, f'X_train_{br_type}_chunk_*.npy')
+    chunk_pattern = os.path.join(input_data_dir, f'X_train_{br_type}_chunk_*.npy')
     has_chunks = len(glob.glob(chunk_pattern)) > 0
     
     if has_chunks:
@@ -56,22 +53,19 @@ def load_dataset(br_type):
         return None, None, None, None
     else:
         # Original loading for smaller datasets
-        X_train = joblib.load(os.path.join(input_data_dir_local, f'X_train_{br_type}.pkl'))
-        y_train = joblib.load(os.path.join(input_data_dir_local, f'y_train_{br_type}.pkl'))
-        X_val = joblib.load(os.path.join(input_data_dir_local, f'X_val_{br_type}.pkl'))
-        y_val = joblib.load(os.path.join(input_data_dir_local, f'y_val_{br_type}.pkl'))
+        X_train = joblib.load(os.path.join(input_data_dir, f'X_train_{br_type}.pkl'))
+        y_train = joblib.load(os.path.join(input_data_dir, f'y_train_{br_type}.pkl'))
+        X_val = joblib.load(os.path.join(input_data_dir, f'X_val_{br_type}.pkl'))
+        y_val = joblib.load(os.path.join(input_data_dir, f'y_val_{br_type}.pkl'))
         return X_train, y_train, X_val, y_val
 
 
-def load_dataset_subset(br_type, sample_fraction=0.1):
+def load_dataset_subset(br_type, input_data_dir, sample_fraction=0.1):
     """
     Load subset of chunked data for Bayesian optimization
     """
-    global input_data_dir
-    input_data_dir_local = input_data_dir
-    
-    X_chunks = sorted(glob.glob(os.path.join(input_data_dir_local, f'X_train_{br_type}_chunk_*.npy')))
-    y_chunks = sorted(glob.glob(os.path.join(input_data_dir_local, f'y_train_{br_type}_chunk_*.npy')))
+    X_chunks = sorted(glob.glob(os.path.join(input_data_dir, f'X_train_{br_type}_chunk_*.npy')))
+    y_chunks = sorted(glob.glob(os.path.join(input_data_dir, f'y_train_{br_type}_chunk_*.npy')))
     
     n_chunks_to_load = max(1, int(len(X_chunks) * sample_fraction))
     X_list = []
@@ -91,7 +85,7 @@ def load_dataset_subset(br_type, sample_fraction=0.1):
     y_sample = np.hstack(y_list) if len(y_list) > 1 else y_list[0]
     
     # Load feature names if available
-    training_cols_path = os.path.join(input_data_dir_local, f'training_cols_{br_type}.pkl')
+    training_cols_path = os.path.join(input_data_dir, f'training_cols_{br_type}.pkl')
     if os.path.exists(training_cols_path):
         training_cols = joblib.load(training_cols_path)
         X_sample = pd.DataFrame(X_sample, columns=training_cols)
@@ -103,12 +97,12 @@ def load_dataset_subset(br_type, sample_fraction=0.1):
 if __name__ == '__main__':
 
     print(f"Train individual signal physical channels ...")
-    model_dir = MODEL_DIR #"./models" 
+    model_dir = MODEL_DIR
 
     import shutil
     if os.path.exists(model_dir):
         print(f"Model directory exists: {model_dir}")
-        # FIXED: Commented out to prevent accidental deletion
+        # Commented out to prevent accidental deletion
         # shutil.rmtree(model_dir)
 
     os.makedirs(model_dir, exist_ok=True)
@@ -134,7 +128,7 @@ if __name__ == '__main__':
     # MODIFIED: Use subset for Bayesian optimization if data is large
     if has_chunks:
         print("Large dataset detected - using 10% subset for Bayesian optimization...")
-        X_train_subset, y_train_subset, _, _ = load_dataset_subset(br_type, sample_fraction=0.1)
+        X_train_subset, y_train_subset, _, _ = load_dataset_subset(br_type, input_data_dir, sample_fraction=0.1)
         optimized_params = baye_opti(X_train_subset, y_train_subset)
         del X_train_subset, y_train_subset
         gc.collect()
@@ -149,14 +143,16 @@ if __name__ == '__main__':
             training_cols = [f'feature_{i}' for i in range(X_first.shape[1])]
     else:
         # Original path for smaller datasets
-        X_train, y_train, X_val, y_val = load_dataset(br_type)
+        X_train, y_train, X_val, y_val = load_dataset(br_type, input_data_dir)
         print(f"X_train columns: {X_train.columns}")
         print(f"Number of features in the training: {len(X_train.columns.tolist())}")
         optimized_params = baye_opti(X_train, y_train)
         training_cols = [col for col in X_train.columns if col != 'is_pi0']
 
-    # Set fixed parameters
+    # Set fixed parameters (added objective and max_bin for robustness)
     params = {
+         'objective': 'binary:logistic',
+         'max_bin': 512,
          'nthread': -1,
          'tree_method': 'hist',
          'eval_metric': ['auc', 'error'],
@@ -192,9 +188,6 @@ if __name__ == '__main__':
         y_chunks = sorted(glob.glob(os.path.join(input_data_dir, f'y_train_{br_type}_chunk_*.npy')))
         X_val_chunks = sorted(glob.glob(os.path.join(input_data_dir, f'X_val_{br_type}_chunk_*.npy')))
         y_val_chunks = sorted(glob.glob(os.path.join(input_data_dir, f'y_val_{br_type}_chunk_*.npy')))
-        
-        # FIX: Create a single pattern string for external memory
-        train_pattern = os.path.join(input_data_dir, f'X_train_{br_type}_chunk_*.npy')
         
         # Use DataIter approach which is more reliable
         from xgboost import DataIter
@@ -271,9 +264,18 @@ if __name__ == '__main__':
         
         print(f"\nTraining completed in {training_time/60:.1f} minutes")
         
+        # Cleanup chunked training objects
+        del dtrain
+        if X_val_chunks:
+            del dval
+        del train_iter
+        if X_val_chunks:
+            del val_iter
+        gc.collect()
+        
     else:
         # ORIGINAL IN-MEMORY TRAINING
-        X_train, y_train, X_val, y_val = load_dataset(br_type)
+        X_train, y_train, X_val, y_val = load_dataset(br_type, input_data_dir)
         
         X_train_np = X_train[training_cols].to_numpy()
         X_val_np = X_val[training_cols].to_numpy()
@@ -289,8 +291,9 @@ if __name__ == '__main__':
         print("\nTraining started - monitoring CPU...")
         start_time = time.time()
 
+        # Use only validation set for evaluation (remove training set to save time)
         model.fit(X_train_np, y_train_np,
-                  eval_set=[(X_train_np, y_train_np), (X_val_np, y_val_np)],
+                  eval_set=[(X_val_np, y_val_np)],
                   verbose=50)
         
         training_time = time.time() - start_time
@@ -303,6 +306,7 @@ if __name__ == '__main__':
         n_features = len(training_cols)
         
         del X_train_np, X_val_np, y_train_np, y_val_np
+        gc.collect()
         
         booster = model.get_booster()
 
@@ -333,7 +337,7 @@ if __name__ == '__main__':
         print(f"Metrics saved to {model_dir}/metrics_{br_type}.json")
         print(f"AUC: {metrics['auc']:.4f}")
 
-    # Save to ROOT format
+    # Save to ROOT format (works with this CPU chunked approach)
     try:
         import ROOT._pythonization._tmva._tree_inference as tree_inference
         tree_inference.get_basescore = patched_get_basescore
@@ -344,10 +348,9 @@ if __name__ == '__main__':
     if not has_chunks:
         booster = model.get_booster()
     
-    # FIXED: Use booster for saving instead of model
     try:
         ROOT.TMVA.Experimental.SaveXGBoost(
-            booster,  # Use booster instead of model
+            booster,
             "BDT_pi0", 
             f"{model_dir}/bdt_pi0_{br_type}.root", 
             num_inputs=n_features
@@ -367,7 +370,7 @@ if __name__ == '__main__':
         except Exception as e2:
             print(f"✗ Alternative also failed: {e2}")
 
-    # Memory cleanup
+    # Final cleanup
     gc.collect()
             
     print(f"\n✓ Training completed for {br_type}")
