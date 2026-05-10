@@ -98,7 +98,7 @@ BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& 
  * using a BDT trained on kinematic variables, then applies both
  * KLOE χ² selection and BDT selection for comparison.
  */
-void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root",
+void test_bdt_try(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root",
               const char* data_filename = "/home/kloe/Desktop/KLOE_BDT/dataset/kloe_bdt.root") {
 
     // ROOT Style settings
@@ -127,8 +127,8 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
     std::cout << "✓ Model loaded successfully!" << std::endl;
 
     //const TString phys_ch[2] = {"TDATA", "Data"};
-    //const TString phys_ch[2] = {"TETAGAM", "Etagam"};
-    const TString phys_ch[2] = {"TISR3PI_SIG", "Signal"};
+    const TString phys_ch[2] = {"TETAGAM", "Etagam"};
+    //const TString phys_ch[2] = {"TISR3PI_SIG", "Signal"};
     
     const TString ch_nm = phys_ch[0];
     const TString ch_type = phys_ch[1];
@@ -387,7 +387,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
 
     // 5. Make comparison plots
     if (evnt_KLOE > 0) {
-        // Original raw counts canvas
+        // Energy spectra canvas
         TCanvas* cv0 = new TCanvas("c1", "BDT Selection (" + ch_nm + ")", 1800, 1200);
         cv0->SetLeftMargin(0.1);
         cv0->SetBottomMargin(0.1);
@@ -401,7 +401,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         
         TPaveText* pt1 = new TPaveText(0.11, 0.87, 0.80, 0.89, "NDC");
         PteAttr(pt1);
-        pt1->SetTextSize(0.05);
+        pt1->SetTextSize(0.03);
         pt1->SetTextColor(kBlack);
         pt1->AddText(Form("Events=%d, BDT Cut Value=%.1f, BDT Selected=%d, Discarded=%d", evnt_KLOE, BDT_CUT_VALUE, n_found, evnt_KLOE - n_found));
         
@@ -411,11 +411,6 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         //format_h(hE1_bad, 2, 1);
         formatfill_h(hE1_BDT_good, 3, 3001);
         formatfill_h(hE1_BDT_bad, 2, 3001);
-
-	hE1_BDT_good->SetLineColor(kGreen+2);
-        hE1_BDT_good->SetFillColorAlpha(kGreen+1, 0.4);
-        hE1_BDT_bad->SetLineColor(kRed+2);
-        hE1_BDT_bad->SetFillColorAlpha(kRed+1, 0.4);
         
         hE1_BDT->GetYaxis()->SetNdivisions(505);
         hE1_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e1 * 1.2);
@@ -445,13 +440,10 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         cv0->cd(2);
         format_h(hE2, 1, 2);
         format_h(hE2_BDT, 1, 1);
+        //format_h(hE2_good, 4, 1);
+        //format_h(hE2_bad, 2, 1);
         formatfill_h(hE2_BDT_good, 3, 3001);
         formatfill_h(hE2_BDT_bad, 2, 3001);
-
-	hE2_BDT_good->SetLineColor(kGreen+2);
-        hE2_BDT_good->SetFillColorAlpha(kGreen+1, 0.4);
-        hE2_BDT_bad->SetLineColor(kRed+2);
-        hE2_BDT_bad->SetFillColorAlpha(kRed+1, 0.4);
         
         hE2_BDT->GetYaxis()->SetNdivisions(505);
         hE2_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e2 * 1.2);
@@ -470,11 +462,6 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         format_h(hE3_BDT, 1, 1);
         formatfill_h(hE3_BDT_good, 3, 3001);
         formatfill_h(hE3_BDT_bad, 2, 3001);
-
-	hE3_BDT_good->SetLineColor(kGreen+2);
-        hE3_BDT_good->SetFillColorAlpha(kGreen+1, 0.4);
-        hE3_BDT_bad->SetLineColor(kRed+2);
-        hE3_BDT_bad->SetFillColorAlpha(kRed+1, 0.4);
         
         hE3_BDT->GetYaxis()->SetNdivisions(505);
         hE3_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e3 * 1.2);
@@ -495,11 +482,6 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         format_h(hM_gg_BDT, 1, 1);
         formatfill_h(hM_gg_BDT_good, 3, 3001);
         formatfill_h(hM_gg_BDT_bad, 2, 3001);
-
-	hM_gg_BDT_good->SetLineColor(kGreen+2);
-        hM_gg_BDT_good->SetFillColorAlpha(kGreen+1, 0.4);
-        hM_gg_BDT_bad->SetLineColor(kRed+2);
-        hM_gg_BDT_bad->SetFillColorAlpha(kRed+1, 0.4);
         
         hM_gg_BDT->GetYaxis()->SetNdivisions(505);
         hM_gg_BDT->GetYaxis()->SetRangeUser(0.1, ymax_m_gg * 1.2);
@@ -520,13 +502,10 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         
         format_h(hM3pi, 1, 2);
 	format_h(hM3pi_BDT, 1, 1);
+        //format_h(hM3pi_good, 4, 1);
+        //format_h(hM3pi_bad, 2, 1);
         formatfill_h(hM3pi_BDT_good, 3, 3001);
         formatfill_h(hM3pi_BDT_bad, 2, 3001);
-
-	hM3pi_BDT_good->SetLineColor(kGreen+2);
-        hM3pi_BDT_good->SetFillColorAlpha(kGreen+1, 0.4);
-        hM3pi_BDT_bad->SetLineColor(kRed+2);
-        hM3pi_BDT_bad->SetFillColorAlpha(kRed+1, 0.4);
         
         hM3pi_BDT->GetYaxis()->SetNdivisions(505);
         hM3pi_BDT->GetYaxis()->SetRangeUser(0.1, ymax_m3pi * 1.5);
@@ -537,110 +516,22 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hM3pi_BDT->GetXaxis()->SetTitleSize(0.04);
         
         hM3pi_BDT->Draw();
+        //hM3pi_good->Draw("Same");
+        //hM3pi_bad->Draw("Same");
         hM3pi_BDT_good->Draw("Same");
         hM3pi_BDT_bad->Draw("Same");
         gPad->SetLogy(1);
         
+        // Save canvases
         cv0->SaveAs(Form("../plots_bdt/bdt_spectra_%s.pdf", ch_nm.Data()));
+        //cv01->SaveAs(Form("../plots_bdt/invariant_mgg_%s.pdf", ch_nm.Data()));
+        
+        // Cleanup
         delete cv0;
+        //delete cv01;
         delete pt1;
         delete legd_cv;
-
-	/*
-        // ==================== NEW: Normalized (differential) shapes ====================
-        // Create normalized clones
-        TH1D* hE1_good_norm = (TH1D*)hE1_BDT_good->Clone("hE1_good_norm");
-        TH1D* hE1_bad_norm  = (TH1D*)hE1_BDT_bad->Clone("hE1_bad_norm");
-        hE1_good_norm->Scale(1.0 / hE1_good_norm->Integral());
-        hE1_bad_norm->Scale(1.0 / hE1_bad_norm->Integral());
-
-        TH1D* hE2_good_norm = (TH1D*)hE2_BDT_good->Clone("hE2_good_norm");
-        TH1D* hE2_bad_norm  = (TH1D*)hE2_BDT_bad->Clone("hE2_bad_norm");
-        hE2_good_norm->Scale(1.0 / hE2_good_norm->Integral());
-        hE2_bad_norm->Scale(1.0 / hE2_bad_norm->Integral());
-
-        TH1D* hE3_good_norm = (TH1D*)hE3_BDT_good->Clone("hE3_good_norm");
-        TH1D* hE3_bad_norm  = (TH1D*)hE3_BDT_bad->Clone("hE3_bad_norm");
-        hE3_good_norm->Scale(1.0 / hE3_good_norm->Integral());
-        hE3_bad_norm->Scale(1.0 / hE3_bad_norm->Integral());
-
-        TH1D* hMgg_good_norm = (TH1D*)hM_gg_BDT_good->Clone("hMgg_good_norm");
-        TH1D* hMgg_bad_norm  = (TH1D*)hM_gg_BDT_bad->Clone("hMgg_bad_norm");
-        hMgg_good_norm->Scale(1.0 / hMgg_good_norm->Integral());
-        hMgg_bad_norm->Scale(1.0 / hMgg_bad_norm->Integral());
-
-        TH1D* hM3pi_good_norm = (TH1D*)hM3pi_BDT_good->Clone("hM3pi_good_norm");
-        TH1D* hM3pi_bad_norm  = (TH1D*)hM3pi_BDT_bad->Clone("hM3pi_bad_norm");
-        hM3pi_good_norm->Scale(1.0 / hM3pi_good_norm->Integral());
-        hM3pi_bad_norm->Scale(1.0 / hM3pi_bad_norm->Integral());
-
-        // New canvas for normalized comparison
-        TCanvas* cv_norm = new TCanvas("cv_norm", "Normalized BDT Comparison", 1800, 1200);
-        cv_norm->Divide(2,3);
-        
-        // E1
-        cv_norm->cd(1);
-        hE1_good_norm->SetLineColor(kGreen+2);
-        hE1_good_norm->SetFillColorAlpha(kGreen+1, 0.4);
-        hE1_bad_norm->SetLineColor(kRed+2);
-        hE1_bad_norm->SetFillColorAlpha(kRed+1, 0.4);
-        hE1_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hE1_good_norm->GetXaxis()->SetTitle("E_{1} [MeV]");
-        hE1_good_norm->Draw("HIST");
-        hE1_bad_norm->Draw("HIST SAME");
-        TLegend* leg1 = new TLegend(0.7,0.7,0.9,0.9);
-        leg1->AddEntry(hE1_good_norm, "BDT Selected", "f");
-        leg1->AddEntry(hE1_bad_norm, "BDT Discarded", "f");
-        leg1->Draw();
-        
-        // E2
-        cv_norm->cd(2);
-        hE2_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hE2_good_norm->GetXaxis()->SetTitle("E_{2} [MeV]");
-        hE2_good_norm->Draw("HIST");
-        hE2_bad_norm->Draw("HIST SAME");
-        TLegend* leg2 = new TLegend(0.7,0.7,0.9,0.9);
-        leg2->AddEntry(hE2_good_norm, "BDT Selected", "f");
-        leg2->AddEntry(hE2_bad_norm, "BDT Discarded", "f");
-        leg2->Draw();
-        
-        // E3
-        cv_norm->cd(3);
-        hE3_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hE3_good_norm->GetXaxis()->SetTitle("E_{3} [MeV]");
-        hE3_good_norm->Draw("HIST");
-        hE3_bad_norm->Draw("HIST SAME");
-        TLegend* leg3 = new TLegend(0.7,0.7,0.9,0.9);
-        leg3->AddEntry(hE3_good_norm, "BDT Selected", "f");
-        leg3->AddEntry(hE3_bad_norm, "BDT Discarded", "f");
-        leg3->Draw();
-        
-        // M_gg
-        cv_norm->cd(4);
-        hMgg_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hMgg_good_norm->GetXaxis()->SetTitle("M(#gamma#gamma) [MeV/c^{2}]");
-        hMgg_good_norm->Draw("HIST");
-        hMgg_bad_norm->Draw("HIST SAME");
-        TLegend* leg4 = new TLegend(0.7,0.7,0.9,0.9);
-        leg4->AddEntry(hMgg_good_norm, "BDT Selected", "f");
-        leg4->AddEntry(hMgg_bad_norm, "BDT Discarded", "f");
-        leg4->Draw();
-        
-        // M_3pi
-        cv_norm->cd(5);
-        hM3pi_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hM3pi_good_norm->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-        hM3pi_good_norm->Draw("HIST");
-        hM3pi_bad_norm->Draw("HIST SAME");
-        TLegend* leg5 = new TLegend(0.7,0.7,0.9,0.9);
-        leg5->AddEntry(hM3pi_good_norm, "BDT Selected", "f");
-        leg5->AddEntry(hM3pi_bad_norm, "BDT Discarded", "f");
-        leg5->Draw();
-        
-        cv_norm->SaveAs(Form("../plots_bdt/bdt_norm_%s.pdf", ch_nm.Data()));
-        delete cv_norm;
-        delete leg1; delete leg2; delete leg3; delete leg4; delete leg5;
-	*/
+        //delete legd1;
     }
 }
 
