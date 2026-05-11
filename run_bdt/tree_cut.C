@@ -4,6 +4,19 @@
 #include "../header_bdt/method.h"
 #include <TStopwatch.h>
 
+TLorentzVector Get4vector(double E, double px, double py, double pz) {
+
+  //given a cluster index returns the 4-mom of a photon
+  TVector3 gamma(px, py, pz);
+  
+  Double_t scale1;
+  scale1=E/gamma.Mag();
+  TLorentzVector gamma4mom(scale1*gamma, E);
+  //cout << gamma4mom.M() << endl;
+  return gamma4mom;
+
+}
+
 int tree_cut(){
 
   TStopwatch timer;
@@ -20,6 +33,7 @@ int tree_cut(){
   double angle_pi0gam12 = 0.;  
   double betapi0 = 0.;
   double m02 = 0., mplus2 = 0.;
+  double m3pi = 0.;
   double ppIM = 0.;
   double IM3pi_7C = 0., IM3pi_true = 0.;
   double IM_pi0_7C = 0.;
@@ -43,7 +57,7 @@ int tree_cut(){
     
   int phid = 0, sig_type = 0;
   int bkg_indx = 0, recon_indx = 0;
-
+  
   double evnt_tot = 0;
   double Eprompt_max = 0.;
   
@@ -120,7 +134,10 @@ int tree_cut(){
     tree_tmp -> Branch("Br_Eprompt_max", &Eprompt_max, "Br_Eprompt_max/D");
     tree_tmp -> Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
     tree_tmp -> Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
+    tree_tmp -> Branch("Br_m3pi", &m3pi, "Br_m3pi/D");
   }
+
+  TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
   
   // Event loop
   for (Int_t irow = 0; irow < ALLCHAIN_CUT -> GetEntries(); irow ++) {
@@ -191,7 +208,15 @@ int tree_cut(){
     Eisr = ALLCHAIN_CUT -> GetLeaf("Br_ENERGYLIST") -> GetValue(0);
     Epi0_pho1 = ALLCHAIN_CUT -> GetLeaf("Br_ENERGYLIST") -> GetValue(1);
     Epi0_pho2 = ALLCHAIN_CUT -> GetLeaf("Br_ENERGYLIST") -> GetValue(3);
-    
+
+    pi0gam1 = Get4vector(pho_E1, pho_px1, pho_py1, pho_pz1);
+    pi0gam2 = Get4vector(pho_E2, pho_px2, pho_py2, pho_pz2);
+    isrgam = Get4vector(pho_E3, pho_px3, pho_py3, pho_pz3);
+    trkplus = Get4vector(ppl_E, ppl_px, ppl_py, ppl_pz);
+    trkmin = Get4vector(pmi_E, pmi_px, pmi_py, pmi_pz);
+  
+    m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
+
     evnt_tot ++;
 
     Eprompt_max = 0.;

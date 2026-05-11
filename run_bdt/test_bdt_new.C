@@ -100,8 +100,7 @@ BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& 
  * using a BDT trained on kinematic variables, then applies both
  * KLOE χ² selection and BDT selection for comparison.
  */
-void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root",
-              const char* data_filename = "/home/kloe/Desktop/KLOE_BDT/dataset/kloe_bdt.root") {
+void test_bdt_new() {
 
     // ROOT Style settings
     gErrorIgnoreLevel = kError;
@@ -109,7 +108,12 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
     gStyle->SetOptStat(0);
     gStyle->SetOptTitle(0);
     gStyle->SetFitFormat("6.4g");
+
+    const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root";
+    //const char* data_filename = "/home/kloe/Desktop/KLOE_BDT/dataset/kloe_bdt_norm.root";
+    const char* data_filename = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre.root";
   
+    
     // Manually load libraries
     gSystem->Load("libTMVA");
     gSystem->Load("libTMVAUtils");
@@ -397,10 +401,10 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
     // 5. Make comparison plots
     if (evnt_KLOE > 0) {
         // Original raw counts canvas
-        TCanvas* cv0 = new TCanvas("c1", "BDT Selection (" + ch_nm + ")", 1800, 1200);
+        TCanvas* cv0 = new TCanvas("c1", "BDT Selection (" + ch_nm + ")", 2000, 1200);
         //cv0->SetLeftMargin(0.1);
         //cv0->SetBottomMargin(0.1);
-        cv0->Divide(2, 3);
+        cv0->Divide(3, 2);
         
         // Energy of gamma 1: E1
         cv0->cd(1);
@@ -410,7 +414,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         
         TPaveText* pt1 = new TPaveText(0.11, 0.87, 0.80, 0.89, "NDC");
         PteAttr(pt1);
-        pt1->SetTextSize(0.05);
+        pt1->SetTextSize(0.03);
         pt1->SetTextColor(kBlack);
         pt1->AddText(Form("Events=%d, BDT Cut Value=%.1f, BDT Selected=%d, Discarded=%d", evnt_KLOE, BDT_CUT_VALUE, n_found, evnt_KLOE - n_found));
         
@@ -430,7 +434,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hE1_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e1 * 1.2);
 	hE1_BDT->GetYaxis()->SetTitle("Entries");
 	hE1_BDT->GetYaxis()->CenterTitle();
-	hE1_BDT->GetYaxis()->SetTitleSize(0.04);
+	hE1_BDT->GetYaxis()->SetTitleSize(0.03);
         
 	hE1_BDT->GetXaxis()->SetTitle("E_{1} [MeV]");
         hE1_BDT->GetXaxis()->CenterTitle();
@@ -467,7 +471,8 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hE2_BDT->GetYaxis()->SetNdivisions(505);
         hE2_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e2 * 1.2);
 	hE2_BDT->GetYaxis()->SetTitle("Entries");
-	hE2_BDT->GetYaxis()->CenterTitle();
+	hE2_BDT->GetYaxis()->SetTitleSize(0.03);
+        hE2_BDT->GetYaxis()->CenterTitle();
         hE2_BDT->GetXaxis()->SetTitle("E_{2} [MeV]");
         hE2_BDT->GetXaxis()->CenterTitle();
         hE2_BDT->GetXaxis()->SetTitleSize(0.04);
@@ -491,6 +496,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hE3_BDT->GetYaxis()->SetRangeUser(0.1, ymax_e3 * 1.2);
 	hE3_BDT->GetYaxis()->SetTitle("Entries");
 	hE3_BDT->GetYaxis()->CenterTitle();
+	hE3_BDT->GetYaxis()->SetTitleSize(0.03);
         hE3_BDT->GetXaxis()->SetTitle("E_{3} [MeV]");
         hE3_BDT->GetXaxis()->CenterTitle();
         hE3_BDT->GetXaxis()->SetTitleSize(0.04);
@@ -516,6 +522,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hM_gg_BDT->GetYaxis()->SetRangeUser(0.1, ymax_m_gg * 1.2);
 	hM_gg_BDT->GetYaxis()->SetTitle("Entries");
 	hM_gg_BDT->GetYaxis()->CenterTitle();
+	hM_gg_BDT->GetXaxis()->SetTitleSize(0.03);
         hM_gg_BDT->GetXaxis()->SetTitle("M(#gamma#gamma) [MeV/c^{2}]");
         hM_gg_BDT->GetXaxis()->CenterTitle();
         hM_gg_BDT->GetXaxis()->SetTitleSize(0.04);
@@ -543,6 +550,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hM3pi_BDT->GetYaxis()->SetRangeUser(0.1, ymax_m3pi * 1.5);
 	hM3pi_BDT->GetYaxis()->SetTitle("Entries");
 	hM3pi_BDT->GetYaxis()->CenterTitle();
+	hM3pi_BDT->GetYaxis()->SetTitleSize(0.03);
         hM3pi_BDT->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
         hM3pi_BDT->GetXaxis()->CenterTitle();
         hM3pi_BDT->GetXaxis()->SetTitleSize(0.04);
@@ -569,6 +577,7 @@ void test_bdt_new(const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/mode
         hchi2_BDT->GetYaxis()->SetRangeUser(0.1, ymax_chi2 * 1.5);
 	hchi2_BDT->GetYaxis()->SetTitle("Entries");
 	hchi2_BDT->GetYaxis()->CenterTitle();
+	hchi2_BDT->GetYaxis()->SetTitleSize(0.03);
         hchi2_BDT->GetXaxis()->SetTitle("#chi^{2}");
         hchi2_BDT->GetXaxis()->CenterTitle();
         hchi2_BDT->GetXaxis()->SetTitleSize(0.04);
