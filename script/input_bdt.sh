@@ -157,14 +157,35 @@ for ((i=0;i<${#DATA_TYPE[@]};++i)); do
     data_type=${DATA_TYPE[i]}
     #echo ${data_type}
 
+    # Ensure the sampleFile path matches data_type
+    sample_file_name="${input_path}${data_type}"
+    
     INPUT_FILE=${sample_path}${data_type}_path
     ROOT_FILE=${input_path}${data_type}
     echo $INPUT_FILE
     #echo $ROOT_FILE
 
-    sed -i 's|\(const TString rootFile =\)\(.*\)|\1 "'"${INPUT_FILE}"'";|' "$path_header"
-    sed -i 's|\(const TString sampleFile =\)\(.*\)|\1 "'"${ROOT_FILE}"'";|' "$path_header"
+    cat > "$path_header" <<EOF
+const TString rootFile = "${INPUT_FILE}";
+const TString sampleFile = "${ROOT_FILE}";
+const TString outputCut = "${cut_path}";
+const TString sig_path = "${input_path}";
+const TString outputGen = "${gen_path}";
+const TString outputHist = "${hist_path}";
+const TString outputSfw2D = "${sfw2d_path}";
+const TString outputSfw1D = "${sfw1d_path}";
+const TString outputOmega = "${omega_path}";
+const TString data_type = "${data_type}";
+const TString exp_type = "${exp_type}";
+double gsf = ${gsf};
+EOF
 
+    # Verify consistency
+    if ! grep -q "data_type = \"${data_type}\"" "$path_header"; then
+        echo "ERROR: path.h data_type mismatch!" >> ${log_cut}
+        exit 1
+    fi
+    
     ## Input trees
     run_script=run_script.C
     
@@ -176,8 +197,6 @@ for ((i=0;i<${#DATA_TYPE[@]};++i)); do
     root -l -n -q -b $run_script >> ${log_input}
     
     ## Selection cuts
-    sed -i 's|\(const TString outputCut =\)\(.*\)|\1 "'"${cut_path}"'";|' "$path_header"
-    sed -i 's|\(const TString data_type =\)\(.*\)|\1 "'"${data_type}"'";|' "$path_header"
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script
     echo "void tree_cut_script() {" >> $tree_cut_script

@@ -243,6 +243,7 @@ void test_bdt_new() {
     TH1D* hM3pi = hists.create("hM3pi", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
     TH1D* hM3pi_good = hists.create("hM3pi_good", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
     TH1D* hM3pi_bad = hists.create("hM3pi_bad", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
+
     
     TH1D* hE1 = hists.create("hE1", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE1_good = hists.create("hE1_good", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
@@ -294,7 +295,9 @@ void test_bdt_new() {
 	double E2_true = 0., px2_true = 0., py2_true = 0., pz2_true = 0.;
   	double E3_true = 0., px3_true = 0., py3_true = 0., pz3_true = 0.;
   	double ppl_E = 0., ppl_px = 0., ppl_py = 0., ppl_pz = 0.;
-        double pmi_E = 0., pmi_px = 0., pmi_py = 0., pmi_pz = 0.;
+	double pmi_E = 0., pmi_px = 0., pmi_py = 0., pmi_pz = 0.;
+	double ppl_E_true = 0., ppl_px_true = 0., ppl_py_true = 0., ppl_pz_true = 0.;
+	double pmi_E_true = 0., pmi_px_true = 0., pmi_py_true = 0., pmi_pz_true = 0.;
         int bkg_indx = 0, recon_indx = 0;
 
         // Set branch addresses
@@ -337,14 +340,23 @@ void test_bdt_new() {
 	tree->SetBranchAddress("Br_px3_true", &px3_true);
 	tree->SetBranchAddress("Br_py3_true", &py3_true);
 	tree->SetBranchAddress("Br_pz3_true", &pz3_true);
-
+	tree->SetBranchAddress("Br_ppl_E_true", &ppl_E_true);
+        tree->SetBranchAddress("Br_ppl_px_true", &ppl_px_true);
+        tree->SetBranchAddress("Br_ppl_py_true", &ppl_py_true);
+        tree->SetBranchAddress("Br_ppl_pz_true", &ppl_pz_true);
+        tree->SetBranchAddress("Br_pmi_E_true", &pmi_E_true);
+        tree->SetBranchAddress("Br_pmi_px_true", &pmi_px_true);
+        tree->SetBranchAddress("Br_pmi_py_true", &pmi_py_true);
+        tree->SetBranchAddress("Br_pmi_pz_true", &pmi_pz_true);
+        
         // Create output file and tree
         TFile* outfile = TFile::Open("output_with_bdt.root", "RECREATE");
         TTree* outtree = new TTree("new_tree", "Tree with BDT response");
         
         double bdt_score = 0.0;
         double m_gg_bdt = 0.0, m3pi_bdt = 0.0;
-        double e1_bdt = 0.0, e2_bdt = 0.0, e3_bdt = 0.0;
+	double m_gg_bdt_true = 0.0, m3pi_bdt_true = 0.0;
+	double e1_bdt = 0.0, e2_bdt = 0.0, e3_bdt = 0.0;
 	double px1_bdt = 0.0, px2_bdt = 0.0, px3_bdt = 0.0;
 	double py1_bdt = 0.0, py2_bdt = 0.0, py3_bdt = 0.0;
 	double pz1_bdt = 0.0, pz2_bdt = 0.0, pz3_bdt = 0.0;
@@ -362,7 +374,9 @@ void test_bdt_new() {
         outtree->Branch("event_id", &event_id);
         outtree->Branch("bdt_score", &bdt_score);
         outtree->Branch("m_gg_bdt", &m_gg_bdt);
+	outtree->Branch("m_gg_bdt_true", &m_gg_bdt_true);
         outtree->Branch("m3pi_bdt", &m3pi_bdt);
+	outtree->Branch("m3pi_bdt_true", &m3pi_bdt_true);
         outtree->Branch("e1_bdt", &e1_bdt);
         outtree->Branch("e2_bdt", &e2_bdt);
         outtree->Branch("e3_bdt", &e3_bdt);
@@ -389,7 +403,9 @@ void test_bdt_new() {
 	    // Test variables
 	    //cout << E1_true << ", " << px1_true << ", " << py1_true << ", " << pz1_true << endl;
 	    //cout << lagvalue_min_7C << endl;
-	      
+	    //cout << ppl_px_true << ", " << ppl_py_true << ", " << ppl_pz_true << endl;
+	    cout << pmi_px_true << ", " << pmi_py_true << ", " << pmi_pz_true << endl;
+	    
             // Apply kinematic cuts
             if (lagvalue_min_7C > chi2_cut) continue;
             if (deltaE > deltaE_cut) continue;
@@ -425,6 +441,8 @@ void test_bdt_new() {
             event_true.photons[0][0] = E1_true; event_true.photons[0][1] = px1_true; event_true.photons[0][2] = py1_true; event_true.photons[0][3] = pz1_true;
             event_true.photons[1][0] = E2_true; event_true.photons[1][1] = px2_true; event_true.photons[1][2] = py2_true; event_true.photons[1][3] = pz2_true;
             event_true.photons[2][0] = E3_true; event_true.photons[2][1] = px3_true; event_true.photons[2][2] = py3_true; event_true.photons[2][3] = pz3_true;
+            //event_true.tracks[0][0] = ppl_E_true; event_true.tracks[0][1] = ppl_px_true; event_true.tracks[0][2] = ppl_py_true; event_true.tracks[0][3] = ppl_pz_true;
+            //event_true.tracks[1][0] = pmi_E_true; event_true.tracks[1][1] = pmi_px_true; event_true.tracks[1][2] = pmi_py_true; event.tracks[1][3] = pmi_pz_true;
             
 	    // Compute using fixed pair (0,1) for KLOE comparison
             double m_gg_fixed = compute_invariant_mass(0, 1, event.photons);
@@ -799,7 +817,7 @@ void test_bdt_new() {
 	// Common style settings
 	auto setHistStyle = [](TH1D* h, Color_t color, const char* xTitle) {
 	  h->SetLineColor(color);
-	  h->SetLineWidth(2);
+	  h->SetLineWidth(1);
 	  h->SetFillColorAlpha(color, 0.3);
 	  h->GetYaxis()->SetTitle("Normalized entries");
 	  h->GetXaxis()->SetTitle(xTitle);
@@ -822,20 +840,27 @@ void test_bdt_new() {
 	  double max1 = h1->GetMaximum();
 	  double max2 = h2->GetMaximum();
 	  double max3 = h3->GetMaximum();
-	  double yMax = TMath::Max(max1, TMath::Max(max2, max3)) * yMaxFactor;
+	  //double yMax = TMath::Max(max1, TMath::Max(max2, max3)) * yMaxFactor;
 	  
 	  // Set margins for each pad individually
 	  for (int iPad = 1; iPad <= 3; ++iPad) {
 	    TPad* pad = (TPad*)c->GetPad(iPad);
 	    pad->SetBottomMargin(0.22);   // more space for x‑title
-	    pad->SetLeftMargin(0.14);     // more space for y‑title
+	    pad->SetLeftMargin(0.15);     // more space for y‑title
 	  }
 
+	  TPaveText* pt2 = new TPaveText(0.2, 0.80, 0.80, 0.89, "NDC");
+	  PteAttr(pt2);
+	  pt2->SetTextSize(0.05);
+	  pt2->SetTextColor(kBlack);
+	  pt2->AddText("Signal");
+        
 	  c->cd(1);
 	  setHistStyle(h1, kGreen+2, xTitle1);
-	  h1->GetYaxis()->SetRangeUser(0, yMax);
+	  h1->GetYaxis()->SetRangeUser(0, h1->GetBinContent(h1->GetMaximumBin()) * yMaxFactor);
 	  h1->Draw("HIST");
-	  TLegend* leg1 = new TLegend(0.65, 0.75, 0.9, 0.9);
+	  pt2->Draw("Same");
+	  TLegend* leg1 = new TLegend(0.65, 0.8, 0.9, 0.9);
 	  leg1->SetBorderSize(0);
 	  leg1->SetFillStyle(0);
 	  leg1->AddEntry(h1, "BDT Selected", "f");
@@ -843,23 +868,23 @@ void test_bdt_new() {
 	  
 	  c->cd(2);
 	  setHistStyle(h2, kGreen+2, xTitle2);
-	  h2->GetYaxis()->SetRangeUser(0, yMax);
+	  h2->GetYaxis()->SetRangeUser(0, h2->GetBinContent(h2->GetMaximumBin()) * yMaxFactor);
 	  h2->Draw("HIST");
-	  TLegend* leg2 = new TLegend(0.65, 0.75, 0.9, 0.9);
-	  leg2->SetBorderSize(0);
-	  leg2->SetFillStyle(0);
-	  leg2->AddEntry(h2, "BDT Selected", "f");
-	  leg2->Draw();
+	  //TLegend* leg2 = new TLegend(0.65, 0.75, 0.9, 0.9);
+	  //leg2->SetBorderSize(0);
+	  //leg2->SetFillStyle(0);
+	  //leg2->AddEntry(h2, "BDT Selected", "f");
+	  //leg2->Draw();
 	  
 	  c->cd(3);
 	  setHistStyle(h3, kGreen+2, xTitle3);
-	  h3->GetYaxis()->SetRangeUser(0, yMax);
+	  h3->GetYaxis()->SetRangeUser(0, h3->GetBinContent(h3->GetMaximumBin()) * yMaxFactor);
 	  h3->Draw("HIST");
-	  TLegend* leg3 = new TLegend(0.65, 0.75, 0.9, 0.9);
-	  leg3->SetBorderSize(0);
-	  leg3->SetFillStyle(0);
-	  leg3->AddEntry(h3, "BDT Selected", "f");
-	  leg3->Draw();
+	  //TLegend* leg3 = new TLegend(0.65, 0.75, 0.9, 0.9);
+	  //leg3->SetBorderSize(0);
+	  //leg3->SetFillStyle(0);
+	  //leg3->AddEntry(h3, "BDT Selected", "f");
+	  //leg3->Draw();
 	  
 	  c->SaveAs(Form("../plots_bdt/%s.pdf", canvasName));
 	  delete c;

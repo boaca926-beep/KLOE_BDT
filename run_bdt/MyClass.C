@@ -125,7 +125,10 @@ void MyClass::Main()
   double pho_E1_true = 0., pho_px1_true = 0., pho_py1_true = 0., pho_pz1_true = 0.;
   double pho_E2_true = 0., pho_px2_true = 0., pho_py2_true = 0., pho_pz2_true = 0.;
   double pho_E3_true = 0., pho_px3_true = 0., pho_py3_true = 0., pho_pz3_true = 0.;
-  
+
+  double ppl_E_true = 0., ppl_px_true = 0., ppl_py_true = 0., ppl_pz_true = 0.;
+  double pmi_E_true = 0., pmi_px_true = 0., pmi_py_true = 0., pmi_pz_true = 0.;
+ 
   //
   TTree ALLCHAIN_CUT ("ALLCHAIN_CUT", "recreate");
   ALLCHAIN_CUT.SetAutoSave(0);
@@ -246,6 +249,16 @@ void MyClass::Main()
   ALLCHAIN_CUT.Branch("Br_py3_true", &pho_py3_true, "Br_py3_true/D");
   ALLCHAIN_CUT.Branch("Br_pz3_true", &pho_pz3_true, "Br_pz3_true/D");
 
+  ALLCHAIN_CUT.Branch("Br_ppl_E_true", &ppl_E_true, "Br_ppl_E_true/D");
+  ALLCHAIN_CUT.Branch("Br_ppl_px_true", &ppl_px_true, "Br_ppl_px_true/D");
+  ALLCHAIN_CUT.Branch("Br_ppl_py_true", &ppl_py_true, "Br_ppl_py_true/D");
+  ALLCHAIN_CUT.Branch("Br_ppl_pz_true", &ppl_pz_true, "Br_ppl_pz_true/D");
+  
+  ALLCHAIN_CUT.Branch("Br_pmi_E_true", &pmi_E_true, "Br_pmi_E_true/D");
+  ALLCHAIN_CUT.Branch("Br_pmi_px_true", &pmi_px_true, "Br_pmi_px_true/D");
+  ALLCHAIN_CUT.Branch("Br_pmi_py_true", &pmi_py_true, "Br_pmi_py_true/D");
+  ALLCHAIN_CUT.Branch("Br_pmi_pz_true", &pmi_pz_true, "Br_pmi_pz_true/D");
+  
   //
   TTree ALLCHAIN_TEST ("ALLCHAIN_TEST", "recreate"); ALLCHAIN_TEST.SetAutoSave(0);
   ALLCHAIN_TEST.Branch("Br_bkg_indx", &bkg_indx, "Br_bkg_indx/I");
@@ -289,7 +302,10 @@ void MyClass::Main()
     int pi0gam1_ntmc = 0, pi0gam2_ntmc = 0; 
     TVector3 MC_vect;
     TLorentzVector pi0MC_TLvect, piplusMC_TLvect, piminusMC_TLvect, threepi_TLvect, isrpho_TLvect, finalstate_TLvect, pho_radiv1_TLvect, pho_radiv2_TLvect, pi0gam1_TLvect, pi0gam2_TLvect;
-   
+
+    // Initialize track 4-momenta
+    piplusMC_TLvect.SetPxPyPzE(0,0,0,0);
+    piminusMC_TLvect.SetPxPyPzE(0,0,0,0);
       
     /// paticle infomation
     //cout << "\n\n" << endl;
@@ -1421,12 +1437,22 @@ void MyClass::Main()
     ppl_py = TLVector_ppl.Y();
     ppl_pz = TLVector_ppl.Z();
 
+    ppl_E_true = piplusMC_TLvect.E();
+    ppl_px_true = piplusMC_TLvect.Px();
+    ppl_py_true = piplusMC_TLvect.Py();
+    ppl_pz_true = piplusMC_TLvect.Pz();
+ 
     // negative track
     pmi_E = TLVector_pmi.E();
     pmi_px = TLVector_pmi.X();
     pmi_py = TLVector_pmi.Y();
     pmi_pz = TLVector_pmi.Z();
 
+    pmi_E_true = piminusMC_TLvect.E();
+    pmi_px_true = piminusMC_TLvect.Px();
+    pmi_py_true = piminusMC_TLvect.Py();
+    pmi_pz_true = piminusMC_TLvect.Pz();
+ 
     if (recon_indx == 0) {
       evnt_recon_type0 ++;
     }

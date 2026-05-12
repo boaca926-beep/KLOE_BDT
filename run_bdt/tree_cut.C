@@ -51,6 +51,8 @@ int tree_cut(){
   double pho_E2 = 0., pho_px2 = 0., pho_py2 = 0., pho_pz2 = 0.;
   double pho_E3 = 0., pho_px3 = 0., pho_py3 = 0., pho_pz3 = 0.;
   // true 4-momentum
+  double ppl_E_true = 0., ppl_px_true = 0., ppl_py_true = 0., ppl_pz_true = 0.;
+  double pmi_E_true = 0., pmi_px_true = 0., pmi_py_true = 0., pmi_pz_true = 0.;
   double pho_E1_true = 0., pho_px1_true = 0., pho_py1_true = 0., pho_pz1_true = 0.;
   double pho_E2_true = 0., pho_px2_true = 0., pho_py2_true = 0., pho_pz2_true = 0.;
   double pho_E3_true = 0., pho_px3_true = 0., pho_py3_true = 0., pho_pz3_true = 0.;
@@ -88,6 +90,16 @@ int tree_cut(){
     tree_tmp -> Branch("Br_pmi_px", &pmi_px, "Br_pmi_px/D");
     tree_tmp -> Branch("Br_pmi_py", &pmi_py, "Br_pmi_py/D");
     tree_tmp -> Branch("Br_pmi_pz", &pmi_pz, "Br_pmi_pz/D");
+
+    tree_tmp -> Branch("Br_ppl_E_true", &ppl_E_true, "Br_ppl_E_true/D");
+    tree_tmp -> Branch("Br_ppl_px_true", &ppl_px_true, "Br_ppl_px_true/D");
+    tree_tmp -> Branch("Br_ppl_py_true", &ppl_py_true, "Br_ppl_py_true/D");
+    tree_tmp -> Branch("Br_ppl_pz_true", &ppl_pz_true, "Br_ppl_pz_true/D");
+    tree_tmp -> Branch("Br_pmi_E_true", &pmi_E_true, "Br_pmi_E_true/D");
+    tree_tmp -> Branch("Br_pmi_px_true", &pmi_px_true, "Br_pmi_px_true/D");
+    tree_tmp -> Branch("Br_pmi_py_true", &pmi_py_true, "Br_pmi_py_true/D");
+    tree_tmp -> Branch("Br_pmi_pz_true", &pmi_pz_true, "Br_pmi_pz_true/D");
+    
     tree_tmp -> Branch("Br_E1", &pho_E1, "Br_pho_E1/D");
     tree_tmp -> Branch("Br_px1", &pho_px1, "Br_pho_px1/D");
     tree_tmp -> Branch("Br_py1", &pho_py1, "Br_pho_py1/D");
@@ -135,6 +147,7 @@ int tree_cut(){
     tree_tmp -> Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
     tree_tmp -> Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
     tree_tmp -> Branch("Br_m3pi", &m3pi, "Br_m3pi/D");
+    
   }
 
   TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
@@ -152,6 +165,16 @@ int tree_cut(){
     pmi_px = ALLCHAIN_CUT -> GetLeaf("Br_pmi_px") -> GetValue(0);
     pmi_py = ALLCHAIN_CUT -> GetLeaf("Br_pmi_py") -> GetValue(0);
     pmi_pz = ALLCHAIN_CUT -> GetLeaf("Br_pmi_pz") -> GetValue(0);
+
+    ppl_E_true = ALLCHAIN_CUT -> GetLeaf("Br_ppl_E_true") -> GetValue(0);
+    ppl_px_true = ALLCHAIN_CUT -> GetLeaf("Br_ppl_px_true") -> GetValue(0);
+    ppl_py_true = ALLCHAIN_CUT -> GetLeaf("Br_ppl_py_true") -> GetValue(0);
+    ppl_pz_true = ALLCHAIN_CUT -> GetLeaf("Br_ppl_pz_true") -> GetValue(0);
+
+    pmi_E_true = ALLCHAIN_CUT -> GetLeaf("Br_pmi_E_true") -> GetValue(0);
+    pmi_px_true = ALLCHAIN_CUT -> GetLeaf("Br_pmi_px_true") -> GetValue(0);
+    pmi_py_true = ALLCHAIN_CUT -> GetLeaf("Br_pmi_py_true") -> GetValue(0);
+    pmi_pz_true = ALLCHAIN_CUT -> GetLeaf("Br_pmi_pz_true") -> GetValue(0);
 
     pho_E1 = ALLCHAIN_CUT -> GetLeaf("Br_E1") -> GetValue(0);
     pho_px1 = ALLCHAIN_CUT -> GetLeaf("Br_px1") -> GetValue(0);
@@ -212,8 +235,10 @@ int tree_cut(){
     pi0gam1 = Get4vector(pho_E1, pho_px1, pho_py1, pho_pz1);
     pi0gam2 = Get4vector(pho_E2, pho_px2, pho_py2, pho_pz2);
     isrgam = Get4vector(pho_E3, pho_px3, pho_py3, pho_pz3);
-    trkplus = Get4vector(ppl_E, ppl_px, ppl_py, ppl_pz);
-    trkmin = Get4vector(pmi_E, pmi_px, pmi_py, pmi_pz);
+    //trkplus = Get4vector(ppl_E, ppl_px, ppl_py, ppl_pz);
+    //trkmin = Get4vector(pmi_E, pmi_px, pmi_py, pmi_pz);
+    trkplus.SetPxPyPzE(ppl_px, ppl_py, ppl_pz, ppl_E);
+    trkmin.SetPxPyPzE(pmi_px, pmi_py, pmi_pz, pmi_E);
   
     m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
