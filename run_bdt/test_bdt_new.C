@@ -262,7 +262,6 @@ void test_bdt_new() {
     TH1D* hE2 = hists.create("hE2", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE2_good = hists.create("hE2_good", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE2_bad = hists.create("hE2_bad", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
-
     
     // Event counters
     int evnt_KLOE = 0;
@@ -485,7 +484,7 @@ void test_bdt_new() {
             e2_bdt = event.photons[result.pi0_indices[1]][0];
             e3_bdt = event.photons[result.prompt_index][0];
 
-	    px1_bdt = event.photons[result.pi0_indices[0]][1];  // px of first pi0 photon
+	    px1_bdt = event.photons[result.pi0_indices[0]][1];
 	    py1_bdt = event.photons[result.pi0_indices[0]][2];
 	    pz1_bdt = event.photons[result.pi0_indices[0]][3];
 
@@ -501,7 +500,7 @@ void test_bdt_new() {
             e2_bdt_true = event_true.photons[result.pi0_indices[1]][0];
             e3_bdt_true = event_true.photons[result.prompt_index][0];
 
-	    px1_bdt_true = event_true.photons[result.pi0_indices[0]][1];  // px of first pi0 photon
+	    px1_bdt_true = event_true.photons[result.pi0_indices[0]][1];
 	    py1_bdt_true = event_true.photons[result.pi0_indices[0]][2];
 	    pz1_bdt_true = event_true.photons[result.pi0_indices[0]][3];
 
@@ -808,7 +807,9 @@ void test_bdt_new() {
         delete pt1;
         delete legd_cv;
 
-	// ==================== Normalized pull histograms ====================
+	// ==================================================================
+	// Normalized pull histograms
+	// ==================================================================
 	auto safeNormalize = [](TH1D* h) {
 	  if (h && h->Integral() > 0) h->Scale(1.0 / h->Integral());
 	};
@@ -858,7 +859,7 @@ void test_bdt_new() {
 	  h->GetXaxis()->SetTitleSize(0.05);
 	  h->GetYaxis()->SetLabelSize(0.045);
 	  h->GetXaxis()->SetLabelSize(0.045);
-	  h->GetXaxis()->SetTitleOffset(1.3);   // <-- added
+	  h->GetXaxis()->SetTitleOffset(1.3);
 	  h->GetXaxis()->CenterTitle();
 	  h->GetYaxis()->CenterTitle();
 	};
@@ -953,82 +954,6 @@ void test_bdt_new() {
 		hM3pi_pull_good_norm, hM_gg_pull_good_norm, hM2pi_pull,
 		"M_{3#pi} pull [MeV/c^{2}]", "M_{#gamma#gamma} pull [MeV/c^{2}]", "M_{2#pi} pull [MeV/c^{2}]",
 		"Normalized Entries", "Normalized Entries", "Entries");
-	
-	
-	
-	/*
-	// ==================================================================
-	// Draw only the normalized "good" pull histograms (BDT selected)
-	// ==================================================================
-
-	// Collect all good_norm histograms
-	std::vector<TH1D*> goodHists = {
-	  hE1_pull_good_norm, hE2_pull_good_norm, hE3_pull_good_norm,
-	  hPx1_pull_good_norm, hPx2_pull_good_norm, hPx3_pull_good_norm,
-	  hPy1_pull_good_norm, hPy2_pull_good_norm, hPy3_pull_good_norm,
-	  hPz1_pull_good_norm, hPz2_pull_good_norm, hPz3_pull_good_norm
-	};
-	
-	// Corresponding x-axis titles
-	std::vector<const char*> xTitles = {
-	  "E_{1} pull [MeV]", "E_{2} pull [MeV]", "E_{3} pull [MeV]",
-	  "p_{x,1} pull [MeV/c]", "p_{x,2} pull [MeV/c]", "p_{x,3} pull [MeV/c]",
-	  "p_{y,1} pull [MeV/c]", "p_{y,2} pull [MeV/c]", "p_{y,3} pull [MeV/c]",
-	  "p_{z,1} pull [MeV/c]", "p_{z,2} pull [MeV/c]", "p_{z,3} pull [MeV/c]"
-	};
-	
-	// Calculate number of pads (12) and find optimal grid (3 rows x 4 columns)
-	int nPads = goodHists.size();
-	int nCols = 4;
-	int nRows = (nPads + nCols - 1) / nCols;
-	
-	TCanvas* cv_good_pulls = new TCanvas("cv_good_pulls", "BDT Selected Pull Distributions", 2000, 1500);
-	cv_good_pulls->Divide(nCols, nRows);
-	
-	for (int i = 0; i < nPads; ++i) {
-	  cv_good_pulls->cd(i+1);
-	  TH1D* h = goodHists[i];
-	  if (!h || h->Integral() == 0) continue;
-	  
-	  h->SetLineColor(kGreen+2);
-	  h->SetFillColorAlpha(kGreen+1, 0.4);
-	  h->GetYaxis()->SetTitle("Normalized entries");
-	  h->GetXaxis()->SetTitle(xTitles[i]);
-	  h->Draw("HIST");
-	  
-	  // Optional: simple legend
-	  TLegend* leg = new TLegend(0.7, 0.75, 0.9, 0.9);
-	  leg->SetBorderSize(0);
-	  leg->SetFillStyle(0);
-	  leg->AddEntry(h, "BDT Selected", "f");
-	  leg->Draw();
-	}
-	
-	cv_good_pulls->SaveAs("../plots_bdt/normalized_good_pulls.pdf");
-	delete cv_good_pulls;
-	*/
-	
-	/*
-	// New canvas for normalized comparison
-        TCanvas* cv_norm = new TCanvas("cv_norm", "Normalized BDT Comparison", 1800, 1200);
-        cv_norm->Divide(2,2);
-
-	// E1_pull
-        cv_norm->cd(1);
-	
-	hE1_pull_good_norm->SetLineColor(kGreen+2);
-	hE1_pull_good_norm->SetFillColorAlpha(kGreen+1, 0.4);
-	hE1_pull_good_norm->GetYaxis()->SetTitle("Normalized entries");
-	hE1_pull_good_norm->GetXaxis()->SetTitle("E_{1} pull [MeV]");
-	hE1_pull_good_norm->Draw("HIST");
-	TLegend* leg1 = new TLegend(0.7,0.7,0.9,0.9);
-	leg1->AddEntry(hE1_pull_good_norm, "BDT Selected", "f");
-	leg1->Draw();
-  
-        cv_norm->SaveAs(Form("../plots_bdt/bdt_norm_%s.pdf", ch_nm.Data()));
-        delete cv_norm;
-        delete leg1; delete leg2; delete leg3; delete leg4; delete leg5;
-	*/
     }
 }
 
