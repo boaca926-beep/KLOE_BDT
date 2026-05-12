@@ -91,6 +91,7 @@ double compute_invariant_mass(int i, int j, const double photons[3][4]);
 double compute_3pi_mass(int pi0_idx1, int pi0_idx2, const double photons[3][4], const double tracks[2][4]);
 double compute_cos_theta(int i, int j, const double photons[3][4]);
 double get_fbeta(double a1, double b1, double c1, double m2pi);
+double compute_dipion_mass(const double tracks[2][4]);
 std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx, 
                                     const double photons[3][4], double energy_threshold);
 BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& bdt);
@@ -158,6 +159,7 @@ void test_bdt_new() {
     TH1D* he_min_x_angle = hists.create("he_min_x_angle", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE_diff = hists.create("hE_diff", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hasym_x_angle = hists.create("hasym_x_angle", "", N_BINS_ENERGY, 0, PI);
+    TH1D* hM2pi_pull = hists.create("hM2pi_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     // Histograms for BDT selection
     TH1D* hchi2_BDT_good = hists.create("hchi2_BDT_good", "", N_BINS_CHI2, 0, CHI2_RANGE_MAX);
@@ -167,7 +169,7 @@ void test_bdt_new() {
     TH1D* hM3pi_BDT_good = hists.create("hM3pi_BDT_good", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
     TH1D* hM3pi_BDT_bad = hists.create("hM3pi_BDT_bad", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
     TH1D* hM3pi_BDT = hists.create("hM3pi_BDT", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
-    
+
     TH1D* hM_gg_BDT_good = hists.create("hM_gg_BDT_good", "", N_BINS_ENERGY, MASS_GG_RANGE_MIN, MASS_GG_RANGE_MAX);
     TH1D* hM_gg_BDT_bad = hists.create("hM_gg_BDT_bad", "", N_BINS_ENERGY, MASS_GG_RANGE_MIN, MASS_GG_RANGE_MAX);
     TH1D* hM_gg_BDT = hists.create("hM_gg_BDT", "", N_BINS_ENERGY, MASS_GG_RANGE_MIN, MASS_GG_RANGE_MAX);
@@ -186,54 +188,63 @@ void test_bdt_new() {
 
     TH1D* hE1_pull_good = hists.create("hE1_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hE1_pull_bad = hists.create("hE1_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hE1_pull_BDT = hists.create("hE1_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE1_pull = hists.create("hE1_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
 
     TH1D* hE2_pull_good = hists.create("hE2_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hE2_pull_bad = hists.create("hE2_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hE2_pull_BDT = hists.create("hE2_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE2_pull = hists.create("hE2_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
 
     TH1D* hE3_pull_good = hists.create("hE3_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hE3_pull_bad = hists.create("hE3_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hE3_pull_BDT = hists.create("hE3_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE3_pull = hists.create("hE3_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
 
     // px pulls
     TH1D* hPx1_pull_good = hists.create("hPx1_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPx1_pull_bad  = hists.create("hPx1_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPx1_pull_BDT  = hists.create("hPx1_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx1_pull  = hists.create("hPx1_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     TH1D* hPx2_pull_good = hists.create("hPx2_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPx2_pull_bad  = hists.create("hPx2_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPx2_pull_BDT  = hists.create("hPx2_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx2_pull  = hists.create("hPx2_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     TH1D* hPx3_pull_good = hists.create("hPx3_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPx3_pull_bad  = hists.create("hPx3_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPx3_pull_BDT  = hists.create("hPx3_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx3_pull  = hists.create("hPx3_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     // py pulls
     TH1D* hPy1_pull_good = hists.create("hPy1_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPy1_pull_bad  = hists.create("hPy1_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPy1_pull_BDT  = hists.create("hPy1_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy1_pull  = hists.create("hPy1_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     TH1D* hPy2_pull_good = hists.create("hPy2_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPy2_pull_bad  = hists.create("hPy2_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPy2_pull_BDT  = hists.create("hPy2_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy2_pull  = hists.create("hPy2_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     TH1D* hPy3_pull_good = hists.create("hPy3_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPy3_pull_bad  = hists.create("hPy3_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPy3_pull_BDT  = hists.create("hPy3_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy3_pull  = hists.create("hPy3_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     // pz pulls
     TH1D* hPz1_pull_good = hists.create("hPz1_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPz1_pull_bad  = hists.create("hPz1_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPz1_pull_BDT  = hists.create("hPz1_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz1_pull  = hists.create("hPz1_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     TH1D* hPz2_pull_good = hists.create("hPz2_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPz2_pull_bad  = hists.create("hPz2_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPz2_pull_BDT  = hists.create("hPz2_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz2_pull  = hists.create("hPz2_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     TH1D* hPz3_pull_good = hists.create("hPz3_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hPz3_pull_bad  = hists.create("hPz3_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
-    TH1D* hPz3_pull_BDT  = hists.create("hPz3_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz3_pull  = hists.create("hPz3_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+
+    //
+    TH1D* hM3pi_pull_good = hists.create("hM3pi_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hM3pi_pull_bad = hists.create("hM3pi_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hM3pi_pull = hists.create("hM3pi_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    TH1D* hM_gg_pull_good = hists.create("hM_gg_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hM_gg_pull_bad = hists.create("hM_gg_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hM_gg_pull = hists.create("hM_gg_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     // Mass histograms for KLOE selection (using fixed pair 0,1)
     TH1D* hM_gg = hists.create("hM_gg", "", N_BINS_ENERGY, MASS_GG_RANGE_MIN, MASS_GG_RANGE_MAX);
@@ -243,7 +254,6 @@ void test_bdt_new() {
     TH1D* hM3pi = hists.create("hM3pi", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
     TH1D* hM3pi_good = hists.create("hM3pi_good", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
     TH1D* hM3pi_bad = hists.create("hM3pi_bad", "", N_BINS_MASS, 400, MASS_RANGE_MAX);
-
     
     TH1D* hE1 = hists.create("hE1", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE1_good = hists.create("hE1_good", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
@@ -356,6 +366,8 @@ void test_bdt_new() {
         double bdt_score = 0.0;
         double m_gg_bdt = 0.0, m3pi_bdt = 0.0;
 	double m_gg_bdt_true = 0.0, m3pi_bdt_true = 0.0;
+	double m_gg_pull = 0.0, m3pi_pull = 0.0;
+	double m2pi = 0.0, m2pi_true = 0., m2pi_pull = 0.0;
 	double e1_bdt = 0.0, e2_bdt = 0.0, e3_bdt = 0.0;
 	double px1_bdt = 0.0, px2_bdt = 0.0, px3_bdt = 0.0;
 	double py1_bdt = 0.0, py2_bdt = 0.0, py3_bdt = 0.0;
@@ -375,8 +387,13 @@ void test_bdt_new() {
         outtree->Branch("bdt_score", &bdt_score);
         outtree->Branch("m_gg_bdt", &m_gg_bdt);
 	outtree->Branch("m_gg_bdt_true", &m_gg_bdt_true);
+	outtree->Branch("m_gg_pull", &m_gg_pull);
         outtree->Branch("m3pi_bdt", &m3pi_bdt);
 	outtree->Branch("m3pi_bdt_true", &m3pi_bdt_true);
+	outtree->Branch("m3pi_pull", &m3pi_pull);
+	outtree->Branch("m2pi", &m2pi);
+	outtree->Branch("m2pi_true", &m2pi_true);
+	outtree->Branch("m2pi_pull", &m2pi_pull);
         outtree->Branch("e1_bdt", &e1_bdt);
         outtree->Branch("e2_bdt", &e2_bdt);
         outtree->Branch("e3_bdt", &e3_bdt);
@@ -404,7 +421,7 @@ void test_bdt_new() {
 	    //cout << E1_true << ", " << px1_true << ", " << py1_true << ", " << pz1_true << endl;
 	    //cout << lagvalue_min_7C << endl;
 	    //cout << ppl_px_true << ", " << ppl_py_true << ", " << ppl_pz_true << endl;
-	    cout << pmi_px_true << ", " << pmi_py_true << ", " << pmi_pz_true << endl;
+	    //cout << pmi_px_true << ", " << pmi_py_true << ", " << pmi_pz_true << endl;
 	    
             // Apply kinematic cuts
             if (lagvalue_min_7C > chi2_cut) continue;
@@ -441,19 +458,23 @@ void test_bdt_new() {
             event_true.photons[0][0] = E1_true; event_true.photons[0][1] = px1_true; event_true.photons[0][2] = py1_true; event_true.photons[0][3] = pz1_true;
             event_true.photons[1][0] = E2_true; event_true.photons[1][1] = px2_true; event_true.photons[1][2] = py2_true; event_true.photons[1][3] = pz2_true;
             event_true.photons[2][0] = E3_true; event_true.photons[2][1] = px3_true; event_true.photons[2][2] = py3_true; event_true.photons[2][3] = pz3_true;
-            //event_true.tracks[0][0] = ppl_E_true; event_true.tracks[0][1] = ppl_px_true; event_true.tracks[0][2] = ppl_py_true; event_true.tracks[0][3] = ppl_pz_true;
-            //event_true.tracks[1][0] = pmi_E_true; event_true.tracks[1][1] = pmi_px_true; event_true.tracks[1][2] = pmi_py_true; event.tracks[1][3] = pmi_pz_true;
+            event_true.tracks[0][0] = ppl_E_true; event_true.tracks[0][1] = ppl_px_true; event_true.tracks[0][2] = ppl_py_true; event_true.tracks[0][3] = ppl_pz_true;
+            event_true.tracks[1][0] = pmi_E_true; event_true.tracks[1][1] = pmi_px_true; event_true.tracks[1][2] = pmi_py_true; event_true.tracks[1][3] = pmi_pz_true;
             
 	    // Compute using fixed pair (0,1) for KLOE comparison
             double m_gg_fixed = compute_invariant_mass(0, 1, event.photons);
             double m3pi_fixed = compute_3pi_mass(0, 1, event.photons, event.tracks);
-            
+            m2pi = compute_dipion_mass(event.tracks);
+	    m2pi_true = compute_dipion_mass(event_true.tracks);
+	    m2pi_pull = m2pi - m2pi_true;
+	    
             // Fill histograms for fixed pair
             hM_gg->Fill(m_gg_fixed);
             hM3pi->Fill(m3pi_fixed);
             hE1->Fill(event.photons[0][0]);
             hE2->Fill(event.photons[1][0]);
-
+	    hM2pi_pull->Fill(m2pi_pull);
+	      
             // Find best pair using BDT
             BDTResult result = find_best_pion_pair(event, bdt);
             
@@ -507,9 +528,15 @@ void test_bdt_new() {
 	    px3_pull = px3_bdt - px3_bdt_true;
 	    py3_pull = py3_bdt - py3_bdt_true;
 	    pz3_pull = pz3_bdt - pz3_bdt_true;
-	    
-            m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
+
+	    m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
+	    m_gg_bdt_true = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event_true.photons);
+
             m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
+	    m_gg_pull = m_gg_bdt - m_gg_bdt_true;
+	    
+	    m3pi_bdt_true = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event_true.photons, event_true.tracks);
+	    m3pi_pull = m3pi_bdt - m3pi_bdt_true;
             bdt_score = result.score;
             event_id = i;
 
@@ -541,6 +568,9 @@ void test_bdt_new() {
 		hPz1_pull_good->Fill(pz1_pull);
 		hPz2_pull_good->Fill(pz2_pull);
 		hPz3_pull_good->Fill(pz3_pull);
+
+		hM3pi_pull_good->Fill(m3pi_pull);
+		hM_gg_pull_good->Fill(m_gg_pull);
             } else {
                 n_discarded++;
 		hchi2_BDT_bad->Fill(lagvalue_min_7C);
@@ -778,8 +808,7 @@ void test_bdt_new() {
         delete pt1;
         delete legd_cv;
 
-	// ==================== Normalized (differential) shapes ====================
-        // Normalized pull histograms
+	// ==================== Normalized pull histograms ====================
 	auto safeNormalize = [](TH1D* h) {
 	  if (h && h->Integral() > 0) h->Scale(1.0 / h->Integral());
 	};
@@ -796,7 +825,9 @@ void test_bdt_new() {
 	TH1D* hPz1_pull_good_norm = (TH1D*)hPz1_pull_good->Clone("hPz1_pull_good_norm");
 	TH1D* hPz2_pull_good_norm = (TH1D*)hPz2_pull_good->Clone("hPz2_pull_good_norm");
 	TH1D* hPz3_pull_good_norm = (TH1D*)hPz3_pull_good->Clone("hPz3_pull_good_norm");
-	
+	TH1D* hM3pi_pull_good_norm = (TH1D*)hM3pi_pull_good->Clone("hM3pi_pull_good_norm");
+	TH1D* hM_gg_pull_good_norm = (TH1D*)hM_gg_pull_good->Clone("hM_gg_pull_good_norm");
+ 
 	safeNormalize(hE1_pull_good_norm);
 	safeNormalize(hE2_pull_good_norm);
 	safeNormalize(hE3_pull_good_norm);
@@ -809,17 +840,19 @@ void test_bdt_new() {
 	safeNormalize(hPz1_pull_good_norm);
 	safeNormalize(hPz2_pull_good_norm);
 	safeNormalize(hPz3_pull_good_norm);
+	safeNormalize(hM3pi_pull_good_norm);
+	safeNormalize(hM_gg_pull_good_norm);
 
 	// ==================================================================
 	// Improved layout: separate canvases for each variable type
 	// ==================================================================
 
 	// Common style settings
-	auto setHistStyle = [](TH1D* h, Color_t color, const char* xTitle) {
+	auto setHistStyle = [](TH1D* h, Color_t color, const char* xTitle, const char* yTitle) {
 	  h->SetLineColor(color);
 	  h->SetLineWidth(1);
 	  h->SetFillColorAlpha(color, 0.3);
-	  h->GetYaxis()->SetTitle("Normalized entries");
+	  h->GetYaxis()->SetTitle(yTitle);
 	  h->GetXaxis()->SetTitle(xTitle);
 	  h->GetYaxis()->SetTitleSize(0.05);
 	  h->GetXaxis()->SetTitleSize(0.05);
@@ -830,9 +863,10 @@ void test_bdt_new() {
 	  h->GetYaxis()->CenterTitle();
 	};
 	
-	auto drawSet = [&](const char* canvasName, const char* canvasTitle,
+	auto drawSet = [&](const char* canvasName, const char* canvasTitle, const char* lgdTitle,
 			   TH1D* h1, TH1D* h2, TH1D* h3,
 			   const char* xTitle1, const char* xTitle2, const char* xTitle3,
+			   const char* yTitle1, const char* yTitle2, const char* yTitle3,
 			   double yMaxFactor = 1.2) {
 	  TCanvas* c = new TCanvas(canvasName, canvasTitle, 1800, 600);
 	  c->Divide(3,1);
@@ -856,18 +890,18 @@ void test_bdt_new() {
 	  pt2->AddText("Signal");
         
 	  c->cd(1);
-	  setHistStyle(h1, kGreen+2, xTitle1);
+	  setHistStyle(h1, kGreen+2, xTitle1, yTitle1);
 	  h1->GetYaxis()->SetRangeUser(0, h1->GetBinContent(h1->GetMaximumBin()) * yMaxFactor);
 	  h1->Draw("HIST");
 	  pt2->Draw("Same");
 	  TLegend* leg1 = new TLegend(0.65, 0.8, 0.9, 0.9);
 	  leg1->SetBorderSize(0);
 	  leg1->SetFillStyle(0);
-	  leg1->AddEntry(h1, "BDT Selected", "f");
+	  leg1->AddEntry(h1, lgdTitle, "f");
 	  leg1->Draw();
 	  
 	  c->cd(2);
-	  setHistStyle(h2, kGreen+2, xTitle2);
+	  setHistStyle(h2, kGreen+2, xTitle2, yTitle2);
 	  h2->GetYaxis()->SetRangeUser(0, h2->GetBinContent(h2->GetMaximumBin()) * yMaxFactor);
 	  h2->Draw("HIST");
 	  //TLegend* leg2 = new TLegend(0.65, 0.75, 0.9, 0.9);
@@ -877,7 +911,7 @@ void test_bdt_new() {
 	  //leg2->Draw();
 	  
 	  c->cd(3);
-	  setHistStyle(h3, kGreen+2, xTitle3);
+	  setHistStyle(h3, kGreen+2, xTitle3, yTitle3);
 	  h3->GetYaxis()->SetRangeUser(0, h3->GetBinContent(h3->GetMaximumBin()) * yMaxFactor);
 	  h3->Draw("HIST");
 	  //TLegend* leg3 = new TLegend(0.65, 0.75, 0.9, 0.9);
@@ -891,25 +925,37 @@ void test_bdt_new() {
 	};
 
 	// Draw Energy pulls
-	drawSet("energy_good_pulls", "Energy Pulls (BDT Selected)",
+	drawSet("energy_good_pulls", "Energy Pulls (BDT Selected)", "BDT Selected",
 		hE1_pull_good_norm, hE2_pull_good_norm, hE3_pull_good_norm,
-		"E_{1} pull [MeV]", "E_{2} pull [MeV]", "E_{3} pull [MeV]");
+		"E_{1} pull [MeV]", "E_{2} pull [MeV]", "E_{3} pull [MeV]",
+		"Normalized entries", "Normalized entries", "Normalized entries");
 	
 	// Draw Px pulls
-	drawSet("px_good_pulls", "P_{x} Pulls (BDT Selected)",
+	drawSet("px_good_pulls", "P_{x} Pulls (BDT Selected)", "BDT Selected",
 		hPx1_pull_good_norm, hPx2_pull_good_norm, hPx3_pull_good_norm,
-		"p_{x,1} pull [MeV/c]", "p_{x,2} pull [MeV/c]", "p_{x,3} pull [MeV/c]");
+		"p_{x,1} pull [MeV/c]", "p_{x,2} pull [MeV/c]", "p_{x,3} pull [MeV/c]",
+		"Normalized entries", "Normalized entries", "Normalized entries");
 	
 	// Draw Py pulls
-	drawSet("py_good_pulls", "P_{y} Pulls (BDT Selected)",
+	drawSet("py_good_pulls", "P_{y} Pulls (BDT Selected)", "BDT Selected",
 		hPy1_pull_good_norm, hPy2_pull_good_norm, hPy3_pull_good_norm,
-		"p_{y,1} pull [MeV/c]", "p_{y,2} pull [MeV/c]", "p_{y,3} pull [MeV/c]");
+		"p_{y,1} pull [MeV/c]", "p_{y,2} pull [MeV/c]", "p_{y,3} pull [MeV/c]",
+		"Normalized entries", "Normalized entries", "Normalized entries");
 	
 	// Draw Pz pulls
-	drawSet("pz_good_pulls", "P_{z} Pulls (BDT Selected)",
+	drawSet("pz_good_pulls", "P_{z} Pulls (BDT Selected)", "BDT Selected",
 		hPz1_pull_good_norm, hPz2_pull_good_norm, hPz3_pull_good_norm,
-		"p_{z,1} pull [MeV/c]", "p_{z,2} pull [MeV/c]", "p_{z,3} pull [MeV/c]");
+		"p_{z,1} pull [MeV/c]", "p_{z,2} pull [MeV/c]", "p_{z,3} pull [MeV/c]",
+		"Normalized entries", "Normalized entries", "Normalized entries");
 
+	// Draw m3pi pulls
+	drawSet("mass_good_pulls", "M_{3#pi} Pulls (BDT Selected)", "BDT Selected",
+		hM3pi_pull_good_norm, hM_gg_pull_good_norm, hM2pi_pull,
+		"M_{3#pi} pull [MeV/c^{2}]", "M_{#gamma#gamma} pull [MeV/c^{2}]", "M_{2#pi} pull [MeV/c^{2}]",
+		"Normalized Entries", "Normalized Entries", "Entries");
+	
+	
+	
 	/*
 	// ==================================================================
 	// Draw only the normalized "good" pull histograms (BDT selected)
@@ -992,6 +1038,15 @@ double get_fbeta(double a1, double b1, double c1, double m2pi) {
     m2pi = m2pi / 1000.;
     double fbeta = a1 + 1. / (exp((m2pi - c1) / b1) - 1.);
     return fbeta;
+}
+
+double compute_dipion_mass(const double tracks[2][4]) {
+    double E_sum = tracks[0][0] + tracks[1][0];
+    double px_sum = tracks[0][1] + tracks[1][1];
+    double py_sum = tracks[0][2] + tracks[1][2];
+    double pz_sum = tracks[0][3] + tracks[1][3];
+    double mass2 = E_sum*E_sum - (px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
+    return (mass2 > 0) ? sqrt(mass2) : 0.0;
 }
 
 double compute_invariant_mass(int i, int j, const double photons[3][4]) {
