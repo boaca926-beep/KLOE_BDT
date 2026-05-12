@@ -26,6 +26,7 @@ constexpr double BDT_CUT_VALUE = 0.4;           // BDT score threshold
 constexpr int N_BINS_ENERGY = 200;
 constexpr int N_BINS_MASS = 200;
 constexpr int N_BINS_CHI2 = 100;
+constexpr int N_BINS_PULL = 150;
 constexpr double ENERGY_RANGE_MAX = 500.0;      // MeV
 constexpr double MASS_RANGE_MAX = 1000.0;       // MeV/c²
 constexpr double MASS_GG_RANGE_MAX = 200.0;     // MeV/c²
@@ -33,6 +34,9 @@ constexpr double MASS_GG_RANGE_MIN = 50.0;      // MeV/c²
 constexpr double CHI2_RANGE_MAX = 0.0;      
 constexpr double COS_THETA_RANGE_MIN = -1.0;
 constexpr double COS_THETA_RANGE_MAX = 1.0;
+constexpr double PULL_RANGE_MIN = -30;          // MeV/c²
+constexpr double PULL_RANGE_MAX = 30;           // MeV/c²
+
 constexpr double PI = TMath::Pi();
 
 // Event data structure for better organization
@@ -132,9 +136,9 @@ void test_bdt_new() {
     
     std::cout << "✓ Model loaded successfully!" << std::endl;
 
-    const TString phys_ch[2] = {"TDATA", "Data"};
+    //const TString phys_ch[2] = {"TDATA", "Data"};
     //const TString phys_ch[2] = {"TETAGAM", "Etagam"};
-    //const TString phys_ch[2] = {"TISR3PI_SIG", "Signal"};
+    const TString phys_ch[2] = {"TISR3PI_SIG", "Signal"};
     
     const TString ch_nm = phys_ch[0];
     const TString ch_type = phys_ch[1];
@@ -179,6 +183,57 @@ void test_bdt_new() {
     TH1D* hE3_BDT_good = hists.create("hE3_BDT_good", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE3_BDT_bad = hists.create("hE3_BDT_bad", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE3_BDT = hists.create("hE3_BDT", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
+
+    TH1D* hE1_pull_good = hists.create("hE1_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE1_pull_bad = hists.create("hE1_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE1_pull_BDT = hists.create("hE1_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+
+    TH1D* hE2_pull_good = hists.create("hE2_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE2_pull_bad = hists.create("hE2_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE2_pull_BDT = hists.create("hE2_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+
+    TH1D* hE3_pull_good = hists.create("hE3_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE3_pull_bad = hists.create("hE3_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hE3_pull_BDT = hists.create("hE3_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+
+    // px pulls
+    TH1D* hPx1_pull_good = hists.create("hPx1_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx1_pull_bad  = hists.create("hPx1_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx1_pull_BDT  = hists.create("hPx1_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    TH1D* hPx2_pull_good = hists.create("hPx2_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx2_pull_bad  = hists.create("hPx2_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx2_pull_BDT  = hists.create("hPx2_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    TH1D* hPx3_pull_good = hists.create("hPx3_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx3_pull_bad  = hists.create("hPx3_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPx3_pull_BDT  = hists.create("hPx3_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    // py pulls
+    TH1D* hPy1_pull_good = hists.create("hPy1_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy1_pull_bad  = hists.create("hPy1_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy1_pull_BDT  = hists.create("hPy1_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    TH1D* hPy2_pull_good = hists.create("hPy2_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy2_pull_bad  = hists.create("hPy2_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy2_pull_BDT  = hists.create("hPy2_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    TH1D* hPy3_pull_good = hists.create("hPy3_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy3_pull_bad  = hists.create("hPy3_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPy3_pull_BDT  = hists.create("hPy3_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    // pz pulls
+    TH1D* hPz1_pull_good = hists.create("hPz1_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz1_pull_bad  = hists.create("hPz1_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz1_pull_BDT  = hists.create("hPz1_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    TH1D* hPz2_pull_good = hists.create("hPz2_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz2_pull_bad  = hists.create("hPz2_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz2_pull_BDT  = hists.create("hPz2_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    
+    TH1D* hPz3_pull_good = hists.create("hPz3_pull_good", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz3_pull_bad  = hists.create("hPz3_pull_bad", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
+    TH1D* hPz3_pull_BDT  = hists.create("hPz3_pull_BDT", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     
     // Mass histograms for KLOE selection (using fixed pair 0,1)
     TH1D* hM_gg = hists.create("hM_gg", "", N_BINS_ENERGY, MASS_GG_RANGE_MIN, MASS_GG_RANGE_MAX);
@@ -196,6 +251,7 @@ void test_bdt_new() {
     TH1D* hE2 = hists.create("hE2", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE2_good = hists.create("hE2_good", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE2_bad = hists.create("hE2_bad", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
+
     
     // Event counters
     int evnt_KLOE = 0;
@@ -234,7 +290,10 @@ void test_bdt_new() {
         double E1 = 0., px1 = 0., py1 = 0., pz1 = 0.;
         double E2 = 0., px2 = 0., py2 = 0., pz2 = 0.;
         double E3 = 0., px3 = 0., py3 = 0., pz3 = 0.;
-        double ppl_E = 0., ppl_px = 0., ppl_py = 0., ppl_pz = 0.;
+	double E1_true = 0., px1_true = 0., py1_true = 0., pz1_true = 0.;
+	double E2_true = 0., px2_true = 0., py2_true = 0., pz2_true = 0.;
+  	double E3_true = 0., px3_true = 0., py3_true = 0., pz3_true = 0.;
+  	double ppl_E = 0., ppl_px = 0., ppl_py = 0., ppl_pz = 0.;
         double pmi_E = 0., pmi_px = 0., pmi_py = 0., pmi_pz = 0.;
         int bkg_indx = 0, recon_indx = 0;
 
@@ -266,6 +325,18 @@ void test_bdt_new() {
         tree->SetBranchAddress("Br_px3", &px3);
         tree->SetBranchAddress("Br_py3", &py3);
         tree->SetBranchAddress("Br_pz3", &pz3);
+	tree->SetBranchAddress("Br_E1_true", &E1_true);
+	tree->SetBranchAddress("Br_px1_true", &px1_true);
+	tree->SetBranchAddress("Br_py1_true", &py1_true);
+	tree->SetBranchAddress("Br_pz1_true", &pz1_true);
+	tree->SetBranchAddress("Br_E2_true", &E2_true);
+	tree->SetBranchAddress("Br_px2_true", &px2_true);
+	tree->SetBranchAddress("Br_py2_true", &py2_true);
+	tree->SetBranchAddress("Br_pz2_true", &pz2_true);
+	tree->SetBranchAddress("Br_E3_true", &E3_true);
+	tree->SetBranchAddress("Br_px3_true", &px3_true);
+	tree->SetBranchAddress("Br_py3_true", &py3_true);
+	tree->SetBranchAddress("Br_pz3_true", &pz3_true);
 
         // Create output file and tree
         TFile* outfile = TFile::Open("output_with_bdt.root", "RECREATE");
@@ -274,6 +345,18 @@ void test_bdt_new() {
         double bdt_score = 0.0;
         double m_gg_bdt = 0.0, m3pi_bdt = 0.0;
         double e1_bdt = 0.0, e2_bdt = 0.0, e3_bdt = 0.0;
+	double px1_bdt = 0.0, px2_bdt = 0.0, px3_bdt = 0.0;
+	double py1_bdt = 0.0, py2_bdt = 0.0, py3_bdt = 0.0;
+	double pz1_bdt = 0.0, pz2_bdt = 0.0, pz3_bdt = 0.0;
+	double e1_bdt_true = 0.0, e2_bdt_true = 0.0, e3_bdt_true = 0.0;
+	double px1_bdt_true = 0.0, px2_bdt_true = 0.0, px3_bdt_true = 0.0;
+	double py1_bdt_true = 0.0, py2_bdt_true = 0.0, py3_bdt_true = 0.0;
+	double pz1_bdt_true = 0.0, pz2_bdt_true = 0.0, pz3_bdt_true = 0.0;
+	double e1_pull = 0.0, e2_pull = 0.0, e3_pull = 0.0;
+	double px1_pull = 0.0, px2_pull = 0.0, px3_pull = 0.0;
+	double py1_pull = 0.0, py2_pull = 0.0, py3_pull = 0.0;
+	double pz1_pull = 0.0, pz2_pull = 0.0, pz3_pull = 0.0;
+	
         int event_id = 0;
         
         outtree->Branch("event_id", &event_id);
@@ -283,11 +366,30 @@ void test_bdt_new() {
         outtree->Branch("e1_bdt", &e1_bdt);
         outtree->Branch("e2_bdt", &e2_bdt);
         outtree->Branch("e3_bdt", &e3_bdt);
+	outtree->Branch("e1_bdt_true", &e1_bdt_true);
+	outtree->Branch("e2_bdt_true", &e2_bdt_true);
+        outtree->Branch("e3_bdt_true", &e3_bdt_true);
+        outtree->Branch("e1_pull", &e1_pull);
+	outtree->Branch("e2_pull", &e2_pull);
+	outtree->Branch("e3_pull", &e3_pull);
+	outtree->Branch("px1_pull", &px1_pull);
+	outtree->Branch("px2_pull", &px2_pull);
+	outtree->Branch("px3_pull", &px3_pull);
+	outtree->Branch("py1_pull", &py1_pull);
+	outtree->Branch("py2_pull", &py2_pull);
+	outtree->Branch("py3_pull", &py3_pull);
+	outtree->Branch("pz1_pull", &pz1_pull);
+	outtree->Branch("pz2_pull", &pz2_pull);
+	outtree->Branch("pz3_pull", &pz3_pull);
 
         // Main event loop
         for (int i = 0; i < nentries; i++) {
             tree->GetEntry(i);
 
+	    // Test variables
+	    //cout << E1_true << ", " << px1_true << ", " << py1_true << ", " << pz1_true << endl;
+	    //cout << lagvalue_min_7C << endl;
+	      
             // Apply kinematic cuts
             if (lagvalue_min_7C > chi2_cut) continue;
             if (deltaE > deltaE_cut) continue;
@@ -318,7 +420,13 @@ void test_bdt_new() {
             event.bkg_indx = bkg_indx;
             event.recon_indx = recon_indx;
 
-            // Compute using fixed pair (0,1) for KLOE comparison
+	    // Prepare event photon true data structure
+	    EventData event_true;
+            event_true.photons[0][0] = E1_true; event_true.photons[0][1] = px1_true; event_true.photons[0][2] = py1_true; event_true.photons[0][3] = pz1_true;
+            event_true.photons[1][0] = E2_true; event_true.photons[1][1] = px2_true; event_true.photons[1][2] = py2_true; event_true.photons[1][3] = pz2_true;
+            event_true.photons[2][0] = E3_true; event_true.photons[2][1] = px3_true; event_true.photons[2][2] = py3_true; event_true.photons[2][3] = pz3_true;
+            
+	    // Compute using fixed pair (0,1) for KLOE comparison
             double m_gg_fixed = compute_invariant_mass(0, 1, event.photons);
             double m3pi_fixed = compute_3pi_mass(0, 1, event.photons, event.tracks);
             
@@ -337,7 +445,51 @@ void test_bdt_new() {
             e1_bdt = event.photons[result.pi0_indices[0]][0];
             e2_bdt = event.photons[result.pi0_indices[1]][0];
             e3_bdt = event.photons[result.prompt_index][0];
-            
+
+	    px1_bdt = event.photons[result.pi0_indices[0]][1];  // px of first pi0 photon
+	    py1_bdt = event.photons[result.pi0_indices[0]][2];
+	    pz1_bdt = event.photons[result.pi0_indices[0]][3];
+
+	    px2_bdt = event.photons[result.pi0_indices[1]][1];
+	    py2_bdt = event.photons[result.pi0_indices[1]][2];
+	    pz2_bdt = event.photons[result.pi0_indices[1]][3];
+
+	    px3_bdt = event.photons[result.prompt_index][1];
+	    py3_bdt = event.photons[result.prompt_index][2];
+	    pz3_bdt = event.photons[result.prompt_index][3];
+ 
+	    e1_bdt_true = event_true.photons[result.pi0_indices[0]][0];
+            e2_bdt_true = event_true.photons[result.pi0_indices[1]][0];
+            e3_bdt_true = event_true.photons[result.prompt_index][0];
+
+	    px1_bdt_true = event_true.photons[result.pi0_indices[0]][1];  // px of first pi0 photon
+	    py1_bdt_true = event_true.photons[result.pi0_indices[0]][2];
+	    pz1_bdt_true = event_true.photons[result.pi0_indices[0]][3];
+
+	    px2_bdt_true = event_true.photons[result.pi0_indices[1]][1];
+	    py2_bdt_true = event_true.photons[result.pi0_indices[1]][2];
+	    pz2_bdt_true = event_true.photons[result.pi0_indices[1]][3];
+	    
+	    px3_bdt_true = event_true.photons[result.prompt_index][1];
+	    py3_bdt_true = event_true.photons[result.prompt_index][2];
+	    pz3_bdt_true = event_true.photons[result.prompt_index][3];
+
+	    e1_pull = e1_bdt - e1_bdt_true;
+	    e2_pull = e2_bdt - e2_bdt_true;
+	    e3_pull = e3_bdt - e3_bdt_true;
+
+	    px1_pull = px1_bdt - px1_bdt_true;
+	    py1_pull = py1_bdt - py1_bdt_true;
+	    pz1_pull = pz1_bdt - pz1_bdt_true;
+
+	    px2_pull = px2_bdt - px2_bdt_true;
+	    py2_pull = py2_bdt - py2_bdt_true;
+	    pz2_pull = pz2_bdt - pz2_bdt_true;
+
+	    px3_pull = px3_bdt - px3_bdt_true;
+	    py3_pull = py3_bdt - py3_bdt_true;
+	    pz3_pull = pz3_bdt - pz3_bdt_true;
+	    
             m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
             m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
             bdt_score = result.score;
@@ -355,6 +507,22 @@ void test_bdt_new() {
                 hE3_BDT_good->Fill(e3_bdt);
                 hM_gg_BDT_good->Fill(m_gg_bdt);
                 hM3pi_BDT_good->Fill(m3pi_bdt);
+
+		hE1_pull_good->Fill(e1_pull);
+		hE2_pull_good->Fill(e2_pull);
+		hE3_pull_good->Fill(e3_pull);
+		
+		hPx1_pull_good->Fill(px1_pull);
+		hPx2_pull_good->Fill(px2_pull);
+		hPx3_pull_good->Fill(px3_pull);
+
+		hPy1_pull_good->Fill(py1_pull);
+		hPy2_pull_good->Fill(py2_pull);
+		hPy3_pull_good->Fill(py3_pull);
+
+		hPz1_pull_good->Fill(pz1_pull);
+		hPz2_pull_good->Fill(pz2_pull);
+		hPz3_pull_good->Fill(pz3_pull);
             } else {
                 n_discarded++;
 		hchi2_BDT_bad->Fill(lagvalue_min_7C);
@@ -378,7 +546,7 @@ void test_bdt_new() {
 
         // Write histograms and close files
         outfile->cd();
-        outtree->Write();
+        //outtree->Write();
         
         //hM3pi->Write();
         //hM3pi_good->Write();
@@ -592,97 +760,200 @@ void test_bdt_new() {
         delete pt1;
         delete legd_cv;
 
+	// ==================== Normalized (differential) shapes ====================
+        // Normalized pull histograms
+	auto safeNormalize = [](TH1D* h) {
+	  if (h && h->Integral() > 0) h->Scale(1.0 / h->Integral());
+	};
+
+	TH1D* hE1_pull_good_norm = (TH1D*)hE1_pull_good->Clone("hE1_pull_good_norm");
+	TH1D* hE2_pull_good_norm = (TH1D*)hE2_pull_good->Clone("hE2_pull_good_norm");
+	TH1D* hE3_pull_good_norm = (TH1D*)hE3_pull_good->Clone("hE3_pull_good_norm");
+	TH1D* hPx1_pull_good_norm = (TH1D*)hPx1_pull_good->Clone("hPx1_pull_good_norm");
+	TH1D* hPx2_pull_good_norm = (TH1D*)hPx2_pull_good->Clone("hPx2_pull_good_norm");
+	TH1D* hPx3_pull_good_norm = (TH1D*)hPx3_pull_good->Clone("hPx3_pull_good_norm");
+	TH1D* hPy1_pull_good_norm = (TH1D*)hPy1_pull_good->Clone("hPy1_pull_good_norm");
+	TH1D* hPy2_pull_good_norm = (TH1D*)hPy2_pull_good->Clone("hPy2_pull_good_norm");
+	TH1D* hPy3_pull_good_norm = (TH1D*)hPy3_pull_good->Clone("hPy3_pull_good_norm");
+	TH1D* hPz1_pull_good_norm = (TH1D*)hPz1_pull_good->Clone("hPz1_pull_good_norm");
+	TH1D* hPz2_pull_good_norm = (TH1D*)hPz2_pull_good->Clone("hPz2_pull_good_norm");
+	TH1D* hPz3_pull_good_norm = (TH1D*)hPz3_pull_good->Clone("hPz3_pull_good_norm");
+	
+	safeNormalize(hE1_pull_good_norm);
+	safeNormalize(hE2_pull_good_norm);
+	safeNormalize(hE3_pull_good_norm);
+	safeNormalize(hPx1_pull_good_norm);
+	safeNormalize(hPx2_pull_good_norm);
+	safeNormalize(hPx3_pull_good_norm);
+	safeNormalize(hPy1_pull_good_norm);
+	safeNormalize(hPy2_pull_good_norm);
+	safeNormalize(hPy3_pull_good_norm);
+	safeNormalize(hPz1_pull_good_norm);
+	safeNormalize(hPz2_pull_good_norm);
+	safeNormalize(hPz3_pull_good_norm);
+
+	// ==================================================================
+	// Improved layout: separate canvases for each variable type
+	// ==================================================================
+
+	// Common style settings
+	auto setHistStyle = [](TH1D* h, Color_t color, const char* xTitle) {
+	  h->SetLineColor(color);
+	  h->SetLineWidth(2);
+	  h->SetFillColorAlpha(color, 0.3);
+	  h->GetYaxis()->SetTitle("Normalized entries");
+	  h->GetXaxis()->SetTitle(xTitle);
+	  h->GetYaxis()->SetTitleSize(0.05);
+	  h->GetXaxis()->SetTitleSize(0.05);
+	  h->GetYaxis()->SetLabelSize(0.045);
+	  h->GetXaxis()->SetLabelSize(0.045);
+	  h->GetXaxis()->SetTitleOffset(1.3);   // <-- added
+	  h->GetXaxis()->CenterTitle();
+	  h->GetYaxis()->CenterTitle();
+	};
+	
+	auto drawSet = [&](const char* canvasName, const char* canvasTitle,
+			   TH1D* h1, TH1D* h2, TH1D* h3,
+			   const char* xTitle1, const char* xTitle2, const char* xTitle3,
+			   double yMaxFactor = 1.2) {
+	  TCanvas* c = new TCanvas(canvasName, canvasTitle, 1800, 600);
+	  c->Divide(3,1);
+	  
+	  double max1 = h1->GetMaximum();
+	  double max2 = h2->GetMaximum();
+	  double max3 = h3->GetMaximum();
+	  double yMax = TMath::Max(max1, TMath::Max(max2, max3)) * yMaxFactor;
+	  
+	  // Set margins for each pad individually
+	  for (int iPad = 1; iPad <= 3; ++iPad) {
+	    TPad* pad = (TPad*)c->GetPad(iPad);
+	    pad->SetBottomMargin(0.22);   // more space for x‑title
+	    pad->SetLeftMargin(0.14);     // more space for y‑title
+	  }
+
+	  c->cd(1);
+	  setHistStyle(h1, kGreen+2, xTitle1);
+	  h1->GetYaxis()->SetRangeUser(0, yMax);
+	  h1->Draw("HIST");
+	  TLegend* leg1 = new TLegend(0.65, 0.75, 0.9, 0.9);
+	  leg1->SetBorderSize(0);
+	  leg1->SetFillStyle(0);
+	  leg1->AddEntry(h1, "BDT Selected", "f");
+	  leg1->Draw();
+	  
+	  c->cd(2);
+	  setHistStyle(h2, kGreen+2, xTitle2);
+	  h2->GetYaxis()->SetRangeUser(0, yMax);
+	  h2->Draw("HIST");
+	  TLegend* leg2 = new TLegend(0.65, 0.75, 0.9, 0.9);
+	  leg2->SetBorderSize(0);
+	  leg2->SetFillStyle(0);
+	  leg2->AddEntry(h2, "BDT Selected", "f");
+	  leg2->Draw();
+	  
+	  c->cd(3);
+	  setHistStyle(h3, kGreen+2, xTitle3);
+	  h3->GetYaxis()->SetRangeUser(0, yMax);
+	  h3->Draw("HIST");
+	  TLegend* leg3 = new TLegend(0.65, 0.75, 0.9, 0.9);
+	  leg3->SetBorderSize(0);
+	  leg3->SetFillStyle(0);
+	  leg3->AddEntry(h3, "BDT Selected", "f");
+	  leg3->Draw();
+	  
+	  c->SaveAs(Form("../plots_bdt/%s.pdf", canvasName));
+	  delete c;
+	};
+
+	// Draw Energy pulls
+	drawSet("energy_good_pulls", "Energy Pulls (BDT Selected)",
+		hE1_pull_good_norm, hE2_pull_good_norm, hE3_pull_good_norm,
+		"E_{1} pull [MeV]", "E_{2} pull [MeV]", "E_{3} pull [MeV]");
+	
+	// Draw Px pulls
+	drawSet("px_good_pulls", "P_{x} Pulls (BDT Selected)",
+		hPx1_pull_good_norm, hPx2_pull_good_norm, hPx3_pull_good_norm,
+		"p_{x,1} pull [MeV/c]", "p_{x,2} pull [MeV/c]", "p_{x,3} pull [MeV/c]");
+	
+	// Draw Py pulls
+	drawSet("py_good_pulls", "P_{y} Pulls (BDT Selected)",
+		hPy1_pull_good_norm, hPy2_pull_good_norm, hPy3_pull_good_norm,
+		"p_{y,1} pull [MeV/c]", "p_{y,2} pull [MeV/c]", "p_{y,3} pull [MeV/c]");
+	
+	// Draw Pz pulls
+	drawSet("pz_good_pulls", "P_{z} Pulls (BDT Selected)",
+		hPz1_pull_good_norm, hPz2_pull_good_norm, hPz3_pull_good_norm,
+		"p_{z,1} pull [MeV/c]", "p_{z,2} pull [MeV/c]", "p_{z,3} pull [MeV/c]");
+
 	/*
-        // ==================== NEW: Normalized (differential) shapes ====================
-        // Create normalized clones
-        TH1D* hE1_good_norm = (TH1D*)hE1_BDT_good->Clone("hE1_good_norm");
-        TH1D* hE1_bad_norm  = (TH1D*)hE1_BDT_bad->Clone("hE1_bad_norm");
-        hE1_good_norm->Scale(1.0 / hE1_good_norm->Integral());
-        hE1_bad_norm->Scale(1.0 / hE1_bad_norm->Integral());
+	// ==================================================================
+	// Draw only the normalized "good" pull histograms (BDT selected)
+	// ==================================================================
 
-        TH1D* hE2_good_norm = (TH1D*)hE2_BDT_good->Clone("hE2_good_norm");
-        TH1D* hE2_bad_norm  = (TH1D*)hE2_BDT_bad->Clone("hE2_bad_norm");
-        hE2_good_norm->Scale(1.0 / hE2_good_norm->Integral());
-        hE2_bad_norm->Scale(1.0 / hE2_bad_norm->Integral());
-
-        TH1D* hE3_good_norm = (TH1D*)hE3_BDT_good->Clone("hE3_good_norm");
-        TH1D* hE3_bad_norm  = (TH1D*)hE3_BDT_bad->Clone("hE3_bad_norm");
-        hE3_good_norm->Scale(1.0 / hE3_good_norm->Integral());
-        hE3_bad_norm->Scale(1.0 / hE3_bad_norm->Integral());
-
-        TH1D* hMgg_good_norm = (TH1D*)hM_gg_BDT_good->Clone("hMgg_good_norm");
-        TH1D* hMgg_bad_norm  = (TH1D*)hM_gg_BDT_bad->Clone("hMgg_bad_norm");
-        hMgg_good_norm->Scale(1.0 / hMgg_good_norm->Integral());
-        hMgg_bad_norm->Scale(1.0 / hMgg_bad_norm->Integral());
-
-        TH1D* hM3pi_good_norm = (TH1D*)hM3pi_BDT_good->Clone("hM3pi_good_norm");
-        TH1D* hM3pi_bad_norm  = (TH1D*)hM3pi_BDT_bad->Clone("hM3pi_bad_norm");
-        hM3pi_good_norm->Scale(1.0 / hM3pi_good_norm->Integral());
-        hM3pi_bad_norm->Scale(1.0 / hM3pi_bad_norm->Integral());
-
-        // New canvas for normalized comparison
+	// Collect all good_norm histograms
+	std::vector<TH1D*> goodHists = {
+	  hE1_pull_good_norm, hE2_pull_good_norm, hE3_pull_good_norm,
+	  hPx1_pull_good_norm, hPx2_pull_good_norm, hPx3_pull_good_norm,
+	  hPy1_pull_good_norm, hPy2_pull_good_norm, hPy3_pull_good_norm,
+	  hPz1_pull_good_norm, hPz2_pull_good_norm, hPz3_pull_good_norm
+	};
+	
+	// Corresponding x-axis titles
+	std::vector<const char*> xTitles = {
+	  "E_{1} pull [MeV]", "E_{2} pull [MeV]", "E_{3} pull [MeV]",
+	  "p_{x,1} pull [MeV/c]", "p_{x,2} pull [MeV/c]", "p_{x,3} pull [MeV/c]",
+	  "p_{y,1} pull [MeV/c]", "p_{y,2} pull [MeV/c]", "p_{y,3} pull [MeV/c]",
+	  "p_{z,1} pull [MeV/c]", "p_{z,2} pull [MeV/c]", "p_{z,3} pull [MeV/c]"
+	};
+	
+	// Calculate number of pads (12) and find optimal grid (3 rows x 4 columns)
+	int nPads = goodHists.size();
+	int nCols = 4;
+	int nRows = (nPads + nCols - 1) / nCols;
+	
+	TCanvas* cv_good_pulls = new TCanvas("cv_good_pulls", "BDT Selected Pull Distributions", 2000, 1500);
+	cv_good_pulls->Divide(nCols, nRows);
+	
+	for (int i = 0; i < nPads; ++i) {
+	  cv_good_pulls->cd(i+1);
+	  TH1D* h = goodHists[i];
+	  if (!h || h->Integral() == 0) continue;
+	  
+	  h->SetLineColor(kGreen+2);
+	  h->SetFillColorAlpha(kGreen+1, 0.4);
+	  h->GetYaxis()->SetTitle("Normalized entries");
+	  h->GetXaxis()->SetTitle(xTitles[i]);
+	  h->Draw("HIST");
+	  
+	  // Optional: simple legend
+	  TLegend* leg = new TLegend(0.7, 0.75, 0.9, 0.9);
+	  leg->SetBorderSize(0);
+	  leg->SetFillStyle(0);
+	  leg->AddEntry(h, "BDT Selected", "f");
+	  leg->Draw();
+	}
+	
+	cv_good_pulls->SaveAs("../plots_bdt/normalized_good_pulls.pdf");
+	delete cv_good_pulls;
+	*/
+	
+	/*
+	// New canvas for normalized comparison
         TCanvas* cv_norm = new TCanvas("cv_norm", "Normalized BDT Comparison", 1800, 1200);
-        cv_norm->Divide(2,3);
-        
-        // E1
+        cv_norm->Divide(2,2);
+
+	// E1_pull
         cv_norm->cd(1);
-        hE1_good_norm->SetLineColor(kGreen+2);
-        hE1_good_norm->SetFillColorAlpha(kGreen+1, 0.4);
-        hE1_bad_norm->SetLineColor(kRed+2);
-        hE1_bad_norm->SetFillColorAlpha(kRed+1, 0.4);
-        hE1_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hE1_good_norm->GetXaxis()->SetTitle("E_{1} [MeV]");
-        hE1_good_norm->Draw("HIST");
-        hE1_bad_norm->Draw("HIST SAME");
-        TLegend* leg1 = new TLegend(0.7,0.7,0.9,0.9);
-        leg1->AddEntry(hE1_good_norm, "BDT Selected", "f");
-        leg1->AddEntry(hE1_bad_norm, "BDT Discarded", "f");
-        leg1->Draw();
-        
-        // E2
-        cv_norm->cd(2);
-        hE2_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hE2_good_norm->GetXaxis()->SetTitle("E_{2} [MeV]");
-        hE2_good_norm->Draw("HIST");
-        hE2_bad_norm->Draw("HIST SAME");
-        TLegend* leg2 = new TLegend(0.7,0.7,0.9,0.9);
-        leg2->AddEntry(hE2_good_norm, "BDT Selected", "f");
-        leg2->AddEntry(hE2_bad_norm, "BDT Discarded", "f");
-        leg2->Draw();
-        
-        // E3
-        cv_norm->cd(3);
-        hE3_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hE3_good_norm->GetXaxis()->SetTitle("E_{3} [MeV]");
-        hE3_good_norm->Draw("HIST");
-        hE3_bad_norm->Draw("HIST SAME");
-        TLegend* leg3 = new TLegend(0.7,0.7,0.9,0.9);
-        leg3->AddEntry(hE3_good_norm, "BDT Selected", "f");
-        leg3->AddEntry(hE3_bad_norm, "BDT Discarded", "f");
-        leg3->Draw();
-        
-        // M_gg
-        cv_norm->cd(4);
-        hMgg_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hMgg_good_norm->GetXaxis()->SetTitle("M(#gamma#gamma) [MeV/c^{2}]");
-        hMgg_good_norm->Draw("HIST");
-        hMgg_bad_norm->Draw("HIST SAME");
-        TLegend* leg4 = new TLegend(0.7,0.7,0.9,0.9);
-        leg4->AddEntry(hMgg_good_norm, "BDT Selected", "f");
-        leg4->AddEntry(hMgg_bad_norm, "BDT Discarded", "f");
-        leg4->Draw();
-        
-        // M_3pi
-        cv_norm->cd(5);
-        hM3pi_good_norm->GetYaxis()->SetTitle("Normalized entries");
-        hM3pi_good_norm->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-        hM3pi_good_norm->Draw("HIST");
-        hM3pi_bad_norm->Draw("HIST SAME");
-        TLegend* leg5 = new TLegend(0.7,0.7,0.9,0.9);
-        leg5->AddEntry(hM3pi_good_norm, "BDT Selected", "f");
-        leg5->AddEntry(hM3pi_bad_norm, "BDT Discarded", "f");
-        leg5->Draw();
-        
+	
+	hE1_pull_good_norm->SetLineColor(kGreen+2);
+	hE1_pull_good_norm->SetFillColorAlpha(kGreen+1, 0.4);
+	hE1_pull_good_norm->GetYaxis()->SetTitle("Normalized entries");
+	hE1_pull_good_norm->GetXaxis()->SetTitle("E_{1} pull [MeV]");
+	hE1_pull_good_norm->Draw("HIST");
+	TLegend* leg1 = new TLegend(0.7,0.7,0.9,0.9);
+	leg1->AddEntry(hE1_pull_good_norm, "BDT Selected", "f");
+	leg1->Draw();
+  
         cv_norm->SaveAs(Form("../plots_bdt/bdt_norm_%s.pdf", ch_nm.Data()));
         delete cv_norm;
         delete leg1; delete leg2; delete leg3; delete leg4; delete leg5;
