@@ -198,11 +198,6 @@ uv run main_inspect.py
 
 **Diagnostic Plots:**
 <div align="center">
-<img src="plots_inspect/Kine_compr_TCOMB.png" width="500" alt="Kinematic Variables"/>
-<br/>
-<em>Figure 1: Kinematic variables distribution after selection cuts</em>
-    
-<br/><br/>
 
 <img src="plots_inspect/Photon_4-momentum_compr_TCOMB.png" width="500" alt="Photon Features"/>
 <br/>

@@ -379,8 +379,14 @@ void test_bdt_new() {
 	double px1_pull = 0.0, px2_pull = 0.0, px3_pull = 0.0;
 	double py1_pull = 0.0, py2_pull = 0.0, py3_pull = 0.0;
 	double pz1_pull = 0.0, pz2_pull = 0.0, pz3_pull = 0.0;
+	double betapi0_bdt = 0.0;
+	double angle_pi0gam12_bdt = 0.0;
 	
-        int event_id = 0;
+	TLorentzVector pi0gam1_bdt(0.,0.,0.,0.);
+	TLorentzVector pi0gam2_bdt(0.,0.,0.,0.);
+	TLorentzVector pi0_bdt;
+	
+	int event_id = 0;
         
         outtree->Branch("event_id", &event_id);
         outtree->Branch("bdt_score", &bdt_score);
@@ -411,7 +417,12 @@ void test_bdt_new() {
 	outtree->Branch("pz1_pull", &pz1_pull);
 	outtree->Branch("pz2_pull", &pz2_pull);
 	outtree->Branch("pz3_pull", &pz3_pull);
+	outtree->Branch("betapi0_bdt", &betapi0_bdt);
+	outtree->Branch("betapi0", &betapi0);
+	outtree->Branch("angle_pi0gam12_bdt", &angle_pi0gam12_bdt);
+	outtree->Branch("angle_pi0gam12", &angle_pi0gam12);
 
+	
         // Main event loop
         for (int i = 0; i < nentries; i++) {
             tree->GetEntry(i);
@@ -422,12 +433,6 @@ void test_bdt_new() {
 	    //cout << ppl_px_true << ", " << ppl_py_true << ", " << ppl_pz_true << endl;
 	    //cout << pmi_px_true << ", " << pmi_py_true << ", " << pmi_pz_true << endl;
 	    
-            // Apply kinematic cuts
-            if (lagvalue_min_7C > chi2_cut) continue;
-            if (deltaE > deltaE_cut) continue;
-            if (angle_pi0gam12 > angle_cut) continue;
-            if (betapi0 > get_fbeta(beta_cut, c0, c1, ppIM)) continue;
-
             // Clean data - remove NaN values
             if (TMath::IsNaN(E1) || TMath::IsNaN(E2) || TMath::IsNaN(E3)) continue;
             if (TMath::IsNaN(ppl_E) || TMath::IsNaN(pmi_E)) continue;
@@ -528,17 +533,36 @@ void test_bdt_new() {
 	    py3_pull = py3_bdt - py3_bdt_true;
 	    pz3_pull = pz3_bdt - pz3_bdt_true;
 
+	    // m_gg
 	    m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
 	    m_gg_bdt_true = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event_true.photons);
-
-            m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
 	    m_gg_pull = m_gg_bdt - m_gg_bdt_true;
 	    
+	    // m3pi
+            m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
 	    m3pi_bdt_true = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event_true.photons, event_true.tracks);
 	    m3pi_pull = m3pi_bdt - m3pi_bdt_true;
-            bdt_score = result.score;
-            event_id = i;
 
+	    // angle_gg
+	    pi0gam1_bdt.SetPxPyPzE(px1_bdt, py1_bdt, pz1_bdt, e1_bdt);
+	    pi0gam2_bdt.SetPxPyPzE(px2_bdt, py2_bdt, pz2_bdt, e2_bdt);
+	    
+	    angle_pi0gam12_bdt = pi0gam1_bdt.Angle(pi0gam2_bdt.Vect())*TMath::RadToDeg();
+    
+	    // betapi0
+	    pi0_bdt = pi0gam1_bdt + pi0gam2_bdt;
+	    betapi0_bdt = (pi0_bdt.Vect()).Mag() / pi0_bdt.E();
+    
+	    bdt_score = result.score;
+	    event_id = i;
+
+	    // Apply kinematic cuts
+            if (lagvalue_min_7C > chi2_cut) continue;
+            if (deltaE > deltaE_cut) continue;
+            if (angle_pi0gam12_bdt > angle_cut) continue;
+            if (betapi0_bdt > get_fbeta(beta_cut, c0, c1, ppIM)) continue;
+
+            
             // Fill output tree
             outtree->Fill();
 

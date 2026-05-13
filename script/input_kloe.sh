@@ -6,7 +6,7 @@ sample_path=../path_${sample_size}/
 exp_type=TDATA # DATA
 gsf=1 # DATA
 
-result_path=../../input_bdt_${exp_type}_${sample_size}
+result_path=../../input_kloe_${exp_type}_${sample_size}
 #result_path=/media/bo/Analysis_Disk/
 
 ## Initialize the normial conditions
@@ -78,7 +78,10 @@ DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
 input_path=${result_path}/input/
 cut_path=${result_path}/cut/
 gen_path=${result_path}/gen/
-
+hist_path=${result_path}/hist/
+sfw2d_path=${result_path}/sfw2d/
+sfw1d_path=${result_path}/sfw1d/
+omega_path=${result_path}/omega_fit/
 log_path=${result_path}/log/
 
 if [[ -d "$result_path" ]]; then
@@ -90,7 +93,10 @@ mkdir ${result_path} # result folder
 mkdir ${input_path} # input root files
 mkdir ${cut_path} # trees: after all cuts
 mkdir ${gen_path} # tree: signal MC generated
-
+mkdir ${hist_path} # histos
+mkdir ${sfw2d_path} # mc normalization
+mkdir ${sfw1d_path} # mc signal tuning
+mkdir ${omega_path} # omega parameters
 mkdir ${log_path} # log files   
 echo "Results folder is created at ${result_path}"
 
@@ -194,8 +200,8 @@ EOF
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script
     echo "void tree_cut_script() {" >> $tree_cut_script
-    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt.C");' >> $tree_cut_script
-    echo 'gROOT->ProcessLine("tree_cut_bdt()");' >> $tree_cut_script
+    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut.C");' >> $tree_cut_script
+    echo 'gROOT->ProcessLine("tree_cut()");' >> $tree_cut_script
     echo '}' >> $tree_cut_script
     root -l -n -q -b $tree_cut_script >> ${log_cut}
 done
@@ -211,3 +217,51 @@ echo '}' >> $tree_gen_script
 root -l -n -q -b $tree_gen_script
 echo "Signal MC is generated!"
 
+## Histos
+echo '#include <iostream>' > $hist_script
+echo "void hist_script() {" >> $hist_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/gethist.C");' >> $hist_script
+echo 'gROOT->ProcessLine("gethist()");' >> $hist_script
+echo '}' >> $hist_script
+root -l -n -q -b $hist_script >> ${log_hist}
+echo "Histos are created!"
+
+## Normalization
+echo '#include <iostream>' > $sfw2d_script
+echo "void sfw2d_script() {" >> $sfw2d_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
+echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
+echo '}' >> $sfw2d_script
+root -l -n -q -b $sfw2d_script >> ${log_sfw2d}
+#cp ../header_bdt/sfw2d.txt ${outputSfw2D}
+#ls ${outputSfw2D}
+echo "MC normalization!"
+
+## MC signal tuning
+echo '#include <iostream>' > $sfw1d_script
+echo "void sfw1d_script() {" >> $sfw1d_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/sfw1d.C");' >> $sfw1d_script
+echo 'gROOT->ProcessLine("sfw1d()");' >> $sfw1d_script
+echo '}' >> $sfw1d_script
+root -l -n -q -b $sfw1d_script >> ${log_sfw1d}
+#cp ../header_bdt/sfw1d.txt ${outputSfw1D}
+#ls ${outputSfw1D}
+echo "MC signal tuning!"
+
+## Omega parameters
+omega_fit_script=omega_fit_script.C
+echo '#include <iostream>' > $omega_fit_script
+echo "void omega_fit_script() {" >> $omega_fit_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/omega_fit.C");' >> $omega_fit_script
+echo 'gROOT->ProcessLine("omega_fit()");' >> $omega_fit_script
+echo '}' >> $omega_fit_script
+root -l -n -q -b $omega_fit_script >> ${log_omega_fit}
+echo "Omega parameters are extracted!"
+
+rm $run_script
+rm $tree_cut_script
+rm $tree_gen_script
+rm $hist_script
+rm $sfw2d_script
+rm $sfw1d_script
+rm $omega_fit_script

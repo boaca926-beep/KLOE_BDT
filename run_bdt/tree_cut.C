@@ -4,18 +4,6 @@
 #include "../header_bdt/method.h"
 #include <TStopwatch.h>
 
-TLorentzVector Get4vector(double E, double px, double py, double pz) {
-
-  //given a cluster index returns the 4-mom of a photon
-  TVector3 gamma(px, py, pz);
-  
-  Double_t scale1;
-  scale1=E/gamma.Mag();
-  TLorentzVector gamma4mom(scale1*gamma, E);
-  //cout << gamma4mom.M() << endl;
-  return gamma4mom;
-
-}
 
 int tree_cut(){
 
@@ -232,11 +220,9 @@ int tree_cut(){
     Epi0_pho1 = ALLCHAIN_CUT -> GetLeaf("Br_ENERGYLIST") -> GetValue(1);
     Epi0_pho2 = ALLCHAIN_CUT -> GetLeaf("Br_ENERGYLIST") -> GetValue(3);
 
-    pi0gam1 = Get4vector(pho_E1, pho_px1, pho_py1, pho_pz1);
-    pi0gam2 = Get4vector(pho_E2, pho_px2, pho_py2, pho_pz2);
-    isrgam = Get4vector(pho_E3, pho_px3, pho_py3, pho_pz3);
-    //trkplus = Get4vector(ppl_E, ppl_px, ppl_py, ppl_pz);
-    //trkmin = Get4vector(pmi_E, pmi_px, pmi_py, pmi_pz);
+    pi0gam1.SetPxPyPzE(pho_px1, pho_py1, pho_pz1, pho_E1);
+    pi0gam2.SetPxPyPzE(pho_px2, pho_py2, pho_pz2, pho_E2);
+    isrgam.SetPxPyPzE(pho_px3, pho_py3, pho_pz3, pho_E3);
     trkplus.SetPxPyPzE(ppl_px, ppl_py, ppl_pz, ppl_E);
     trkmin.SetPxPyPzE(pmi_px, pmi_py, pmi_pz, pmi_E);
   
@@ -250,10 +236,10 @@ int tree_cut(){
     if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
 
     // Selection cuts
-    if (lagvalue_min_7C > chi2_cut) continue;
-    else if (deltaE > deltaE_cut) continue;
-    else if (angle_pi0gam12 > angle_cut) continue;
-    else if (betapi0 > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+    //if (lagvalue_min_7C > chi2_cut) continue;
+    //else if (deltaE > deltaE_cut) continue;
+    //else if (angle_pi0gam12 > angle_cut) continue;
+    //else if (betapi0 > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
 
     // Fill only the tree(s) corresponding to the current sample type
     if (data_type == "exp") {

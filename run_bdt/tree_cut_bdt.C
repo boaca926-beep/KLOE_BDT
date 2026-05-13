@@ -1,0 +1,498 @@
+#include "../header_bdt/sm_para.h"
+#include "../header_bdt/path.h"
+#include "../header_bdt/cut_para.h"
+#include "../header_bdt/method.h"
+#include <TStopwatch.h>
+#include <TMVA/RBDT.hxx>
+#include <TMVA/RTensor.hxx>
+#include <TMath.h>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+using namespace TMVA::Experimental;
+
+// ----------------------------------------------------------------------
+// Configuration
+// ----------------------------------------------------------------------
+#define BDT_MODEL_PATH "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root"
+
+constexpr double ENERGY_THRESHOLD = 5.0;   // MeV
+constexpr double BDT_CUT_VALUE = 0.4;     // BDT score threshold
+
+// ----------------------------------------------------------------------
+// Structures and helper prototypes
+// ----------------------------------------------------------------------
+struct EventData {
+    double photons[3][4];
+    double tracks[2][4];
+    double lagvalue_min_7C;
+    double deltaE;
+    double betapi0;
+    double angle_pi0gam12;
+    double ppIM;
+    int bkg_indx;
+    int recon_indx;
+};
+
+struct BDTResult {
+    double score;
+    int best_pair_index;
+    int pi0_indices[2];
+    int prompt_index;
+    bool is_valid;
+};
+
+// Helper function prototypes
+double compute_invariant_mass(int i, int j, const double photons[3][4]);
+double compute_3pi_mass(int pi0_idx1, int pi0_idx2, const double photons[3][4], const double tracks[2][4]);
+double compute_cos_theta(int i, int j, const double photons[3][4]);
+std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx,
+                                    const double photons[3][4], double energy_threshold);
+BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& bdt);
+
+// ----------------------------------------------------------------------
+int tree_cut_bdt() {
+    TStopwatch timer;
+    timer.Start();
+
+    cout << "Input path: " << sampleFile << endl;
+
+    TFile *f_input = new TFile(sampleFile + ".root");
+    TTree *ALLCHAIN_CUT = (TTree*)f_input->Get("ALLCHAIN_CUT");
+    if (!ALLCHAIN_CUT) {
+        cerr << "ERROR: Cannot find tree ALLCHAIN_CUT" << endl;
+        return 1;
+    }
+
+    // Load BDT model
+    if (gSystem->AccessPathName(BDT_MODEL_PATH)) {
+        cerr << "ERROR: BDT model file not found: " << BDT_MODEL_PATH << endl;
+        return 1;
+    }
+    TMVA::Experimental::RBDT bdt("BDT_pi0", BDT_MODEL_PATH);
+    cout << "✓ BDT model loaded from " << BDT_MODEL_PATH << endl;
+
+    // ---------- Variables (all will be read via GetLeaf) ----------
+    double lagvalue_min_7C = 0., deltaE = 0., betapi0 = 0., angle_pi0gam12 = 0.;
+    double m02 = 0., mplus2 = 0.;
+    double m3pi = 0.;
+    double ppIM = 0.;
+    double IM3pi_7C = 0., IM3pi_true = 0.;
+    double IM_pi0_7C = 0.;
+    double Eisr = 0., Epi0_pho1 = 0., Epi0_pho2 = 0.;
+    double pull_E1 = 0., pull_x1 = 0., pull_y1 = 0., pull_z1 = 0., pull_t1 = 0.;
+    double ppl_E = 0., ppl_px = 0., ppl_py = 0., ppl_pz = 0.;
+    double pmi_E = 0., pmi_px = 0., pmi_py = 0., pmi_pz = 0.;
+    double pho_E1 = 0., pho_px1 = 0., pho_py1 = 0., pho_pz1 = 0.;
+    double pho_E2 = 0., pho_px2 = 0., pho_py2 = 0., pho_pz2 = 0.;
+    double pho_E3 = 0., pho_px3 = 0., pho_py3 = 0., pho_pz3 = 0.;
+    double ppl_E_true = 0., ppl_px_true = 0., ppl_py_true = 0., ppl_pz_true = 0.;
+    double pmi_E_true = 0., pmi_px_true = 0., pmi_py_true = 0., pmi_pz_true = 0.;
+    double pho_E1_true = 0., pho_px1_true = 0., pho_py1_true = 0., pho_pz1_true = 0.;
+    double pho_E2_true = 0., pho_px2_true = 0., pho_py2_true = 0., pho_pz2_true = 0.;
+    double pho_E3_true = 0., pho_px3_true = 0., pho_py3_true = 0., pho_pz3_true = 0.;
+    int phid = 0, sig_type = 0;
+    int bkg_indx = 0, recon_indx = 0;
+    double evnt_tot = 0;
+    double Eprompt_max = 0.;
+
+    // BDT‑specific variables
+    double bdt_score = 0.;
+    double e1_bdt = 0., e2_bdt = 0., e3_bdt = 0.;
+    double m_gg_bdt = 0., m3pi_bdt = 0.;
+    double angle_pi0gam12_bdt = 0., betapi0_bdt = 0.;
+
+    // ---------- Output trees ----------
+    const int list_size = 13;
+    const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI",
+                                    "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG",
+                                    "TISR3PI_SIG_COMB", "TETAGAM_COMB"};
+    TTree *TTList[list_size];
+    TCollection* tree_list = new TList;
+
+    for (int i = 0; i < list_size; i++) {
+        TTList[i] = new TTree(TNM[i], "recreate");
+        TTList[i]->SetAutoSave(0);
+        tree_list->Add(TTList[i]);
+    }
+
+    // Add branches to all trees (same set)
+    TObject* treeout = 0;
+    TIter treeliter(tree_list);
+    while ((treeout = treeliter.Next()) != 0) {
+        TTree* tree_tmp = dynamic_cast<TTree*>(treeout);
+        // Original branches (same as tree_cut.C)
+        tree_tmp->Branch("Br_ppl_E", &ppl_E, "Br_ppl_E/D");
+        tree_tmp->Branch("Br_ppl_px", &ppl_px, "Br_ppl_px/D");
+        tree_tmp->Branch("Br_ppl_py", &ppl_py, "Br_ppl_py/D");
+        tree_tmp->Branch("Br_ppl_pz", &ppl_pz, "Br_ppl_pz/D");
+        tree_tmp->Branch("Br_pmi_E", &pmi_E, "Br_pmi_E/D");
+        tree_tmp->Branch("Br_pmi_px", &pmi_px, "Br_pmi_px/D");
+        tree_tmp->Branch("Br_pmi_py", &pmi_py, "Br_pmi_py/D");
+        tree_tmp->Branch("Br_pmi_pz", &pmi_pz, "Br_pmi_pz/D");
+        tree_tmp->Branch("Br_ppl_E_true", &ppl_E_true, "Br_ppl_E_true/D");
+        tree_tmp->Branch("Br_ppl_px_true", &ppl_px_true, "Br_ppl_px_true/D");
+        tree_tmp->Branch("Br_ppl_py_true", &ppl_py_true, "Br_ppl_py_true/D");
+        tree_tmp->Branch("Br_ppl_pz_true", &ppl_pz_true, "Br_ppl_pz_true/D");
+        tree_tmp->Branch("Br_pmi_E_true", &pmi_E_true, "Br_pmi_E_true/D");
+        tree_tmp->Branch("Br_pmi_px_true", &pmi_px_true, "Br_pmi_px_true/D");
+        tree_tmp->Branch("Br_pmi_py_true", &pmi_py_true, "Br_pmi_py_true/D");
+        tree_tmp->Branch("Br_pmi_pz_true", &pmi_pz_true, "Br_pmi_pz_true/D");
+        tree_tmp->Branch("Br_E1", &pho_E1, "Br_pho_E1/D");
+        tree_tmp->Branch("Br_px1", &pho_px1, "Br_pho_px1/D");
+        tree_tmp->Branch("Br_py1", &pho_py1, "Br_pho_py1/D");
+        tree_tmp->Branch("Br_pz1", &pho_pz1, "Br_pho_pz1/D");
+        tree_tmp->Branch("Br_E2", &pho_E2, "Br_pho_E2/D");
+        tree_tmp->Branch("Br_px2", &pho_px2, "Br_pho_px2/D");
+        tree_tmp->Branch("Br_py2", &pho_py2, "Br_pho_py2/D");
+        tree_tmp->Branch("Br_pz2", &pho_pz2, "Br_pho_pz2/D");
+        tree_tmp->Branch("Br_E3", &pho_E3, "Br_pho_E3/D");
+        tree_tmp->Branch("Br_E1_true", &pho_E1_true, "Br_pho_E1_true/D");
+        tree_tmp->Branch("Br_px1_true", &pho_px1_true, "Br_pho_px1_true/D");
+        tree_tmp->Branch("Br_py1_true", &pho_py1_true, "Br_pho_py1_true/D");
+        tree_tmp->Branch("Br_pz1_true", &pho_pz1_true, "Br_pho_pz1_true/D");
+        tree_tmp->Branch("Br_E2_true", &pho_E2_true, "Br_pho_E2_true/D");
+        tree_tmp->Branch("Br_px2_true", &pho_px2_true, "Br_pho_px2_true/D");
+        tree_tmp->Branch("Br_py2_true", &pho_py2_true, "Br_pho_py2_true/D");
+        tree_tmp->Branch("Br_pz2_true", &pho_pz2_true, "Br_pho_pz2_true/D");
+        tree_tmp->Branch("Br_E3_true", &pho_E3_true, "Br_pho_E3_true/D");
+        tree_tmp->Branch("Br_px3_true", &pho_px3_true, "Br_pho_px3_true/D");
+        tree_tmp->Branch("Br_py3_true", &pho_py3_true, "Br_pho_py3_true/D");
+        tree_tmp->Branch("Br_pz3_true", &pho_pz3_true, "Br_pho_pz3_true/D");
+        tree_tmp->Branch("Br_px3", &pho_px3, "Br_pho_px3/D");
+        tree_tmp->Branch("Br_py3", &pho_py3, "Br_pho_py3/D");
+        tree_tmp->Branch("Br_pz3", &pho_pz3, "Br_pho_pz3/D");
+        tree_tmp->Branch("Br_pull_E1", &pull_E1, "Br_pull_E1/D");
+        tree_tmp->Branch("Br_pull_x1", &pull_x1, "Br_pull_x1/D");
+        tree_tmp->Branch("Br_pull_y1", &pull_y1, "Br_pull_y1/D");
+        tree_tmp->Branch("Br_pull_z1", &pull_z1, "Br_pull_z1/D");
+        tree_tmp->Branch("Br_pull_t1", &pull_t1, "Br_pull_t1/D");
+        tree_tmp->Branch("Br_sig_type", &sig_type, "Br_sig_type/I");
+        tree_tmp->Branch("Br_bkg_indx", &bkg_indx, "Br_bkg_indx/I");
+        tree_tmp->Branch("Br_recon_indx", &recon_indx, "Br_recon_indx/I");
+        tree_tmp->Branch("Br_IM3pi_7C", &IM3pi_7C, "Br_IM3pi_7C/D");
+        tree_tmp->Branch("Br_IM3pi_true", &IM3pi_true, "Br_IM3pi_true/D");
+        tree_tmp->Branch("Br_IM_pi0_7C", &IM_pi0_7C, "Br_IM_pi0_7C/D");
+        tree_tmp->Branch("Br_mplus2", &mplus2, "Br_mplus2/D");
+        tree_tmp->Branch("Br_m02", &m02, "Br_m02/D");
+        tree_tmp->Branch("Br_ppIM", &ppIM, "Br_ppIM/D");
+        tree_tmp->Branch("Br_Eisr", &Eisr, "Br_Eisr/D");
+        tree_tmp->Branch("Br_Epi0_pho1", &Epi0_pho1, "Br_Epi0_pho1/D");
+        tree_tmp->Branch("Br_Epi0_pho2", &Epi0_pho2, "Br_Epi0_pho2/D");
+        tree_tmp->Branch("Br_angle_pi0gam12", &angle_pi0gam12, "Br_angle_pi0gam12/D");
+        tree_tmp->Branch("Br_betapi0", &betapi0, "Br_betapi0/D");
+        tree_tmp->Branch("Br_Eprompt_max", &Eprompt_max, "Br_Eprompt_max/D");
+        tree_tmp->Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
+        tree_tmp->Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
+        tree_tmp->Branch("Br_m3pi", &m3pi, "Br_m3pi/D");
+        // New BDT branches
+        tree_tmp->Branch("Br_bdt_score", &bdt_score, "Br_bdt_score/D");
+        tree_tmp->Branch("Br_e1_bdt", &e1_bdt, "Br_e1_bdt/D");
+        tree_tmp->Branch("Br_e2_bdt", &e2_bdt, "Br_e2_bdt/D");
+        tree_tmp->Branch("Br_e3_bdt", &e3_bdt, "Br_e3_bdt/D");
+        tree_tmp->Branch("Br_m_gg_bdt", &m_gg_bdt, "Br_m_gg_bdt/D");
+        tree_tmp->Branch("Br_m3pi_bdt", &m3pi_bdt, "Br_m3pi_bdt/D");
+        tree_tmp->Branch("Br_angle_pi0gam12_bdt", &angle_pi0gam12_bdt, "Br_angle_pi0gam12_bdt/D");
+        tree_tmp->Branch("Br_betapi0_bdt", &betapi0_bdt, "Br_betapi0_bdt/D");
+    }
+
+    TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
+
+    // ---------- Event loop ----------
+    Long64_t nentries = ALLCHAIN_CUT->GetEntries();
+    cout << "Processing " << nentries << " events" << endl;
+
+    for (Long64_t irow = 0; irow < nentries; irow++) {
+        ALLCHAIN_CUT->GetEntry(irow);
+        if (irow % 100000 == 0) cout << "Event " << irow << endl;
+
+        // ----- Read all variables via GetLeaf (consistent with tree_cut.C) -----
+        // Simple branches (non-array)
+        ppl_E = ALLCHAIN_CUT->GetLeaf("Br_ppl_E")->GetValue(0);
+        ppl_px = ALLCHAIN_CUT->GetLeaf("Br_ppl_px")->GetValue(0);
+        ppl_py = ALLCHAIN_CUT->GetLeaf("Br_ppl_py")->GetValue(0);
+        ppl_pz = ALLCHAIN_CUT->GetLeaf("Br_ppl_pz")->GetValue(0);
+
+        pmi_E = ALLCHAIN_CUT->GetLeaf("Br_pmi_E")->GetValue(0);
+        pmi_px = ALLCHAIN_CUT->GetLeaf("Br_pmi_px")->GetValue(0);
+        pmi_py = ALLCHAIN_CUT->GetLeaf("Br_pmi_py")->GetValue(0);
+        pmi_pz = ALLCHAIN_CUT->GetLeaf("Br_pmi_pz")->GetValue(0);
+
+        ppl_E_true = ALLCHAIN_CUT->GetLeaf("Br_ppl_E_true")->GetValue(0);
+        ppl_px_true = ALLCHAIN_CUT->GetLeaf("Br_ppl_px_true")->GetValue(0);
+        ppl_py_true = ALLCHAIN_CUT->GetLeaf("Br_ppl_py_true")->GetValue(0);
+        ppl_pz_true = ALLCHAIN_CUT->GetLeaf("Br_ppl_pz_true")->GetValue(0);
+
+        pmi_E_true = ALLCHAIN_CUT->GetLeaf("Br_pmi_E_true")->GetValue(0);
+        pmi_px_true = ALLCHAIN_CUT->GetLeaf("Br_pmi_px_true")->GetValue(0);
+        pmi_py_true = ALLCHAIN_CUT->GetLeaf("Br_pmi_py_true")->GetValue(0);
+        pmi_pz_true = ALLCHAIN_CUT->GetLeaf("Br_pmi_pz_true")->GetValue(0);
+
+        pho_E1 = ALLCHAIN_CUT->GetLeaf("Br_E1")->GetValue(0);
+        pho_px1 = ALLCHAIN_CUT->GetLeaf("Br_px1")->GetValue(0);
+        pho_py1 = ALLCHAIN_CUT->GetLeaf("Br_py1")->GetValue(0);
+        pho_pz1 = ALLCHAIN_CUT->GetLeaf("Br_pz1")->GetValue(0);
+
+        pho_E2 = ALLCHAIN_CUT->GetLeaf("Br_E2")->GetValue(0);
+        pho_px2 = ALLCHAIN_CUT->GetLeaf("Br_px2")->GetValue(0);
+        pho_py2 = ALLCHAIN_CUT->GetLeaf("Br_py2")->GetValue(0);
+        pho_pz2 = ALLCHAIN_CUT->GetLeaf("Br_pz2")->GetValue(0);
+
+        pho_E3 = ALLCHAIN_CUT->GetLeaf("Br_E3")->GetValue(0);
+        pho_px3 = ALLCHAIN_CUT->GetLeaf("Br_px3")->GetValue(0);
+        pho_py3 = ALLCHAIN_CUT->GetLeaf("Br_py3")->GetValue(0);
+        pho_pz3 = ALLCHAIN_CUT->GetLeaf("Br_pz3")->GetValue(0);
+
+        pho_E1_true = ALLCHAIN_CUT->GetLeaf("Br_E1_true")->GetValue(0);
+        pho_px1_true = ALLCHAIN_CUT->GetLeaf("Br_px1_true")->GetValue(0);
+        pho_py1_true = ALLCHAIN_CUT->GetLeaf("Br_py1_true")->GetValue(0);
+        pho_pz1_true = ALLCHAIN_CUT->GetLeaf("Br_pz1_true")->GetValue(0);
+
+        pho_E2_true = ALLCHAIN_CUT->GetLeaf("Br_E2_true")->GetValue(0);
+        pho_px2_true = ALLCHAIN_CUT->GetLeaf("Br_px2_true")->GetValue(0);
+        pho_py2_true = ALLCHAIN_CUT->GetLeaf("Br_py2_true")->GetValue(0);
+        pho_pz2_true = ALLCHAIN_CUT->GetLeaf("Br_pz2_true")->GetValue(0);
+
+        pho_E3_true = ALLCHAIN_CUT->GetLeaf("Br_E3_true")->GetValue(0);
+        pho_px3_true = ALLCHAIN_CUT->GetLeaf("Br_px3_true")->GetValue(0);
+        pho_py3_true = ALLCHAIN_CUT->GetLeaf("Br_py3_true")->GetValue(0);
+        pho_pz3_true = ALLCHAIN_CUT->GetLeaf("Br_pz3_true")->GetValue(0);
+
+        pull_E1 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(0);
+        pull_x1 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(1);
+        pull_y1 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(2);
+        pull_z1 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(3);
+        pull_t1 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(4);
+
+        bkg_indx = ALLCHAIN_CUT->GetLeaf("Br_bkg_indx")->GetValue(0);
+        recon_indx = ALLCHAIN_CUT->GetLeaf("Br_recon_indx")->GetValue(0);
+
+        phid = ALLCHAIN_CUT->GetLeaf("Br_phid")->GetValue(0);
+        sig_type = ALLCHAIN_CUT->GetLeaf("Br_sig_type")->GetValue(0);
+        lagvalue_min_7C = ALLCHAIN_CUT->GetLeaf("Br_lagvalue_min_7C")->GetValue(0);
+        deltaE = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(2);
+        angle_pi0gam12 = ALLCHAIN_CUT->GetLeaf("Br_ANGLELIST")->GetValue(0);
+        betapi0 = ALLCHAIN_CUT->GetLeaf("Br_betapi0")->GetValue(0);
+        ppIM = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(5);
+        m02 = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(10);
+        mplus2 = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(11);
+
+        IM3pi_7C = ALLCHAIN_CUT->GetLeaf("Br_IM3pi_7C")->GetValue(0);
+        IM_pi0_7C = ALLCHAIN_CUT->GetLeaf("Br_IM_pi0_7C")->GetValue(0);
+        IM3pi_true = ALLCHAIN_CUT->GetLeaf("Br_IM3pi_true")->GetValue(0);
+        Eisr = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(0);
+        Epi0_pho1 = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(1);
+        Epi0_pho2 = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(3);
+
+        // Build Lorentz vectors using momentum interpretation (no scaling)
+        pi0gam1.SetPxPyPzE(pho_px1, pho_py1, pho_pz1, pho_E1);
+        pi0gam2.SetPxPyPzE(pho_px2, pho_py2, pho_pz2, pho_E2);
+        isrgam.SetPxPyPzE(pho_px3, pho_py3, pho_pz3, pho_E3);
+        trkplus.SetPxPyPzE(ppl_px, ppl_py, ppl_pz, ppl_E);
+        trkmin.SetPxPyPzE(pmi_px, pmi_py, pmi_pz, pmi_E);
+
+        m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
+
+        evnt_tot++;
+        Eprompt_max = 0.;
+        if (Eisr > Eprompt_max) Eprompt_max = Eisr;
+        if (Epi0_pho1 > Eprompt_max) Eprompt_max = Epi0_pho1;
+        if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
+
+        // ---------- BDT evaluation ----------
+        EventData event;
+        event.photons[0][0] = pho_E1; event.photons[0][1] = pho_px1; event.photons[0][2] = pho_py1; event.photons[0][3] = pho_pz1;
+        event.photons[1][0] = pho_E2; event.photons[1][1] = pho_px2; event.photons[1][2] = pho_py2; event.photons[1][3] = pho_pz2;
+        event.photons[2][0] = pho_E3; event.photons[2][1] = pho_px3; event.photons[2][2] = pho_py3; event.photons[2][3] = pho_pz3;
+        event.tracks[0][0] = ppl_E; event.tracks[0][1] = ppl_px; event.tracks[0][2] = ppl_py; event.tracks[0][3] = ppl_pz;
+        event.tracks[1][0] = pmi_E; event.tracks[1][1] = pmi_px; event.tracks[1][2] = pmi_py; event.tracks[1][3] = pmi_pz;
+        event.lagvalue_min_7C = lagvalue_min_7C;
+        event.deltaE = deltaE;
+        event.betapi0 = betapi0;
+        event.angle_pi0gam12 = angle_pi0gam12;
+        event.ppIM = ppIM;
+        event.bkg_indx = bkg_indx;
+        event.recon_indx = recon_indx;
+
+        BDTResult result = find_best_pion_pair(event, bdt);
+        if (!result.is_valid) continue;
+
+        // Fill BDT‑selected variables
+        e1_bdt = event.photons[result.pi0_indices[0]][0];
+        e2_bdt = event.photons[result.pi0_indices[1]][0];
+        e3_bdt = event.photons[result.prompt_index][0];
+        double px1_bdt = event.photons[result.pi0_indices[0]][1];
+        double py1_bdt = event.photons[result.pi0_indices[0]][2];
+        double pz1_bdt = event.photons[result.pi0_indices[0]][3];
+        double px2_bdt = event.photons[result.pi0_indices[1]][1];
+        double py2_bdt = event.photons[result.pi0_indices[1]][2];
+        double pz2_bdt = event.photons[result.pi0_indices[1]][3];
+
+        m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
+        m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
+
+        TLorentzVector pi0gam1_bdt, pi0gam2_bdt;
+        pi0gam1_bdt.SetPxPyPzE(px1_bdt, py1_bdt, pz1_bdt, e1_bdt);
+        pi0gam2_bdt.SetPxPyPzE(px2_bdt, py2_bdt, pz2_bdt, e2_bdt);
+        angle_pi0gam12_bdt = pi0gam1_bdt.Angle(pi0gam2_bdt.Vect()) * TMath::RadToDeg();
+        TLorentzVector pi0_bdt = pi0gam1_bdt + pi0gam2_bdt;
+        betapi0_bdt = (pi0_bdt.Vect()).Mag() / pi0_bdt.E();
+        bdt_score = result.score;
+
+        // Selection cuts
+        if (lagvalue_min_7C > chi2_cut) continue;
+        else if (deltaE > deltaE_cut) continue;
+        else if (angle_pi0gam12_bdt > angle_cut) continue;
+        else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+
+        // ---------- Classification and filling ----------
+        if (data_type == "exp") {
+            TTList[0]->Fill();
+        } else if (data_type == "ufo") {
+            TTList[8]->Fill();
+        } else if (data_type == "eeg") {
+            TTList[9]->Fill();
+        } else if (data_type == "sig") {
+            if (bdt_score > BDT_CUT_VALUE)
+                TTList[10]->Fill();   // TISR3PI_SIG
+            else
+                TTList[11]->Fill();   // TISR3PI_SIG_COMB
+        } else if (data_type == "ksl") {
+            if (phid == 0) {
+                TTList[1]->Fill();   // TOMEGAPI
+            } else if (phid == 1) {
+                TTList[2]->Fill();   // TKPM
+            } else if (phid == 2) {
+                TTList[3]->Fill();   // TKSL
+            } else if (phid == 3) {
+                if (sig_type == 1) TTList[4]->Fill();  // 3pi
+		else TTList[5]->Fill();                // rho pi
+            } else if (phid == 5) {
+                if (bdt_score > BDT_CUT_VALUE)
+                    TTList[6]->Fill();   // TETAGAM
+                else
+                    TTList[12]->Fill();  // TETAGAM_COMB
+            } else {
+                TTList[7]->Fill();   // TBKGREST
+            }
+        }
+    }
+
+    // ---------- Write output file ----------
+    TFile *f_output = new TFile(outputCut + "tree_pre_bdt.root", "update");
+    f_output->cd();
+    for (int i = 0; i < list_size; i++) {
+        if (TTList[i]->GetEntries() > 0) {
+            TTList[i]->Write();
+            cout << "Tree " << TNM[i] << " written with " << TTList[i]->GetEntries() << " entries" << endl;
+        }
+    }
+    f_output->Close();
+
+    f_input->Close();
+    delete tree_list;
+
+    cout << "=========================================\n"
+         << "Output file: " << outputCut << "tree_pre_bdt.root" << endl;
+    cout << "Total events processed: " << evnt_tot << endl;
+
+    timer.Stop();
+    timer.Print();
+    return 0;
+}
+
+// ----------------------------------------------------------------------
+// Helper function implementations (now using momentum inputs)
+// ----------------------------------------------------------------------
+double compute_invariant_mass(int i, int j, const double photons[3][4]) {
+    double E_sum = photons[i][0] + photons[j][0];
+    double px_sum = photons[i][1] + photons[j][1];
+    double py_sum = photons[i][2] + photons[j][2];
+    double pz_sum = photons[i][3] + photons[j][3];
+    double mass2 = E_sum*E_sum - (px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
+    return (mass2 > 0) ? sqrt(mass2) : 0.0;
+}
+
+double compute_3pi_mass(int pi0_idx1, int pi0_idx2, const double photons[3][4], const double tracks[2][4]) {
+    double E_sum = photons[pi0_idx1][0] + photons[pi0_idx2][0] + tracks[0][0] + tracks[1][0];
+    double px_sum = photons[pi0_idx1][1] + photons[pi0_idx2][1] + tracks[0][1] + tracks[1][1];
+    double py_sum = photons[pi0_idx1][2] + photons[pi0_idx2][2] + tracks[0][2] + tracks[1][2];
+    double pz_sum = photons[pi0_idx1][3] + photons[pi0_idx2][3] + tracks[0][3] + tracks[1][3];
+    double mass2 = E_sum*E_sum - (px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
+    return (mass2 > 0) ? sqrt(mass2) : 0.0;
+}
+
+double compute_cos_theta(int i, int j, const double photons[3][4]) {
+    double px_sum = photons[i][1] + photons[j][1];
+    double py_sum = photons[i][2] + photons[j][2];
+    double pz_sum = photons[i][3] + photons[j][3];
+    double p_mag = sqrt(px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
+    if (p_mag < 1e-10) return 0.0;
+    return pz_sum / p_mag;
+}
+
+std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx,
+                                    const double photons[3][4], double energy_threshold) {
+    std::vector<float> features(10, 0.0f);
+    double e1 = photons[i_idx][0];
+    double e2 = photons[j_idx][0];
+    double e3 = photons[unpaired_idx][0];
+    features[5] = (float)e1;
+    features[6] = (float)e2;
+    features[7] = (float)e3;
+    if (e1 >= energy_threshold && e2 >= energy_threshold) {
+        double m_gg = compute_invariant_mass(i_idx, j_idx, photons);
+        double cos_theta = compute_cos_theta(i_idx, j_idx, photons);
+        double opening_angle = acos(std::max(-1.0, std::min(1.0, cos_theta))); // clamped
+        double denominator = e1 + e2;
+        double E_asym = (denominator > 1e-10) ? fabs(e1 - e2) / denominator : 0.0;
+        E_asym = std::max(0.0, std::min(1.0, E_asym));
+        double e_min_x_angle = std::min(e1, e2) * opening_angle;
+        double E_diff = fabs(e1 - e2);
+        double asym_x_angle = E_asym * opening_angle;
+        features[0] = (float)m_gg;
+        features[1] = (float)opening_angle;
+        features[2] = (float)cos_theta;
+        features[3] = (float)E_asym;
+        features[4] = (float)e_min_x_angle;
+        features[8] = (float)asym_x_angle;
+        features[9] = (float)E_diff;
+    }
+    return features;
+}
+
+BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& bdt) {
+    BDTResult result;
+    result.is_valid = false;
+    int pair_indices[3][2] = {{0,1}, {2,0}, {1,2}};
+    double scores[3] = {0.0, 0.0, 0.0};
+    for (int p = 0; p < 3; ++p) {
+        int i_idx = pair_indices[p][0];
+        int j_idx = pair_indices[p][1];
+        int unpaired_idx = -1;
+        for (int k = 0; k < 3; ++k) {
+            if (k != i_idx && k != j_idx) { unpaired_idx = k; break; }
+        }
+        if (unpaired_idx == -1) continue;
+        std::vector<float> features = extract_features(i_idx, j_idx, unpaired_idx,
+                                                       event.photons, ENERGY_THRESHOLD);
+        TMVA::Experimental::RTensor<float> input_tensor(features.data(), {1, features.size()});
+        auto bdt_result = bdt.Compute(input_tensor);
+        scores[p] = bdt_result(0,0);
+    }
+    int best_pair = 0;
+    for (int p = 1; p < 3; ++p) if (scores[p] > scores[best_pair]) best_pair = p;
+    result.score = scores[best_pair];
+    result.best_pair_index = best_pair;
+    result.pi0_indices[0] = pair_indices[best_pair][0];
+    result.pi0_indices[1] = pair_indices[best_pair][1];
+    result.prompt_index = -1;
+    for (int k = 0; k < 3; ++k) {
+        if (k != result.pi0_indices[0] && k != result.pi0_indices[1]) {
+            result.prompt_index = k; break;
+        }
+    }
+    result.is_valid = (result.prompt_index != -1);
+    return result;
+}

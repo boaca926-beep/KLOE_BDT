@@ -19,8 +19,19 @@ This project analyzes the $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$ ISR process
 </div>
 
 ## 🚀 Quick Start {#-quick-start}
-> **BDT test mode:** `root -l -q $HOME/run_bdt/test_bdt.C #Outputs: $HOME/Desktop/input_bdt_TDATA_norm/`
-> **BDT analysis:** `root - l -q $HOME/input_bdt.sh #Output: $HOME/Destop/KLOE_BDT/plots_bdt/` 
+> **BDT model:** 
+```bash
+root - l -q $HOME/input_kloe.sh 
+# Output: $HOME/Destop/input_kloe_chain/cut/tree_pre.root
+# BDT training requires tree_pre.root before selection cuts. Modify $HOME/Destop/KLOE_BDT/run_bdt/tree_cut.C, comment off all cut condtions 
+``` 
+<div align="center">
+<img src="plots_inspect/Kine_compr_TCOMB.png" width="500" alt="Kinematic Variables"/>
+<br/>
+<em>Figure 1: Kinematic variables distribution before selection cuts</em>
+    
+</div>
+
 
 
 ## 📐 Analysis Flow
