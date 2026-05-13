@@ -73,6 +73,8 @@ public:
         histograms.push_back(h);
         return h;
     }
+
+  
 };
 
 void test_bdt_new() {
@@ -113,7 +115,8 @@ void test_bdt_new() {
     std::cout << "Tree " << tree_name << " has " << tree->GetEntries() << " entries." << std::endl;
 
     HistogramManager hists;
-
+    HistogramManager hists2d;
+ 
     // --- Histograms for fixed pair (photons 0,1) ---
     TH1D* hE1_fixed = hists.create("hE1_fixed", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE2_fixed = hists.create("hE2_fixed", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
@@ -130,6 +133,10 @@ void test_bdt_new() {
     TH1D* hM3pi_bdt = hists.create("hM3pi_bdt", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
     TH1D* hM2pi_bdt = hists.create("hM2pi_bdt", "", N_BINS_MASS, MASS_2PI_RANGE_MIN, MASS_2PI_RANGE_MAX);
 
+    TH2D* hM3pi_bdt_corr = new TH2D("hM3pi_bdt_corr", "M_{3#pi} Correlation",
+                                    N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
+                                    N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+    
     // --- Pull histograms (if true branches exist) ---
     TH1D* hE1_pull = hists.create("hE1_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hE2_pull = hists.create("hE2_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
@@ -138,6 +145,9 @@ void test_bdt_new() {
     TH1D* hM3pi_pull = hists.create("hM3pi_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hM2pi_pull = hists.create("hM2pi_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
 
+    // Create output ROOT file
+    TFile* outfile = new TFile("test_bdt_new.root", "RECREATE");
+ 
     // Branch addresses (unchanged)
     double E1, px1, py1, pz1;
     double E2, px2, py2, pz2;
@@ -218,7 +228,7 @@ void test_bdt_new() {
         event.angle_pi0gam12 = angle_pi0gam12;
         event.ppIM = ppIM;
 
-        // Fixed pair
+	// Fixed pair
         double m_gg_fixed = compute_invariant_mass(0, 1, event.photons);
         double m3pi_fixed = compute_3pi_mass(0, 1, event.photons, event.tracks);
         double m2pi_fixed = compute_dipion_mass(event.tracks);
@@ -238,6 +248,7 @@ void test_bdt_new() {
         double e3 = event.photons[result.prompt_index][0];
         double m_gg = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
         double m3pi = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
+	
         double m2pi = compute_dipion_mass(event.tracks);
 
         hE1_bdt->Fill(e1);
@@ -262,6 +273,10 @@ void test_bdt_new() {
             double m3pi_true = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event_true.photons, event_true.tracks);
             double m2pi_true = compute_dipion_mass(event_true.tracks);
 
+	    //cout << m3pi << ", " << m3pi_true << endl;
+	    hM3pi_bdt_corr->Fill(m3pi_true, m3pi);
+
+	    
             hE1_pull->Fill(e1 - e1_true);
             hE2_pull->Fill(e2 - e2_true);
             hE3_pull->Fill(e3 - e3_true);
@@ -269,8 +284,31 @@ void test_bdt_new() {
             hM3pi_pull->Fill(m3pi - m3pi_true);
             hM2pi_pull->Fill(m2pi - m2pi_true);
         }
+
     }
 
+    // After event loop, before drawing
+    if (hasTrue) {
+        // Fit the 2D correlation histogram
+        TFitResultPtr fitRes = hM3pi_bdt_corr->Fit("pol1", "S");
+        if (fitRes.Get() && fitRes->IsValid()) {
+            double p0 = fitRes->Parameter(0);
+            double p1 = fitRes->Parameter(1);
+            double err0 = fitRes->ParError(0);
+            double err1 = fitRes->ParError(1);
+            double corr = hM3pi_bdt_corr->GetCorrelationFactor();
+            std::cout << "\n=== M3pi Correlation (BDT-selected) ===" << std::endl;
+            std::cout << "Linear fit: M_reco = p0 + p1 * M_true" << std::endl;
+            std::cout << "p0 = " << p0 << " +/- " << err0 << " MeV/c²" << std::endl;
+            std::cout << "p1 = " << p1 << " +/- " << err1 << std::endl;
+            std::cout << "Pearson correlation coefficient r = " << corr << std::endl;
+            std::cout << "Pull RMS = " << hM3pi_pull->GetRMS() << " MeV/c²" << std::endl;
+            std::cout << "=======================================\n" << std::endl;
+        } else {
+            std::cout << "Fit failed!" << std::endl;
+        }
+    }
+    
     // Normalise pull histograms
     auto safeNormalize = [](TH1D* h) { if (h && h->Integral() > 0) h->Scale(1.0 / h->Integral()); };
     if (hasTrue) {
@@ -335,6 +373,7 @@ void test_bdt_new() {
       drawPad(2, h2_fixed, h2_bdt, xTitle2);
       drawPad(3, h3_fixed, h3_bdt, xTitle3);
       c->SaveAs(Form("../plots_bdt/%s.pdf", name));
+      c->Write();
       delete c;
     };
     
@@ -364,9 +403,57 @@ void test_bdt_new() {
         drawPad(2, h2, xTitle2);
         drawPad(3, h3, xTitle3);
         c->SaveAs(Form("../plots_bdt/%s.pdf", name));
+	c->Write();
         delete c;
     };
 
+    // Drawing function for 2D histogram
+    auto draw2D = [&](const char* name, const char* title,
+		      TH2D* h2, const char* xTitle, const char* yTitle,
+		      bool logz = false, std::vector<double> hlines = {}) {
+      TCanvas* c = new TCanvas(name, title, 800, 800);
+      c->SetLeftMargin(0.15);
+      c->SetRightMargin(0.15);
+      c->SetBottomMargin(0.15);
+      h2->GetXaxis()->SetTitle(xTitle);
+      h2->GetYaxis()->SetTitle(yTitle);
+      h2->GetXaxis()->SetTitleSize(0.05);
+      h2->GetYaxis()->SetTitleSize(0.05);
+      h2->GetXaxis()->SetLabelSize(0.04);
+      h2->GetYaxis()->SetLabelSize(0.04);
+      h2->GetXaxis()->CenterTitle();
+      h2->GetYaxis()->CenterTitle();
+      h2->Draw("COLZ");
+      if (logz) c->SetLogz();
+      c->Update();
+      
+      // Draw the diagonal fit line (pol1) if it exists
+      TF1 *fit = h2->GetFunction("pol1");
+      if (fit) {
+        fit->SetLineColor(kRed);
+        fit->SetLineWidth(2);
+        fit->SetLineStyle(1);
+        fit->Draw("same");
+      }
+      
+      // Draw horizontal lines
+      if (!hlines.empty()) {
+        double xmin = gPad->GetUxmin();
+        double xmax = gPad->GetUxmax();
+        for (double y : hlines) {
+	  TLine *line = new TLine(xmin, y, xmax, y);
+	  line->SetLineColor(kBlack);
+	  line->SetLineWidth(3);
+	  //line->SetLineStyle(2);   // dashed
+	  line->Draw("same");      // <-- lower‑case "same"
+        }
+      }
+      
+      c->SaveAs(Form("../plots_bdt/%s.pdf", name));
+      c->Write();
+      delete c;
+    };
+    
     // Produce plots
     // Photon energies: linear y-axis
     drawTripleOverlay("photon_energies", "Photon Energies",
@@ -387,8 +474,23 @@ void test_bdt_new() {
                    hMgg_pull, hM3pi_pull, hM2pi_pull,
                    "M_{#gamma#gamma} pull [MeV/c^{2}]", "M_{3#pi} pull [MeV/c^{2}]", "M_{2#pi} pull [MeV/c^{2}]",
                    "Normalized entries", kRed);
+	draw2D("m3pi_correlation", "M_{3#pi} Correlation (BDT-selected)",
+               hM3pi_bdt_corr, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
     }
 
+    // Write histograms to output ROOT file
+    outfile->cd();
+    hE1_fixed->Write(); hE2_fixed->Write(); hE3_fixed->Write();
+    hMgg_fixed->Write(); hM3pi_fixed->Write(); hM2pi_fixed->Write();
+    hE1_bdt->Write(); hE2_bdt->Write(); hE3_bdt->Write();
+    hMgg_bdt->Write(); hM3pi_bdt->Write(); hM2pi_bdt->Write();
+    if (hasTrue) {
+      hE1_pull->Write(); hE2_pull->Write(); hE3_pull->Write();
+      hMgg_pull->Write(); hM3pi_pull->Write(); hM2pi_pull->Write();
+      hM3pi_bdt_corr->Write();
+    }
+    outfile->Close();
+ 
     file->Close();
     std::cout << "\nAll plots saved to ../plots_bdt/" << std::endl;
 }
