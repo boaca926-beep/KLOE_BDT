@@ -33,7 +33,7 @@ uv run main_initialize_kloe_opti.py \
     --input /home/kloe/Desktop/KLOE_BDT/dataset/kloe_bdt.root \
     --chunk-size 50000 \
     --output-dir /home/kloe/Desktop/KLOE_BDT/dataset_bdt
-# alternative input data at: /home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre.root
+# alternative input data at: /home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre.root (make sure cuts are removed)
 """
 
 # ========== ADDED: Cut constants (matching C++ header_bdt/cut_para.h) ==========
@@ -71,30 +71,32 @@ def create_dataset(df, category): # For photon 4-momentum
     
     # ---------- REPLACED CUT BLOCK (minimal adaptation) ----------
     # Build a single mask that includes all selection criteria.
-    mask = pd.Series(True, index=df.index)
+    # mask = pd.Series(True, index=df.index)
 
     # 1. χ² cut (lagvalue_min_7C)
-    if 'Br_lagvalue_min_7C' in df.columns:
-        mask &= (df['Br_lagvalue_min_7C'] <= CHI2_CUT)
+    #if 'Br_lagvalue_min_7C' in df.columns:
+    #    mask &= (df['Br_lagvalue_min_7C'] <= CHI2_CUT)
 
     # 2. ΔE cut
-    if 'Br_deltaE' in df.columns:
-        mask &= (df['Br_deltaE'] <= DELTAE_CUT)
+    #if 'Br_deltaE' in df.columns:
+    #    mask &= (df['Br_deltaE'] <= DELTAE_CUT)
 
     # 3. Opening angle of π⁰ and γ cut
-    if 'Br_angle_pi0gam12' in df.columns:
-        mask &= (df['Br_angle_pi0gam12'] <= ANGLE_CUT)
+    #if 'Br_angle_pi0gam12' in df.columns:
+    #    mask &= (df['Br_angle_pi0gam12'] <= ANGLE_CUT)
 
     # 4. Beta cut (physical region 0<β<1 + β ≤ fβ(ppIM))
-    if 'Br_betapi0' in df.columns:
+    #if 'Br_betapi0' in df.columns:
         #mask &= (df['Br_betapi0'] > 0) & (df['Br_betapi0'] < 1)   # physical range
-        if 'Br_ppIM' in df.columns:
-            fbeta_vals = df['Br_ppIM'].apply(lambda ppIM: get_fbeta(BETA_CUT, C0, C1, ppIM))
-            mask &= (df['Br_betapi0'] <= fbeta_vals)
+    #    if 'Br_ppIM' in df.columns:
+    #        fbeta_vals = df['Br_ppIM'].apply(lambda ppIM: get_fbeta(BETA_CUT, C0, C1, ppIM))
+    #        mask &= (df['Br_betapi0'] <= fbeta_vals)
 
     # Apply the mask and keep only available columns
-    df_filtered = df[mask][available_cols].copy()
-    df = df_filtered
+    #df_filtered = df[mask][available_cols].copy()
+    #df = df_filtered
+
+    df = df[available_cols].copy()
     # -------------------------------------------------------------
 
     # Create all_df, pos_df, neg_df for signal and background events
