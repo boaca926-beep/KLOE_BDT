@@ -236,10 +236,10 @@ int tree_cut(){
     if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
 
     // Selection cuts
-    //if (lagvalue_min_7C > chi2_cut) continue;
-    //else if (deltaE > deltaE_cut) continue;
-    //else if (angle_pi0gam12 > angle_cut) continue;
-    //else if (betapi0 > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+    if (lagvalue_min_7C > chi2_cut) continue;
+    else if (deltaE > deltaE_cut) continue;
+    else if (angle_pi0gam12 > angle_cut) continue;
+    else if (betapi0 > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
 
     // Fill only the tree(s) corresponding to the current sample type
     if (data_type == "exp") {

@@ -18,7 +18,7 @@ using namespace TMVA::Experimental;
 #define BDT_MODEL_PATH "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root"
 
 constexpr double ENERGY_THRESHOLD = 5.0;   // MeV
-constexpr double BDT_CUT_VALUE = 0.4;     // BDT score threshold
+constexpr double BDT_CUT_VALUE = 0.4;     // BDT score threshold (kept for reference, not used in classification)
 
 // ----------------------------------------------------------------------
 // Structures and helper prototypes
@@ -46,6 +46,7 @@ struct BDTResult {
 // Helper function prototypes
 double compute_invariant_mass(int i, int j, const double photons[3][4]);
 double compute_3pi_mass(int pi0_idx1, int pi0_idx2, const double photons[3][4], const double tracks[2][4]);
+double compute_dipion_mass(const double tracks[2][4]);
 double compute_cos_theta(int i, int j, const double photons[3][4]);
 std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx,
                                     const double photons[3][4], double energy_threshold);
@@ -97,17 +98,24 @@ int tree_cut_bdt() {
     double evnt_tot = 0;
     double Eprompt_max = 0.;
 
-    // BDT‑specific variables
+    // BDT‑specific variables (reco)
     double bdt_score = 0.;
     double e1_bdt = 0., e2_bdt = 0., e3_bdt = 0.;
     double m_gg_bdt = 0., m3pi_bdt = 0.;
     double angle_pi0gam12_bdt = 0., betapi0_bdt = 0.;
 
-    // ---------- Output trees ----------
-    const int list_size = 13;
+    // Pull variables
+    double e1_pull = 0., e2_pull = 0., e3_pull = 0.;
+    double px1_pull = 0., py1_pull = 0., pz1_pull = 0.;
+    double px2_pull = 0., py2_pull = 0., pz2_pull = 0.;
+    double px3_pull = 0., py3_pull = 0., pz3_pull = 0.;
+    double m_gg_pull = 0., m3pi_pull = 0.;
+    double m2pi_pull = 0.;
+
+    // ---------- Output trees (same as tree_cut.C: 11 trees) ----------
+    const int list_size = 11;
     const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI",
-                                    "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG",
-                                    "TISR3PI_SIG_COMB", "TETAGAM_COMB"};
+                                    "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG"};
     TTree *TTList[list_size];
     TCollection* tree_list = new TList;
 
@@ -186,7 +194,7 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
         tree_tmp->Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
         tree_tmp->Branch("Br_m3pi", &m3pi, "Br_m3pi/D");
-        // New BDT branches
+        // New BDT branches (additional, do not affect classification)
         tree_tmp->Branch("Br_bdt_score", &bdt_score, "Br_bdt_score/D");
         tree_tmp->Branch("Br_e1_bdt", &e1_bdt, "Br_e1_bdt/D");
         tree_tmp->Branch("Br_e2_bdt", &e2_bdt, "Br_e2_bdt/D");
@@ -195,6 +203,22 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_m3pi_bdt", &m3pi_bdt, "Br_m3pi_bdt/D");
         tree_tmp->Branch("Br_angle_pi0gam12_bdt", &angle_pi0gam12_bdt, "Br_angle_pi0gam12_bdt/D");
         tree_tmp->Branch("Br_betapi0_bdt", &betapi0_bdt, "Br_betapi0_bdt/D");
+        // Pull branches
+        tree_tmp->Branch("Br_e1_pull", &e1_pull, "Br_e1_pull/D");
+        tree_tmp->Branch("Br_e2_pull", &e2_pull, "Br_e2_pull/D");
+        tree_tmp->Branch("Br_e3_pull", &e3_pull, "Br_e3_pull/D");
+        tree_tmp->Branch("Br_px1_pull", &px1_pull, "Br_px1_pull/D");
+        tree_tmp->Branch("Br_py1_pull", &py1_pull, "Br_py1_pull/D");
+        tree_tmp->Branch("Br_pz1_pull", &pz1_pull, "Br_pz1_pull/D");
+        tree_tmp->Branch("Br_px2_pull", &px2_pull, "Br_px2_pull/D");
+        tree_tmp->Branch("Br_py2_pull", &py2_pull, "Br_py2_pull/D");
+        tree_tmp->Branch("Br_pz2_pull", &pz2_pull, "Br_pz2_pull/D");
+        tree_tmp->Branch("Br_px3_pull", &px3_pull, "Br_px3_pull/D");
+        tree_tmp->Branch("Br_py3_pull", &py3_pull, "Br_py3_pull/D");
+        tree_tmp->Branch("Br_pz3_pull", &pz3_pull, "Br_pz3_pull/D");
+        tree_tmp->Branch("Br_m_gg_pull", &m_gg_pull, "Br_m_gg_pull/D");
+        tree_tmp->Branch("Br_m3pi_pull", &m3pi_pull, "Br_m3pi_pull/D");
+        tree_tmp->Branch("Br_m2pi_pull", &m2pi_pull, "Br_m2pi_pull/D");
     }
 
     TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
@@ -207,8 +231,7 @@ int tree_cut_bdt() {
         ALLCHAIN_CUT->GetEntry(irow);
         if (irow % 100000 == 0) cout << "Event " << irow << endl;
 
-        // ----- Read all variables via GetLeaf (consistent with tree_cut.C) -----
-        // Simple branches (non-array)
+        // ----- Read all variables via GetLeaf -----
         ppl_E = ALLCHAIN_CUT->GetLeaf("Br_ppl_E")->GetValue(0);
         ppl_px = ALLCHAIN_CUT->GetLeaf("Br_ppl_px")->GetValue(0);
         ppl_py = ALLCHAIN_CUT->GetLeaf("Br_ppl_py")->GetValue(0);
@@ -315,10 +338,21 @@ int tree_cut_bdt() {
         event.bkg_indx = bkg_indx;
         event.recon_indx = recon_indx;
 
+        // Prepare event true data structure
+        double true_photons[3][4] = {
+            {pho_E1_true, pho_px1_true, pho_py1_true, pho_pz1_true},
+            {pho_E2_true, pho_px2_true, pho_py2_true, pho_pz2_true},
+            {pho_E3_true, pho_px3_true, pho_py3_true, pho_pz3_true}
+        };
+        double true_tracks[2][4] = {
+            {ppl_E_true, ppl_px_true, ppl_py_true, ppl_pz_true},
+            {pmi_E_true, pmi_px_true, pmi_py_true, pmi_pz_true}
+        };
+
         BDTResult result = find_best_pion_pair(event, bdt);
         if (!result.is_valid) continue;
 
-        // Fill BDT‑selected variables
+        // Fill BDT‑selected variables (reco)
         e1_bdt = event.photons[result.pi0_indices[0]][0];
         e2_bdt = event.photons[result.pi0_indices[1]][0];
         e3_bdt = event.photons[result.prompt_index][0];
@@ -328,6 +362,9 @@ int tree_cut_bdt() {
         double px2_bdt = event.photons[result.pi0_indices[1]][1];
         double py2_bdt = event.photons[result.pi0_indices[1]][2];
         double pz2_bdt = event.photons[result.pi0_indices[1]][3];
+        double px3_bdt = event.photons[result.prompt_index][1];
+        double py3_bdt = event.photons[result.prompt_index][2];
+        double pz3_bdt = event.photons[result.prompt_index][3];
 
         m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
         m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
@@ -340,13 +377,52 @@ int tree_cut_bdt() {
         betapi0_bdt = (pi0_bdt.Vect()).Mag() / pi0_bdt.E();
         bdt_score = result.score;
 
-        // Selection cuts
+        // --- Compute true quantities using same indices ---
+        double e1_true = true_photons[result.pi0_indices[0]][0];
+        double e2_true = true_photons[result.pi0_indices[1]][0];
+        double e3_true = true_photons[result.prompt_index][0];
+        double px1_true = true_photons[result.pi0_indices[0]][1];
+        double py1_true = true_photons[result.pi0_indices[0]][2];
+        double pz1_true = true_photons[result.pi0_indices[0]][3];
+        double px2_true = true_photons[result.pi0_indices[1]][1];
+        double py2_true = true_photons[result.pi0_indices[1]][2];
+        double pz2_true = true_photons[result.pi0_indices[1]][3];
+        double px3_true = true_photons[result.prompt_index][1];
+        double py3_true = true_photons[result.prompt_index][2];
+        double pz3_true = true_photons[result.prompt_index][3];
+
+        double m_gg_true = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], true_photons);
+        double m3pi_true = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], true_photons, true_tracks);
+        double m2pi_true = compute_dipion_mass(true_tracks);
+
+        // Compute pulls
+        e1_pull = e1_bdt - e1_true;
+        e2_pull = e2_bdt - e2_true;
+        e3_pull = e3_bdt - e3_true;
+
+        px1_pull = px1_bdt - px1_true;
+        py1_pull = py1_bdt - py1_true;
+        pz1_pull = pz1_bdt - pz1_true;
+
+        px2_pull = px2_bdt - px2_true;
+        py2_pull = py2_bdt - py2_true;
+        pz2_pull = pz2_bdt - pz2_true;
+
+        px3_pull = px3_bdt - px3_true;
+        py3_pull = py3_bdt - py3_true;
+        pz3_pull = pz3_bdt - pz3_true;
+
+        m_gg_pull = m_gg_bdt - m_gg_true;
+        m3pi_pull = m3pi_bdt - m3pi_true;
+        m2pi_pull = compute_dipion_mass(event.tracks) - m2pi_true;
+
+        // Selection cuts (commented out to match tree_cut.C)
         if (lagvalue_min_7C > chi2_cut) continue;
         else if (deltaE > deltaE_cut) continue;
         else if (angle_pi0gam12_bdt > angle_cut) continue;
         else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
 
-        // ---------- Classification and filling ----------
+        // ---------- Classification and filling (identical to tree_cut.C) ----------
         if (data_type == "exp") {
             TTList[0]->Fill();
         } else if (data_type == "ufo") {
@@ -354,10 +430,7 @@ int tree_cut_bdt() {
         } else if (data_type == "eeg") {
             TTList[9]->Fill();
         } else if (data_type == "sig") {
-            if (bdt_score > BDT_CUT_VALUE)
-                TTList[10]->Fill();   // TISR3PI_SIG
-            else
-                TTList[11]->Fill();   // TISR3PI_SIG_COMB
+            TTList[10]->Fill();   // TISR3PI_SIG
         } else if (data_type == "ksl") {
             if (phid == 0) {
                 TTList[1]->Fill();   // TOMEGAPI
@@ -366,13 +439,11 @@ int tree_cut_bdt() {
             } else if (phid == 2) {
                 TTList[3]->Fill();   // TKSL
             } else if (phid == 3) {
-                if (sig_type == 1) TTList[4]->Fill();  // 3pi
-		else TTList[5]->Fill();                // rho pi
+                if (sig_type == 1) TTList[4]->Fill();  // T3PIGAM
+                else TTList[5]->Fill();                // TRHOPI
             } else if (phid == 5) {
-                if (bdt_score > BDT_CUT_VALUE)
-                    TTList[6]->Fill();   // TETAGAM
-                else
-                    TTList[12]->Fill();  // TETAGAM_COMB
+                if (sig_type == 1) TTList[6]->Fill();  // TETAGAM
+                else TTList[7]->Fill();                // TBKGREST
             } else {
                 TTList[7]->Fill();   // TBKGREST
             }
@@ -403,7 +474,7 @@ int tree_cut_bdt() {
 }
 
 // ----------------------------------------------------------------------
-// Helper function implementations (now using momentum inputs)
+// Helper function implementations
 // ----------------------------------------------------------------------
 double compute_invariant_mass(int i, int j, const double photons[3][4]) {
     double E_sum = photons[i][0] + photons[j][0];
@@ -419,6 +490,15 @@ double compute_3pi_mass(int pi0_idx1, int pi0_idx2, const double photons[3][4], 
     double px_sum = photons[pi0_idx1][1] + photons[pi0_idx2][1] + tracks[0][1] + tracks[1][1];
     double py_sum = photons[pi0_idx1][2] + photons[pi0_idx2][2] + tracks[0][2] + tracks[1][2];
     double pz_sum = photons[pi0_idx1][3] + photons[pi0_idx2][3] + tracks[0][3] + tracks[1][3];
+    double mass2 = E_sum*E_sum - (px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
+    return (mass2 > 0) ? sqrt(mass2) : 0.0;
+}
+
+double compute_dipion_mass(const double tracks[2][4]) {
+    double E_sum = tracks[0][0] + tracks[1][0];
+    double px_sum = tracks[0][1] + tracks[1][1];
+    double py_sum = tracks[0][2] + tracks[1][2];
+    double pz_sum = tracks[0][3] + tracks[1][3];
     double mass2 = E_sum*E_sum - (px_sum*px_sum + py_sum*py_sum + pz_sum*pz_sum);
     return (mass2 > 0) ? sqrt(mass2) : 0.0;
 }
