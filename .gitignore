@@ -19,6 +19,8 @@ plots_omega/
 plots_test/
 models/
 etagam_plots/
+plots_trees/
+signal_plots/
 
 # Backup files
 *~
