@@ -79,7 +79,10 @@ DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
 input_path=${result_path}/input/
 cut_path=${result_path}/cut/
 gen_path=${result_path}/gen/
-
+hist_path=${result_path}/hist/
+sfw2d_path=${result_path}/sfw2d/
+sfw1d_path=${result_path}/sfw1d/
+omega_path=${result_path}/omega_fit/
 log_path=${result_path}/log/
 
 if [[ -d "$result_path" ]]; then
@@ -91,7 +94,10 @@ mkdir ${result_path} # result folder
 mkdir ${input_path} # input root files
 mkdir ${cut_path} # trees: after all cuts
 mkdir ${gen_path} # tree: signal MC generated
-
+mkdir ${hist_path} # histos
+mkdir ${sfw2d_path} # mc normalization
+mkdir ${sfw1d_path} # mc signal tuning
+mkdir ${omega_path} # omega parameters
 mkdir ${log_path} # log files   
 echo "Results folder is created at ${result_path}"
 
@@ -212,3 +218,16 @@ echo '}' >> $tree_gen_script
 root -l -n -q -b $tree_gen_script
 echo "Signal MC is generated!"
 
+## Histos
+echo '#include <iostream>' > $hist_script
+echo "void hist_script() {" >> $hist_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/gethist.C");' >> $hist_script
+echo 'gROOT->ProcessLine("gethist()");' >> $hist_script
+echo '}' >> $hist_script
+root -l -n -q -b $hist_script >> ${log_hist}
+echo "Histos are created!"
+
+rm $run_script
+rm $tree_cut_script
+rm $tree_gen_script
+rm $hist_script

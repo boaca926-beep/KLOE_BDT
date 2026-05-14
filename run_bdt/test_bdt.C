@@ -91,8 +91,8 @@ void test_bdt() {
     // Configuration
     const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root";
     const char* data_filename = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
-    const char* tree_name = "TISR3PI_SIG";   // or "TETAGAM"
-    //const char* tree_name = "TETAGAM";
+    //const char* tree_name = "TISR3PI_SIG";   // or "TETAGAM"
+    const char* tree_name = "TETAGAM";
     //const char* tree_name = "TDATA";
     
     gSystem->mkdir("../plots_test/", kTRUE);
@@ -473,7 +473,7 @@ void test_bdt() {
     // Kinematic variables: logarithmic y-axis
     drawTripleOverlay("kine_vars", "Kinematic Variables",
                       hMgg_fixed, hMgg_bdt, hM3pi_fixed, hM3pi_bdt, hAngle_fixed, hAngle_bdt,
-                      "M_{#gamma#gamma} [MeV/c^{2}]", "M_{3#pi} [MeV/c^{2}]", "#angle_{#gamma#gamma} [#circle]", "Entries", true);
+                      "M_{#gamma#gamma} [MeV/c^{2}]", "M_{3#pi} [MeV/c^{2}]", "#angle_{#gamma#gamma} [#circ]", "Entries", true);
 
     if (hasTrue) {
         drawTriple("energy_pulls", "Energy Pulls (BDT-selected)",

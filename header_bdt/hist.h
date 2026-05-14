@@ -1,4 +1,4 @@
-TFile *f_cut = new TFile(outputCut + "tree_pre.root");
+TFile *f_cut = new TFile(outputCut + "tree_pre_bdt.root");
 TFile *f_gen = new TFile(outputGen + "tree_gen.root");
 
 //cout << f_gen -> GetName() << endl;
@@ -49,26 +49,27 @@ void fillHist() {
 
   // data and MC background
   TIter next_tree(f_cut -> GetListOfKeys());
-
-  TString objnm_tree, classnm_tree;
-
-  double m3pi = 0., m3pi_true = 0., m3pi_corred = 0.;
-  double Eisr = 0.;
-  double ppIM = 0.;
-
   TKey *key;
-  
+
   while ( (key = (TKey *) next_tree() ) ) {// start tree while loop
 
-    objnm_tree   =  key -> GetName();
-    classnm_tree = key -> GetClassName();
+    TString objnm_tree = key -> GetName();
+    TString classnm_tree = key -> GetClassName();
     key -> GetSeekKey();
 
     cout << "classnm = " << classnm_tree << ", objnm = " << objnm_tree << endl;
 
     TTree *tree_tmp = (TTree*)f_cut -> Get(objnm_tree);
     //cout << tree_tmp -> GetName() << endl;
+    if (!tree_tmp) continue;
 
+    // ---- Set branch addresses for this tree ----
+    double m3pi_bdt = 0., m3pi_true_bdt = 0., Eisr = 0., ppIM = 0.;
+    tree_tmp->SetBranchAddress("Br_m3pi_bdt", &m3pi_bdt);
+    tree_tmp->SetBranchAddress("Br_m3pi_true_bdt", &m3pi_true_bdt);
+    tree_tmp->SetBranchAddress("Br_e3_bdt", &Eisr);
+    tree_tmp->SetBranchAddress("Br_ppIM", &ppIM);
+	
     // fill histos
     TH1D * h1d_tmp_crx = new TH1D("h1d_IM3pi_" + objnm_tree + "_CRX", "", hbins, hmin, hmax);
     h1d_tmp_crx -> Sumw2();
@@ -89,22 +90,27 @@ void fillHist() {
 
       tree_tmp -> GetEntry(irow);
       
-      m3pi = tree_tmp -> GetLeaf("Br_IM3pi_7C") -> GetValue(0);
-      m3pi_true = tree_tmp -> GetLeaf("Br_IM3pi_true") -> GetValue(0);
+      //m3pi = tree_tmp -> GetLeaf("Br_IM3pi_7C") -> GetValue(0);
+      
+      //m3pi_bdt = tree_tmp -> GetLeaf("Br_m3pi_bdt") -> GetValue(0);
+      //m3pi_true = tree_tmp -> GetLeaf("Br_m3pi_true_bdt") -> GetValue(0);
 
-      Eisr = tree_tmp -> GetLeaf("Br_Eisr") -> GetValue(0);
-      ppIM = tree_tmp -> GetLeaf("Br_ppIM") -> GetValue(0);
-
+      //Eisr = tree_tmp -> GetLeaf("Br_Eisr") -> GetValue(0);
+      //ppIM = tree_tmp -> GetLeaf("Br_ppIM") -> GetValue(0);
+      
+      // calculate m3pi_bdt
+      
       // filling
-      h1d_tmp -> Fill(m3pi);
+      //h1d_tmp -> Fill(m3pi);
+      h1d_tmp -> Fill(m3pi_bdt);
 
-      h1d_tmp_sfw -> Fill(m3pi);
+      h1d_tmp_sfw -> Fill(m3pi_bdt);
 
-      h1d_tmp_crx -> Fill(m3pi);
+      h1d_tmp_crx -> Fill(m3pi_bdt);
 
-      h1d_tmp_true -> Fill(m3pi_true);
+      h1d_tmp_true -> Fill(m3pi_true_bdt); // bdt m3pi true
 
-      h2d_tmp -> Fill(ppIM, Eisr);
+      h2d_tmp -> Fill(ppIM, Eisr); // Eisr -> e3_bdt
       
     }
 
@@ -126,8 +132,6 @@ void fillHist() {
 
   // hsig_true
 
-  m3pi_true = 0.;
-
   TH1D * hsig_true = new TH1D("hsig_true", "", IM3pi_bin, IM3pi_min, IM3pi_max);
   hsig_true -> Sumw2();
 
@@ -136,17 +140,15 @@ void fillHist() {
 
   TTree *TISR3PI_SIG = (TTree*)f_cut -> Get("TISR3PI_SIG");
 
-  for (Int_t irow = 0; irow < TISR3PI_SIG -> GetEntries(); irow++) {
-
-    TISR3PI_SIG -> GetEntry(irow);
-
-    m3pi_true = TISR3PI_SIG -> GetLeaf("Br_IM3pi_true") -> GetValue(0);
-
-    //cout << m3pi_true << endl;
-
-    hsig_true -> Fill(m3pi_true);
-    hsig_true_crx -> Fill(m3pi_true);
-    
+  if (TISR3PI_SIG) {
+    double m3pi_true = 0.;
+    TISR3PI_SIG->SetBranchAddress("Br_m3pi_true_bdt", &m3pi_true);
+    for (Int_t irow = 0; irow < TISR3PI_SIG -> GetEntries(); irow++) {
+      TISR3PI_SIG -> GetEntry(irow);
+      //cout << m3pi_true << endl;
+      hsig_true -> Fill(m3pi_true); // bdt true?
+      hsig_true_crx -> Fill(m3pi_true); // bdt true?
+    }
   }
 
   HSIG -> Add(hsig_true);
