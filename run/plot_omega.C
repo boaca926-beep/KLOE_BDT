@@ -1,8 +1,8 @@
-#include "../header_bdt/sm_para.h"
-#include "../header_bdt/plot.h"
-#include "../header_bdt/graph.h"
-#include "../header_bdt/plot_omega.h"
-#include "../header_bdt/method.h"
+#include "../header/sm_para.h"
+#include "../header/plot.h"
+#include "../header/graph.h"
+#include "../header/plot_omega.h"
+#include "../header/method.h"
 
 //int plot_omega(TString data_type = "DATA"){// fit_DATA.root
 int plot_omega(){

@@ -16,7 +16,9 @@ plots_inspect/
 plots_app/
 plot_val/
 plots_omega/
+plots_test/
 models/
+etagam_plots/
 
 # Backup files
 *~

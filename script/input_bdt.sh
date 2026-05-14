@@ -16,7 +16,7 @@ Rhovmax=4
 Zvmax=10 
 nb_sigma_T_clust=3 # 3, 4
 
-class_header=../header_bdt/MyClass.h
+class_header=../header/MyClass.h
 sed -i 's/\(egammamin =\)\(.*\)/\1 '$egammamin';/' $class_header
 sed -i 's/\(Rhovmax =\)\(.*\)/\1 '$Rhovmax';/' $class_header
 sed -i 's/\(Zvmax =\)\(.*\)/\1 '$Zvmax';/' $class_header   
@@ -73,6 +73,7 @@ sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples 
 DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
+#DATA_TYPE=("sig")
 
 ## Folders
 input_path=${result_path}/input/
@@ -184,7 +185,7 @@ EOF
     run_script=run_script.C
     
     echo "void run_script() {" > $run_script
-    echo '  gROOT->ProcessLine(".L ../run_bdt/MyClass.C");' >> $run_script
+    echo '  gROOT->ProcessLine(".L ../run/MyClass.C");' >> $run_script
     echo '  gROOT->ProcessLine(".L ../run_bdt/Analys_class.C");' >> $run_script
     echo '  gROOT->ProcessLine("Analys_class(rootFile, sampleFile)");' >> $run_script
     echo '}' >> $run_script

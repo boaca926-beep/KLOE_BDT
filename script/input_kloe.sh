@@ -16,7 +16,7 @@ Rhovmax=4
 Zvmax=10 
 nb_sigma_T_clust=3 # 3, 4
 
-class_header=../header_bdt/MyClass.h
+class_header=../header/MyClass.h
 sed -i 's/\(egammamin =\)\(.*\)/\1 '$egammamin';/' $class_header
 sed -i 's/\(Rhovmax =\)\(.*\)/\1 '$Rhovmax';/' $class_header
 sed -i 's/\(Zvmax =\)\(.*\)/\1 '$Zvmax';/' $class_header   
@@ -32,7 +32,7 @@ c1=0.8
 cut_nm=""
 cut_value=0
 
-cut_header=../header_bdt/cut_para.h
+cut_header=../header/cut_para.h
 echo -e 'const double chi2_cut = -1;' > $cut_header
 echo -e 'const double angle_cut = -1;' >> $cut_header
 echo -e 'const double deltaE_cut = -1;' >> $cut_header
@@ -53,7 +53,7 @@ sed -i 's/\(const double c1 =\)\(.*\)/\1 '$c1';/' $cut_header
 mass_sigma_nb=1
 sfw2d_sigma_nb=1
 
-hist_header=../header_bdt/hist.h
+hist_header=../header/hist.h
 sed -i 's/\(const double mass_sigma_nb =\)\(.*\)/\1 '$mass_sigma_nb';/' $hist_header
 sed -i 's/\(const double sfw2d_sigma_nb =\)\(.*\)/\1 '$sfw2d_sigma_nb';/' $hist_header
 
@@ -61,14 +61,14 @@ sed -i 's/\(const double sfw2d_sigma_nb =\)\(.*\)/\1 '$sfw2d_sigma_nb';/' $hist_
 fit_min=760
 fit_max=800
 
-omega_header=../header_bdt/omega_fit.h
+omega_header=../header/omega_fit.h
 sed -i 's/\(const double fit_min =\)\(.*\)/\1 '$fit_min';/' $omega_header
 sed -i 's/\(const double fit_max =\)\(.*\)/\1 '$fit_max';/' $omega_header
 
 # sm_para
 Lumi_tot=1724470
 
-sm_header=../header_bdt/sm_para.h
+sm_header=../header/sm_para.h
 sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples 
@@ -102,7 +102,7 @@ echo "Results folder is created at ${result_path}"
 
 echo "Initializing $path_header and log files!"
 ## Initializing $path_header and log files!"
-path_header=../header_bdt/path.h
+path_header=../header/path.h
 echo -e 'const TString rootFile = "";' > $path_header
 echo -e 'const TString sampleFile = "";' >> $path_header
 echo -e 'const TString outputCut = "";' >> $path_header
@@ -190,8 +190,8 @@ EOF
     run_script=run_script.C
     
     echo "void run_script() {" > $run_script
-    echo '  gROOT->ProcessLine(".L ../run_bdt/MyClass.C");' >> $run_script
-    echo '  gROOT->ProcessLine(".L ../run_bdt/Analys_class.C");' >> $run_script
+    echo '  gROOT->ProcessLine(".L ../run/MyClass.C");' >> $run_script
+    echo '  gROOT->ProcessLine(".L ../run/Analys_class.C");' >> $run_script
     echo '  gROOT->ProcessLine("Analys_class(rootFile, sampleFile)");' >> $run_script
     echo '}' >> $run_script
     root -l -n -q -b $run_script >> ${log_input}
@@ -200,7 +200,7 @@ EOF
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script
     echo "void tree_cut_script() {" >> $tree_cut_script
-    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut.C");' >> $tree_cut_script
+    echo 'gROOT->ProcessLine(".L ../run/tree_cut.C");' >> $tree_cut_script
     echo 'gROOT->ProcessLine("tree_cut()");' >> $tree_cut_script
     echo '}' >> $tree_cut_script
     root -l -n -q -b $tree_cut_script >> ${log_cut}
@@ -211,7 +211,7 @@ echo "Selection cuts applied!"
 tree_gen_script=tree_gen_script.C
 echo '#include <iostream>' > $tree_gen_script
 echo "void tree_gen_script() {" >> $tree_gen_script
-echo 'gROOT->ProcessLine(".L ../run_bdt/tree_gen.C");' >> $tree_gen_script
+echo 'gROOT->ProcessLine(".L ../run/tree_gen.C");' >> $tree_gen_script
 echo 'gROOT->ProcessLine("tree_gen()");' >> $tree_gen_script
 echo '}' >> $tree_gen_script
 root -l -n -q -b $tree_gen_script
@@ -220,7 +220,7 @@ echo "Signal MC is generated!"
 ## Histos
 echo '#include <iostream>' > $hist_script
 echo "void hist_script() {" >> $hist_script
-echo 'gROOT->ProcessLine(".L ../run_bdt/gethist.C");' >> $hist_script
+echo 'gROOT->ProcessLine(".L ../run/gethist.C");' >> $hist_script
 echo 'gROOT->ProcessLine("gethist()");' >> $hist_script
 echo '}' >> $hist_script
 root -l -n -q -b $hist_script >> ${log_hist}
@@ -229,22 +229,22 @@ echo "Histos are created!"
 ## Normalization
 echo '#include <iostream>' > $sfw2d_script
 echo "void sfw2d_script() {" >> $sfw2d_script
-echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
+echo 'gROOT->ProcessLine(".L ../run/sfw2d.C");' >> $sfw2d_script
 echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
 echo '}' >> $sfw2d_script
 root -l -n -q -b $sfw2d_script >> ${log_sfw2d}
-#cp ../header_bdt/sfw2d.txt ${outputSfw2D}
+#cp ../header/sfw2d.txt ${outputSfw2D}
 #ls ${outputSfw2D}
 echo "MC normalization!"
 
 ## MC signal tuning
 echo '#include <iostream>' > $sfw1d_script
 echo "void sfw1d_script() {" >> $sfw1d_script
-echo 'gROOT->ProcessLine(".L ../run_bdt/sfw1d.C");' >> $sfw1d_script
+echo 'gROOT->ProcessLine(".L ../run/sfw1d.C");' >> $sfw1d_script
 echo 'gROOT->ProcessLine("sfw1d()");' >> $sfw1d_script
 echo '}' >> $sfw1d_script
 root -l -n -q -b $sfw1d_script >> ${log_sfw1d}
-#cp ../header_bdt/sfw1d.txt ${outputSfw1D}
+#cp ../header/sfw1d.txt ${outputSfw1D}
 #ls ${outputSfw1D}
 echo "MC signal tuning!"
 
@@ -252,7 +252,7 @@ echo "MC signal tuning!"
 omega_fit_script=omega_fit_script.C
 echo '#include <iostream>' > $omega_fit_script
 echo "void omega_fit_script() {" >> $omega_fit_script
-echo 'gROOT->ProcessLine(".L ../run_bdt/omega_fit.C");' >> $omega_fit_script
+echo 'gROOT->ProcessLine(".L ../run/omega_fit.C");' >> $omega_fit_script
 echo 'gROOT->ProcessLine("omega_fit()");' >> $omega_fit_script
 echo '}' >> $omega_fit_script
 root -l -n -q -b $omega_fit_script >> ${log_omega_fit}

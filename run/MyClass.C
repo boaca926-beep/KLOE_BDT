@@ -1,5 +1,5 @@
 #define MyClass_cxx
-#include "../header_bdt/MyClass.h"
+#include "../header/MyClass.h"
 #include "TMatrixD.h"
 #include "TVectorD.h"
 #include <TH2.h>

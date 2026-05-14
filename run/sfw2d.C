@@ -1,8 +1,8 @@
-#include "../header_bdt/sm_para.h"
-#include "../header_bdt/path.h"
-#include "../header_bdt/sfw2d.h"
-#include "../header_bdt/method.h"
-#include "../header_bdt/cut_para.h"
+#include "../header/sm_para.h"
+#include "../header/path.h"
+#include "../header/sfw2d.h"
+#include "../header/method.h"
+#include "../header/cut_para.h"
 
 int sfw2d(){
   /// get histos
@@ -127,7 +127,7 @@ int sfw2d(){
   }
 
   ofstream myfile;
-  TString myfile_nm = "../header_bdt/sfw2d.txt";
+  TString myfile_nm = "../header/sfw2d.txt";
   myfile.open(myfile_nm);
   myfile << "const double nb_data_sum = " << nb_data_sum << ";\n"
 	 << "const double nb_eeg_sum = " << nb_eeg_sum << ";\n"

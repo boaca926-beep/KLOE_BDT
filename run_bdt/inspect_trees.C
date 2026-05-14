@@ -1,5 +1,3 @@
-//#include "../header_bdt/helper.h"
-
 // Constants
 constexpr double BDT_CUT_VALUE = 0.4;           // BDT score threshold (not used)
 constexpr int N_BINS_ENERGY = 200;
@@ -40,18 +38,18 @@ public:
 #define OUTPUT_FILE_PATH "./output_with_bdt.root"
 
 struct DataAttr {
-    const char* tree_name;      // single tree containing BDT-selected branches
-    const char* label;          // label for plots
-    Color_t     color;          // colour for histograms
-    TString     cut_label;      // optional description (e.g., "BDT selection")
+  const char* tree_name;      // single tree containing BDT-selected branches
+  const char* label;          // label for plots
+  Color_t     color;          // colour for histograms
+  TString     cut_label;      // optional description (e.g., "BDT selection")
 };
 
 // Example for signal 3π channel
 DataAttr myData = {
-    "TISR3PI_SIG",              // tree_name
-    "BDT-selected",             // label
-    kGreen,                     // colour
-    "BDT selection (no score cut)"
+  "TISR3PI_SIG",              // tree_name
+  "BDT-selected pair",        // label
+  kGreen,                     // colour
+  "BDT selection (no score cut)"
 };
 
 // ----------------------------------------------------------------------
@@ -66,7 +64,7 @@ int inspect_trees() {
     gStyle->SetOptTitle(0);
     gStyle->SetFitFormat("6.4g");
 
-    gSystem->mkdir("../plots_bdt/", kTRUE);
+    gSystem->mkdir("../plots_trees/", kTRUE);
 
     if (gSystem->AccessPathName(INPUT_FILE_PATH)) {
         std::cerr << "ERROR: Input file not found: " << INPUT_FILE_PATH << std::endl;
@@ -217,7 +215,7 @@ int inspect_trees() {
         drawPad(1, h1, xTitle1);
         drawPad(2, h2, xTitle2);
         drawPad(3, h3, xTitle3);
-        c->SaveAs(Form("../plots_bdt/%s.pdf", name));
+        c->SaveAs(Form("../plots_trees/%s.pdf", name));
         delete c;
     };
 
@@ -239,7 +237,7 @@ int inspect_trees() {
       TLegend* leg = new TLegend(0.7, 0.7, 0.9, 0.9);
       leg->AddEntry(h, myData.label, "f");
       leg->Draw();
-      c->SaveAs(Form("../plots_bdt/%s.pdf", name));
+      c->SaveAs(Form("../plots_trees/%s.pdf", name));
       delete c;
     };
     
@@ -250,7 +248,7 @@ int inspect_trees() {
                "E_{1} [MeV]", "E_{2} [MeV]", "E_{3} [MeV]", "Entries");
 
     // 2. Energy pulls (normalised)
-    drawTriple("energy_pulls", "Energy Pulls (BDT-selected)",
+    drawTriple("E_pulls", "Energy Pulls (BDT-selected)",
                hE1_pull, hE2_pull, hE3_pull,
                "E_{1} pull [MeV]", "E_{2} pull [MeV]", "E_{3} pull [MeV]", "Normalized entries");
 
@@ -272,7 +270,7 @@ int inspect_trees() {
                "Normalized entries");
 
     // 5. Kinematic variables (raw counts)
-    drawTriple("kinematic_vars", "Kinematic Variables (BDT-selected)",
+    drawTriple("kine_vars", "Kinematic Variables (BDT-selected)",
                hMgg, hM3pi, hAngle,
                "M_{#gamma#gamma} [MeV/c^{2}]", "M_{3#pi} [MeV/c^{2}]", "#angle_{#gamma#gamma} [#circ]", "Entries");
 

@@ -2,8 +2,8 @@
 #set -e # Exit on error
 
 # Check if tree_sample.C exists
-if [[ ! -f "../run_bdt/tree_sample.C" ]]; then
-    echo "Error: ../run_bdt/tree_sample.C not found!"
+if [[ ! -f "../run/tree_sample.C" ]]; then
+    echo "Error: ../run/tree_sample.C not found!"
     exit 1
 else
     echo "tree_sample.C is found!"
@@ -34,7 +34,7 @@ fi
 mkdir ${cut_path} # result folder
 
 
-path_header=../header_bdt/path_sample.h
+path_header=../header/path_sample.h
 echo -e 'const TString data_type = "";' > $path_header
 echo -e 'const TString sampleFile = "";' >> $path_header
 echo -e 'const TString outputCut = "";' >> $path_header
@@ -59,7 +59,7 @@ for ((i=0;i<${#DATA_TYPE[@]};++i)); do
     tree_sample_script=tree_sample_script.C
     echo '#include <iostream>' > $tree_sample_script
     echo "void tree_sample_script() {" >> $tree_sample_script
-    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_sample.C");' >> $tree_sample_script
+    echo 'gROOT->ProcessLine(".L ../run/tree_sample.C");' >> $tree_sample_script
     echo 'gROOT->ProcessLine("tree_sample()");' >> $tree_sample_script
     echo '}' >> $tree_sample_script
     root -l -n -q -b $tree_sample_script

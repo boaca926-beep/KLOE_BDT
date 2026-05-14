@@ -29,7 +29,7 @@ fi
 mkdir $plot_folder
 
 
-header="../header_bdt/plot_omega.h"
+header="../header/plot_omega.h"
 
 for ((i=0; i<${#FILE_TYPE[@]}; ++i)); do
 
@@ -50,14 +50,14 @@ for ((i=0; i<${#FILE_TYPE[@]}; ++i)); do
     plot_script=plot_script.C
     echo '#include <iostream>' > $plot_script
     echo "void plot_script() {" >> $plot_script
-    echo '  gROOT->ProcessLine(".L ../run_bdt/plot_omega.C");' >> $plot_script
+    echo '  gROOT->ProcessLine(".L ../run/plot_omega.C");' >> $plot_script
     echo '  gROOT->ProcessLine("plot_omega()");' >> $plot_script
     echo '}' >> $plot_script
     root -l -n -q -b $plot_script
 
 done
 
-#header_compr="../header_bdt/plot_omega_compr.h"
+#header_compr="../header/plot_omega_compr.h"
 
 #echo $file_type1 $file_type2
 

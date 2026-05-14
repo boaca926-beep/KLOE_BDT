@@ -1,8 +1,8 @@
-#include "../header_bdt/sm_para.h"
-#include "../header_bdt/path.h"
-#include "../header_bdt/sfw1d.h"
-#include "../header_bdt/sfw2d.txt"
-#include "../header_bdt/method.h"
+#include "../header/sm_para.h"
+#include "../header/path.h"
+#include "../header/sfw1d.h"
+#include "../header/sfw2d.txt"
+#include "../header/method.h"
 
 int sfw1d(){
   
@@ -223,7 +223,7 @@ int sfw1d(){
   cout << "chisq = " << amin << ", fit_indx = " << fit_indx << ", chisq rel. = " << amin / (fit_indx - 1)  << "\n";
 
   ofstream myfile;
-  TString myfile_nm = "../header_bdt/sfw1d.txt";
+  TString myfile_nm = "../header/sfw1d.txt";
   myfile.open(myfile_nm);
   myfile << "const double sig_sfw = " << sig_sfw << ";\n";
   myfile.close();

@@ -1,5 +1,5 @@
-#include "../header_bdt/path.h"
-#include "../header_bdt/hist.h"
+#include "../header/path.h"
+#include "../header/hist.h"
 
 int gethist(){
 
