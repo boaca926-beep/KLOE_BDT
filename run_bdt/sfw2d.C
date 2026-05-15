@@ -1,6 +1,6 @@
 #include "../header_plot/plot.h"
 #include "../header_method/method.h"
-#include "sfw2d.h"
+#include "../header_bdt/plot2d.h"
 
 gROOT->ForceStyle();
 
@@ -80,19 +80,17 @@ int sfw2d() {
 
   // get histos
   
-  TFile *infile = new TFile("./sfw2d_output.root_kloe.root");
+  TFile *infile = new TFile(output_path + "sfw2d_output.root");
 
   // Check input file
   getObj(infile);
   
-  
-  //TH2D* h2d = (TH2D*)infile -> Get(hist_type);
-    
+  TH2D* h2d = (TH2D*)infile -> Get(hist_type);
   //cout << hist_type << endl;
 
   // plot
 
-  //TCanvas *cv2d = plot_cv("cv2d_" + hist_type, cv_nm, h2d, cv_text);
+  TCanvas *cv2d = plot_cv("cv2d_" + hist_type, cv_nm, h2d, cv_text);
 
   // save
   //cv2d -> SaveAs("./plots/sfw2d_" + cv_nm + ".pdf");

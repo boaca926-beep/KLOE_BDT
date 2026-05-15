@@ -10,7 +10,7 @@ int get2Dhist() {
   gStyle->SetOptTitle(0);
   //gROOT->SetBatch(kFALSE); //kFALSE
     
-  cout << "Creating 2D histos... " << endl;
+  cout << "Creating 2D histos... " << infile_nm << "\n" << endl;
 
   // get histos
   TFile* infile = new TFile(infile_nm);

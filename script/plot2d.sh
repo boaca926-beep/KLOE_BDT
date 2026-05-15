@@ -1,7 +1,7 @@
 #!/bin/bash
 
 header=../header_bdt/plot2d.h
-infile_nm="/home/kloe/Desktop/input_kloe_TDATA_chain/hist/hist.root"
+infile_nm="/home/kloe/Desktop/input_bkt_TDATA_chain/hist/hist.root"
 output_path=../run_bdt/
 
 echo -e "\nPlotting sfw2d ..."

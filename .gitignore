@@ -21,6 +21,7 @@ models/
 etagam_plots/
 plots_trees/
 signal_plots/
+plots2d/
 
 # Backup files
 *~

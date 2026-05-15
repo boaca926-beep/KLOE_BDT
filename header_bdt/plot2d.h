@@ -1,5 +1,5 @@
 const TString hist_type = "h2d_sfw_TDATA";
-const TString infile_nm = "/home/kloe/Desktop/input_kloe_TDATA_chain/hist/hist.root";
+const TString infile_nm = "/home/kloe/Desktop/input_bkt_TDATA_chain/hist/hist.root";
 const TString output_path = "../run_bdt/";
 const TString cv_nm = "";
 const TString cv_text = "Data";
