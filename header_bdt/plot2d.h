@@ -1,10 +1,10 @@
 const TString hist_root = "/home/kloe/Desktop/input_bdt_TDATA_chain/hist/hist.root";
-const TString hist_type = "h2d_ppIM_vs_betapi0_TETAGAM";
+const TString hist_type = "hbkgsum_noeta";
 const TString infile_nm = "../run_bdt/ppIM_vs_betapi0_output.root";
 const TString output_path = "../run_bdt/";
-const TString cv_nm = "etagam_ppbeta";
-const TString cv_text = "#eta#gamma";
-const double pt1_x0 = 0.5;
-const double pt1_x1 = 0.8;
+const TString cv_nm = "bkgsum_noeta";
+const TString cv_text = "Others";
+const double pt1_x0 = 0.6;
+const double pt1_x1 = 0.85;
 //const double nm_scale = 0.0525063; // normalization factor signal rhopi_str / phok5
 const double nm_scale = 1; 

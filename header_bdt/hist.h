@@ -93,8 +93,7 @@ void fillHist() {
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp -> Sumw2();
 
-    // range in GeV
-    TH2D *h2d_ppIM_vs_beta = new TH2D("h2d_ppIM_vs_betapi0_" + objnm_tree, "", 200, 0.25, 0.65, 200, 0.3, 1.);  
+    TH2D *h2d_ppIM_vs_beta = new TH2D("h2d_ppIM_vs_betapi0_" + objnm_tree, "", 200, 0.25, 0.65, 200, 0.3, 1.);  // range in GeV  
     h2d_ppIM_vs_beta -> Sumw2();
 
     for (Int_t irow = 0; irow < tree_tmp -> GetEntries(); irow++) {// loop chain

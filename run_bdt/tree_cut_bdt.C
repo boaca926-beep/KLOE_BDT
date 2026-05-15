@@ -423,7 +423,7 @@ int tree_cut_bdt() {
         if (lagvalue_min_7C > chi2_cut) continue;
         else if (deltaE > deltaE_cut) continue;
         else if (angle_pi0gam12_bdt > angle_cut) continue;
-        else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+        //else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
 
         // ---------- Classification and filling (identical to tree_cut.C) ----------
         if (data_type == "exp") {
