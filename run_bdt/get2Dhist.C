@@ -2,80 +2,113 @@
 #include "../header_method/method.h"
 #include "../header_bdt/plot2d.h"
 
-int get2Dhist() {
+// plot_type can be "sfw2d" (default) or "ppIM_vs_beta0"
+int get2Dhist(const TString plot_type = "sfw2d") {
 
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(3);
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
-  //gROOT->SetBatch(kFALSE); //kFALSE
-    
-  cout << "Creating 2D histos... " << infile_nm << "\n" << endl;
 
-  // get histos
-  TFile* infile = new TFile(infile_nm);
-  getObj(infile);
+  cout << "Creating 2D histos for " << plot_type << "... " << hist_root << "\n" << endl;
 
-  TList *HSFW2D = (TList*)gROOT->FindObject("HSFW2D");
-  if (!HSFW2D) { cerr << "HSFW2D not found" << endl; return 1; }
-  checkList(HSFW2D);
- 
-  TH2D *h2d_sfw_TISR3PI_SIG = (TH2D *)HSFW2D->FindObject("h2d_sfw_TISR3PI_SIG");
-  TH2D *h2d_sfw_TOMEGAPI = (TH2D *)HSFW2D->FindObject("h2d_sfw_TOMEGAPI");
-  TH2D *h2d_sfw_TKPM = (TH2D *)HSFW2D->FindObject("h2d_sfw_TKPM");
-  TH2D *h2d_sfw_TKSL = (TH2D *)HSFW2D->FindObject("h2d_sfw_TKSL");
-  TH2D *h2d_sfw_TRHOPI = (TH2D *)HSFW2D->FindObject("h2d_sfw_TRHOPI");
-  TH2D *h2d_sfw_TETAGAM = (TH2D *)HSFW2D->FindObject("h2d_sfw_TETAGAM");
-  TH2D *h2d_sfw_TBKGREST = (TH2D *)HSFW2D->FindObject("h2d_sfw_TBKGREST");
-  if (!h2d_sfw_TBKGREST) {
-    std::cerr << "ERROR: histogram h2d_sfw_TBKGREST not found!" << std::endl;
+  TFile* infile = new TFile(hist_root);
+  if (!infile || infile->IsZombie()) {
+    cerr << "ERROR: Cannot open " << hist_root << endl;
     return 1;
-}
-  TH2D *h2d_sfw_TDATA = (TH2D *)HSFW2D->FindObject("h2d_sfw_TDATA");
-  TH2D *h2d_sfw_TEEG = (TH2D *)HSFW2D->FindObject("h2d_sfw_TEEG");
-  
-  // mc rest
-  TH2D *hmcrest = (TH2D*) h2d_sfw_TBKGREST -> Clone();
-  hmcrest -> Add(h2d_sfw_TKPM, 1.);
-  hmcrest -> Add(h2d_sfw_TRHOPI, 1.);
-  hmcrest -> SetName("hmcrest");
-  
-  // bkg sum no etagam
-  TH2D *hbkgsum_noeta = (TH2D *) h2d_sfw_TEEG -> Clone();
-  //hbkgsum_noeta -> Add(h2d_sfw_TISR3PI_SIG, 1.);
-  hbkgsum_noeta -> Add(h2d_sfw_TKSL, 1.);
-  hbkgsum_noeta -> Add(h2d_sfw_TOMEGAPI, 1.);
-  hbkgsum_noeta -> Add(hmcrest, 1.);
-  hbkgsum_noeta -> SetName("hbkgsum_noeta");
+  }
 
-  // bkg sum
-  TH2D *hbkgsum = (TH2D*) hbkgsum_noeta -> Clone();
-  hbkgsum -> Add(h2d_sfw_TETAGAM, 1.);
-  hbkgsum -> SetName("hbkgsum");
+  // ------------------------------------------------------------------
+  // Select the appropriate TList based on plot_type
+  // ------------------------------------------------------------------
+  TList *sourceList = nullptr;
+  TString listName;
+  if (plot_type == "sfw2d") {
+    listName = "HSFW2D";
+    sourceList = (TList*)infile->Get(listName);
+  } else if (plot_type == "ppIM_vs_betapi0") {
+    listName = "HppIM_vs_betapi0";
+    sourceList = (TList*)infile->Get(listName);
+  } else {
+    cerr << "ERROR: Unknown plot_type '" << plot_type << "'. Use 'sfw2d' or 'ppIM_vs_betapi0'." << endl;
+    return 1;
+  }
 
-  // mc sum
-  TH2D *hmcsum = (TH2D *) hbkgsum -> Clone();
-  hmcsum -> Add(h2d_sfw_TETAGAM, 1.);
-  hmcsum -> Add(h2d_sfw_TISR3PI_SIG, 1.);
-  hmcsum -> SetName("hmcsum");
-  
-  // save
-  TFile *f_out = new TFile(output_path + "sfw2d_output.root", "recreate");
+  if (!sourceList) {
+    cerr << "ERROR: " << listName << " not found in " << hist_root << endl;
+    infile->Close();
+    return 1;
+  }
 
-  h2d_sfw_TDATA -> Write();
-  h2d_sfw_TISR3PI_SIG -> Write();
-  h2d_sfw_TETAGAM -> Write();
+  // Helper function to get histogram from list with error checking
+  auto getHist = [&](const char* name) -> TH2D* {
+    TH2D* h = (TH2D*)sourceList->FindObject(name);
+    if (!h) cerr << "WARNING: histogram " << name << " not found in " << listName << endl;
+    return h;
+  };
+
+  // Determine histogram name prefix based on plot_type
+  TString prefix = (plot_type == "sfw2d") ? "sfw" : "ppIM_vs_betapi0";
     
-  hmcrest -> Write();
-  hbkgsum_noeta -> Write();
-  hmcsum -> Write();
-  hbkgsum -> Write();
+  // Extract individual histograms
+  TH2D *h_sig     = getHist(Form("h2d_%s_TISR3PI_SIG", prefix.Data()));
+  TH2D *h_omega   = getHist(Form("h2d_%s_TOMEGAPI",   prefix.Data()));
+  TH2D *h_kpm     = getHist(Form("h2d_%s_TKPM",       prefix.Data()));
+  TH2D *h_ksl     = getHist(Form("h2d_%s_TKSL",       prefix.Data()));
+  TH2D *h_rhopi   = getHist(Form("h2d_%s_TRHOPI",     prefix.Data()));
+  TH2D *h_etagam  = getHist(Form("h2d_%s_TETAGAM",    prefix.Data()));
+  TH2D *h_bkgrest = getHist(Form("h2d_%s_TBKGREST",   prefix.Data()));
+  TH2D *h_data    = getHist(Form("h2d_%s_TDATA",      prefix.Data()));
+  TH2D *h_eeg     = getHist(Form("h2d_%s_TEEG",       prefix.Data()));
   
-  f_out->Close();
-  infile->Close();
+  if (!h_data) {
+    cerr << "ERROR: Data histogram not found!" << endl;
+    infile->Close();
+    return 1;
+  }
 
-  cout << "2D histos are created!" << endl;
+  // ------------------------------------------------------------------
+  // Build combined histograms (MC rest, background sums, MC sum)
+  // ------------------------------------------------------------------
+  // MC rest (background without signal)
+  TH2D *hmcrest = (TH2D*)h_bkgrest->Clone();
+  hmcrest->Add(h_kpm, 1.);
+  hmcrest->Add(h_rhopi, 1.);
   
+  // Background sum without η→γγ
+  TH2D *hbkgsum_noeta = (TH2D*)h_eeg->Clone();
+  hbkgsum_noeta->Add(h_ksl, 1.);
+  hbkgsum_noeta->Add(h_omega, 1.);
+  hbkgsum_noeta->Add(hmcrest, 1.);
+  
+  // Background sum (including η→γγ)
+  TH2D *hbkgsum = (TH2D*)hbkgsum_noeta->Clone();
+  hbkgsum->Add(h_etagam, 1.);
+  
+  // MC sum (background + signal)
+  TH2D *hmcsum = (TH2D*)hbkgsum->Clone();
+  hmcsum->Add(h_sig, 1.);
+  
+  hmcrest->SetName("hmcrest");
+  hbkgsum_noeta->SetName("hbkgsum_noeta");
+  hbkgsum->SetName("hbkgsum");
+  hmcsum->SetName("hmcsum");
+ 
+  // ------------------------------------------------------------------
+  // Write to output file
+  // ------------------------------------------------------------------
+  TString outfile_name = output_path + (plot_type == "sfw2d" ? "sfw2d_output.root" : "ppIM_vs_betapi0_output.root");
+  TFile *f_out = new TFile(outfile_name, "recreate");
+  h_data->Write();
+  h_sig->Write();
+  h_etagam->Write();
+  hmcrest->Write();
+  hbkgsum_noeta->Write();
+  hbkgsum->Write();
+  hmcsum->Write();
+  f_out->Close();
+
+  infile->Close();
+  cout << "2D histograms for " << plot_type << " saved to " << outfile_name << endl;
   return 0;
-  
 }

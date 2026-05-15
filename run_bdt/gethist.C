@@ -15,7 +15,8 @@ int gethist(){
   HSFW1D -> Write("HSFW1D", 1);
   HSIG -> Write("HSIG",1);  
   HIM3pi_crx -> Write("HIM3pi_crx",1);
-    
+  HppIM_vs_betapi0->Write("HppIM_vs_betapi0", 1);
+  
   f_output -> Close();
   
   return 0;

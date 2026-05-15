@@ -20,10 +20,15 @@ const double Eisr_sigma = 2.48;
 const int Eisr_bin = TMath::Nint((Eisr_max - Eisr_min) / sfw2d_sigma_nb / Eisr_sigma);
 
 //ppIM:
-const double ppIM_min = 200;
-const double ppIM_max = 700;
+const double ppIM_min = 200; 
+const double ppIM_max = 700; 
 const double ppIM_sigma = 2.30;
 const int ppIM_bin = TMath::Nint((ppIM_max - ppIM_min) / sfw2d_sigma_nb / ppIM_sigma);
+
+// betapi0:
+const double betapi0_min = 0.;
+const double betapi0_max = 1.0;
+const int betapi0_bin = 50;
 
 //sfw1d
 const double xmin = 770;
@@ -41,6 +46,7 @@ TList *HSFW2D = new TList(); // Eisr vs. ppIM distr. for MC normalization
 TList *HSFW1D = new TList(); // IM3pi distr. for signal MC tuning
 TList *HSIG = new TList(); // IM3pi distr. signal true and generated
 TList *HIM3pi_crx = new TList(); // IM3pi distr. for crx3pi obs.
+TList *HppIM_vs_betapi0 = new TList();   // 2D for ppIM vs betapi0
 TRandom *rnd=0;
 
 
@@ -64,11 +70,12 @@ void fillHist() {
     if (!tree_tmp) continue;
 
     // ---- Set branch addresses for this tree ----
-    double m3pi_bdt = 0., m3pi_true_bdt = 0., Eisr = 0., ppIM = 0.;
+    double m3pi_bdt = 0., m3pi_true_bdt = 0., Eisr = 0., ppIM = 0., betapi0_bdt = 0.;
     tree_tmp->SetBranchAddress("Br_m3pi_bdt", &m3pi_bdt);
     tree_tmp->SetBranchAddress("Br_m3pi_true_bdt", &m3pi_true_bdt);
     tree_tmp->SetBranchAddress("Br_e3_bdt", &Eisr);
     tree_tmp->SetBranchAddress("Br_ppIM", &ppIM);
+    tree_tmp->SetBranchAddress("Br_betapi0_bdt", &betapi0_bdt);
 	
     // fill histos
     TH1D * h1d_tmp_crx = new TH1D("h1d_IM3pi_" + objnm_tree + "_CRX", "", hbins, hmin, hmax);
@@ -85,6 +92,10 @@ void fillHist() {
 
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp -> Sumw2();
+
+    // range in GeV
+    TH2D *h2d_ppIM_vs_beta = new TH2D("h2d_ppIM_vs_betapi0_" + objnm_tree, "", 200, 0.25, 0.65, 200, 0.3, 1.);  
+    h2d_ppIM_vs_beta -> Sumw2();
 
     for (Int_t irow = 0; irow < tree_tmp -> GetEntries(); irow++) {// loop chain
 
@@ -103,14 +114,11 @@ void fillHist() {
       // filling
       //h1d_tmp -> Fill(m3pi);
       h1d_tmp -> Fill(m3pi_bdt);
-
       h1d_tmp_sfw -> Fill(m3pi_bdt);
-
       h1d_tmp_crx -> Fill(m3pi_bdt);
-
       h1d_tmp_true -> Fill(m3pi_true_bdt); // bdt m3pi true
-
       h2d_tmp -> Fill(ppIM, Eisr); // Eisr -> e3_bdt
+      h2d_ppIM_vs_beta -> Fill(ppIM * 1e-3, betapi0_bdt);
       
     }
 
@@ -118,6 +126,7 @@ void fillHist() {
     if (objnm_tree == "TEEG") {
        h1d_tmp -> Scale(eeg_lsf);
        h2d_tmp -> Scale(eeg_lsf);
+       h2d_ppIM_vs_beta -> Scale(eeg_lsf);
     }
 
     HIM3pi_fit -> Add(h1d_tmp);
@@ -125,6 +134,7 @@ void fillHist() {
     
     HSFW1D -> Add(h1d_tmp_sfw);
     HSFW2D -> Add(h2d_tmp);
+    HppIM_vs_betapi0 -> Add(h2d_ppIM_vs_beta);
 
     HIM3pi_crx -> Add(h1d_tmp_crx);
     

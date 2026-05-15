@@ -9,7 +9,7 @@ void getObj(TFile * f){
   int i = 0;
   TKey *key;
   
-  while ( (key = (TKey *) next_tree() ) ) {// start tree while lop
+  while ( (key = (TKey *) next_tree() ) ) {// start tree while loop
 
     objnm_tree   =  key -> GetName();
     classnm_tree = key -> GetClassName();

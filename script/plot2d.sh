@@ -1,94 +1,91 @@
 #!/bin/bash
 
+# Quick start
+# ./plot2d.sh sfw2d             # for the original sideband plots
+# ./plot2d.sh ppIM_vs_betapi0   # for the new dipion mass vs π⁰ β correlation
+
+hist_root="/home/kloe/Desktop/input_bdt_TDATA_chain/hist/hist.root"
+
+# Usage: ./plot2d.sh [sfw2d|ppIM_vs_betapi0]
+plot_type=${1:-sfw2d}
 header=../header_bdt/plot2d.h
-infile_nm="/home/kloe/Desktop/input_kloe_TDATA_chain/hist/hist.root"
 output_path=../run_bdt/
+plots_dir=../plots2d_${plot_type}/
 
-echo -e "\nPlotting sfw2d ..."
+# ----------------------------------------------------------------------
+# Create required directories
+# ----------------------------------------------------------------------
+mkdir -p $output_path
+mkdir -p $plots_dir
 
-#rm plots/hist.root 
-#rm plots/*.pdf 
+echo -e "\nPlotting $plot_type ..."
 
-echo "Get hist.root"
+sed -i 's|\(const TString hist_root =\)\(.*\)|\1 "'"${hist_root}"'";|' $header
 
+# ----------------------------------------------------------------------
+# Get hist.root and produce combined 2D outputs (sfw2d or ppIM_vs_betapi0)
+# ----------------------------------------------------------------------
 gethist_script=gethist_script.C
-echo '#include <iostream>' > $gethist_script
-echo "void gethist_script() {" >> $gethist_script
-echo '  gROOT->ProcessLine(".L ../run_bdt/get2Dhist.C");' >> $gethist_script
-echo '  gROOT->ProcessLine("get2Dhist()");' >> $gethist_script
-echo '}' >> $gethist_script
+cat > $gethist_script <<EOF
+#include <iostream>
+void gethist_script() {
+    gROOT->ProcessLine(".L ../run_bdt/get2Dhist.C");
+    gROOT->ProcessLine("get2Dhist(\"$plot_type\")");
+}
+EOF
 root -l -n -q -b $gethist_script
 rm $gethist_script
 
-# plot sfw2d
-hist_type=("h2d_sfw_TDATA" "h2d_sfw_TISR3PI_SIG" "h2d_sfw_TETAGAM" "hbkgsum_noeta")
-cv_nm=("data" "signal" "etagam" "bkgsum_noeta")
-cv_text=("Data" "Signal" "#eta#gamma" "Others" )
-pt1_x0=(0.5 0.5 0.5 0.5)
-pt1_x1=(0.8 0.8 0.8 0.8)
+# ----------------------------------------------------------------------
+# Configure arrays and macro based on plot type
+# ----------------------------------------------------------------------
+if [ "$plot_type" == "sfw2d" ]; then
+    outfile_name="sfw2d_output.root"
+    hist_type=("h2d_sfw_TDATA" "h2d_sfw_TISR3PI_SIG" "h2d_sfw_TETAGAM" "hbkgsum_noeta")
+    cv_nm=("data" "signal" "etagam" "bkgsum_noeta")
+    cv_text=("Data" "Signal" "#eta#gamma" "Others")
+    pt1_x0=(0.5 0.5 0.5 0.5)
+    pt1_x1=(0.8 0.8 0.8 0.8)
+    macro="plot2d_sfw.C"
+    func="plot2d_sfw"
+elif [ "$plot_type" == "ppIM_vs_betapi0" ]; then
+    outfile_name="ppIM_vs_betapi0_output.root"
+    hist_type=("h2d_ppIM_vs_betapi0_TDATA" "h2d_ppIM_vs_betapi0_TISR3PI_SIG" "h2d_ppIM_vs_betapi0_TETAGAM")
+    cv_nm=("data_ppbeta" "signal_ppbeta" "etagam_ppbeta")
+    cv_text=("Data" "Signal" "#eta#gamma")
+    pt1_x0=(0.5 0.5 0.5)
+    pt1_x1=(0.8 0.8 0.8)
+    macro="plot2d_ppbeta.C"
+    func="plot2d_ppbeta"
+else
+    echo "Unknown plot type: $plot_type. Use 'sfw2d' or 'ppIM_vs_betapi0'."
+    exit 1
+fi
 
-#hist_type=("h2d_sfw_TDATA")
-#cv_text=("Data")
-#pt1_x0=(0.5)
-#pt1_x1=(0.8)
-
-#You need to use IFS to stop space as element delimiter.
+# ----------------------------------------------------------------------
+# Loop over histograms
+# ----------------------------------------------------------------------
 IFS=""
-for ((i=0;i<${#hist_type[@]};++i)); do
-
-    #echo $i
-    
+for ((i=0; i<${#hist_type[@]}; ++i)); do
+    # Update header with current histogram settings
     sed -i 's/\(const double pt1_x0 =\)\(.*\)/\1 '${pt1_x0[i]}';/' $header
     sed -i 's/\(const double pt1_x1 =\)\(.*\)/\1 '${pt1_x1[i]}';/' $header
-    
     sed -i 's/\(const TString hist_type =\)\(.*\)/\1 "'${hist_type[i]}'";/' $header
-    sed -i 's|\(const TString infile_nm =\)\(.*\)|\1 "'"${infile_nm}"'";|' $header
+    sed -i 's|\(const TString infile_nm =\)\(.*\)|\1 "'"${output_path}${outfile_name}"'";|' $header
     sed -i 's|\(const TString output_path =\)\(.*\)|\1 "'"${output_path}"'";|' $header
     sed -i 's/\(const TString cv_nm =\)\(.*\)/\1 "'${cv_nm[i]}'";/' $header
     sed -i 's/\(const TString cv_text =\)\(.*\)/\1 "'${cv_text[i]}'";/' $header
-    #sed -i 's/\(sprintf(display,\)\(.*\)/\1 "'${cv_text[i]}'");/' sfw2d.C
 
-    sfw2d_script=sfw2d_script.C
-    echo '#include <iostream>' > $sfw2d_script
-    echo "void sfw2d_script() {" >> $sfw2d_script
-    echo '  gROOT->ProcessLine(".L ../run_bdt/plot2d.C");' >> $sfw2d_script
-    echo '  gROOT->ProcessLine("plot2d()");' >> $sfw2d_script
-    echo '}' >> $sfw2d_script
-    root -l -n -q -b $sfw2d_script
-    rm $sfw2d_script
+    # Create and run the ROOT macro
+    cat > plot_script.C <<EOF
+#include <iostream>
+void plot_script() {
+    gROOT->ProcessLine(".L ../run_bdt/${macro}");
+    gROOT->ProcessLine("${func}(\"$plots_dir\")");
+}
+EOF
+    root -l -n -q -b plot_script.C
+    rm plot_script.C
 done
 
-# plot mcsum
-#hist_type=("hmcsum" "hbkgsum" "hmcsum_noeta")
-#cv_nm=("mcsum" "bkgsum" "mcsum_noeta")
-#cv_text=("MC_Sum" "Bkg_Sum" "MC_without_#eta#gamma")
-#pt1_x0=(0.6 0.6 0.45)
-#pt1_x1=(0.7 0.7 0.7)
-
-#hist_type=("hmcsum_noeta")
-#cv_nm=("mcsum_noeta")
-##cv_text=(" ")
-#pt1_x0=(0.45)
-#pt1_x1=(0.7)
-
-#for ((i=0;i<${#hist_type[@]};++i)); do
-
-#    #echo $i
-    
-#    sed -i 's/\(const double pt1_x0 =\)\(.*\)/\1 '${pt1_x0[i]}';/' header
-#    sed -i 's/\(const double pt1_x1 =\)\(.*\)/\1 '${pt1_x1[i]}';/' header
-
-#    sed -i 's/\(const TString hist_type =\)\(.*\)/\1 "'${hist_type[i]}'";/' header
-#    sed -i 's/\(const TString cv_nm =\)\(.*\)/\1 "'${cv_nm[i]}'";/' header
-#    sed -i 's/\(sprintf(display,\)\(.*\)/\1 "'${cv_text[i]}'");/' mcsum.C
-
-#    mcsum_script=mcsum_script.C
-#    echo '#include <iostream>' > $mcsum_script
-#    echo "void mcsum_script() {" >> $mcsum_script
-#    echo '  gROOT->ProcessLine(".L mcsum.C");' >> $mcsum_script
-#    echo '  gROOT->ProcessLine("mcsum()");' >> $mcsum_script
-#    echo '}' >> $mcsum_script
-#    root -l -n -q -b $mcsum_script
-#    rm $mcsum_script
-    
-#done
+echo "All $plot_type plots finished."

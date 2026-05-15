@@ -4,7 +4,7 @@
 
 gROOT->ForceStyle();
 
-TCanvas *plot_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const TString pt_str)
+TCanvas *plot2d_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const TString pt_str)
 {
 
   TH1D *h2d_projx = h2d -> ProjectionX();
@@ -66,7 +66,7 @@ TCanvas *plot_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const T
   
 }
 
-int plot2d() {
+int plot2d_sfw(const TString plots_dir = "") {
 
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
@@ -80,7 +80,7 @@ int plot2d() {
 
   // get histos
   
-  TFile *infile = new TFile(output_path + "sfw2d_output.root");
+  TFile *infile = new TFile(infile_nm);
 
   // Check input file
   getObj(infile);
@@ -90,11 +90,11 @@ int plot2d() {
 
   // plot
 
-  TCanvas *cv2d = plot_cv("cv2d_" + hist_type, cv_nm, h2d, cv_text);
+  TCanvas *cv2d = plot2d_cv("cv2d_" + hist_type, cv_nm, h2d, cv_text);
 
   // save
-  //cout << cv_nm << endl;
-  cv2d -> SaveAs("../plots2d/sfw2d_" + cv_nm + ".pdf");
+  cout << "plots_dir = " << plots_dir << endl;
+  cv2d -> SaveAs(plots_dir + "sfw2d_" + cv_nm + ".pdf");
   
   return 0;
 
