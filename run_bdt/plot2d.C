@@ -66,7 +66,7 @@ TCanvas *plot_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const T
   
 }
 
-int sfw2d() {
+int plot2d() {
 
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
@@ -93,8 +93,8 @@ int sfw2d() {
   TCanvas *cv2d = plot_cv("cv2d_" + hist_type, cv_nm, h2d, cv_text);
 
   // save
-  //cv2d -> SaveAs("./plots/sfw2d_" + cv_nm + ".pdf");
-  
+  //cout << cv_nm << endl;
+  cv2d -> SaveAs("../plots2d/sfw2d_" + cv_nm + ".pdf");
   
   return 0;
 
