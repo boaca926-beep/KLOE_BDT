@@ -23,6 +23,24 @@ void checkFile(TFile *f_input){
 }
 
 //
+void checkArray(TObjArray *array){
+
+  // Create a TIter object for the TObjArray
+  TIter next(array);
+
+  TObject* object = 0;
+  int obj_indx = 0;
+  while ((object = next()))
+    {
+
+      cout << "[" << obj_indx << "]: " << object -> GetName() << endl;
+      obj_indx ++;
+      
+    }
+  
+}
+
+//
 void checkList(TList *list_tmp){
 
   TIter next(list_tmp);
