@@ -1,12 +1,8 @@
-//#include "sfw1d_ref.h" //#include "../sf_2g/sfw1d_ref.h"
 #include "compr.h"
 
 #include "../plot.h"
 #include "../hist.h"
-#include "../method.h"
-
-
-//TRandom *rnd=0;
+#include "../header_method/method.h"
 
 int compr(){
 
@@ -24,55 +20,27 @@ int compr(){
 
   // Inspect the input tree
   //cout << infile_nm << endl;
+  const TString gen_file = "/home/bo/Desktop/analysis/chains_norm/sig_gen.root";
+  const TString tree_file = "/home/bo/Desktop/analysis/crx3pi/output_norm/tree_cut0.root";
 
-  // get generated signal
-  TFile* intree_gen = new TFile("/home/bo/Desktop/analysis/chains_norm/sig_gen.root");
+  if (!infile || gen_file->IsZombie()) {
+    cerr << "ERROR: Cannot open " << gen_file << endl;
+    return 1;
+  }
 
-  TIter next_tree1(intree_gen -> GetListOfKeys());
+  if (!infile || tree_file->IsZombie()) {
+    cerr << "ERROR: Cannot open " << tree_file << endl;
+    return 1;
+  }
 
-  TString objnm_tree, classnm_tree;
-
-  int i = 0;
-  TKey *key;
+  getObj(gen_file);
+  getObj(tree_file);
   
-  while ( (key = (TKey *) next_tree1() ) ) {
-    
-    i ++;
-    
-     objnm_tree   =  key -> GetName();
-     classnm_tree = key -> GetClassName();
-     //key -> GetSeekKey();
+  // get generated signal
+  TFile* intree_gen = new TFile(gen_file);
 
-     cout << "tree" << i << ": classnm = " << classnm_tree << ", objnm = " << objnm_tree << endl;
-
-   }
-
-   /*
-   double Eisr_gen = 0., angle_isr_gen = 0.;
-
-   TH1D* hEisr_gen = new TH1D("hEisr_gen", "", 200, 0., 500.);
-   TH1D* hangle_isr_gen = new TH1D("hangle_isr_gen", "", 400, -1., 1.);
-
-   for (Int_t irow = 0; irow < ALLCHAIN_GEN -> GetEntries(); irow++) {
-
-       ALLCHAIN_GEN -> GetEntry(irow);
-
-       if (irow > 1e7) break;
-       Eisr_gen = ALLCHAIN_GEN -> GetLeaf("Br_E_pho_isr") -> GetValue(0);
-       angle_isr_gen = ALLCHAIN_GEN -> GetLeaf("Br_Angle_pho_isr") -> GetValue(0);
-
-
-       hEisr_gen -> Fill(Eisr_gen);
-       hangle_isr_gen -> Fill(angle_isr_gen);
-
-       //cout << Eisr_gen << endl;
-       //cout << angle_isr_gen << endl;
-
-       cout << irow << endl;
-
-   }
-   */
-
+  
+  
    TTree * ALLCHAIN_GEN = static_cast<TTree*>(intree_gen -> Get("ALLCHAIN_GEN")); 
 
    const double evnb_sig_gen = ALLCHAIN_GEN -> GetEntries(); //number of generated signal events
@@ -80,17 +48,12 @@ int compr(){
    cout << evnb_sig_gen << endl;
 
    // get MC recon.
-   //TFile* intree = new TFile("./tree_final.root");
-   //TFile* intree = new TFile("/home/bo/Desktop/analysis/crx3pi/output_angle_cut/tree_cut0.root");
-   //TFile* intree = new TFile("/media/bo/8E97-E8DD/KLOE_OUTPUT/output_norm/tree_cut0.root");
-
-  TFile* intree = new TFile("/home/bo/Desktop/analysis/crx3pi/output_norm/tree_cut0.root");
-  //TFile* intree = new TFile("/home/bo/Desktop/analysis/crx3pi/output_pre/tree_cut0.root");
-  //TFile* intree = new TFile("tree_pre.root");
+   
+   TFile* intree = new TFile(tree_file);
   
-  TIter next_tree(intree -> GetListOfKeys());
+   TIter next_tree(intree -> GetListOfKeys());
 
-  //TString objnm_tree, classnm_tree;
+   //TString objnm_tree, classnm_tree;
 
   i = 0;
   

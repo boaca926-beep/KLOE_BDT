@@ -227,7 +227,19 @@ echo '}' >> $hist_script
 root -l -n -q -b $hist_script >> ${log_hist}
 echo "Histos are created!"
 
+## Normalization
+echo '#include <iostream>' > $sfw2d_script
+echo "void sfw2d_script() {" >> $sfw2d_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
+echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
+echo '}' >> $sfw2d_script
+root -l -n -q -b $sfw2d_script >> ${log_sfw2d}
+#cp ../header/sfw2d.txt ${outputSfw2D}
+#ls ${outputSfw2D}
+echo "MC normalization!"
+
 rm $run_script
 rm $tree_cut_script
 rm $tree_gen_script
 rm $hist_script
+rm $sfw2d_script

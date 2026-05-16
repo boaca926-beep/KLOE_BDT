@@ -1,9 +1,9 @@
 #include "../header_plot/plot.h"
 #include "../header_method/method.h"
-#include "../header_bdt/plot2d.h"
+#include "../header_bdt/plot.h"
 
 // plot_type can be "sfw2d" (default) or "ppIM_vs_beta0"
-int get2Dhist(const TString plot_type = "sfw2d") {
+int getplothist(const TString plot_type = "") {
 
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(3);

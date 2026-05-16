@@ -1,4 +1,5 @@
-TRandom *rnd=0;
+//TRandom *rnd=0;
+TRandom *rnd = new TRandom(0); // seed 0 = use system time
 
 void getObj(TFile * f){
 

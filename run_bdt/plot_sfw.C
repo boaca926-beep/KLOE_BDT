@@ -1,10 +1,10 @@
 #include "../header_plot/plot.h"
 #include "../header_method/method.h"
-#include "../header_bdt/plot2d.h"
+#include "../header_bdt/plot.h"
 
 gROOT->ForceStyle();
 
-TCanvas *plot2d_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const TString pt_str)
+TCanvas *plot_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const TString pt_str)
 {
 
   TH1D *h2d_projx = h2d -> ProjectionX();
@@ -66,7 +66,7 @@ TCanvas *plot2d_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const
   
 }
 
-int plot2d_sfw(const TString plots_dir = "") {
+int plot_sfw(const TString plots_dir = "") {
 
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
@@ -90,7 +90,7 @@ int plot2d_sfw(const TString plots_dir = "") {
 
   // plot
 
-  TCanvas *cv2d = plot2d_cv("cv2d_" + hist_type, cv_nm, h2d, cv_text);
+  TCanvas *cv2d = plot_cv("cv2d_" + hist_type, cv_nm, h2d, cv_text);
 
   // save
   cout << "plots_dir = " << plots_dir << endl;

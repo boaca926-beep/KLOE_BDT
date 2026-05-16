@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # Quick start
-# ./plot2d.sh sfw2d             # for the original sideband plots
-# ./plot2d.sh ppIM_vs_betapi0   # for the new dipion mass vs π⁰ β correlation
+# ./plot.sh sfw2d             # for the original sideband plots
+# ./plot.sh ppIM_vs_betapi0   # for the new dipion mass vs π⁰ β correlation
 
 hist_root="/home/kloe/Desktop/input_bdt_TDATA_chain/hist/hist.root"
 
-# Usage: ./plot2d.sh [sfw2d|ppIM_vs_betapi0]
+# Usage: ./plot.sh [sfw2d|ppIM_vs_betapi0]
 plot_type=${1:-sfw2d}
-header=../header_bdt/plot2d.h
+header=../header_bdt/plot.h
 output_path=../run_bdt/
-plots_dir=../plots2d_${plot_type}/
+plots_dir=../plots_${plot_type}/
 
 # ----------------------------------------------------------------------
 # Create required directories
@@ -30,14 +30,14 @@ fi
 sed -i 's|\(const TString hist_root =\)\(.*\)|\1 "'"${hist_root}"'";|' "$header"
 
 # ----------------------------------------------------------------------
-# Get hist.root and produce combined 2D outputs (sfw2d or ppIM_vs_betapi0)
+# Get hist.root and produce histos for plotting e.g. combined 2D outputs (sfw2d or ppIM_vs_betapi0)
 # ----------------------------------------------------------------------
 gethist_script=gethist_script.C
 cat > "$gethist_script" <<EOF
 #include <iostream>
 void gethist_script() {
-    gROOT->ProcessLine(".L ../run_bdt/get2Dhist.C");
-    gROOT->ProcessLine("get2Dhist(\"$plot_type\")");
+    gROOT->ProcessLine(".L ../run_bdt/getplothist.C");
+    gROOT->ProcessLine("getplothist(\"$plot_type\")");
 }
 EOF
 root -l -n -q -b "$gethist_script"
@@ -53,8 +53,8 @@ if [ "$plot_type" == "sfw2d" ]; then
     cv_text=("Data" "Signal" "#eta#gamma" "Others")
     pt1_x0=(0.5 0.5 0.5 0.5)
     pt1_x1=(0.8 0.8 0.8 0.8)
-    macro="plot2d_sfw.C"
-    func="plot2d_sfw"
+    macro="plot_sfw.C"
+    func="plot_sfw"
 elif [ "$plot_type" == "ppIM_vs_betapi0" ]; then
     outfile_name="ppIM_vs_betapi0_output.root"
     # FIXED: removed stray commas, corrected histogram name "hbkgsum_noeta" (was "hbkgrum_noeta")
@@ -63,8 +63,8 @@ elif [ "$plot_type" == "ppIM_vs_betapi0" ]; then
     cv_text=("Data" "Signal" "#eta#gamma" "Others")
     pt1_x0=(0.6 0.6 0.6 0.6)
     pt1_x1=(0.85 0.85 0.85 0.85)
-    macro="plot2d_ppbeta.C"
-    func="plot2d_ppbeta"
+    macro="plot_ppbeta.C"
+    func="plot_ppbeta"
 else
     echo "Unknown plot type: $plot_type. Use 'sfw2d' or 'ppIM_vs_betapi0'."
     exit 1
