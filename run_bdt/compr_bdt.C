@@ -89,12 +89,18 @@ int compr_bdt() {
   Hlist->Add(hist_mcrest);
 
   // Clone histograms for scaling (no scaling applied yet)
-  TH1D *hist_eeg_sc      = (TH1D*)hist_eeg->Clone();     hist_eeg_sc->SetName("hist_eeg_sc");
-  TH1D *hist_isr3pi_sc   = (TH1D*)hist_isr3pi->Clone();  hist_isr3pi_sc->SetName("hist_isr3pi_sc");
-  TH1D *hist_omegapi_sc  = (TH1D*)hist_omegapi->Clone(); hist_omegapi_sc->SetName("hist_omegapi_sc");
-  TH1D *hist_etagam_sc   = (TH1D*)hist_etagam->Clone();  hist_etagam_sc->SetName("hist_etagam_sc");
-  TH1D *hist_ksl_sc      = (TH1D*)hist_ksl->Clone();     hist_ksl_sc->SetName("hist_ksl_sc");
-  TH1D *hist_mcrest_sc   = (TH1D*)hist_mcrest->Clone();  hist_mcrest_sc->SetName("hist_mcrest_sc");
+  TH1D *hist_eeg_sc      = (TH1D*)hist_eeg->Clone();
+  hist_eeg_sc->SetName("hist_eeg_sc");
+  TH1D *hist_isr3pi_sc   = (TH1D*)hist_isr3pi->Clone();
+  hist_isr3pi_sc->SetName("hist_isr3pi_sc");
+  TH1D *hist_omegapi_sc  = (TH1D*)hist_omegapi->Clone();
+  hist_omegapi_sc->SetName("hist_omegapi_sc");
+  TH1D *hist_etagam_sc   = (TH1D*)hist_etagam->Clone();
+  hist_etagam_sc->SetName("hist_etagam_sc");
+  TH1D *hist_ksl_sc      = (TH1D*)hist_ksl->Clone();
+  hist_ksl_sc->SetName("hist_ksl_sc");
+  TH1D *hist_mcrest_sc   = (TH1D*)hist_mcrest->Clone();
+  hist_mcrest_sc->SetName("hist_mcrest_sc");
 
   // Background sum (EEG + all backgrounds)
   TH1D *hist_bkgsum_sc = (TH1D*)hist_eeg_sc->Clone();
@@ -104,7 +110,7 @@ int compr_bdt() {
   hist_bkgsum_sc->Add(hist_mcrest_sc, 1.);
   hist_bkgsum_sc->SetName("hist_bkgsum_sc");
   format_h(hist_bkgsum_sc, 6, 2);
-
+  
   Hlist->Add(hist_eeg_sc);
   Hlist->Add(hist_isr3pi_sc);
   Hlist->Add(hist_omegapi_sc);

@@ -197,7 +197,7 @@ int sfw2d() {
 
   // Write sums to a text file (optional, kept from original)
   std::ofstream myfile;
-  TString myfile_nm = "../header/sfw2d.txt";
+  TString myfile_nm = "../header_bdt/sfw2d.txt";
   myfile.open(myfile_nm.Data());
   myfile << "const double nb_data_sum = " << nb_data_sum << ";\n"
          << "const double nb_eeg_sum = " << nb_eeg_sum << ";\n"

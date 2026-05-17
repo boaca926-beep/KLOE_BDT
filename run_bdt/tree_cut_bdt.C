@@ -372,6 +372,9 @@ int tree_cut_bdt() {
         m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
         m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
 
+	if (m3pi_bdt < 650.0 || m3pi_bdt > 900.0) continue;
+        
+
         TLorentzVector pi0gam1_bdt, pi0gam2_bdt;
         pi0gam1_bdt.SetPxPyPzE(px1_bdt, py1_bdt, pz1_bdt, e1_bdt);
         pi0gam2_bdt.SetPxPyPzE(px2_bdt, py2_bdt, pz2_bdt, e2_bdt);
@@ -423,7 +426,7 @@ int tree_cut_bdt() {
         if (lagvalue_min_7C > chi2_cut) continue;
         else if (deltaE > deltaE_cut) continue;
         else if (angle_pi0gam12_bdt > angle_cut) continue;
-        else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+	else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
 
         // ---------- Classification and filling (identical to tree_cut.C) ----------
         if (data_type == "exp") {

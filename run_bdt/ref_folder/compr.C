@@ -38,8 +38,6 @@ int compr(){
   
   // get generated signal
   TFile* intree_gen = new TFile(gen_file);
-
-  
   
    TTree * ALLCHAIN_GEN = static_cast<TTree*>(intree_gen -> Get("ALLCHAIN_GEN")); 
 

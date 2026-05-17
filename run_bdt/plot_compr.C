@@ -1,228 +1,211 @@
 #include "../header_bdt/compr.h"
-//#include "../hist.h"
 #include "../header_plot/plot.h"
-//#include "../fitfun.h"
 #include "../header_method/method.h"
+#include "../header_bdt/sfw2d.txt"   // provides eeg_sfw, isr3pi_sfw, etc.
 
-int plot_compr(){
+int plot_compr() {
 
-  //gROOT->SetBatch(kTRUE);  
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(3);
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
-  //gROOT->SetStyle("Plain");
-  //gROOT->ForceStyle();
-  
-  TFile* intree = new TFile("../output_" + var_nm + "/hist_" + var_nm + ".root");
-  
-  TIter next_tree(intree -> GetListOfKeys());
+  gStyle->SetErrorX(0.5);            // makes error bar caps visible
+  TH1::SetDefaultSumw2();
 
-  TString objnm_tree, classnm_tree;
-
-  int i = 0;
-  TKey * key;
-  
-  while ( (key = (TKey *) next_tree() ) ) {
-    
-    i ++;
-    
-    objnm_tree   =  key -> GetName();
-    classnm_tree = key -> GetClassName();
-    key -> GetSeekKey();
-    
-    cout << "tree" << i << ": classnm = " << classnm_tree << ", objnm = " << objnm_tree << endl;
-    
+  // Open the file created by compr_bdt
+  TString filename = "../output_" + var_nm + "/hist_" + var_nm + ".root";
+  TFile* intree = new TFile(filename);
+  if (!intree || intree->IsZombie()) {
+    std::cerr << "ERROR: Cannot open input file " << filename << std::endl;
+    return 1;
   }
 
-  TObjArray *Hlist = (TObjArray *)intree -> Get("Hlist");
-  checkArray(Hlist);
+  // Retrieve the TList (written by compr_bdt)
+  TList *Hlist = (TList*)intree->Get("Hlist");
+  if (!Hlist) {
+    std::cerr << "ERROR: Hlist not found in file" << std::endl;
+    return 1;
+  }
 
-  // Helper to retrieve histograms from the list
+  // Helper to get histograms from the list
   auto getHist = [&](const char* name) -> TH1D* {
     TH1D* h = (TH1D*)Hlist->FindObject(name);
-    if (!h) cerr << "WARNING: histogram " << name << " not found in list" << endl;
+    if (!h) std::cerr << "WARNING: histogram " << name << " not found" << std::endl;
     return h;
   };
 
-  TH1D *hist_data = getHist("hist_data");
-  hist_data->Draw();
-  
-  /*
-  TH1D *hist_data = (TH1D *) Hlist -> At(0);
+  // Get the histograms (raw and scaled versions)
+  TH1D *hist_data        = getHist("hist_data");
+  TH1D *hist_eeg_sc      = getHist("hist_eeg_sc");
+  TH1D *hist_isr3pi_sc   = getHist("hist_isr3pi_sc");
+  TH1D *hist_omegapi_sc  = getHist("hist_omegapi_sc");
+  TH1D *hist_etagam_sc   = getHist("hist_etagam_sc");
+  TH1D *hist_ksl_sc      = getHist("hist_ksl_sc");
+  TH1D *hist_mcrest_sc   = getHist("hist_mcrest_sc");
+  TH1D *hist_bkgsum_sc   = getHist("hist_bkgsum_sc");
 
-  TH1D *hist_eeg_sc = (TH1D *) Hlist -> At(10);
-  TH1D *hist_isr3pi_sc = (TH1D *) Hlist -> At(11);
-  TH1D *hist_omegapi_sc = (TH1D *) Hlist -> At(12);
-  TH1D *hist_etagam_sc = (TH1D *) Hlist -> At(13);
-  TH1D *hist_ksl_sc = (TH1D *) Hlist -> At(14);
-  TH1D *hist_mcrest_sc = (TH1D *) Hlist -> At(15);
-  TH1D *hist_bkgsum_sc = (TH1D *) Hlist -> At(16);
-  */
-  
-  /*
-    [0]: hist_data
-    [1]: hist_eeg
-    [2]: hist_omegapi
-    [3]: hist_ksl
-    [4]: hist_kpm
-    [5]: hist_rhopi
-    [6]: hist_etagam
-    [7]: hist_bkgrest
-    [8]: hist_isr3pi
-    [9]: hist_mcrest
-    [10]: hist_eeg_sc
-    [11]: hist_isr3pi_sc
-    [12]: hist_omegapi_sc
-    [13]: hist_etagam_sc
-    [14]: hist_ksl_sc
-    [15]: hist_mcrest_sc
-    [16]: hist_bkgsum_sc
-  */
-
-  /*
-  TH1D *hist_mcsum_sc = (TH1D*) hist_bkgsum_sc -> Clone();
-  hist_mcsum_sc -> Add(hist_isr3pi_sc, 1.);
-  hist_mcsum_sc -> SetName("hist_mcsum_sc");
-  format_h(hist_mcsum_sc, 2, 2);
-
-  // plot distri.
-  const double binwidth = getbinwidth(hist_data);
-  const double ymax = hist_data -> GetMaximum();
-  const double residul_min = -25., residul_max = 25.;
-  
-  TH1D * hresidul = new TH1D("hresidul", "", binsize, var_min, var_max);
-  TH1D * hresidul_distr = new TH1D("hresidul_distr", "", 200, residul_min, residul_max);
-
-  double nb_data = 0., evnt_err = 0., Nb_data = 0., nb_mcsum = 0.;
-  double residul = 0.;
-  
-  for (int j = 1; j <= binsize; j ++ ) {
-
-    nb_data =  hist_data -> GetBinContent(j);
-    Nb_data += nb_data;
-
-    nb_mcsum = hist_mcsum_sc -> GetBinContent(j);  
-    evnt_err = TMath::Sqrt(nb_data + nb_mcsum);
-    
-    // residual
-    residul = (nb_data - nb_mcsum) / evnt_err;
-
-    if (nb_data > 0. && nb_mcsum > 0.) {
-      
-     hresidul -> SetBinContent(j, residul);
-     hresidul_distr -> Fill(residul);
-
-    }
-
-    //cout << j << ": nb_data = " << nb_data << " +/- " << evnt_err << ", mcsum = " << nb_mcsum << ", residul= " << residul << "\n";
-
-    
+  if (!hist_data) {
+    std::cerr << "ERROR: hist_data not found!" << std::endl;
+    return 1;
   }
 
-  //
-  hist_data -> SetMarkerStyle(21);
-  hist_data -> SetMarkerSize(0.7);
+  // Force bin errors to sqrt(content) for data (already set, but safe)
+  for (int bin = 1; bin <= hist_data->GetNbinsX(); ++bin) {
+    double content = hist_data->GetBinContent(bin);
+    hist_data->SetBinError(bin, TMath::Sqrt(content));
+  }
 
-  //hist_data -> GetYaxis() -> SetNdivisions(505);
-  //hist_data -> GetYaxis() -> SetLabelSize(20);
-  //hist_data -> GetYaxis() -> SetTitleFont(43);
-  //hist_data -> GetYaxis() -> SetLabelFont(43); // Absolute font size in pixel (precision 3)
+  // Apply scaling factors (from sfw2d.txt)
+  hist_eeg_sc->Scale(eeg_sfw);
+  hist_isr3pi_sc->Scale(isr3pi_sfw);
+  hist_omegapi_sc->Scale(omegapi_sfw);
+  hist_etagam_sc->Scale(etagam_sfw);
+  hist_ksl_sc->Scale(ksl_sfw);
+  hist_mcrest_sc->Scale(mcrest_sfw);
 
+  // Recompute background sum (eeg + all backgrounds except isr3pi)
+  TH1D *hist_bkgsum_scaled = (TH1D*)hist_eeg_sc->Clone();
+  hist_bkgsum_scaled->Add(hist_omegapi_sc, 1.);
+  hist_bkgsum_scaled->Add(hist_ksl_sc, 1.);
+  hist_bkgsum_scaled->Add(hist_etagam_sc, 1.);
+  hist_bkgsum_scaled->Add(hist_mcrest_sc, 1.);
+  hist_bkgsum_scaled->SetName("hist_bkgsum_scaled");
+
+  // Total MC sum (background + signal)
+  TH1D *hist_mcsum_sc = (TH1D*)hist_bkgsum_scaled->Clone();
+  hist_mcsum_sc->Add(hist_isr3pi_sc, 1.);
+  hist_mcsum_sc->SetName("hist_mcsum_sc");
+  format_h(hist_mcsum_sc, 1, 2);          // black solid line
+
+  // Style the component histograms
+  hist_isr3pi_sc->SetLineStyle(2);   // dashed
+  hist_etagam_sc->SetLineStyle(3);   // dotted
+  hist_ksl_sc->SetLineStyle(4);      // dash-dotted
+  hist_omegapi_sc->SetLineStyle(5);  // long-dashed
+  hist_mcrest_sc->SetLineStyle(6);   // double-dashed
+  hist_eeg_sc->SetLineStyle(7);      // dash-double-dotted
+
+  // Prepare data histogram style
+  hist_data->SetMarkerStyle(21);
+  hist_data->SetMarkerSize(0.7);
+  //hist_data->SetLineWidth(0);
+
+  // --- Residuals (pulls per bin) ---
+  const double ymax = hist_data->GetMaximum();
+  TH1D *hresidul = new TH1D("hresidul", "", binsize, var_min, var_max);
+  TH1D *hresidul_distr = new TH1D("hresidul_distr", "", 200, -10, 10);
+
+  double nb_data = 0., nb_mcsum = 0., residul = 0.;
+
+  for (int j = 1; j <= binsize; ++j) {
+    nb_data = hist_data->GetBinContent(j);
+    nb_mcsum = hist_mcsum_sc->GetBinContent(j);
+    double evnt_err = TMath::Sqrt(nb_data + nb_mcsum);   // Poisson approximation
+    if (evnt_err > 0) {
+      residul = (nb_data - nb_mcsum) / evnt_err;
+      hresidul->SetBinContent(j, residul);
+      hresidul_distr->Fill(residul);
+    }
+  }
+
+  // --- Create canvas with two pads (main plot and residuals) ---
+  TCanvas *cv = new TCanvas("cv", "Comparison", 800, 800);
+  cv->SetBottomMargin(0.12);
+  cv->SetLeftMargin(0.12);
+
+  // Upper pad (main plot)
+  TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1);
+  pad1->SetBottomMargin(0.01);
+  pad1->SetLeftMargin(0.12);
+  pad1->Draw();
+  pad1->cd();
+
+  // Draw data with error bars (E1 ensures markers + error bars)
+  hist_data->Draw("E");
+  hist_mcsum_sc->Draw("SameHist");
+  // Draw components
+  hist_isr3pi_sc->Draw("SameHist");
+  hist_omegapi_sc->Draw("SameHist");
+  hist_etagam_sc->Draw("SameHist");
+  hist_ksl_sc->Draw("SameHist");
+  hist_mcrest_sc->Draw("SameHist");
+  hist_eeg_sc->Draw("SameHist");
+
+  // Axis formatting for upper pad
+  hist_data->GetXaxis()->SetTitle("");
+  hist_data->GetYaxis()->SetTitle("Events");
+  hist_data->GetYaxis()->CenterTitle();
+  hist_data->GetYaxis()->SetTitleSize(0.05);
+  hist_data->GetYaxis()->SetTitleOffset(1.2);
+  hist_data->GetYaxis()->SetLabelSize(0.04);
+  // Allow extra headroom for error bars
+  hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
+
+  // TPaveText label
   TPaveText *pt34 = new TPaveText(0.2, 0.75, 0.4, 0.8, "NDC");
-  PteAttr(pt34); pt34 -> SetTextSize(0.1);
-  pt34 -> AddText("(a)");
-  //pt34 -> AddText("(b)");
-  //pt34 -> AddText("(c)");
-  //pt34 -> AddText("(d)");
+  PteAttr(pt34);
+  pt34->SetTextSize(0.1);
+  pt34->AddText("(a)");
+  pt34->Draw("Same");
 
-  TCanvas *cv = new TCanvas("cv", " ", 700, 700);
-  cv -> SetBottomMargin(0.15);//0.007
-  cv -> SetLeftMargin(0.15);
-  
-  //TPad *p2 = new TPad("p2", "p2", 0., 0., 1., 0.25);
-  //p2 -> Draw();
-  //p2 -> SetBottomMargin(0.3);
-  //p2 -> SetGrid();
-  
-  //TPad *p1 = new TPad("p1", "p1", 0., 0.24, 1., 1.);
-  //p1 -> Draw();
-  //p1 -> SetBottomMargin(0.03);//0.007
-  //p1 -> cd();
+  // Legend
+  TLegend *legd_cv = new TLegend(0.65, 0.45, 0.9, 0.9);
+  legd_cv->SetTextFont(132);
+  legd_cv->SetFillStyle(0);
+  legd_cv->SetBorderSize(0);
+  legd_cv->SetNColumns(1);
+  legd_cv->AddEntry(hist_data, "Data", "lep");
+  legd_cv->AddEntry(hist_mcsum_sc, "MC sum", "l");
+  legd_cv->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma", "l");
+  legd_cv->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
+  legd_cv->AddEntry(hist_etagam_sc, "#eta#gamma", "l");
+  legd_cv->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
+  legd_cv->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
+  legd_cv->AddEntry(hist_mcrest_sc, "Others", "l");
+  legd_cv->Draw("Same");
+  legtextsize(legd_cv, 0.04);
 
-  //hist_data -> GetXaxis() -> SetTitle("M_{3#pi} [MeV/c^{2}]");
-  hist_data -> GetXaxis() -> SetNdivisions(505);
-  hist_data -> GetXaxis() -> SetTitle(var_symb + " " + unit);
-  hist_data -> GetXaxis() -> CenterTitle();
-  hist_data -> GetXaxis() -> SetTitleSize(0.06);
-  hist_data -> GetXaxis() -> SetTitleOffset(1.0);
-  hist_data -> GetXaxis() -> SetLabelOffset(0.01);
-  hist_data -> GetXaxis() -> SetLabelSize(0.05);//0.03
-  hist_data -> GetXaxis() -> SetRangeUser(0., 43.); //chi2
-  //hist_data -> GetXaxis() -> SetRangeUser(20., 140.); //pi0angle
-  //hist_data -> GetXaxis() -> SetRangeUser(0.5, 1.);
-  //hist_data -> GetXaxis() -> SetRangeUser(650., 950.); // 3pi mass omega region
-  
-  //hist_data -> GetYaxis() -> SetLabelFont(43); // Absolute front size in pixel (precision 3)
-  //hist_data -> GetYaxis() -> SetLabelSize(0.05);
-  hist_data -> GetYaxis() -> SetRangeUser(0.01, ymax * 1.5); 
-  //hist_data -> GetYaxis() -> SetRangeUser(0.01, ymax * 1e2); // 3pi mass full region
-  //hist_data -> GetYaxis() -> SetRangeUser(0., 5e4); // 3pi mass omega region  
-  //hist_data -> GetYaxis() -> SetTitle(TString::Format("Entries/%0.2f", binwidth) + " " + unit);
-  hist_data -> GetYaxis() -> SetTitle("Events");
-  hist_data -> GetYaxis() -> CenterTitle();
-  hist_data -> GetYaxis() -> SetTitleSize(0.06);
-  hist_data -> GetYaxis() -> SetTitleOffset(1.2);
-  
-  //hist_data -> SetStats(0);
+  // Lower pad (residuals)
+  cv->cd();
+  TPad *pad2 = new TPad("pad2", "pad2", 0, 0, 1, 0.3);
+  pad2->SetTopMargin(0.02);
+  pad2->SetBottomMargin(0.3);
+  pad2->SetLeftMargin(0.12);
+  pad2->Draw();
+  pad2->cd();
 
-  format_h(hist_mcsum_sc, 1, 2);
+  hresidul->SetMarkerStyle(20);
+  hresidul->SetMarkerSize(0.6);
+  hresidul->SetLineWidth(0);
+  hresidul->GetXaxis()->SetTitle(var_symb + " " + unit);
+  hresidul->GetXaxis()->SetTitleSize(0.12);
+  hresidul->GetXaxis()->SetTitleOffset(1.0);
+  hresidul->GetXaxis()->SetLabelSize(0.1);
+  hresidul->GetYaxis()->SetTitle("Pull");
+  hresidul->GetYaxis()->SetTitleSize(0.12);
+  hresidul->GetYaxis()->SetTitleOffset(0.5);
+  hresidul->GetYaxis()->SetLabelSize(0.1);
+  hresidul->GetYaxis()->SetRangeUser(-5, 5);
+  hresidul->Draw("P");
 
-  hist_isr3pi_sc -> SetLineStyle(2); // dashed line
-  hist_etagam_sc -> SetLineStyle(3); // dotted line
-  hist_ksl_sc -> SetLineStyle(4); // short-dotted-dashed line
-  hist_omegapi_sc -> SetLineStyle(5); // dotted-dashed line
-  hist_mcrest_sc -> SetLineStyle(6); // triple-dotted-dashed line
-  hist_eeg_sc -> SetLineStyle(7); // long-dashed line
-  
-  hist_data -> Draw();
-  hist_mcsum_sc -> Draw("SameHist");
-  hist_isr3pi_sc -> Draw("SameHist");
-  hist_omegapi_sc -> Draw("SameHist");
-  hist_etagam_sc -> Draw("SameHist");
-  hist_ksl_sc -> Draw("SameHist");
-  hist_mcrest_sc -> Draw("SameHist");
-  hist_eeg_sc -> Draw("SameHist");
-  pt34 -> Draw("Same");
-  
-  //gPad->SetLogy();
+  // Line at zero
+  TLine *line = new TLine(var_min, 0, var_max, 0);
+  line->SetLineStyle(2);
+  line->Draw();
 
-  TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
-  
-  legd_cv -> SetTextFont(132);
-  legd_cv -> SetFillStyle(0);
-  legd_cv -> SetBorderSize(0);
-  legd_cv -> SetNColumns(1);
-  
-  legd_cv -> AddEntry(hist_data, "Data", "lep");
-  legd_cv -> AddEntry(hist_mcsum_sc, "MC sum", "l");
-  legd_cv -> AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma", "l");
-  legd_cv -> AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
-  //legd_cv -> AddEntry(hist_etagam_sc, "#varphi#rightarrow#eta#gamma#rightarrow#pi^{+}#pi^{-}#pi^{0}#gamma", "l");
-  legd_cv -> AddEntry(hist_etagam_sc, "#eta#gamma", "l");
-  legd_cv -> AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
-  legd_cv -> AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
-  legd_cv -> AddEntry(hist_mcrest_sc, "Others", "l");
-  
-  legd_cv -> Draw("Same");
-  
-  legtextsize(legd_cv, 0.05);
-  
-  // save
-  
-  cv -> SaveAs("./output_" + var_nm + "/cv_compr_" + var_nm + ".pdf");
-  */
-  
+  // Save the main plot
+  cv->SaveAs("../output_" + var_nm + "/cv_compr_" + var_nm + ".pdf");
+
+  // Save residual distribution (optional)
+  TCanvas *cv_res = new TCanvas("cv_res", "Residual Distribution", 700, 500);
+  hresidul_distr->Draw();
+  cv_res->SaveAs("../output_" + var_nm + "/residuals_distr_" + var_nm + ".pdf");
+
+  // Cleanup
+  delete cv;
+  delete cv_res;
+  intree->Close();
+  delete intree;
+
   return 0;
-  
 }

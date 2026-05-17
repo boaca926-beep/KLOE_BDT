@@ -1,0 +1,15 @@
+  /home/kloe/Desktop/KLOE_BDT/header_bdt:
+  -rw-rw-r--  1 kloe kloe   655 May 17 11:54 path.h
+  drwxrwxr-x  2 kloe kloe  4096 May 17 11:25 .
+  -rw-rw-r--  1 kloe kloe  2595 May 17 11:25 sm_para.h
+  -rw-rw-r--  1 kloe kloe 26824 May 17 11:25 omega_fit.h
+  -rw-rw-r--  1 kloe kloe  6044 May 17 11:25 hist.h
+  -rw-rw-r--  1 kloe kloe   217 May 17 11:25 cut_para.h
+  -rw-rw-r--  1 kloe kloe   271 May 17 11:20 compr.h
+  drwxrwxr-x 33 kloe kloe  4096 May 17 11:09 ..
+  -rw-rw-r--  1 kloe kloe   469 May 16 18:08 plot.h
+  -rw-rw-r--  1 kloe kloe  1143 May 16 14:18 compr.h~
+  -rw-rw-r--  1 kloe kloe  1601 May 16 13:19 sfw2d.h
+  -rw-rw-r--  1 kloe kloe  3096 May 16 13:10 method.h
+  -rw-rw-r--  1 kloe kloe  4852 May 16 13:05 sfw2d.h~
+  -rw-rw-r--  1 kloe kloe  2753 May 13 10:38 helper.h
