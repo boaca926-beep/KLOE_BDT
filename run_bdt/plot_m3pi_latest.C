@@ -30,7 +30,7 @@
 
 void plot_m3pi_latest() {
   gErrorIgnoreLevel = kError;
-  TGaxis::SetMaxDigits(3);
+  TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
   gStyle->SetErrorX(0.8);
@@ -197,7 +197,8 @@ void plot_m3pi_latest() {
   h_mc_total->Draw("hist same");
   for (auto h : comps) if (h) h->Draw("hist same");
 
-  h_data->GetXaxis()->SetTitle("M_{3#pi} [MeV]");
+  h_data->GetXaxis()->SetLabelOffset(0.1);
+  h_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
   h_data->GetYaxis()->SetTitle("Events");
   h_data->GetYaxis()->CenterTitle();
   h_data->GetYaxis()->SetTitleSize(0.05);
@@ -205,10 +206,11 @@ void plot_m3pi_latest() {
   h_data->GetYaxis()->SetLabelSize(0.04);
 
   // Legend
-  TLegend *leg = new TLegend(0.65, 0.25, 0.9, 0.9);
-  leg->SetTextFont(132);
+  TLegend *leg = new TLegend(0.6, 0.25, 0.9, 0.9);
+  //leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
+  leg->SetTextSize(0.04);           
   leg->AddEntry(h_data, "Data", "lep");
   leg->AddEntry(h_mc_total, "Total MC", "l");
   // Add fixed components (order as in comps)
@@ -219,8 +221,8 @@ void plot_m3pi_latest() {
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "#eta#gamma", "l");
   // For ISR3π: if separated, two entries; else one
   if (h_isr_peak && h_isr_bkg) {
-    if (comps.size() > idx) leg->AddEntry(comps[idx++], "3#pi (peak)", "l");
-    if (comps.size() > idx) leg->AddEntry(comps[idx++], "Non-resonant 3#pi", "l");
+    if (comps.size() > idx) leg->AddEntry(comps[idx++], "3#pi (peak) BW func.", "l");
+    if (comps.size() > idx) leg->AddEntry(comps[idx++], "Non-resonant 3#pi Poly func.", "l");
   } else if (h_isr_peak && !h_isr_bkg) {
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "ISR3#pi", "l");
   }
@@ -235,7 +237,8 @@ void plot_m3pi_latest() {
   pad2->SetLeftMargin(0.12);
   pad2->Draw();
   pad2->cd();
-
+  gPad->SetGrid();   // adds grid lines to both X and Y axes
+ 
   h_pull->GetXaxis()->SetTitle("M_{3#pi} [MeV]");
   h_pull->GetXaxis()->SetTitleSize(0.12);
   h_pull->GetXaxis()->SetTitleOffset(1.0);
@@ -254,7 +257,7 @@ void plot_m3pi_latest() {
   line->SetLineStyle(2);
   line->Draw();
 
-  c->SaveAs("m3pi_projection_with_pulls.pdf");
+  c->SaveAs("../plots_m3pi_corr/m3pi_projection_with_pulls.pdf");
   std::cout << "\nSaved m3pi_projection_with_pulls.pdf\n";
 
   delete c;
