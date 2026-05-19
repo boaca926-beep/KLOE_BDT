@@ -189,6 +189,19 @@ int roofit_sfw2d() {
     std::cout << "KSL        : " << sf_ksl << " +/- " << err_ksl << std::endl;
     std::cout << "MC Rest    : " << sf_mcrest << " +/- " << err_mcrest << std::endl;
 
+
+    // Append fit results to the text file
+    std::ofstream myfile;
+    TString myfile_nm = "../header_bdt/sfw2d_bdt.txt";
+    myfile.open(myfile_nm.Data(), std::ios::app);
+    myfile << "const double eeg_sfw = " << sf_eeg << ";\n"
+	   << "const double isr3pi_sfw = " << sf_isr3pi << ";\n"
+	   << "const double omegapi_sfw = " << sf_omegapi << ";\n"
+	   << "const double etagam_sfw = " << sf_etagam << ";\n"
+	   << "const double ksl_sfw = " << sf_ksl << ";\n"
+	   << "const double mcrest_sfw = " << sf_mcrest << ";\n";
+    myfile.close();
+
     // ------------------------------------------------------------------
     // 11. Project the fit onto the Eisr axis (integrate over x)
     // ------------------------------------------------------------------
