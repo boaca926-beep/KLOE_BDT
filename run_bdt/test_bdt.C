@@ -91,8 +91,8 @@ void test_bdt() {
     // Configuration
     const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root";
     const char* data_filename = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
-    //const char* tree_name = "TISR3PI_SIG";   // or "TETAGAM"
-    const char* tree_name = "TETAGAM";
+    const char* tree_name = "TISR3PI_SIG";   // or "TETAGAM"
+    //const char* tree_name = "TETAGAM";
     //const char* tree_name = "TDATA";
     
     gSystem->mkdir("../plots_test/", kTRUE);
@@ -143,6 +143,9 @@ void test_bdt() {
     TH2D* hM3pi_bdt_corr = new TH2D("hM3pi_bdt_corr", "M_{3#pi} Correlation",
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+    TH2D* hM3pi_bdt_corr_non_reson = new TH2D("hM3pi_bdt_corr_reson", "M_{3#pi} Correlation",
+                                    N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
+                                    N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
     
     // --- Pull histograms (if true branches exist) ---
     TH1D* hE1_pull = hists.create("hE1_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
@@ -169,6 +172,12 @@ void test_bdt() {
     double ppl_E_true, ppl_px_true, ppl_py_true, ppl_pz_true;
     double pmi_E_true, pmi_px_true, pmi_py_true, pmi_pz_true;
 
+    int recon_indx_bdt = 0, recon_indx = 0;
+    int bkg_indx = 0;
+
+    tree->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
+    tree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
+    
     tree->SetBranchAddress("Br_E1", &E1);
     tree->SetBranchAddress("Br_px1", &px1);
     tree->SetBranchAddress("Br_py1", &py1);
@@ -284,8 +293,14 @@ void test_bdt() {
             double m2pi_true = compute_dipion_mass(event_true.tracks);
 
 	    //cout << m3pi << ", " << m3pi_true << endl;
-	    hM3pi_bdt_corr->Fill(m3pi_true, m3pi);
+	    //cout << recon_indx_bdt << ", " << bkg_indx << endl;
 
+	    if (recon_indx_bdt == 2 && bkg_indx == 1) {
+	      hM3pi_bdt_corr->Fill(m3pi_true, m3pi);
+	    }
+	    else {
+	      hM3pi_bdt_corr_non_reson->Fill(m3pi_true, m3pi);
+	    }
 	    
             hE1_pull->Fill(e1 - e1_true);
             hE2_pull->Fill(e2 - e2_true);
@@ -486,6 +501,8 @@ void test_bdt() {
                    "Normalized entries", kRed);
 	draw2D("m3pi_correlation", "M_{3#pi} Correlation (BDT-selected)",
                hM3pi_bdt_corr, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
+	draw2D("m3pi_correlation_non_reson", "M_{3#pi} Correlation Non-resonance (BDT-selected)",
+               hM3pi_bdt_corr_non_reson, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
     }
 
     // Write histograms to output ROOT file

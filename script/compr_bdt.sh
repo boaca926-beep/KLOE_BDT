@@ -145,7 +145,7 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     echo '  gROOT->ProcessLine(".L ../run_bdt/plot_compr.C");' >> $plot_script
     echo '  gROOT->ProcessLine("plot_compr()");' >> $plot_script
     echo '}' >> $plot_script
-    root -l -n -q -b $plot_script >> output.txt
+    root -l -n -q -b $plot_script >> ${output_folder}/output.txt
     rm $plot_script
 done
 

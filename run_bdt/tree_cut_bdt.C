@@ -98,6 +98,8 @@ int tree_cut_bdt() {
     double evnt_tot = 0;
     double Eprompt_max = 0.;
 
+    int pho_indx[3], EPI0NTMC[2];
+    
     // BDT‑specific variables (reco)
     double bdt_score = 0.;
     double e1_bdt = 0., e2_bdt = 0., e3_bdt = 0.;
@@ -113,6 +115,9 @@ int tree_cut_bdt() {
     double m_gg_pull = 0., m3pi_pull = 0.;
     double m2pi_pull = 0.;
 
+    // ---------- NEW: BDT-based truth variables ----------
+    int recon_indx_bdt = 0;
+    
     // ---------- Output trees (same as tree_cut.C: 11 trees) ----------
     const int list_size = 11;
     const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI",
@@ -222,6 +227,8 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_m_gg_pull", &m_gg_pull, "Br_m_gg_pull/D");
         tree_tmp->Branch("Br_m3pi_pull", &m3pi_pull, "Br_m3pi_pull/D");
         tree_tmp->Branch("Br_m2pi_pull", &m2pi_pull, "Br_m2pi_pull/D");
+        // ---------- NEW branches for BDT-based truth variables ----------
+        tree_tmp->Branch("Br_recon_indx_bdt", &recon_indx_bdt, "Br_recon_indx_bdt/I");
     }
 
     TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
@@ -234,6 +241,12 @@ int tree_cut_bdt() {
         ALLCHAIN_CUT->GetEntry(irow);
         if (irow % 100000 == 0) cout << "Event " << irow << endl;
 
+	pho_indx[0] = ALLCHAIN_CUT->GetLeaf("Br_pho_indx")->GetValue(0);
+	pho_indx[1] = ALLCHAIN_CUT->GetLeaf("Br_pho_indx")->GetValue(1);
+	pho_indx[2] = ALLCHAIN_CUT->GetLeaf("Br_pho_indx")->GetValue(2);
+	EPI0NTMC[0] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(0);
+	EPI0NTMC[1] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(1);
+ 
         // ----- Read all variables via GetLeaf -----
         ppl_E = ALLCHAIN_CUT->GetLeaf("Br_ppl_E")->GetValue(0);
         ppl_px = ALLCHAIN_CUT->GetLeaf("Br_ppl_px")->GetValue(0);
@@ -372,9 +385,8 @@ int tree_cut_bdt() {
         m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
         m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
 
-	if (m3pi_bdt < 650.0 || m3pi_bdt > 900.0) continue;
+	//if (m3pi_bdt < 650.0 || m3pi_bdt > 900.0) continue;
         
-
         TLorentzVector pi0gam1_bdt, pi0gam2_bdt;
         pi0gam1_bdt.SetPxPyPzE(px1_bdt, py1_bdt, pz1_bdt, e1_bdt);
         pi0gam2_bdt.SetPxPyPzE(px2_bdt, py2_bdt, pz2_bdt, e2_bdt);
@@ -422,11 +434,40 @@ int tree_cut_bdt() {
         m3pi_pull = m3pi_bdt - m3pi_true;
         m2pi_pull = compute_dipion_mass(event.tracks) - m2pi_true;
 
-        // Selection cuts (commented out to match tree_cut.C)
+        // ---------- Compute BDT-based recon_indx_bdt ----------
+        // (Original recon_indx and bkg_indx are left unchanged, as read from the input tree)
+        int correct_bdt = 0;
+	bool checked[2] = {false, false};
+	for (int i = 0; i < 2; ++i) {
+	  if (pho_indx[result.pi0_indices[0]] == EPI0NTMC[i]) {
+	    correct_bdt++;
+	    checked[i] = true;
+	    break;  // each selected photon can match at most one true index
+	  }
+	}
+	for (int i = 0; i < 2; ++i) {
+	  if (pho_indx[result.pi0_indices[1]] == EPI0NTMC[i] && !checked[i]) {
+	    correct_bdt++;
+	    break;
+	  }
+	}
+	recon_indx_bdt = correct_bdt;
+
+	/* Debugging
+	if (irow < 10) {
+	  cout << "Event " << irow
+	       << " | BDT pair indices: " << result.pi0_indices[0] << "," << result.pi0_indices[1]
+	       << " | true pho_indx: " << pho_indx[result.pi0_indices[0]] << "," << pho_indx[result.pi0_indices[1]]
+	       << " | EPI0NTMC: " << EPI0NTMC[0] << "," << EPI0NTMC[1]
+	       << " | recon_indx_bdt = " << recon_indx_bdt << endl;
+	}
+	*/
+	
+	// Selection cuts (using BDT-based variables for cut decisions, if desired)
         if (lagvalue_min_7C > chi2_cut) continue;
         else if (deltaE > deltaE_cut) continue;
         else if (angle_pi0gam12_bdt > angle_cut) continue;
-	else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+        else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
 
         // ---------- Classification and filling (identical to tree_cut.C) ----------
         if (data_type == "exp") {
@@ -480,7 +521,7 @@ int tree_cut_bdt() {
 }
 
 // ----------------------------------------------------------------------
-// Helper function implementations
+// Helper function implementations (unchanged from original)
 // ----------------------------------------------------------------------
 double compute_invariant_mass(int i, int j, const double photons[3][4]) {
     double E_sum = photons[i][0] + photons[j][0];

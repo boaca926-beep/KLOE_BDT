@@ -25,6 +25,10 @@ void MyClass::Main()
   int filfo_indx = -1;
   int evtcls_indx = -1;
 
+  int pho_indx_save[3];      // indices of the three selected prompt photons in the MC particle array (ntmc)
+  int EPI0NTMC_save[2];      // true π⁰ daughter photon indices in the MC particle array
+
+  
   int test_indx = 0;     
 
   double evnt_sum = 0, evnt_pre_filtred = 0, evnt_pre_pass = 0;
@@ -265,6 +269,9 @@ void MyClass::Main()
   ALLCHAIN_TEST.Branch("Br_IM3pi_7C", &IM3pi_7C, "Br_IM3pi_7C/D");
   ALLCHAIN_TEST.Branch("Br_IMisrpho_miss", &IMisrpho_miss, "Br_IMisrpho_miss/D");
   ALLCHAIN_TEST.Branch("Br_angle_ppl_3piboost", &angle_ppl_3piboost, "Br_angle_ppl_3piboost/D");
+
+  ALLCHAIN_CUT.Branch("Br_pho_indx", &pho_indx_save, "Br_pho_indx[3]/I");
+  ALLCHAIN_CUT.Branch("Br_EPI0NTMC_save", &EPI0NTMC_save, "Br_EPI0NTMC_save[2]/I");
   
   ///
   if (fChain == 0) return;
@@ -1542,6 +1549,12 @@ void MyClass::Main()
       
       }
     */
+
+    pho_indx_save[0] = pho_indx[pi0gam1_indx];
+    pho_indx_save[1] = pho_indx[pi0gam2_indx];
+    pho_indx_save[2] = pho_indx[isrgam_indx];
+    EPI0NTMC_save[0] = pi0gam1_ntmc;
+    EPI0NTMC_save[1] = pi0gam2_ntmc;
     
     ALLCHAIN_CUT.Fill();
   }
