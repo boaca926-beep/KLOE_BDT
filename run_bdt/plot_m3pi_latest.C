@@ -14,8 +14,20 @@
 
 // plot_m3pi_latest.C
 // Uses the latest scaling factors from the RooFit 2D fit (IMpp vs deltaE)
-// to produce the 3π mass projection, with separated ISR3π peak and background.
+// to produce the 3π mass projection, with corrected ISR3π shape from either
+// corrected_isr3pi_sample.root or corrected_isr3pi_tmp.root.
 
+/*
+The template fit is generally better for the reasons discussed earlier:
+
+1.    It preserves the shape correlations from MC (important for efficiency).
+
+2.    It uses realistic, data‑driven templates from the BDT classification.
+
+3.    It has only two free parameters, making the fit more stable.
+
+4.    The side‑band fit with a polynomial background can introduce biases depending on the chosen sideband range.
+*/    
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1D.h>
@@ -98,40 +110,48 @@ void plot_m3pi_latest() {
   comps.push_back(fillHist("TKSL",        ksl_sfw,     28, 4, "K_{S}K_{L}"));
   comps.push_back(fillHist("TETAGAM",     etagam_sfw,  3, 3, "#eta#gamma"));
 
-  // ---------- ISR3π: try to use separated peak and background ----------
+  // ---------- ISR3π: try corrected histograms from either _sample.root or _tmp.root ----------
   TH1D *h_isr_peak = nullptr;
   TH1D *h_isr_bkg  = nullptr;
-  TFile *fcorr = TFile::Open("corrected_isr3pi_tmp.root");
-  if (fcorr && !fcorr->IsZombie()) {
-    TH1D *h_tmp_peak = (TH1D*) fcorr->Get("h_signal");
-    TH1D *h_tmp_bkg  = (TH1D*) fcorr->Get("h_background");
-    if (h_tmp_peak && h_tmp_bkg) {
-      std::cout << "Using separated ISR3π peak and background from corrected_isr3pi.root\n";
-      h_isr_peak = (TH1D*) h_tmp_peak->Clone("h_isr_peak");
-      h_isr_bkg  = (TH1D*) h_tmp_bkg->Clone("h_isr_bkg");
-      h_isr_peak->SetTitle("3#pi (peak)");
-      h_isr_bkg->SetTitle("Non-resonant 3#pi");
-      // Styles: peak solid, background dotted
-      h_isr_peak->SetLineColor(kBlue);
-      h_isr_peak->SetLineStyle(1);
-      h_isr_peak->SetLineWidth(2);
-      h_isr_bkg->SetLineColor(9);
-      h_isr_bkg->SetLineStyle(3);
-      h_isr_bkg->SetLineWidth(2);
-    } else {
-      std::cerr << "WARNING: Separated histograms not found. Falling back to original.\n";
+  TFile *fcorr = nullptr;
+  const char* corrFiles[] = {"corrected_isr3pi_sample.root", "corrected_isr3pi.root"};
+  for (const char* fname : corrFiles) {
+    fcorr = TFile::Open(fname);
+    if (fcorr && !fcorr->IsZombie()) {
+      TH1D *h_tmp_peak = (TH1D*) fcorr->Get("h_signal");
+      TH1D *h_tmp_bkg  = (TH1D*) fcorr->Get("h_background");
+      if (h_tmp_peak && h_tmp_bkg) {
+        std::cout << "Using separated ISR3π peak and background from " << fname << std::endl;
+        h_isr_peak = (TH1D*) h_tmp_peak->Clone("h_isr_peak");
+        h_isr_bkg  = (TH1D*) h_tmp_bkg->Clone("h_isr_bkg");
+        h_isr_peak->SetTitle("3#pi (peak)");
+        h_isr_bkg->SetTitle("Non-resonant 3#pi");
+        // Styles: peak solid, background dotted
+        h_isr_peak->SetLineColor(kBlue);
+        h_isr_peak->SetLineStyle(1);
+        h_isr_peak->SetLineWidth(2);
+        h_isr_bkg->SetLineColor(9);
+        h_isr_bkg->SetLineStyle(3);
+        h_isr_bkg->SetLineWidth(2);
+        break; // success
+      } else {
+        std::cerr << "WARNING: " << fname << " exists but missing h_signal/h_background." << std::endl;
+        fcorr->Close();
+        fcorr = nullptr;
+      }
     }
   }
+
+  // Fallback if no correction file worked
   if (!h_isr_peak || !h_isr_bkg) {
-    // Fallback: use original tree-based histogram (scaled)
     h_isr_peak = fillHist("TISR3PI_SIG", isr3pi_sfw, 4, 2, "ISR3#pi");
     h_isr_peak->SetTitle("ISR3#pi");
     h_isr_peak->SetLineColor(kBlue);
     h_isr_peak->SetLineStyle(1);
     h_isr_peak->SetLineWidth(2);
-    // No separate background; we just push one component.
     comps.push_back(h_isr_peak);
     std::cout << "Using original ISR3π histogram from tree (no separation).\n";
+    if (fcorr) { fcorr->Close(); fcorr = nullptr; }
   } else {
     comps.push_back(h_isr_peak);
     comps.push_back(h_isr_bkg);
@@ -205,28 +225,36 @@ void plot_m3pi_latest() {
   h_data->GetYaxis()->SetTitleOffset(1.2);
   h_data->GetYaxis()->SetLabelSize(0.04);
 
-  // Legend
+  // Legend – order must match comps vector
   TLegend *leg = new TLegend(0.6, 0.25, 0.9, 0.9);
-  //leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);           
   leg->AddEntry(h_data, "Data", "lep");
   leg->AddEntry(h_mc_total, "Total MC", "l");
-  // Add fixed components (order as in comps)
+
   int idx = 0;
+  // EEG
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "EEG", "l");
+  // OmegaPi
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "#omega#pi^{0}", "l");
+  // KSL
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "K_{S}K_{L}", "l");
+  // EtaGamma
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "#eta#gamma", "l");
-  // For ISR3π: if separated, two entries; else one
+
+  // ISR3π part – conditional on whether we have separated peak+background
   if (h_isr_peak && h_isr_bkg) {
-    if (comps.size() > idx) leg->AddEntry(comps[idx++], "3#pi (peak) BW func.", "l");
-    if (comps.size() > idx) leg->AddEntry(comps[idx++], "Non-resonant 3#pi Poly func.", "l");
+    // Two entries: peak (corrected) and non‑resonant background
+    if (comps.size() > idx) leg->AddEntry(comps[idx++], "3#pi (peak) corrected", "l");
+    if (comps.size() > idx) leg->AddEntry(comps[idx++], "Non-resonant 3#pi", "l");
   } else if (h_isr_peak && !h_isr_bkg) {
+    // Fallback: single ISR3π component
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "ISR3#pi", "l");
   }
+  // MC Rest (Others)
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "Others", "l");
+
   leg->Draw();
 
   // Lower pad (pulls)

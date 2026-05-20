@@ -138,6 +138,9 @@ void test_bdt() {
     TH1D* hE3_bdt = hists.create("hE3_bdt", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hMgg_bdt = hists.create("hMgg_bdt", "", N_BINS_MASS, MASS_GG_RANGE_MIN, MASS_GG_RANGE_MAX);
     TH1D* hM3pi_bdt = hists.create("hM3pi_bdt", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+    TH1D* h1dM3pi_bdt_corr_peak = hists.create("h1dM3pi_bdt_corr_peak", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+    TH1D* h1dM3pi_bdt_corr_non_reson = hists.create("h1dM3pi_bdt_corr_non_reson", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+    
     TH1D* hAngle_bdt = hists.create("hAngle_bdt", "", N_BINS_ANGLE, 0, ANGLE_RANGE_MAX);
     
     TH2D* hM3pi_bdt_corr = new TH2D("hM3pi_bdt_corr", "M_{3#pi} Correlation",
@@ -300,9 +303,11 @@ void test_bdt() {
 
 	    if (recon_indx_bdt == 2 && bkg_indx == 1) {
 	      hM3pi_bdt_corr_peak->Fill(m3pi_true, m3pi);
+	      h1dM3pi_bdt_corr_peak->Fill(m3pi);
 	    }
 	    else {
 	      hM3pi_bdt_corr_non_reson->Fill(m3pi_true, m3pi);
+	      h1dM3pi_bdt_corr_non_reson->Fill(m3pi);
 	    }
 	    
             hE1_pull->Fill(e1 - e1_true);
@@ -362,6 +367,38 @@ void test_bdt() {
         h->GetYaxis()->CenterTitle();
     };
 
+    //
+    auto drawDoubleCompr = [&](const char* name, const char* title,
+			       TH1D* h1, TH1D* h2,
+			       const char* xTitle, const char* yTitle,
+			       bool logy = false) {
+      TCanvas* c = new TCanvas(name, title, 600, 600);
+      c->cd();
+      gPad->SetBottomMargin(0.14);
+      gPad->SetLeftMargin(0.16);
+      
+      setHistStyle(h1, kRed, xTitle, yTitle);
+      setHistStyle(h2, kBlue, xTitle, yTitle);
+      double max = std::max(h1->GetMaximum(), h2->GetMaximum());
+      if (logy) {
+        h1->GetYaxis()->SetRangeUser(0.5, max * 1.5);
+        h2->GetYaxis()->SetRangeUser(0.5, max * 1.5);
+      } else {
+        h1->GetYaxis()->SetRangeUser(0, max * 1.2);
+        h2->GetYaxis()->SetRangeUser(0, max * 1.2);
+      }
+      h1->Draw("HIST");
+      h2->Draw("HIST SAME");
+      if (logy) gPad->SetLogy();
+      TLegend* leg = new TLegend(0.7, 0.7, 0.9, 0.9);
+      leg->AddEntry(h2, "#omega peak", "f");
+      leg->AddEntry(h1, "Non-resonant", "f");
+      leg->Draw();
+      c->SaveAs(Form("../plots_test/%s.pdf", name));
+      c->Write();
+      delete c;
+    };
+    
     // Modified drawTripleOverlay with logy parameter
     auto drawTripleOverlay = [&](const char* name, const char* title,
 				 TH1D* h1_fixed, TH1D* h1_bdt,
@@ -496,6 +533,12 @@ void test_bdt() {
     };
     
     // Produce plots
+    // m3pi_bdt_peak and m3pi_bdt_non_reson comparison
+
+    drawDoubleCompr("m3pi_bdt_compr", "3pi Invaraint Mass Comparsion",
+		    h1dM3pi_bdt_corr_non_reson, h1dM3pi_bdt_corr_peak,
+		    "M_{3#pi} [MeV/c^{2}]", "Entries", false);
+
     // Photon energies: linear y-axis
     drawTripleOverlay("photon_energies", "Photon Energies",
                       hE1_fixed, hE1_bdt, hE2_fixed, hE2_bdt, hE3_fixed, hE3_bdt,
