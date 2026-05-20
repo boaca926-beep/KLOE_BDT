@@ -143,7 +143,10 @@ void test_bdt() {
     TH2D* hM3pi_bdt_corr = new TH2D("hM3pi_bdt_corr", "M_{3#pi} Correlation",
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
-    TH2D* hM3pi_bdt_corr_non_reson = new TH2D("hM3pi_bdt_corr_reson", "M_{3#pi} Correlation",
+    TH2D* hM3pi_bdt_corr_peak = new TH2D("hM3pi_bdt_corr_peak", "M_{3#pi} Correlation (#omega peak)",
+                                    N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
+                                    N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+    TH2D* hM3pi_bdt_corr_non_reson = new TH2D("hM3pi_bdt_corr_reson", "M_{3#pi} Correlation (Non-resonant)",
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
     
@@ -296,7 +299,7 @@ void test_bdt() {
 	    //cout << recon_indx_bdt << ", " << bkg_indx << endl;
 
 	    if (recon_indx_bdt == 2 && bkg_indx == 1) {
-	      hM3pi_bdt_corr->Fill(m3pi_true, m3pi);
+	      hM3pi_bdt_corr_peak->Fill(m3pi_true, m3pi);
 	    }
 	    else {
 	      hM3pi_bdt_corr_non_reson->Fill(m3pi_true, m3pi);
@@ -315,13 +318,13 @@ void test_bdt() {
     // After event loop, before drawing
     if (hasTrue) {
         // Fit the 2D correlation histogram
-        TFitResultPtr fitRes = hM3pi_bdt_corr->Fit("pol1", "S");
+        TFitResultPtr fitRes = hM3pi_bdt_corr_peak->Fit("pol1", "S");
         if (fitRes.Get() && fitRes->IsValid()) {
             double p0 = fitRes->Parameter(0);
             double p1 = fitRes->Parameter(1);
             double err0 = fitRes->ParError(0);
             double err1 = fitRes->ParError(1);
-            double corr = hM3pi_bdt_corr->GetCorrelationFactor();
+            double corr = hM3pi_bdt_corr_peak->GetCorrelationFactor();
             std::cout << "\n=== M3pi Correlation (BDT-selected) ===" << std::endl;
             std::cout << "Linear fit: M_reco = p0 + p1 * M_true" << std::endl;
             std::cout << "p0 = " << p0 << " +/- " << err0 << " MeV/c²" << std::endl;
@@ -354,7 +357,7 @@ void test_bdt() {
         h->GetXaxis()->SetLabelSize(0.04);
         h->GetYaxis()->SetLabelSize(0.04);
         h->GetXaxis()->SetTitleOffset(1.3);
-        h->GetXaxis()->SetNdivisions(6, kTRUE);
+	h->GetXaxis()->SetNdivisions(6, kTRUE);
         h->GetXaxis()->CenterTitle();
         h->GetYaxis()->CenterTitle();
     };
@@ -444,6 +447,7 @@ void test_bdt() {
       h2->GetYaxis()->SetTitle(yTitle);
       h2->GetXaxis()->SetTitleSize(0.05);
       h2->GetYaxis()->SetTitleSize(0.05);
+      h2->GetYaxis()->SetTitleOffset(1.3);
       h2->GetXaxis()->SetLabelSize(0.04);
       h2->GetYaxis()->SetLabelSize(0.04);
       h2->GetXaxis()->CenterTitle();
@@ -465,13 +469,25 @@ void test_bdt() {
       if (!hlines.empty()) {
         double xmin = gPad->GetUxmin();
         double xmax = gPad->GetUxmax();
-        for (double y : hlines) {
+	for (double y : hlines) {
 	  TLine *line = new TLine(xmin, y, xmax, y);
 	  line->SetLineColor(kBlack);
 	  line->SetLineWidth(3);
 	  //line->SetLineStyle(2);   // dashed
 	  line->Draw("same");      // <-- lower‑case "same"
         }
+
+	double ymin = gPad->GetUymin();
+        double ymax = gPad->GetUymax();
+	for (double x : hlines) {
+	  TLine *line1 = new TLine(x, ymin, x, ymax);
+	  line1->SetLineColor(kBlack);
+	  line1->SetLineWidth(3);
+	  //line1->SetLineStyle(2);   // dashed
+	  line1->Draw("same");      // <-- lower‑case "same"
+        }
+
+        
       }
       
       c->SaveAs(Form("../plots_test/%s.pdf", name));
@@ -499,8 +515,8 @@ void test_bdt() {
                    hMgg_pull, hM3pi_pull, hM2pi_pull,
                    "M_{#gamma#gamma} pull [MeV/c^{2}]", "M_{3#pi} pull [MeV/c^{2}]", "M_{2#pi} pull [MeV/c^{2}]",
                    "Normalized entries", kRed);
-	draw2D("m3pi_correlation", "M_{3#pi} Correlation (BDT-selected)",
-               hM3pi_bdt_corr, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
+	draw2D("m3pi_correlation_peak", "M_{3#pi} Correlation (BDT-selected)",
+               hM3pi_bdt_corr_peak, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
 	draw2D("m3pi_correlation_non_reson", "M_{3#pi} Correlation Non-resonance (BDT-selected)",
                hM3pi_bdt_corr_non_reson, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
     }
@@ -515,7 +531,7 @@ void test_bdt() {
     if (hasTrue) {
       hE1_pull->Write(); hE2_pull->Write(); hE3_pull->Write();
       hMgg_pull->Write(); hM3pi_pull->Write(); hM2pi_pull->Write();
-      hM3pi_bdt_corr->Write();
+      hM3pi_bdt_corr_peak->Write();
     }
     outfile->Close();
  
