@@ -521,6 +521,9 @@ void test_bdt() {
  
     file->Close();
     std::cout << "\nAll plots saved to ../plots_test/" << std::endl;
+
+    gROOT->GetListOfCanvases()->Delete();
+    
 }
 
 // ---------- Helper function implementations (unchanged) ----------

@@ -20,12 +20,17 @@ void pi0gg_select() {
   tree->SetBranchAddress("Br_recon_indx", &recon_indx);
   tree->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
     
-  TH1D* h_chi2 = new TH1D("h_chi2", "; Number of correct-selected #pi^{0} photons (#chi^{2} pairing);Events", 3, 0, 3);
+  TH1D* h_chi2 = new TH1D("h_chi2", "; Number of correct-selected #pi^{0} photons;Events", 3, 0, 3);
   TH1D* h_bdt  = new TH1D("h_bdt",  ";  Number of correct-selected #pi^{0} photons (BDT pairing);Events", 3, 0, 3);
   h_chi2->SetLineColor(kBlue);
   h_bdt->SetLineColor(kRed);
   h_chi2->SetFillStyle(3001);
   h_bdt->SetFillStyle(3001);
+
+  // Integer bin labels
+  for (int i = 1; i <= h_chi2->GetXaxis()->GetNbins(); ++i) {
+    h_chi2->GetXaxis()->SetBinLabel(i, Form("%d", i-1));
+  }
 
   Long64_t nentries = tree->GetEntries();
   for (Long64_t i = 0; i < nentries; ++i) {
@@ -41,12 +46,21 @@ void pi0gg_select() {
             << 100.*h_bdt->GetBinContent(3)/nentries << "%)\n";
 
   // 1D comparison
-  TCanvas* c1 = new TCanvas("c1","Comparison",800,600);
-  gPad->SetLeftMargin(0.12);
+  TCanvas* c1 = new TCanvas("c1","Comparison",900,900);
+  c1->SetBottomMargin(0.12);
+  c1->SetLeftMargin(0.12);
+
   const double ymax = h_bdt->GetMaximum();
-  
+
   h_chi2->GetXaxis()->CenterTitle();
   h_chi2->GetYaxis()->CenterTitle();
+  h_chi2->GetXaxis()->SetLabelSize(0.05);
+  h_chi2->GetYaxis()->SetLabelSize(0.04);
+  h_chi2->GetXaxis()->SetTitleSize(0.05);
+  h_chi2->GetYaxis()->SetTitleSize(0.05);
+  h_chi2->GetXaxis()->SetTitleOffset(1.0);
+  h_chi2->GetYaxis()->SetTitleOffset(1.2);
+  
   h_chi2->SetLineWidth(2);
   h_chi2->GetYaxis()->SetRangeUser(0, ymax * 1.1);
   h_chi2->Draw("hist");
@@ -56,7 +70,7 @@ void pi0gg_select() {
   leg->AddEntry(h_chi2,"#chi^{2} pairing","f");
   leg->AddEntry(h_bdt,"BDT pairing","f");
   leg->Draw();
-  c1->SaveAs("pi0gg_recon_compare.png");
+  c1->SaveAs("../plots_select/pi0gg_recon_compare.pdf");
 
   // 2D correlation (absolute counts)
   TH2D* h_corr = new TH2D("h_corr",";BDT-selected correct #pi^{0} photons;#chi^{2}-selected correct #pi^{0} photons",3,0,3,3,0,3);
@@ -88,12 +102,12 @@ void pi0gg_select() {
       double y = h_corr->GetYaxis()->GetBinCenter(j);
       TText *t = new TText(x, y, Form("%.0f", val));
       t->SetTextAlign(22);
-      t->SetTextSize(0.03);
+      t->SetTextSize(0.05);
       t->SetTextColor(kBlack);
       t->Draw();
     }
   }
-  c2->SaveAs("pi0gg_recon_correlation_absolute.png");
+  c2->SaveAs("../plots_select/pi0gg_recon_correlation_absolute.png");
 
   // ========== FRACTION BY ROW ==========
   TH2D* h_frac = (TH2D*)h_corr->Clone("h_frac");
@@ -103,18 +117,38 @@ void pi0gg_select() {
       row_sum += h_frac->GetBinContent(ix, iy);
     if (row_sum > 0) {
       for (int iy = 1; iy <= h_frac->GetNbinsY(); ++iy) {
-        double val = h_frac->GetBinContent(ix, iy);
-        h_frac->SetBinContent(ix, iy, val / row_sum);
+	double val = h_frac->GetBinContent(ix, iy);
+	h_frac->SetBinContent(ix, iy, val / row_sum);
       }
     }
   }
-  TCanvas* c3 = new TCanvas("c3","Fraction by row",900,900);
+
+  
+  TCanvas* c3 = new TCanvas("c3", "Fraction by row", 900, 900);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.18);
   h_frac->SetStats(0);
-  // Use correct format for fractions
-  gStyle->SetPaintTextFormat("5.2f");
-  gStyle->SetTextSize(0.03);
-  h_frac->Draw("colz text");
-  c3->SaveAs("pi0gg_recon_correlation_fraction.png");
+  h_frac->GetXaxis()->CenterTitle();
+  h_frac->GetYaxis()->CenterTitle();
+  // Draw colour map only (no automatic text)
+  h_frac->Draw("colz");
+  
+  // Manually draw bin contents as text with desired size
+  double textSize = 0.05;   // adjust as needed
+  for (int i = 1; i <= h_frac->GetNbinsX(); ++i) {
+    for (int j = 1; j <= h_frac->GetNbinsY(); ++j) {
+      double val = h_frac->GetBinContent(i, j);
+      if (val == 0) continue;
+      double x = h_frac->GetXaxis()->GetBinCenter(i);
+        double y = h_frac->GetYaxis()->GetBinCenter(j);
+        TText *t = new TText(x, y, Form("%.2f", val));  // two decimal places
+        t->SetTextAlign(22);
+        t->SetTextSize(textSize);
+        t->SetTextColor(kBlack);
+        t->Draw();
+    }
+  }
+  
+  c3->SaveAs("../plots_select/pi0gg_recon_correlation_fraction.png");
+  
 }

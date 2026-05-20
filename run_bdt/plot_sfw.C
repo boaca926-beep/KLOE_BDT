@@ -28,7 +28,7 @@ TCanvas *plot_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const T
   h2d -> GetXaxis() -> CenterTitle();
   h2d -> GetXaxis() -> SetLabelSize(0.06);
   h2d -> GetXaxis() -> SetLabelOffset(0.01);
-  //h2d -> GetXaxis() -> SetRangeUser(0.2, 0.6);
+  //h2d -> GetXaxis() -> SetRangeUser(200, 600);
   
   h2d -> GetYaxis() -> SetTitle("E_{#gamma_{3}} " + TString::Format("Events/[%0.2f", binwidth_y) + " MeV]"); //SetTitle(x_label + " " + x_unit);
   h2d -> GetYaxis() -> SetLabelOffset(0.01);
