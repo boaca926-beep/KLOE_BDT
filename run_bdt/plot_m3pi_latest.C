@@ -114,7 +114,7 @@ void plot_m3pi_latest() {
   TH1D *h_isr_peak = nullptr;
   TH1D *h_isr_bkg  = nullptr;
   TFile *fcorr = nullptr;
-  const char* corrFiles[] = {"corrected_isr3pi_sample.root", "corrected_isr3pi.root"};
+  const char* corrFiles[] = {"corrected_isr3pi_sample.root", "corrected_isr3pi_tmp.root"};
   for (const char* fname : corrFiles) {
     fcorr = TFile::Open(fname);
     if (fcorr && !fcorr->IsZombie()) {
@@ -125,7 +125,7 @@ void plot_m3pi_latest() {
         h_isr_peak = (TH1D*) h_tmp_peak->Clone("h_isr_peak");
         h_isr_bkg  = (TH1D*) h_tmp_bkg->Clone("h_isr_bkg");
         h_isr_peak->SetTitle("3#pi (peak)");
-        h_isr_bkg->SetTitle("Non-resonant 3#pi");
+        h_isr_bkg->SetTitle("Combinatorial");
         // Styles: peak solid, background dotted
         h_isr_peak->SetLineColor(kBlue);
         h_isr_peak->SetLineStyle(1);
@@ -247,7 +247,7 @@ void plot_m3pi_latest() {
   if (h_isr_peak && h_isr_bkg) {
     // Two entries: peak (corrected) and non‑resonant background
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "3#pi (peak) corrected", "l");
-    if (comps.size() > idx) leg->AddEntry(comps[idx++], "Non-resonant 3#pi", "l");
+    if (comps.size() > idx) leg->AddEntry(comps[idx++], "Combinatorial", "l");
   } else if (h_isr_peak && !h_isr_bkg) {
     // Fallback: single ISR3π component
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "ISR3#pi", "l");
