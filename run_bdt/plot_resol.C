@@ -1,4 +1,4 @@
-// Resolution – fit to m3pi_diff distribution with inner Gaussian values
+// Resolution – fit to m3pi_diff distribution with inner Gaussian values (normalized)
 
 void plot_resol() {
 
@@ -10,7 +10,7 @@ void plot_resol() {
   TH1::SetDefaultSumw2();
 
   // Create output directory if it doesn't exist
-  gSystem->Exec("mkdir -p plots");
+  gSystem->Exec("mkdir -p ../plots_resol");
 
   // Open tree file
   TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
@@ -47,6 +47,15 @@ void plot_resol() {
     }
   }
 
+  // --- Normalize the histogram (integral = 1) ---
+  double integral = h_m3pi_diff->Integral();
+  if (integral > 0) {
+    h_m3pi_diff->Scale(1.0 / integral);
+  } else {
+    std::cerr << "ERROR: histogram has zero entries." << std::endl;
+    return;
+  }
+
   // Fit range: mean ± 3σ
   double mean = h_m3pi_diff->GetMean();
   double rms  = h_m3pi_diff->GetRMS();
@@ -56,7 +65,7 @@ void plot_resol() {
   double hist_max = h_m3pi_diff->GetXaxis()->GetXmax();
   if (fit_min < hist_min) fit_min = hist_min;
   if (fit_max > hist_max) fit_max = hist_max;
-  std::cout << "Fit range for m3pi_diff: [" << fit_min << ", " << fit_max << "] MeV/c^2" << std::endl;
+  std::cout << "Fit range for normalized m3pi_diff: [" << fit_min << ", " << fit_max << "] MeV/c^2" << std::endl;
 
   double peak = h_m3pi_diff->GetMaximum();
   
@@ -102,22 +111,24 @@ void plot_resol() {
   }
 
   // Draw histogram and fit
-  TCanvas *c1 = new TCanvas("c1", "m3pi_diff resolution", 700, 700);
-  c1->SetLeftMargin(0.12);
-  c1->SetRightMargin(0.05);
-  c1->SetBottomMargin(0.10);
-  
-  //h_m3pi_diff->GetXaxis()->SetLabelOffset(0.1);
-  h_m3pi_diff->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-  h_m3pi_diff->GetYaxis()->SetTitle("Events");
+  TCanvas *c1 = new TCanvas("c1", "m3pi_diff resolution (normalized)", 700, 700);
+  c1->SetLeftMargin(0.15);
+  c1->SetBottomMargin(0.15);
+
+  h_m3pi_diff->SetLineWidth(2);
+  h_m3pi_diff->GetXaxis()->SetTitle("M^{true}_{3#pi}-M^{rec}_{3#pi} [MeV/c^{2}]");
+  h_m3pi_diff->GetYaxis()->SetTitle("Normalized Entries");
   h_m3pi_diff->GetXaxis()->CenterTitle();
   h_m3pi_diff->GetYaxis()->CenterTitle();
   h_m3pi_diff->GetXaxis()->SetTitleSize(0.05);
-  h_m3pi_diff->GetYaxis()->SetTitleSize(0.05);
-  h_m3pi_diff->GetYaxis()->SetTitleOffset(1.2);
-  h_m3pi_diff->GetYaxis()->SetLabelSize(0.04);
+  h_m3pi_diff->GetYaxis()->SetTitleSize(0.06);
+  h_m3pi_diff->GetXaxis()->SetLabelSize(0.05);
+  h_m3pi_diff->GetYaxis()->SetLabelSize(0.05);
+  h_m3pi_diff->GetYaxis()->SetTitleOffset(1.3);
+  h_m3pi_diff->GetYaxis()->SetRangeUser(0., 0.1);
   h_m3pi_diff->GetXaxis()->SetRangeUser(3 * fit_min, 3 * fit_max); // or -50,50
- 
+  h_m3pi_diff->GetYaxis()->SetNdivisions(505);
+
   h_m3pi_diff->Draw("hist");
   finalFit->Draw("same");
 
@@ -134,15 +145,15 @@ void plot_resol() {
       double err_sigma = finalFit->GetParError(2);
       line1 = Form("Inner Gaussian (core):");
       line2 = Form("#mu = %.2f #pm %.2f MeV/c^{2}", mean_inner, err_mean);
-      line3 = Form("#sigma = %.2f #pm %.2f MeV/c^{2}", sigma_inner, err_sigma);
+      line3 = Form("#deltaM_{3#pi} = %.2f #pm %.2f MeV/c^{2}", sigma_inner, err_sigma);
     } else {
       double mean_inner = finalFit->GetParameter(4);
       double sigma_inner = sigma2;
       double err_mean = finalFit->GetParError(4);
       double err_sigma = finalFit->GetParError(5);
-      line1 = Form("Inner Gaussian (tail):");
+      line1 = Form("Inner Gaussian:");
       line2 = Form("#mu = %.2f #pm %.2f MeV/c^{2}", mean_inner, err_mean);
-      line3 = Form("#sigma = %.2f #pm %.2f MeV/c^{2}", sigma_inner, err_sigma);
+      line3 = Form("#deltaM_{3#pi} = %.2f #pm %.2f MeV/c^{2}", sigma_inner, err_sigma);
     }
   } else {
     // Single Gaussian
@@ -157,26 +168,28 @@ void plot_resol() {
   TString line4 = Form("#chi^{2}/NDF = %.2f", chi2ndf);
 
   // Create a transparent TPaveText
-  TPaveText *pt = new TPaveText(0.60, 0.70, 0.92, 0.88, "NDC");
+  TPaveText *pt = new TPaveText(0.45, 0.72, 0.9, 0.88, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
-  pt->SetTextSize(0.03);
+  pt->SetTextSize(0.04);
   pt->SetTextFont(42);
   if (doubleUsed) pt->AddText(line1);
   pt->AddText(line2);
   pt->AddText(line3);
-  pt->AddText(line4);
+  //pt->AddText(line4);
   pt->Draw();
 
   // Legend for fit line
-  TLegend *leg = new TLegend(0.60, 0.60, 0.92, 0.68);
+  TLegend *leg = new TLegend(0.55, 0.60, 0.9, 0.68);
+  //leg->SetTextFont(132);
+  leg->SetTextSize(0.035);
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
   leg->AddEntry(finalFit, fitType, "l");
   leg->Draw();
 
   // Save canvas
-  c1->SaveAs("../plots_resol/m3pi_diff_fit.png");
-  std::cout << "\nPlot saved to ../plots_resol/m3pi_diff_fit.png" << std::endl;
+  c1->SaveAs("../plots_resol/m3pi_diff_fit_normalized.png");
+  std::cout << "\nPlot saved to ../plots_resol/m3pi_diff_fit_normalized.png" << std::endl;
 }
