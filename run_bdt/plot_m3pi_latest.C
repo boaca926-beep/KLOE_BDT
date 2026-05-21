@@ -28,6 +28,7 @@ The template fit is generally better for the reasons discussed earlier:
 
 4.    The side‑band fit with a polynomial background can introduce biases depending on the chosen sideband range.
 */    
+
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1D.h>
@@ -39,6 +40,8 @@ The template fit is generally better for the reasons discussed earlier:
 #include <vector>
 #include <cmath>
 #include "../header_bdt/sfw2d_bdt.txt"
+#include "../header_bdt/correct_omega.h"
+
 
 void plot_m3pi_latest() {
   gErrorIgnoreLevel = kError;
@@ -68,8 +71,8 @@ void plot_m3pi_latest() {
   // 3π mass range (MeV)
   TTree *tdata = (TTree*) ftree->Get("TDATA");
   if (!tdata) { std::cerr << "No TDATA tree.\n"; return; }
-  double mass_min = 600.0;
-  double mass_max = 1000.0;
+  double mass_min = 600.0, omega_min = 760.0;
+  double mass_max = 1000.0, omega_max = 820.0;
   const int nBins = 200;
 
   // Helper to fill a histogram from a tree
@@ -103,30 +106,46 @@ void plot_m3pi_latest() {
     h_data->Fill(m3pi);
   }
 
+  // --- Declare pointers for components that will be used later ---
+  TH1D *h_eeg = nullptr;
+  TH1D *h_omegapi = nullptr;
+  TH1D *h_ksl = nullptr;
+  TH1D *h_etagam = nullptr;
+
   // MC components (fixed backgrounds)
   std::vector<TH1D*> comps;
-  comps.push_back(fillHist("TEEG",        eeg_sfw,     6, 7, "EEG"));
-  comps.push_back(fillHist("TOMEGAPI",    omegapi_sfw, 7, 5, "#omega#pi^{0}"));
-  comps.push_back(fillHist("TKSL",        ksl_sfw,     28, 4, "K_{S}K_{L}"));
-  comps.push_back(fillHist("TETAGAM",     etagam_sfw,  3, 3, "#eta#gamma"));
+  h_eeg = fillHist("TEEG",        eeg_sfw,     6, 7, "EEG");
+  comps.push_back(h_eeg);
+  h_omegapi = fillHist("TOMEGAPI",    omegapi_sfw, 7, 5, "#omega#pi^{0}");
+  comps.push_back(h_omegapi);
+  h_ksl = fillHist("TKSL",        ksl_sfw,     28, 4, "K_{S}K_{L}");
+  comps.push_back(h_ksl);
+  h_etagam = fillHist("TETAGAM",     etagam_sfw,  3, 3, "#eta#gamma");
+  comps.push_back(h_etagam);
 
   // ---------- ISR3π: try corrected histograms from either _sample.root or _tmp.root ----------
   TH1D *h_isr_peak = nullptr;
   TH1D *h_isr_bkg  = nullptr;
-  TFile *fcorr = nullptr;
-  const char* corrFiles[] = {"corrected_isr3pi_sample.root", "corrected_isr3pi_tmp.root"};
-  for (const char* fname : corrFiles) {
-    fcorr = TFile::Open(fname);
+  
+  const char* corrFiles[2];
+  TString file1 = output_path + "corrected_isr3pi_sample.root";
+  TString file2 = output_path + "corrected_isr3pi.root";
+  corrFiles[0] = file1.Data();
+  corrFiles[1] = file2.Data();
+
+  TFile *fcorr = nullptr;   // <-- DECLARE and initialise
+  
+  for (int i = 0; i < 1; ++i) {
+    fcorr = TFile::Open(corrFiles[i]);
     if (fcorr && !fcorr->IsZombie()) {
       TH1D *h_tmp_peak = (TH1D*) fcorr->Get("h_signal");
       TH1D *h_tmp_bkg  = (TH1D*) fcorr->Get("h_background");
       if (h_tmp_peak && h_tmp_bkg) {
-        std::cout << "Using separated ISR3π peak and background from " << fname << std::endl;
+        std::cout << "Using separated ISR3π peak and background from " << corrFiles[i] << std::endl;
         h_isr_peak = (TH1D*) h_tmp_peak->Clone("h_isr_peak");
         h_isr_bkg  = (TH1D*) h_tmp_bkg->Clone("h_isr_bkg");
         h_isr_peak->SetTitle("3#pi (peak)");
         h_isr_bkg->SetTitle("Combinatorial");
-        // Styles: peak solid, background dotted
         h_isr_peak->SetLineColor(kBlue);
         h_isr_peak->SetLineStyle(1);
         h_isr_peak->SetLineWidth(2);
@@ -135,7 +154,7 @@ void plot_m3pi_latest() {
         h_isr_bkg->SetLineWidth(2);
         break; // success
       } else {
-        std::cerr << "WARNING: " << fname << " exists but missing h_signal/h_background." << std::endl;
+        std::cerr << "WARNING: " << corrFiles[i] << " exists but missing h_signal/h_background." << std::endl;
         fcorr->Close();
         fcorr = nullptr;
       }
@@ -213,13 +232,15 @@ void plot_m3pi_latest() {
   for (auto h : comps) if (h) max_val = std::max(max_val, h->GetMaximum());
   h_data->GetYaxis()->SetRangeUser(0, max_val * 1.2);
 
-  h_data->Draw("E1");
+  double bin_width = h_data->GetBinWidth(1);
+  
+  h_data->Draw("E0");
   h_mc_total->Draw("hist same");
   for (auto h : comps) if (h) h->Draw("hist same");
-
+  h_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
   h_data->GetXaxis()->SetLabelOffset(0.1);
   h_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-  h_data->GetYaxis()->SetTitle("Events");
+  h_data->GetXaxis()->SetRangeUser(omega_min, omega_max);
   h_data->GetYaxis()->CenterTitle();
   h_data->GetYaxis()->SetTitleSize(0.05);
   h_data->GetYaxis()->SetTitleOffset(1.2);
@@ -275,20 +296,67 @@ void plot_m3pi_latest() {
   h_pull->GetYaxis()->SetTitleSize(0.12);
   h_pull->GetYaxis()->SetTitleOffset(0.5);
   h_pull->GetYaxis()->SetLabelSize(0.1);
+  h_pull->GetXaxis()->SetRangeUser(760, 820);
   h_pull->GetYaxis()->SetRangeUser(-10, 10);
   h_pull->GetYaxis()->SetNdivisions(505);
   h_pull->GetXaxis()->CenterTitle();
   h_pull->GetYaxis()->CenterTitle();
   h_pull->Draw("P");
 
-  TLine *line = new TLine(mass_min, 0, mass_max, 0);
+  TLine *line = new TLine(omega_min, 0, omega_max, 0);
   line->SetLineStyle(2);
   line->Draw();
 
-  c->SaveAs("../plots_m3pi_corr/m3pi_projection_with_pulls.pdf");
-  std::cout << "\nSaved m3pi_projection_with_pulls.pdf\n";
-
+  c->SaveAs(output_path + "m3pi_projection_with_pulls.pdf");
+  std::cout << "\nSaved " + output_path + "m3pi_projection_with_pulls.pdf\n";
   delete c;
+  
+  // --- Minimal addition: background‑subtracted ω signal ---
+  TH1D *h_signal_data = (TH1D*) h_data->Clone("h_signal_data");
+  h_signal_data->Add(h_eeg, -1.0);
+  h_signal_data->Add(h_omegapi, -1.0);
+  h_signal_data->Add(h_ksl, -1.0);
+  h_signal_data->Add(h_etagam, -1.0);
+  h_signal_data->Add(h_mcrest, -1.0);
+  if (h_isr_bkg) h_signal_data->Add(h_isr_bkg, -1.0);
+  // Set negative bins to zero
+  for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin)
+    if (h_signal_data->GetBinContent(bin) < 0) h_signal_data->SetBinContent(bin, 0);
+
+  TCanvas *c2 = new TCanvas("c2", "Background‑subtracted ω signal", 800, 600);
+  c2->SetBottomMargin(0.12);
+  c2->SetLeftMargin(0.12);
+
+  h_signal_data->SetMarkerStyle(20);
+  h_signal_data->SetMarkerSize(0.6);
+  h_signal_data->GetXaxis()->SetLabelOffset(0.007);   // keep default small value
+  h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
+  h_signal_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
+  h_signal_data->GetXaxis()->SetRangeUser(omega_min, omega_max);
+  h_signal_data->GetXaxis()->CenterTitle();
+  h_signal_data->GetYaxis()->CenterTitle();
+  h_signal_data->GetXaxis()->SetTitleSize(0.05);
+  h_signal_data->GetYaxis()->SetTitleSize(0.05);
+  h_signal_data->GetYaxis()->SetTitleOffset(1.2);
+  h_signal_data->GetYaxis()->SetLabelSize(0.04);
+
+  h_signal_data->Draw("E0");
+  if (h_isr_peak) {
+    h_isr_peak->SetLineColor(kBlue);
+    h_isr_peak->Draw("hist same");
+  }
+
+  TLegend *leg2 = new TLegend(0.5, 0.7, 0.9, 0.9);
+  leg2->SetFillStyle(0);
+  leg2->SetBorderSize(0);
+  leg2->SetTextSize(0.04);           
+  leg2->AddEntry(h_signal_data, "Data - backgrounds", "lep");
+  leg2->AddEntry(h_isr_peak, "Corrected #omega peak", "l");
+  leg2->Draw("same");
+  
+  c2->SaveAs(output_path + "background_subtracted_omega.pdf");
+  delete c2;
+  
   ftree->Close();
   if (fcorr) fcorr->Close();
 }

@@ -11,7 +11,7 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200 100 180 200 100 100 200 200 200)
 
 ##################################################################
-#VAR_NM="betapi0"
+#VAR_NM="betapi0_bdt"
 #VAR_SYMB="#beta_{#pi}"
 #UNIT=""
 
@@ -38,13 +38,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("m3pi_bdt")
-VAR_SYMB=("M_{3#pi}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m3pi_bdt")
+#VAR_SYMB=("M_{3#pi}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(770) #300 600
-XMAX=(800) #1020 1050
-BINS=(100)
+#XMIN=(770) #300 600
+#XMAX=(800) #1020 1050
+#BINS=(100)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -65,7 +65,7 @@ BINS=(100)
 #BINS=(450)
 
 ##################################################################
-#VAR_NM=("angle_pi0gam12")
+#VAR_NM=("angle_pi0gam12_bdt")
 #VAR_SYMB=("#angle_{#gamma#gamma}")
 #UNIT=("[#circ]")
 
@@ -83,7 +83,7 @@ BINS=(100)
 #BINS=(200) #150, 550 
 
 ##################################################################
-#VAR_NM=("IM_pi0_7C")
+#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
 #VAR_SYMB=("M_{#gamma#gamma}")
 #UNIT=("[MeV\/c^{2}]")
 

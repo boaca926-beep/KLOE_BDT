@@ -1,4 +1,4 @@
-// correct_omega_peak_safe.C
+// correct_omega_peak.C
 // Safe data-driven correction for ω → 3π shape in ISR3π MC.
 
 /*
@@ -37,17 +37,6 @@ Produces a visualisation (a two‑panel PDF):
 */
 
 // correct_omega_peak.C
-// Data-driven correction for ω → 3π shape using Crystal Ball signal + polynomial background.
-// Outputs: corrected_isr3pi.root (containing h_isr3pi_corrected, h_signal, h_background, h_data_isr, h_weight_smooth)
-
-// correct_omega_peak.C
-// Data-driven correction for ω → 3π shape using Crystal Ball signal + polynomial background.
-// Outputs: corrected_isr3pi.root (containing h_isr3pi_corrected, h_signal, h_background, h_data_isr, h_weight_smooth)
-
-// correct_omega_peak.C (minimal adaptation: Breit‑Wigner → Crystal Ball)
-// ... (same header comments) ...
-
-// correct_omega_peak.C
 // Data-driven correction for ω → 3π shape using Breit‑Wigner signal + polynomial background.
 // Outputs: corrected_isr3pi.root (containing h_isr3pi_corrected, h_signal, h_background, h_data_isr, h_weight_smooth)
 
@@ -61,6 +50,7 @@ Produces a visualisation (a two‑panel PDF):
 #include <cmath>
 
 #include "../header_bdt/sfw2d.txt"
+#include "../header_bdt/correct_omega.h"
 
 void correct_omega_peak() {
     // ------------------------------------------------------------------
@@ -313,7 +303,7 @@ void correct_omega_peak() {
     // ------------------------------------------------------------------
     // 10. Save results
     // ------------------------------------------------------------------
-    TFile *fout = new TFile("corrected_isr3pi.root", "RECREATE");
+    TFile *fout = new TFile(output_path + "corrected_isr3pi.root", "RECREATE");
     h_isr3pi_corrected->Write();
     h_signal->Write();
     h_background->Write();
@@ -358,9 +348,9 @@ void correct_omega_peak() {
     h_weight_smooth->GetXaxis()->SetTitle(is_mev ? "M_{3π} [MeV]" : "M_{3π} [GeV]");
     h_weight_smooth->GetYaxis()->SetTitle("Weight");
     h_weight_smooth->Draw();
-    c->SaveAs("omega_correction_safe.pdf");
+    c->SaveAs(output_path + "omega_correction.pdf");
 
-    std::cout << "\nSaved corrected_isr3pi.root and omega_correction_safe.pdf\n";
+    std::cout << "\nSaved " + output_path + "corrected_isr3pi.root and omega_correction_safe.pdf\n";
 
     ftree->Close();
 }

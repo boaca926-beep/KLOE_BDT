@@ -23,17 +23,23 @@ constexpr int N_BINS_MASS = 200;
 constexpr int N_BINS_PULL = 150;
 constexpr int N_BINS_CHI2 = 100; 
 constexpr int N_BINS_ANGLE = 180;
+constexpr int N_BINS_BETA  = 150;
+constexpr double BETA_RANGE_MIN = 0.3;
+constexpr double BETA_RANGE_MAX = 1.0;
 constexpr double ENERGY_RANGE_MAX = 500.0;      // MeV
+constexpr double ENERGY_PHO3_RANGE_MIN = 50.0;  // MeV
+constexpr double ENERGY_PHO3_RANGE_MAX = 500.0; // MeV
 constexpr double MASS_GG_RANGE_MAX = 200.0;     // MeV/c²
 constexpr double MASS_GG_RANGE_MIN = 50.0;      // MeV/c²
 constexpr double MASS_3PI_RANGE_MAX = 1000.0;   // MeV/c²
 constexpr double MASS_3PI_RANGE_MIN = 400.0;    // MeV/c²
-constexpr double MASS_2PI_RANGE_MAX = 800.0;
+constexpr double MASS_2PI_RANGE_MAX = 700.0;
 constexpr double MASS_2PI_RANGE_MIN = 200.0;
 constexpr double PULL_RANGE_MIN = -30;          // MeV/c² / MeV
 constexpr double PULL_RANGE_MAX = 30;
 constexpr double CHI2_RANGE_MAX = 50.0;
 constexpr double ANGLE_RANGE_MAX = 180.0;       // deg
+
 
 // Event data structure (unchanged)
 struct EventData {
@@ -136,13 +142,54 @@ void test_bdt() {
     TH1D* hE1_bdt = hists.create("hE1_bdt", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE2_bdt = hists.create("hE2_bdt", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
     TH1D* hE3_bdt = hists.create("hE3_bdt", "", N_BINS_ENERGY, 0, ENERGY_RANGE_MAX);
+
     TH1D* hMgg_bdt = hists.create("hMgg_bdt", "", N_BINS_MASS, MASS_GG_RANGE_MIN, MASS_GG_RANGE_MAX);
+
     TH1D* hM3pi_bdt = hists.create("hM3pi_bdt", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+
     TH1D* h1dM3pi_bdt_corr_peak = hists.create("h1dM3pi_bdt_corr_peak", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
     TH1D* h1dM3pi_bdt_corr_non_reson = hists.create("h1dM3pi_bdt_corr_non_reson", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
     
     TH1D* hAngle_bdt = hists.create("hAngle_bdt", "", N_BINS_ANGLE, 0, ANGLE_RANGE_MAX);
+
+    // Ediff vs Eisr
+    TH2D* hDeltaE_eisr_bdt_peak = new TH2D("hDeltaE_eisr_bdt_peak", "DeltaE vs. E_{isr} (omega peak)",
+					   200, -700, -150,
+					   N_BINS_ENERGY, ENERGY_PHO3_RANGE_MIN, ENERGY_PHO3_RANGE_MAX);
     
+    TH2D* hDeltaE_eisr_bdt_non_reson = new TH2D("hDeltaE_eisr_bdt_non_reson", "DeltaE vs. E_{isr} (non_resonant)",
+						200, -700, -150,
+						N_BINS_ENERGY, ENERGY_PHO3_RANGE_MIN, ENERGY_PHO3_RANGE_MAX);
+
+    
+    // beta0 vs Eisr
+    TH2D* hBeta0_eisr_bdt_peak = new TH2D("hBeta0_eisr_bdt_peak", "Beta0 vs. E_{isr} (omega peak)",
+					  N_BINS_BETA, 0, BETA_RANGE_MAX,
+					  N_BINS_ENERGY, ENERGY_PHO3_RANGE_MIN, ENERGY_PHO3_RANGE_MAX);
+    
+    TH2D* hBeta0_eisr_bdt_non_reson = new TH2D("hBeta0_eisr_bdt_non_reson", "Beta0 vs. E_{isr} (non-resonant)",
+					  N_BINS_BETA, BETA_RANGE_MIN, BETA_RANGE_MAX,
+					  N_BINS_ENERGY, ENERGY_PHO3_RANGE_MIN, ENERGY_PHO3_RANGE_MAX);
+    
+    // angle vs Eisr
+    TH2D* hAngle_eisr_bdt_peak = new TH2D("hAngle_eisr_bdt_peak", "Opening Angle vs. E_{isr} (omega peak)",
+					  N_BINS_ANGLE, 0, ANGLE_RANGE_MAX,
+					  N_BINS_ENERGY, ENERGY_PHO3_RANGE_MIN, ENERGY_PHO3_RANGE_MAX);
+    TH2D* hAngle_eisr_bdt_non_reson = new TH2D("hAngle_eisr_bdt_non_reson", "Opening Angle vs. E_{isr} (non-resonant)",
+					  N_BINS_ANGLE, 0, ANGLE_RANGE_MAX,
+					  N_BINS_ENERGY, ENERGY_PHO3_RANGE_MIN, ENERGY_PHO3_RANGE_MAX);
+    
+
+    // m2pi vs Eisr
+    TH2D* hM2pi_eisr_bdt_peak = new TH2D("hM2pi_eisr_bdt_peak", "M_{2#pi} vs. E_{isr} (omega peak)",
+					 N_BINS_MASS, MASS_2PI_RANGE_MIN, MASS_2PI_RANGE_MAX,
+					 N_BINS_ENERGY, ENERGY_PHO3_RANGE_MIN, ENERGY_PHO3_RANGE_MAX);
+
+    TH2D* hM2pi_eisr_bdt_non_reson = new TH2D("hM2pi_eisr_bdt_non_reson", "M_{2#pi} vs. E_{isr} (non-resonant)",
+					 N_BINS_MASS, MASS_2PI_RANGE_MIN, MASS_2PI_RANGE_MAX,
+					 N_BINS_ENERGY, ENERGY_PHO3_RANGE_MIN, ENERGY_PHO3_RANGE_MAX);
+    
+    // m3pi_bdt corr
     TH2D* hM3pi_bdt_corr = new TH2D("hM3pi_bdt_corr", "M_{3#pi} Correlation",
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
@@ -171,6 +218,7 @@ void test_bdt() {
     double ppl_E, ppl_px, ppl_py, ppl_pz;
     double pmi_E, pmi_px, pmi_py, pmi_pz;
     double lagvalue_min_7C, deltaE, betapi0, angle_pi0gam12, ppIM;
+    double betapi0_bdt;
     double angle;
     double E1_true, px1_true, py1_true, pz1_true;
     double E2_true, px2_true, py2_true, pz2_true;
@@ -207,6 +255,7 @@ void test_bdt() {
     tree->SetBranchAddress("Br_lagvalue_min_7C", &lagvalue_min_7C);
     tree->SetBranchAddress("Br_deltaE", &deltaE);
     tree->SetBranchAddress("Br_betapi0", &betapi0);
+    tree->SetBranchAddress("Br_betapi0_bdt", &betapi0_bdt);
     tree->SetBranchAddress("Br_angle_pi0gam12", &angle_pi0gam12);
     tree->SetBranchAddress("Br_angle_pi0gam12_bdt", &angle);
     tree->SetBranchAddress("Br_ppIM", &ppIM);
@@ -300,14 +349,24 @@ void test_bdt() {
 
 	    //cout << m3pi << ", " << m3pi_true << endl;
 	    //cout << recon_indx_bdt << ", " << bkg_indx << endl;
-
+	    //cout << m2pi << ", " << angle << endl;
+	    //cout << betapi0_bdt << endl;
+	    
 	    if (recon_indx_bdt == 2 && bkg_indx == 1) {
 	      hM3pi_bdt_corr_peak->Fill(m3pi_true, m3pi);
 	      h1dM3pi_bdt_corr_peak->Fill(m3pi);
+	      hM2pi_eisr_bdt_peak->Fill(m2pi, e3);
+	      hAngle_eisr_bdt_peak->Fill(angle, e3);
+	      hBeta0_eisr_bdt_peak->Fill(betapi0_bdt, e3);
+	      hDeltaE_eisr_bdt_peak->Fill(deltaE, e3);
 	    }
 	    else {
 	      hM3pi_bdt_corr_non_reson->Fill(m3pi_true, m3pi);
 	      h1dM3pi_bdt_corr_non_reson->Fill(m3pi);
+	      hM2pi_eisr_bdt_non_reson->Fill(m2pi, e3);
+	      hAngle_eisr_bdt_non_reson->Fill(angle, e3);
+	      hBeta0_eisr_bdt_non_reson->Fill(betapi0_bdt, e3);
+	      hDeltaE_eisr_bdt_non_reson->Fill(deltaE, e3);
 	    }
 	    
             hE1_pull->Fill(e1 - e1_true);
@@ -571,6 +630,11 @@ void test_bdt() {
     hMgg_fixed->Write(); hM3pi_fixed->Write();
     hE1_bdt->Write(); hE2_bdt->Write(); hE3_bdt->Write();
     hMgg_bdt->Write(); hM3pi_bdt->Write(); 
+    hM2pi_eisr_bdt_peak->Write(); hM2pi_eisr_bdt_non_reson->Write();
+    hAngle_eisr_bdt_peak->Write(); hAngle_eisr_bdt_non_reson->Write();
+    hBeta0_eisr_bdt_peak->Write(); hBeta0_eisr_bdt_non_reson->Write();
+    hDeltaE_eisr_bdt_peak->Write(); hDeltaE_eisr_bdt_non_reson->Write();
+	   
     if (hasTrue) {
       hE1_pull->Write(); hE2_pull->Write(); hE3_pull->Write();
       hMgg_pull->Write(); hM3pi_pull->Write(); hM2pi_pull->Write();

@@ -1,4 +1,5 @@
 // Resolution – fit to m3pi_diff distribution with inner Gaussian values (normalized)
+#include "../header_bdt/plot_resol.h"
 
 void plot_resol() {
 
@@ -24,50 +25,50 @@ void plot_resol() {
   if (!ttree) { std::cerr << "No such tree.\n"; return; }
 
   // Histogram for difference: (reco – true) mass
-  TH1D *h_m3pi_diff = new TH1D("h_m3pi_diff", "", 200, -50, 50);
-  h_m3pi_diff->SetMarkerStyle(21);
-  h_m3pi_diff->SetMarkerSize(0.7);
-  h_m3pi_diff->SetLineColor(1);
-  h_m3pi_diff->Sumw2();
+  TH1D *h_diff = new TH1D("h_diff", "", 200, -50, 50);
+  h_diff->SetMarkerStyle(21);
+  h_diff->SetMarkerSize(0.7);
+  h_diff->SetLineColor(1);
+  h_diff->Sumw2();
 
-  double m3pi = 0.0, m3pi_true = 0.0;
-  double m3pi_diff = 0.0;
+  double var = 0.0, var_true = 0.0;
+  double var_diff = 0.0;
   int recon_indx_bdt = -1, bkg_indx = -1;
   
   ttree->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
   ttree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
-  ttree->SetBranchAddress("Br_m3pi_bdt", &m3pi);
-  ttree->SetBranchAddress("Br_m3pi_true_bdt", &m3pi_true);
+  ttree->SetBranchAddress(var_type, &var);
+  ttree->SetBranchAddress(var_type_true, &var_true);
   
   for (Long64_t i = 0; i < ttree->GetEntries(); ++i) {
     ttree->GetEntry(i);
     if (recon_indx_bdt == 2 && bkg_indx == 1) {
-      m3pi_diff = m3pi - m3pi_true;
-      h_m3pi_diff->Fill(m3pi_diff);
+      var_diff = var - var_true;
+      h_diff->Fill(var_diff);
     }
   }
 
   // --- Normalize the histogram (integral = 1) ---
-  double integral = h_m3pi_diff->Integral();
+  double integral = h_diff->Integral();
   if (integral > 0) {
-    h_m3pi_diff->Scale(1.0 / integral);
+    h_diff->Scale(1.0 / integral);
   } else {
     std::cerr << "ERROR: histogram has zero entries." << std::endl;
     return;
   }
 
   // Fit range: mean ± 3σ
-  double mean = h_m3pi_diff->GetMean();
-  double rms  = h_m3pi_diff->GetRMS();
+  double mean = h_diff->GetMean();
+  double rms  = h_diff->GetRMS();
   double fit_min = mean - 1.5 * rms;
   double fit_max = mean + 1.5 * rms;
-  double hist_min = h_m3pi_diff->GetXaxis()->GetXmin();
-  double hist_max = h_m3pi_diff->GetXaxis()->GetXmax();
+  double hist_min = h_diff->GetXaxis()->GetXmin();
+  double hist_max = h_diff->GetXaxis()->GetXmax();
   if (fit_min < hist_min) fit_min = hist_min;
   if (fit_max > hist_max) fit_max = hist_max;
-  std::cout << "Fit range for normalized m3pi_diff: [" << fit_min << ", " << fit_max << "] MeV/c^2" << std::endl;
+  std::cout << "Fit range for normalized var_diff: [" << fit_min << ", " << fit_max << "] MeV/c^2" << std::endl;
 
-  double peak = h_m3pi_diff->GetMaximum();
+  double peak = h_diff->GetMaximum();
   
   // Double Gaussian fit
   TF1 *doubleGaus = new TF1("doubleGaus", "gaus(0)+gaus(3)", fit_min, fit_max);
@@ -85,7 +86,7 @@ void plot_resol() {
   doubleGaus->SetLineColor(kRed);
   doubleGaus->SetLineWidth(2);
 
-  h_m3pi_diff->Fit(doubleGaus, "R");
+  h_diff->Fit(doubleGaus, "R");
   
   double chi2ndf = doubleGaus->GetChisquare() / doubleGaus->GetNDF();
   double err_amp2 = doubleGaus->GetParError(3);
@@ -103,7 +104,7 @@ void plot_resol() {
     singleGaus->SetParLimits(2, 0.5, 30.0);
     singleGaus->SetLineColor(kBlue);
     singleGaus->SetLineWidth(2);
-    h_m3pi_diff->Fit(singleGaus, "R");
+    h_diff->Fit(singleGaus, "R");
     finalFit = singleGaus;
     fitType = "Single Gaussian";
     doubleUsed = false;
@@ -111,25 +112,25 @@ void plot_resol() {
   }
 
   // Draw histogram and fit
-  TCanvas *c1 = new TCanvas("c1", "m3pi_diff resolution (normalized)", 700, 700);
+  TCanvas *c1 = new TCanvas("c1", "var_diff resolution (normalized)", 700, 700);
   c1->SetLeftMargin(0.15);
   c1->SetBottomMargin(0.15);
 
-  h_m3pi_diff->SetLineWidth(2);
-  h_m3pi_diff->GetXaxis()->SetTitle("M^{true}_{3#pi}-M^{rec}_{3#pi} [MeV/c^{2}]");
-  h_m3pi_diff->GetYaxis()->SetTitle("Normalized Entries");
-  h_m3pi_diff->GetXaxis()->CenterTitle();
-  h_m3pi_diff->GetYaxis()->CenterTitle();
-  h_m3pi_diff->GetXaxis()->SetTitleSize(0.05);
-  h_m3pi_diff->GetYaxis()->SetTitleSize(0.06);
-  h_m3pi_diff->GetXaxis()->SetLabelSize(0.05);
-  h_m3pi_diff->GetYaxis()->SetLabelSize(0.05);
-  h_m3pi_diff->GetYaxis()->SetTitleOffset(1.3);
-  h_m3pi_diff->GetYaxis()->SetRangeUser(0., 0.1);
-  h_m3pi_diff->GetXaxis()->SetRangeUser(3 * fit_min, 3 * fit_max); // or -50,50
-  h_m3pi_diff->GetYaxis()->SetNdivisions(505);
+  h_diff->SetLineWidth(2);
+  h_diff->GetXaxis()->SetTitle("M^{true}_{3#pi}-M^{rec}_{3#pi} [MeV/c^{2}]");
+  h_diff->GetYaxis()->SetTitle("Normalized Entries");
+  h_diff->GetXaxis()->CenterTitle();
+  h_diff->GetYaxis()->CenterTitle();
+  h_diff->GetXaxis()->SetTitleSize(0.05);
+  h_diff->GetYaxis()->SetTitleSize(0.06);
+  h_diff->GetXaxis()->SetLabelSize(0.05);
+  h_diff->GetYaxis()->SetLabelSize(0.05);
+  h_diff->GetYaxis()->SetTitleOffset(1.3);
+  h_diff->GetYaxis()->SetRangeUser(0., 0.1);
+  h_diff->GetXaxis()->SetRangeUser(3 * fit_min, 3 * fit_max); // or -50,50
+  h_diff->GetYaxis()->SetNdivisions(505);
 
-  h_m3pi_diff->Draw("hist");
+  h_diff->Draw("hist");
   finalFit->Draw("same");
 
   // ----- Extract inner (narrower) Gaussian values if double Gaussian -----
@@ -190,6 +191,6 @@ void plot_resol() {
   leg->Draw();
 
   // Save canvas
-  c1->SaveAs("../plots_resol/m3pi_diff_fit_normalized.png");
-  std::cout << "\nPlot saved to ../plots_resol/m3pi_diff_fit_normalized.png" << std::endl;
+  c1->SaveAs("../plots_resol/" + var_type + "_diff_fit_normalized.png");
+  std::cout << "\nPlot saved to ../plots_resol/" + var_type + "diff_fit_normalized.png" << std::endl;
 }
