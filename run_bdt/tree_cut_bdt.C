@@ -106,7 +106,8 @@ int tree_cut_bdt() {
     double m_gg_bdt = 0., m3pi_bdt = 0.;
     double m2pi_true = 0., m3pi_true = 0.;
     double angle_pi0gam12_bdt = 0., betapi0_bdt = 0.;
-
+    double angle_pi0gam12_bdt_true = 0.;
+    
     // Pull variables
     double e1_pull = 0., e2_pull = 0., e3_pull = 0.;
     double px1_pull = 0., py1_pull = 0., pz1_pull = 0.;
@@ -210,6 +211,7 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_m3pi_bdt", &m3pi_bdt, "Br_m3pi_bdt/D");
 	tree_tmp->Branch("Br_m3pi_true_bdt", &m3pi_true, "Br_m3pi_true_bdt/D");
         tree_tmp->Branch("Br_angle_pi0gam12_bdt", &angle_pi0gam12_bdt, "Br_angle_pi0gam12_bdt/D");
+	tree_tmp->Branch("Br_angle_pi0gam12_bdt_true", &angle_pi0gam12_bdt_true, "Br_angle_pi0gam12_bdt_true/D");
         tree_tmp->Branch("Br_betapi0_bdt", &betapi0_bdt, "Br_betapi0_bdt/D");
         // Pull branches
         tree_tmp->Branch("Br_e1_pull", &e1_pull, "Br_e1_pull/D");
@@ -391,7 +393,8 @@ int tree_cut_bdt() {
         pi0gam1_bdt.SetPxPyPzE(px1_bdt, py1_bdt, pz1_bdt, e1_bdt);
         pi0gam2_bdt.SetPxPyPzE(px2_bdt, py2_bdt, pz2_bdt, e2_bdt);
         angle_pi0gam12_bdt = pi0gam1_bdt.Angle(pi0gam2_bdt.Vect()) * TMath::RadToDeg();
-        TLorentzVector pi0_bdt = pi0gam1_bdt + pi0gam2_bdt;
+	
+	TLorentzVector pi0_bdt = pi0gam1_bdt + pi0gam2_bdt;
         betapi0_bdt = (pi0_bdt.Vect()).Mag() / pi0_bdt.E();
         bdt_score = result.score;
 
@@ -413,6 +416,11 @@ int tree_cut_bdt() {
         m3pi_true = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], true_photons, true_tracks);
         m2pi_true = compute_dipion_mass(true_tracks);
 
+	TLorentzVector pi0gam1_bdt_true, pi0gam2_bdt_true;
+        pi0gam1_bdt_true.SetPxPyPzE(px1_true, py1_true, pz1_true, e1_true);
+        pi0gam2_bdt_true.SetPxPyPzE(px2_true, py2_true, pz2_true, e2_true);
+        angle_pi0gam12_bdt_true = pi0gam1_bdt_true.Angle(pi0gam2_bdt_true.Vect()) * TMath::RadToDeg();
+        
         // Compute pulls
         e1_pull = e1_bdt - e1_true;
         e2_pull = e2_bdt - e2_true;

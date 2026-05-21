@@ -25,7 +25,7 @@ void plot_resol() {
   if (!ttree) { std::cerr << "No such tree.\n"; return; }
 
   // Histogram for difference: (reco – true) mass
-  TH1D *h_diff = new TH1D("h_diff", "", 200, -50, 50);
+  TH1D *h_diff = new TH1D("h_diff", "", bin_size, -50, 50);
   h_diff->SetMarkerStyle(21);
   h_diff->SetMarkerSize(0.7);
   h_diff->SetLineColor(1);
@@ -60,13 +60,13 @@ void plot_resol() {
   // Fit range: mean ± 3σ
   double mean = h_diff->GetMean();
   double rms  = h_diff->GetRMS();
-  double fit_min = mean - 1.5 * rms;
-  double fit_max = mean + 1.5 * rms;
+  double fit_min = mean - fit_factor * rms;
+  double fit_max = mean + fit_factor * rms;
   double hist_min = h_diff->GetXaxis()->GetXmin();
   double hist_max = h_diff->GetXaxis()->GetXmax();
   if (fit_min < hist_min) fit_min = hist_min;
   if (fit_max > hist_max) fit_max = hist_max;
-  std::cout << "Fit range for normalized var_diff: [" << fit_min << ", " << fit_max << "] MeV/c^2" << std::endl;
+  std::cout << "Fit range for normalized var_diff: [" << fit_min << ", " << fit_max << "] " << unit << std::endl;
 
   double peak = h_diff->GetMaximum();
   
@@ -116,8 +116,10 @@ void plot_resol() {
   c1->SetLeftMargin(0.15);
   c1->SetBottomMargin(0.15);
 
+  double ymax = h_diff -> GetMaximum();
+  
   h_diff->SetLineWidth(2);
-  h_diff->GetXaxis()->SetTitle("M^{true}_{3#pi}-M^{rec}_{3#pi} [MeV/c^{2}]");
+  h_diff->GetXaxis()->SetTitle(x_title);
   h_diff->GetYaxis()->SetTitle("Normalized Entries");
   h_diff->GetXaxis()->CenterTitle();
   h_diff->GetYaxis()->CenterTitle();
@@ -126,8 +128,8 @@ void plot_resol() {
   h_diff->GetXaxis()->SetLabelSize(0.05);
   h_diff->GetYaxis()->SetLabelSize(0.05);
   h_diff->GetYaxis()->SetTitleOffset(1.3);
-  h_diff->GetYaxis()->SetRangeUser(0., 0.1);
-  h_diff->GetXaxis()->SetRangeUser(3 * fit_min, 3 * fit_max); // or -50,50
+  h_diff->GetYaxis()->SetRangeUser(0., 1.6 * ymax);
+  h_diff->GetXaxis()->SetRangeUser(range_factor * fit_min, range_factor * fit_max); // or -50,50
   h_diff->GetYaxis()->SetNdivisions(505);
 
   h_diff->Draw("hist");
@@ -145,16 +147,16 @@ void plot_resol() {
       double err_mean = finalFit->GetParError(1);
       double err_sigma = finalFit->GetParError(2);
       line1 = Form("Inner Gaussian (core):");
-      line2 = Form("#mu = %.2f #pm %.2f MeV/c^{2}", mean_inner, err_mean);
-      line3 = Form("#deltaM_{3#pi} = %.2f #pm %.2f MeV/c^{2}", sigma_inner, err_sigma);
+      line2 = Form("#mu = %.2f #pm %.2f" + unit, mean_inner, err_mean);
+      line3 = Form("#sigma = %.2f #pm %.2f" + unit, sigma_inner, err_sigma);
     } else {
       double mean_inner = finalFit->GetParameter(4);
       double sigma_inner = sigma2;
       double err_mean = finalFit->GetParError(4);
       double err_sigma = finalFit->GetParError(5);
       line1 = Form("Inner Gaussian:");
-      line2 = Form("#mu = %.2f #pm %.2f MeV/c^{2}", mean_inner, err_mean);
-      line3 = Form("#deltaM_{3#pi} = %.2f #pm %.2f MeV/c^{2}", sigma_inner, err_sigma);
+      line2 = Form("#mu = %.2f#pm%.2f" + unit, mean_inner, err_mean);
+      line3 = Form("#sigma = %.2f#pm%.2f" + unit, sigma_inner, err_sigma);
     }
   } else {
     // Single Gaussian
@@ -163,13 +165,13 @@ void plot_resol() {
     double err_mean = finalFit->GetParError(1);
     double err_sigma = finalFit->GetParError(2);
     line1 = Form("Gaussian fit:");
-    line2 = Form("#mu = %.2f #pm %.2f MeV/c^{2}", mean_sg, err_mean);
-    line3 = Form("#sigma = %.2f #pm %.2f MeV/c^{2}", sigma_sg, err_sigma);
+    line2 = Form("#mu = %.2f#pm%.2f" + unit, mean_sg, err_mean);
+    line3 = Form("#sigma = %.2f#pm%.2f" + unit, sigma_sg, err_sigma);
   }
   TString line4 = Form("#chi^{2}/NDF = %.2f", chi2ndf);
 
   // Create a transparent TPaveText
-  TPaveText *pt = new TPaveText(0.45, 0.72, 0.9, 0.88, "NDC");
+  TPaveText *pt = new TPaveText(0.4, 0.72, 0.9, 0.88, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);

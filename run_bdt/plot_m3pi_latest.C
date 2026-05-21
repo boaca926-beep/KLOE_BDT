@@ -71,8 +71,12 @@ void plot_m3pi_latest() {
   // 3π mass range (MeV)
   TTree *tdata = (TTree*) ftree->Get("TDATA");
   if (!tdata) { std::cerr << "No TDATA tree.\n"; return; }
-  double mass_min = 600.0, omega_min = 760.0;
-  double mass_max = 1000.0, omega_max = 820.0;
+  double mass_min = 600.0;
+  double mass_max = 1000.0;
+
+  double omega_min = mass_min; // 760.0
+  double omega_max = mass_max; // 1000.0
+  
   const int nBins = 200;
 
   // Helper to fill a histogram from a tree
