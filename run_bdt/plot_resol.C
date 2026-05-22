@@ -25,7 +25,7 @@ void plot_resol() {
   if (!ttree) { std::cerr << "No such tree.\n"; return; }
 
   // Histogram for difference: (reco – true) mass
-  TH1D *h_diff = new TH1D("h_diff", "", bin_size, -50, 50);
+  TH1D *h_diff = new TH1D("h_diff", "", bin_size, XMIN, XMAX);
   h_diff->SetMarkerStyle(21);
   h_diff->SetMarkerSize(0.7);
   h_diff->SetLineColor(1);
@@ -45,6 +45,7 @@ void plot_resol() {
     if (recon_indx_bdt == 2 && bkg_indx == 1) {
       var_diff = var - var_true;
       h_diff->Fill(var_diff);
+      //cout << var_diff << endl;
     }
   }
 
@@ -58,7 +59,8 @@ void plot_resol() {
   }
 
   // Fit range: mean ± 3σ
-  double mean = h_diff->GetMean();
+  //double mean = h_diff->GetMean();
+  double mean = 0.0;
   double rms  = h_diff->GetRMS();
   double fit_min = mean - fit_factor * rms;
   double fit_max = mean + fit_factor * rms;
@@ -102,7 +104,7 @@ void plot_resol() {
     TF1 *singleGaus = new TF1("singleGaus", "gaus", fit_min, fit_max);
     singleGaus->SetParameters(peak, mean, rms * 0.7);
     singleGaus->SetParLimits(2, 0.5, 30.0);
-    singleGaus->SetLineColor(kBlue);
+    singleGaus->SetLineColor(kRed);
     singleGaus->SetLineWidth(2);
     h_diff->Fit(singleGaus, "R");
     finalFit = singleGaus;
@@ -119,6 +121,7 @@ void plot_resol() {
   double ymax = h_diff -> GetMaximum();
   
   h_diff->SetLineWidth(2);
+  h_diff->SetLineColor(4);
   h_diff->GetXaxis()->SetTitle(x_title);
   h_diff->GetYaxis()->SetTitle("Normalized Entries");
   h_diff->GetXaxis()->CenterTitle();
@@ -129,11 +132,15 @@ void plot_resol() {
   h_diff->GetYaxis()->SetLabelSize(0.05);
   h_diff->GetYaxis()->SetTitleOffset(1.3);
   h_diff->GetYaxis()->SetRangeUser(0., 1.6 * ymax);
-  h_diff->GetXaxis()->SetRangeUser(range_factor * fit_min, range_factor * fit_max); // or -50,50
+  //h_diff->GetXaxis()->SetRangeUser(range_factor * fit_min, range_factor * fit_max); // or -50,50
+  h_diff->GetXaxis()->SetRangeUser(XMIN, XMAX);   
   h_diff->GetYaxis()->SetNdivisions(505);
+  h_diff->GetXaxis()->SetNdivisions(505);
 
   h_diff->Draw("hist");
   finalFit->Draw("same");
+
+  //cout << "x range: " << range_factor * fit_min << ", " << range_factor * fit_max << endl;
 
   // ----- Extract inner (narrower) Gaussian values if double Gaussian -----
   TString line1, line2, line3;
@@ -147,8 +154,8 @@ void plot_resol() {
       double err_mean = finalFit->GetParError(1);
       double err_sigma = finalFit->GetParError(2);
       line1 = Form("Inner Gaussian (core):");
-      line2 = Form("#mu = %.2f #pm %.2f" + unit, mean_inner, err_mean);
-      line3 = Form("#sigma = %.2f #pm %.2f" + unit, sigma_inner, err_sigma);
+      line2 = Form("#mu = %.2f#pm%.2f" + unit, mean_inner, err_mean);
+      line3 = Form("#sigma = %.2f#pm%.2f" + unit, sigma_inner, err_sigma);
     } else {
       double mean_inner = finalFit->GetParameter(4);
       double sigma_inner = sigma2;
@@ -165,13 +172,13 @@ void plot_resol() {
     double err_mean = finalFit->GetParError(1);
     double err_sigma = finalFit->GetParError(2);
     line1 = Form("Gaussian fit:");
-    line2 = Form("#mu = %.2f#pm%.2f" + unit, mean_sg, err_mean);
-    line3 = Form("#sigma = %.2f#pm%.2f" + unit, sigma_sg, err_sigma);
+    line2 = Form("#mu = %.2e#pm%.2e %s", mean_sg, err_mean, unit.Data());
+    line3 = Form("#sigma = %.2e#pm%.2e %s", sigma_sg, err_sigma, unit.Data());
   }
   TString line4 = Form("#chi^{2}/NDF = %.2f", chi2ndf);
 
   // Create a transparent TPaveText
-  TPaveText *pt = new TPaveText(0.4, 0.72, 0.9, 0.88, "NDC");
+  TPaveText *pt = new TPaveText(0.3, 0.72, 0.9, 0.88, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
