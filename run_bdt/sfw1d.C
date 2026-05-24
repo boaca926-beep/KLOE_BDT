@@ -10,8 +10,9 @@
 #include <iostream>
 #include <cmath>
 
+#include "../header_bdt/path.h"
 #include "../header_bdt/sfw2d.txt"
-#include "../header_bdt/correct_omega.h"   // not needed if output_path is from path.h
+// #include "../header_bdt/correct_omega.h"   // not needed if outputSfw1D is from path.h
 
 // Global pointers for template histograms (detached from file)
 TH1D *gSigTemplate = nullptr;
@@ -25,11 +26,11 @@ Double_t template_sum(Double_t *x, Double_t *par) {
   return par[0] * sig + par[1] * bkg;
 }
 
-void correct_omega_peak_sample() {
+void sfw1d() {
   // ------------------------------------------------------------------
   // 1. Open tree file
   // ------------------------------------------------------------------
-  TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+  TString treeFile = outputCut + "tree_pre_bdt.root";
   TFile *ftree = TFile::Open(treeFile);
   if (!ftree || ftree->IsZombie()) {
     std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -132,18 +133,16 @@ void correct_omega_peak_sample() {
   double m3pi = 0., m3pi_true = 0.;
   tmc->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
   tmc->SetBranchAddress("Br_bkg_indx", &bkg_indx);
-  tmc->SetBranchAddress("Br_m3pi_bdt", &m3pi); 
+  tmc->SetBranchAddress("Br_m3pi_bdt", &m3pi);
   tmc->SetBranchAddress("Br_m3pi_true_bdt", &m3pi_true); 
   
   TH1D *h_signal_template = new TH1D("h_signal_template", "", nbins, low, high);
   TH1D *h_background_template = new TH1D("h_background_template", "", nbins, low, high);
   h_signal_template->Sumw2(); h_signal_template->SetDirectory(0);
   h_background_template->Sumw2(); h_background_template->SetDirectory(0);
-  
+
   // mc true for efficiency
   TH1D *h_signal_template_true = new TH1D("h_signal_template_true", "", nbins, low, high);
-  
-  // add TH2D correlation matrix, smearing matrix
   
   for (Long64_t i = 0; i < tmc->GetEntries(); ++i) {
     tmc->GetEntry(i);
@@ -239,11 +238,11 @@ void correct_omega_peak_sample() {
   }
   
   // ------------------------------------------------------------------
-  // 10. Save results – IMPORTANT: use the global output_path AFTER all file operations,
+  // 10. Save results – IMPORTANT: use the global outputSfw1D AFTER all file operations,
   //     but BEFORE closing the input file (to avoid memory corruption).
   //     sfw2d.C does not close input until the end, so we follow that.
   // ------------------------------------------------------------------
-  TFile *fout = new TFile(output_path + "corrected_isr3pi_sample.root", "RECREATE");
+  TFile *fout = new TFile(outputSfw1D + "corrected_isr3pi_sample.root", "RECREATE");
   h_isr3pi_corrected->Write();
   h_signal->Write();
   h_signal_true->Write();
@@ -288,7 +287,7 @@ void correct_omega_peak_sample() {
   h_weight_smooth->GetXaxis()->SetTitle(is_mev ? "M_{3π} [MeV]" : "M_{3π} [GeV]");
   h_weight_smooth->GetYaxis()->SetTitle("Weight");
   h_weight_smooth->Draw();
-  c->SaveAs(output_path + "omega_correction_template.pdf");
+  c->SaveAs(outputSfw1D + "omega_correction_template.pdf");
   
   // Clean up
   gSigTemplate = nullptr;
@@ -300,7 +299,7 @@ void correct_omega_peak_sample() {
   ftree->Close();
   delete ftree;
   
-  std::cout << "\nSaved " << output_path << "corrected_isr3pi_sample.root and omega_correction_template.pdf\n";
+  std::cout << "\nSaved " << outputSfw1D << "corrected_isr3pi_sample.root and omega_correction_template.pdf\n";
   gSystem->Exit(0);
 
 }

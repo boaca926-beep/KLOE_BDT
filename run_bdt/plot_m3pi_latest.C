@@ -41,6 +41,7 @@ The template fit is generally better for the reasons discussed earlier:
 #include <cmath>
 #include "../header_bdt/sfw2d_bdt.txt"
 #include "../header_bdt/correct_omega.h"
+#include "../header_bdt/path.h"
 
 void pt_style(TPaveText *pt, TString text) {
   pt->SetFillColor(0);
@@ -143,7 +144,7 @@ void plot_m3pi_latest() {
   TH1D *h_isr_bkg  = nullptr;
   
   const char* corrFiles[2];
-  TString file1 = output_path + "corrected_isr3pi_sample_tmp.root";
+  TString file1 = output_path + "corrected_isr3pi_sample.root";
   TString file2 = output_path + "corrected_isr3pi_tmp.root";
   corrFiles[0] = file1.Data();
   corrFiles[1] = file2.Data();
@@ -326,8 +327,8 @@ void plot_m3pi_latest() {
   line->SetLineStyle(2);
   line->Draw();
 
-  c->SaveAs(output_path + "m3pi_projection_with_pulls.pdf");
-  std::cout << "\nSaved " + output_path + "m3pi_projection_with_pulls.pdf\n";
+  c->SaveAs(output_path + "m3pi_projection_with_pulls_sample.pdf");
+  std::cout << "\nSaved " + output_path + "m3pi_projection_with_pulls_sample.pdf\n";
   delete c;
   
   // --- Minimal addition: background‑subtracted ω signal ---
@@ -403,8 +404,6 @@ void plot_m3pi_latest() {
     
   }
 
-  
-  
   TLegend *leg2 = new TLegend(0.6, 0.7, 0.9, 0.9);
   leg2->SetFillStyle(0);
   leg2->SetBorderSize(0);
@@ -414,13 +413,14 @@ void plot_m3pi_latest() {
   leg2->AddEntry(h_isr_bkg, "Comb. background", "l");
   leg2->Draw("same");
   
-  c2->SaveAs(output_path + "background_subtracted_omega.pdf");
+  c2->SaveAs(output_path + "background_subtracted_omega_sample.pdf");
   delete c2;
 
   if (h_isr_peak && h_isr_bkg) {
-    TString outFileName = "../plots_m3pi_corr/hist.root";   // use same directory as PDFs
+    TString outFileName = output_path + "hist_sample.root";   // use same directory as PDFs
     TFile *f_output = new TFile(outFileName, "RECREATE");
     if (f_output && !f_output->IsZombie()) {
+      h_signal_data->Write();
       h_isr_peak->Write();
       h_isr_bkg->Write();
       f_output->Close();
@@ -431,6 +431,6 @@ void plot_m3pi_latest() {
   ftree->Close();
   if (fcorr) fcorr->Close();
 
-  
+  gSystem->Exit(0);
   
 }

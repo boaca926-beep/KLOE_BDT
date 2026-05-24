@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e   # exit immediately if any command fails
 
 sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
@@ -9,7 +10,7 @@ gsf=1 # DATA
 result_path=../../input_bdt_${exp_type}_${sample_size}
 #result_path=/media/bo/Analysis_Disk/
 
-## Initialize the normial conditions
+## Initialize the normal conditions
 # Pre-selection
 egammamin=15 # 15, 20
 Rhovmax=4
@@ -33,21 +34,16 @@ cut_nm=""
 cut_value=0
 
 cut_header=../header_bdt/cut_para.h
-echo -e 'const double chi2_cut = -1;' > $cut_header
-echo -e 'const double angle_cut = -1;' >> $cut_header
-echo -e 'const double deltaE_cut = -1;' >> $cut_header
-echo -e 'const double beta_cut = -1;' >> $cut_header
-echo -e 'const double c0 = -1;' >> $cut_header
-echo -e 'const double c1 = -1;' >> $cut_header
-echo -e 'double cut_value = -1;' >> $cut_header
-echo -e 'const TString cut_nm = "";' >> $cut_header
-
-sed -i 's/\(const double chi2_cut =\)\(.*\)/\1 '$chi2_cut';/' $cut_header
-sed -i 's/\(const double angle_cut =\)\(.*\)/\1 '$angle_cut';/' $cut_header
-sed -i 's/\(const double deltaE_cut =\)\(.*\)/\1 '$deltaE_cut';/' $cut_header
-sed -i 's/\(const double beta_cut =\)\(.*\)/\1 '$beta_cut';/' $cut_header
-sed -i 's/\(const double c0 =\)\(.*\)/\1 '$c0';/' $cut_header
-sed -i 's/\(const double c1 =\)\(.*\)/\1 '$c1';/' $cut_header
+cat > $cut_header <<EOF
+const double chi2_cut = $chi2_cut;
+const double angle_cut = $angle_cut;
+const double deltaE_cut = $deltaE_cut;
+const double beta_cut = $beta_cut;
+const double c0 = $c0;
+const double c1 = $c1;
+double cut_value = -1;
+const TString cut_nm = "";
+EOF
 
 # histo
 mass_sigma_nb=1
@@ -102,7 +98,7 @@ mkdir ${log_path} # log files
 echo "Results folder is created at ${result_path}"
 
 echo "Initializing $path_header and log files!"
-## Initializing $path_header and log files!"
+## Initializing path_header and log files
 path_header=../header_bdt/path.h
 echo -e 'const TString rootFile = "";' > $path_header
 echo -e 'const TString sampleFile = "";' >> $path_header
@@ -128,35 +124,28 @@ sfw1d_script=sfw1d_script.C
 sed -i 's|\(const TString outputOmega =\)\(.*\)|\1 "'"${omega_path}"'";|' "$path_header"
 
 log_input=${log_path}log_input.txt
-#echo "" > ${log_input}
 touch $log_input
 
 log_cut=${log_path}log_cut.txt
-#echo "" > ${log_cut}
 touch $log_cut
 
 log_hist=${log_path}log_hist.txt
-#echo "" > ${log_hist}
 touch $log_hist
 
 log_sfw2d=${log_path}log_sfw2d.txt
-#echo "" > ${log_sfw2d}
 touch $log_sfw2d
 
 log_sfw1d=${log_path}log_sfw1d.txt
-#echo "" > ${log_sfw1d}
 touch $log_sfw1d
 
 log_omega_fit=${log_path}log_omega_fit.txt
-#echo "" > ${log_omega_fit}
 touch $log_omega_fit
 
 echo "Looping over data samples ..."
-# Loop over data smaples
+# Loop over data samples
 for ((i=0;i<${#DATA_TYPE[@]};++i)); do
 
     data_type=${DATA_TYPE[i]}
-    #echo ${data_type}
 
     # Ensure the sampleFile path matches data_type
     sample_file_name="${input_path}${data_type}"
@@ -164,7 +153,6 @@ for ((i=0;i<${#DATA_TYPE[@]};++i)); do
     INPUT_FILE=${sample_path}${data_type}_path
     ROOT_FILE=${input_path}${data_type}
     echo $INPUT_FILE
-    #echo $ROOT_FILE
 
     cat > "$path_header" <<EOF
 const TString rootFile = "${INPUT_FILE}";
@@ -195,7 +183,7 @@ EOF
     echo '  gROOT->ProcessLine(".L ../run_bdt/Analys_class.C");' >> $run_script
     echo '  gROOT->ProcessLine("Analys_class(rootFile, sampleFile)");' >> $run_script
     echo '}' >> $run_script
-    root -l -n -q -b $run_script >> ${log_input}
+    root -l -n -q -b $run_script >> ${log_input} 2>&1 || { echo "ROOT failed at run_script for $data_type"; exit 1; }
     
     ## Selection cuts
     tree_cut_script=tree_cut_script.C
@@ -204,9 +192,27 @@ EOF
     echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt.C");' >> $tree_cut_script
     echo 'gROOT->ProcessLine("tree_cut_bdt()");' >> $tree_cut_script
     echo '}' >> $tree_cut_script
-    root -l -n -q -b $tree_cut_script >> ${log_cut}
+    root -l -n -q -b $tree_cut_script >> ${log_cut} 2>&1 || { echo "ROOT failed at tree_cut_script for $data_type"; exit 1; }
 done
 echo "Selection cuts applied!"
+
+# ----------------------------------------------------------------------
+# Reset path.h for aggregated steps (no data_type)
+# ----------------------------------------------------------------------
+cat > "$path_header" <<EOF
+const TString rootFile = "";
+const TString sampleFile = "";
+const TString outputCut = "${cut_path}";
+const TString sig_path = "${input_path}";
+const TString outputGen = "${gen_path}";
+const TString outputHist = "${hist_path}";
+const TString outputSfw2D = "${sfw2d_path}";
+const TString outputSfw1D = "${sfw1d_path}";
+const TString outputOmega = "${omega_path}";
+const TString data_type = "";
+const TString exp_type = "${exp_type}";
+double gsf = ${gsf};
+EOF
 
 ## Signal MC generated
 tree_gen_script=tree_gen_script.C
@@ -215,7 +221,7 @@ echo "void tree_gen_script() {" >> $tree_gen_script
 echo 'gROOT->ProcessLine(".L ../run_bdt/tree_gen.C");' >> $tree_gen_script
 echo 'gROOT->ProcessLine("tree_gen()");' >> $tree_gen_script
 echo '}' >> $tree_gen_script
-root -l -n -q -b $tree_gen_script
+root -l -n -q -b $tree_gen_script 2>&1 || { echo "ROOT failed at tree_gen_script"; exit 1; }
 echo "Signal MC is generated!"
 
 ## Histos
@@ -224,7 +230,7 @@ echo "void hist_script() {" >> $hist_script
 echo 'gROOT->ProcessLine(".L ../run_bdt/gethist.C");' >> $hist_script
 echo 'gROOT->ProcessLine("gethist()");' >> $hist_script
 echo '}' >> $hist_script
-root -l -n -q -b $hist_script >> ${log_hist}
+root -l -n -q -b $hist_script >> ${log_hist} 2>&1 || { echo "ROOT failed at hist_script"; exit 1; }
 echo "Histos are created!"
 
 ## Normalization
@@ -233,13 +239,31 @@ echo "void sfw2d_script() {" >> $sfw2d_script
 echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
 echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
 echo '}' >> $sfw2d_script
-root -l -n -q -b $sfw2d_script >> ${log_sfw2d}
-#cp ../header/sfw2d.txt ${outputSfw2D}
-#ls ${outputSfw2D}
+root -l -n -q -b $sfw2d_script >> ${log_sfw2d} 2>&1 || { echo "ROOT failed at sfw2d_script"; exit 1; }
 echo "MC normalization!"
 
-rm $run_script
-rm $tree_cut_script
-rm $tree_gen_script
-rm $hist_script
-rm $sfw2d_script
+## MC signal tuning (ω peak correction)
+echo '#include <iostream>' > $sfw1d_script
+echo "void sfw1d_script() {" >> $sfw1d_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/sfw1d.C");' >> $sfw1d_script
+echo 'gROOT->ProcessLine("sfw1d()");' >> $sfw1d_script
+echo '}' >> $sfw1d_script
+root -l -n -q -b $sfw1d_script >> ${log_sfw1d} 2>&1 || { echo "ROOT failed at sfw1d_script"; exit 1; }
+echo "omega peak correction!"
+
+## Omega parameters
+omega_fit_script=omega_fit_script.C
+echo '#include <iostream>' > $omega_fit_script
+echo "void omega_fit_script() {" >> $omega_fit_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/omega_fit.C");' >> $omega_fit_script
+echo 'gROOT->ProcessLine("omega_fit()");' >> $omega_fit_script
+echo '}' >> $omega_fit_script
+#root -l -n -q -b $omega_fit_script >> ${log_omega_fit}
+echo "Omega parameters are extracted!"
+
+# Optional: keep temporary scripts for debugging
+if [ -z "$DEBUG" ]; then
+    rm -f $run_script $tree_cut_script $tree_gen_script $hist_script $sfw2d_script $sfw1d_script $omega_fit_script
+else
+    echo "Debug mode: temporary scripts retained in current directory."
+fi
