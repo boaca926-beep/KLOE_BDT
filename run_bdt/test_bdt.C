@@ -617,9 +617,9 @@ void test_bdt() {
                    hMgg_pull, hM3pi_pull, hM2pi_pull,
                    "M_{#gamma#gamma} pull [MeV/c^{2}]", "M_{3#pi} pull [MeV/c^{2}]", "M_{2#pi} pull [MeV/c^{2}]",
                    "Normalized entries", kRed);
-	draw2D("m3pi_correlation_peak", "M_{3#pi} Correlation (BDT-selected)",
+	draw2D(Form("m3pi_correlation_peak_%s", tree_name), "M_{3#pi} Correlation (BDT-selected)",
                hM3pi_bdt_corr_peak, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
-	draw2D("m3pi_correlation_non_reson", "M_{3#pi} Correlation Non-resonance (BDT-selected)",
+	draw2D(Form("m3pi_correlation_non_reso_%s", tree_name), "M_{3#pi} Correlation Non-resonance (BDT-selected)",
                hM3pi_bdt_corr_non_reson, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
     }
 

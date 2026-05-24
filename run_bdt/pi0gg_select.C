@@ -1,4 +1,15 @@
 // pi0gg_select.C – compare χ² and BDT π⁰ photon identification
+void pt_style(TPaveText *pt, TString text) {
+  pt->SetFillColor(0);
+  pt->SetBorderSize(0);
+  pt->SetTextAlign(12);
+  pt->SetTextSize(0.04);
+  pt->SetTextFont(42);
+  pt->AddText(text);
+  //pt->AddText(line4);
+  
+}
+
 void pi0gg_select() {
 
   gErrorIgnoreLevel = kError;
@@ -8,7 +19,8 @@ void pi0gg_select() {
   gStyle->SetFitFormat("6.4g");
 
   const char* data_filename = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
-  const char* tree_name = "TISR3PI_SIG";
+  //const char* tree_name = "TISR3PI_SIG";
+  const char* tree_name = "TETAGAM";
     
   TFile* file = TFile::Open(data_filename);
   if (!file || file->IsZombie()) return;
@@ -40,10 +52,13 @@ void pi0gg_select() {
   }
 
   std::cout << "\n=== Summary ===\n";
+  double purity_chi2 = 100.*h_chi2->GetBinContent(3)/nentries;
+  double purity_bdt = 100.*h_bdt->GetBinContent(3)/nentries; 
+    
   std::cout << "χ² pairing:  " << h_chi2->GetBinContent(3) << " events with 2 correct photons ("
-            << 100.*h_chi2->GetBinContent(3)/nentries << "%)\n";
+            << purity_chi2 << "%)\n";
   std::cout << "BDT pairing: " << h_bdt->GetBinContent(3)  << " events with 2 correct photons ("
-            << 100.*h_bdt->GetBinContent(3)/nentries << "%)\n";
+            << purity_bdt << "%)\n";
 
   // 1D comparison
   TCanvas* c1 = new TCanvas("c1","Comparison",900,900);
@@ -66,11 +81,30 @@ void pi0gg_select() {
   h_chi2->Draw("hist");
   h_bdt->SetLineWidth(2);
   h_bdt->Draw("hist same");
-  TLegend* leg = new TLegend(0.2,0.7,0.6,0.88);
-  leg->AddEntry(h_chi2,"#chi^{2} pairing","f");
-  leg->AddEntry(h_bdt,"BDT pairing","f");
+
+  // Create a transparent TPaveText
+  TPaveText *pt = new TPaveText(0.15, 0.6, 0.5, 0.68, "NDC");
+  TPaveText *pt1 = new TPaveText(0.15, 0.67, 0.5, 0.72, "NDC");
+  
+  TString line = Form("Purity #chi^{2}-selection = %.2f", purity_chi2* 1e-2);
+  TString line1 = Form("Purity bdt-selection = %.2f", purity_bdt* 1e-2);
+
+  pt_style(pt, line);
+  pt->SetTextColor(kBlue);
+        
+  pt_style(pt1, line1);
+  pt1->SetTextColor(kRed);
+  
+  pt->Draw();
+  pt1->Draw("same");
+
+  TLegend* leg = new TLegend(0.2,0.8,0.5,0.88);
+  leg->SetTextSize(0.03);
+  leg->SetBorderSize(0);
+  leg->AddEntry(h_chi2,"#chi^{2} pairing","l");
+  leg->AddEntry(h_bdt,"BDT pairing","l");
   leg->Draw();
-  c1->SaveAs("../plots_select/pi0gg_recon_compare.pdf");
+  c1->SaveAs(Form("../plots_select/pi0gg_recon_compare_%s.pdf", tree_name));
 
   // 2D correlation (absolute counts)
   TH2D* h_corr = new TH2D("h_corr",";BDT-selected correct #pi^{0} photons;#chi^{2}-selected correct #pi^{0} photons",3,0,3,3,0,3);
@@ -107,7 +141,7 @@ void pi0gg_select() {
       t->Draw();
     }
   }
-  c2->SaveAs("../plots_select/pi0gg_recon_correlation_absolute.png");
+  c2->SaveAs(Form("../plots_select/pi0gg_recon_correlation_absolute_%s.png", tree_name));
 
   // ========== FRACTION BY ROW ==========
   TH2D* h_frac = (TH2D*)h_corr->Clone("h_frac");
@@ -149,6 +183,6 @@ void pi0gg_select() {
     }
   }
   
-  c3->SaveAs("../plots_select/pi0gg_recon_correlation_fraction.png");
+  c3->SaveAs(Form("../plots_select/pi0gg_recon_correlation_fraction_%s.pdf", tree_name));
   
 }

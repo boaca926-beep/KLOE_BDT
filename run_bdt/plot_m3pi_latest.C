@@ -42,6 +42,16 @@ The template fit is generally better for the reasons discussed earlier:
 #include "../header_bdt/sfw2d_bdt.txt"
 #include "../header_bdt/correct_omega.h"
 
+void pt_style(TPaveText *pt, TString text) {
+  pt->SetFillColor(0);
+  pt->SetBorderSize(0);
+  pt->SetTextAlign(12);
+  pt->SetTextSize(0.04);
+  pt->SetTextFont(42);
+  pt->AddText(text);
+  //pt->AddText(line4);
+  
+}
 
 void plot_m3pi_latest() {
   gErrorIgnoreLevel = kError;
@@ -51,6 +61,7 @@ void plot_m3pi_latest() {
   gStyle->SetErrorX(0.8);
   TH1::SetDefaultSumw2();
 
+  
   // Latest scaling factors
   std::cout << "Using latest scaling factors from RooFit 2D fit:\n"
             << "  EEG     : " << eeg_sfw << "\n"
@@ -132,8 +143,8 @@ void plot_m3pi_latest() {
   TH1D *h_isr_bkg  = nullptr;
   
   const char* corrFiles[2];
-  TString file1 = output_path + "corrected_isr3pi_sample.root";
-  TString file2 = output_path + "corrected_isr3pi.root";
+  TString file1 = output_path + "corrected_isr3pi_sample_tmp.root";
+  TString file2 = output_path + "corrected_isr3pi_tmp.root";
   corrFiles[0] = file1.Data();
   corrFiles[1] = file2.Data();
 
@@ -153,7 +164,7 @@ void plot_m3pi_latest() {
         h_isr_peak->SetLineColor(kBlue);
         h_isr_peak->SetLineStyle(1);
         h_isr_peak->SetLineWidth(2);
-        h_isr_bkg->SetLineColor(9);
+        h_isr_bkg->SetLineColor(kRed);
         h_isr_bkg->SetLineStyle(3);
         h_isr_bkg->SetLineWidth(2);
         break; // success
@@ -243,15 +254,18 @@ void plot_m3pi_latest() {
   for (auto h : comps) if (h) h->Draw("hist same");
   h_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
   h_data->GetXaxis()->SetLabelOffset(0.1);
+  //h_data->GetYaxis()->SetLabelOffset(0.005);
   h_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
   h_data->GetXaxis()->SetRangeUser(omega_min, omega_max);
   h_data->GetYaxis()->CenterTitle();
-  h_data->GetYaxis()->SetTitleSize(0.05);
-  h_data->GetYaxis()->SetTitleOffset(1.2);
+  h_data->GetXaxis()->SetTitleSize(0.06);
+  h_data->GetYaxis()->SetTitleSize(0.07);
+  h_data->GetYaxis()->SetTitleOffset(.7);
   h_data->GetYaxis()->SetLabelSize(0.04);
-
+  h_data->GetYaxis()->SetNdivisions(505);
+  
   // Legend – order must match comps vector
-  TLegend *leg = new TLegend(0.6, 0.25, 0.9, 0.9);
+  TLegend *leg = new TLegend(0.65, 0.25, 0.9, 0.9);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);           
@@ -270,6 +284,7 @@ void plot_m3pi_latest() {
 
   // ISR3π part – conditional on whether we have separated peak+background
   if (h_isr_peak && h_isr_bkg) {
+
     // Two entries: peak (corrected) and non‑resonant background
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "3#pi (peak) corrected", "l");
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "Combinatorial", "l");
@@ -291,22 +306,22 @@ void plot_m3pi_latest() {
   pad2->Draw();
   pad2->cd();
   gPad->SetGrid();   // adds grid lines to both X and Y axes
- 
+
   h_pull->GetXaxis()->SetTitle("M_{3#pi} [MeV]");
   h_pull->GetXaxis()->SetTitleSize(0.12);
   h_pull->GetXaxis()->SetTitleOffset(1.0);
   h_pull->GetXaxis()->SetLabelSize(0.1);
   h_pull->GetYaxis()->SetTitle("Pull");
-  h_pull->GetYaxis()->SetTitleSize(0.12);
-  h_pull->GetYaxis()->SetTitleOffset(0.5);
+  h_pull->GetYaxis()->SetTitleSize(0.2);       // increased for readability
+  h_pull->GetYaxis()->SetTitleOffset(0.2);      // avoid overlap
   h_pull->GetYaxis()->SetLabelSize(0.1);
-  h_pull->GetXaxis()->SetRangeUser(760, 820);
+  //h_pull->GetXaxis()->SetRangeUser(760, 820);   // optional: zoom to ω peak
   h_pull->GetYaxis()->SetRangeUser(-10, 10);
   h_pull->GetYaxis()->SetNdivisions(505);
   h_pull->GetXaxis()->CenterTitle();
   h_pull->GetYaxis()->CenterTitle();
   h_pull->Draw("P");
-
+ 
   TLine *line = new TLine(omega_min, 0, omega_max, 0);
   line->SetLineStyle(2);
   line->Draw();
@@ -327,7 +342,7 @@ void plot_m3pi_latest() {
   for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin)
     if (h_signal_data->GetBinContent(bin) < 0) h_signal_data->SetBinContent(bin, 0);
 
-  TCanvas *c2 = new TCanvas("c2", "Background‑subtracted ω signal", 800, 600);
+  TCanvas *c2 = new TCanvas("c2", "Background‑subtracted ω signal", 1200, 700);
   c2->SetBottomMargin(0.12);
   c2->SetLeftMargin(0.12);
 
@@ -336,7 +351,7 @@ void plot_m3pi_latest() {
   h_signal_data->GetXaxis()->SetLabelOffset(0.007);   // keep default small value
   h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
   h_signal_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-  h_signal_data->GetXaxis()->SetRangeUser(omega_min, omega_max);
+  h_signal_data->GetXaxis()->SetRangeUser(omega_min, omega_max - 50.0);
   h_signal_data->GetXaxis()->CenterTitle();
   h_signal_data->GetYaxis()->CenterTitle();
   h_signal_data->GetXaxis()->SetTitleSize(0.05);
@@ -345,22 +360,77 @@ void plot_m3pi_latest() {
   h_signal_data->GetYaxis()->SetLabelSize(0.04);
 
   h_signal_data->Draw("E0");
-  if (h_isr_peak) {
+  if (h_isr_peak && h_isr_bkg) {
     h_isr_peak->SetLineColor(kBlue);
     h_isr_peak->Draw("hist same");
+    h_isr_bkg->SetLineColor(kRed);
+    h_isr_bkg->Draw("hist same");
+
+    // Define the mass window (MeV/c²)
+    double low = 650.0, high = 900.0;
+    int bin_low = h_isr_peak->FindBin(low);
+    int bin_high = h_isr_peak->FindBin(high);
+    
+    double peak_entries = h_isr_peak->Integral(bin_low, bin_high);
+    double comb_entries = h_isr_bkg->Integral(bin_low, bin_high);
+    double total = peak_entries + comb_entries;
+    double purity = (total > 0) ? (peak_entries / total) * 100.0 : 0.0;
+    
+    cout << "Data-driven peak entries in mass region m3pi = [" << low << ", " << high << "] MeV/c^2:\n"
+         << "peak entries: " << peak_entries << "\n"
+         << "combinatorial entries: " << comb_entries << "\n"
+         << "purity: " << purity << "%\n";
+
+    // mass range for purity estimation
+    TLine *line1 = new TLine(650, 0, 650, 400);
+    line1->SetLineColor(kBlack);
+    line1->SetLineWidth(3);
+
+    TLine *line2 = new TLine(900, 0, 900, 400);
+    line2->SetLineColor(kBlack);
+    line2->SetLineWidth(3);
+    line2->Draw();
+  
+    line1->Draw();
+    line2->Draw("same");
+  
+    // Create a transparent TPaveText
+    TPaveText *pt = new TPaveText(0.6, 0.6, 0.7, 0.68, "NDC");
+    TString line = Form("Data-driven purity = %.2f", purity* 1e-2);
+    pt_style(pt, line);
+    pt->SetTextColor(kRed);
+    pt->Draw("same");
+    
   }
 
-  TLegend *leg2 = new TLegend(0.5, 0.7, 0.9, 0.9);
+  
+  
+  TLegend *leg2 = new TLegend(0.6, 0.7, 0.9, 0.9);
   leg2->SetFillStyle(0);
   leg2->SetBorderSize(0);
   leg2->SetTextSize(0.04);           
   leg2->AddEntry(h_signal_data, "Data - backgrounds", "lep");
   leg2->AddEntry(h_isr_peak, "Corrected #omega peak", "l");
+  leg2->AddEntry(h_isr_bkg, "Comb. background", "l");
   leg2->Draw("same");
   
   c2->SaveAs(output_path + "background_subtracted_omega.pdf");
   delete c2;
-  
+
+  if (h_isr_peak && h_isr_bkg) {
+    TString outFileName = "../plots_m3pi_corr/hist.root";   // use same directory as PDFs
+    TFile *f_output = new TFile(outFileName, "RECREATE");
+    if (f_output && !f_output->IsZombie()) {
+      h_isr_peak->Write();
+      h_isr_bkg->Write();
+      f_output->Close();
+    }
+    delete f_output;
+  }
+
   ftree->Close();
   if (fcorr) fcorr->Close();
+
+  
+  
 }
