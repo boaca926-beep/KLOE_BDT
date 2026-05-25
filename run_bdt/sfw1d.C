@@ -36,6 +36,14 @@ void sfw1d() {
     std::cerr << "ERROR: cannot open " << treeFile << std::endl;
     return;
   }
+
+  TString treeFile_gen = outputGen + "tree_gen.root";
+  TFile *ftree_gen = TFile::Open(treeFile_gen);
+  if (!ftree_gen || ftree_gen->IsZombie()) {
+    std::cerr << "ERROR: cannot open " << treeFile_gen << std::endl;
+    return;
+  }
+
   
   TTree *tdata = (TTree*) ftree->Get("TDATA");
   if (!tdata) { std::cerr << "ERROR: TDATA not found." << std::endl; return; }
@@ -110,7 +118,7 @@ void sfw1d() {
   h_mcrest->Scale(mcrest_sfw);
   
   if (!h_isr3pi) { std::cerr << "ERROR: No ISR3pi histogram." << std::endl; return; }
-  
+
   // ------------------------------------------------------------------
   // 4. Subtract backgrounds -> h_data_isr (detached)
   // ------------------------------------------------------------------
@@ -159,6 +167,20 @@ void sfw1d() {
   double bkg_int = h_background_template->Integral();
   if (sig_int > 0) h_signal_template->Scale(1.0 / sig_int);
   if (bkg_int > 0) h_background_template->Scale(1.0 / bkg_int);
+
+  // mc gen for efficiency
+  TTree *tmc_gen = (TTree*) ftree_gen->Get("TISR3PI_SIG_GEN");
+  if (!tmc_gen) { std::cerr << "ERROR: TISR3PI_SIG_GEN not found." << std::endl; return; }
+  double m3pi_gen = 0.;
+
+  tmc_gen->SetBranchAddress("Br_IM3pi_gen", &m3pi_gen); 
+  
+  TH1D *h_signal_template_gen = new TH1D("h_signal_template_gen", "", nbins, low, high);
+  for (Long64_t i = 0; i < tmc_gen->GetEntries(); ++i) {
+    tmc_gen->GetEntry(i);
+    h_signal_template_gen->Fill(m3pi_gen);
+    //cout << m3pi_gen << endl;
+  }
   
   // Set global pointers for the fit function
   gSigTemplate = h_signal_template;
@@ -182,6 +204,7 @@ void sfw1d() {
   // ------------------------------------------------------------------
   TH1D *h_signal = (TH1D*) h_signal_template->Clone("h_signal");
   TH1D *h_signal_true = (TH1D*) h_signal_template_true->Clone("h_signal_true");
+  TH1D *h_signal_gen = (TH1D*) h_signal_template_gen->Clone("h_signal_gen");
   TH1D *h_background = (TH1D*) h_background_template->Clone("h_background");
   h_signal->SetDirectory(0); h_background->SetDirectory(0);
   h_signal->Scale(alpha);
@@ -246,6 +269,7 @@ void sfw1d() {
   h_isr3pi_corrected->Write();
   h_signal->Write();
   h_signal_true->Write();
+  h_signal_gen->Write();
   h_background->Write();
   h_weight_smooth->Write();
   h_data_isr->Write();
@@ -296,6 +320,8 @@ void sfw1d() {
   delete c;
   
   // Now close the input file – after all uses of globals
+  ftree_gen->Close();
+  delete ftree_gen;
   ftree->Close();
   delete ftree;
   

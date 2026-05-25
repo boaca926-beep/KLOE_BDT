@@ -41,9 +41,9 @@ double chi2_sum_crx3pi = 0.;
 int residul_size_crx3pi = 0;
 
 TFile *f_hist = new TFile(outputHist + "hist.root"); 
-TFile *f_cut = new TFile(outputCut + "tree_pre.root");  
+TFile *f_cut = new TFile(outputCut + "tree_pre_bdt.root");  
 TFile *f_sfw2d = new TFile(outputSfw2D + "sfw2d.root");  
-TFile *f_sfw1d = new TFile(outputSfw1D + "sfw1d.root");  
+TFile *f_sfw1d = new TFile(outputSfw1D + "corrected_isr3pi_sample.root");  
 
 TFile *f_out = new TFile(outputOmega + "omega_fit.root", "recreate");
 
