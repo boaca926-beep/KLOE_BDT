@@ -209,7 +209,7 @@ void test_bdt() {
     TH1D* hM2pi_pull = hists.create("hM2pi_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
 
     // Create output ROOT file
-    TFile* outfile = new TFile("test_bdt.root", "RECREATE");
+    TFile* outfile = new TFile("../plots_test/test_bdt.root", "RECREATE");
  
     // Branch addresses (unchanged)
     double E1, px1, py1, pz1;
@@ -534,7 +534,9 @@ void test_bdt() {
     // Drawing function for 2D histogram
     auto draw2D = [&](const char* name, const char* title,
 		      TH2D* h2, const char* xTitle, const char* yTitle,
-		      bool logz = false, std::vector<double> hlines = {}) {
+		      bool logz = false,
+		      std::vector<double> hlines = {},
+		      std::vector<double> vlines = {}) {
       TCanvas* c = new TCanvas(name, title, 800, 800);
       c->SetLeftMargin(0.15);
       c->SetRightMargin(0.15);
@@ -572,20 +574,22 @@ void test_bdt() {
 	  //line->SetLineStyle(2);   // dashed
 	  line->Draw("same");      // <-- lower‑case "same"
         }
+	
+      }
 
-	double ymin = gPad->GetUymin();
-        double ymax = gPad->GetUymax();
-	for (double x : hlines) {
+      // Draw vertical lines
+      if (!vlines.empty()) {
+       	double ymin = gPad->GetUymin();
+	double ymax = gPad->GetUymax();
+	for (double x : vlines) {
 	  TLine *line1 = new TLine(x, ymin, x, ymax);
 	  line1->SetLineColor(kBlack);
 	  line1->SetLineWidth(3);
 	  //line1->SetLineStyle(2);   // dashed
 	  line1->Draw("same");      // <-- lower‑case "same"
-        }
-
-        
+	}
+	
       }
-      
       c->SaveAs(Form("../plots_test/%s.pdf", name));
       c->Write();
       delete c;
@@ -608,6 +612,13 @@ void test_bdt() {
                       hMgg_fixed, hMgg_bdt, hM3pi_fixed, hM3pi_bdt, hAngle_fixed, hAngle_bdt,
                       "M_{#gamma#gamma} [MeV/c^{2}]", "M_{3#pi} [MeV/c^{2}]", "#angle_{#gamma#gamma} [#circ]", "Entries", true);
 
+    // M_{2#pi} vs. E_{#gamma_{3}}
+    draw2D(Form("angle_eisr_bdt_peak_%s", tree_name), "#angle_{#gamma#gamma} vs. E_{#gamma_{3}} (omega-peak)",
+	   hAngle_eisr_bdt_peak, "#angle_{#gamma#gamma} [#circ]", "E_{#gamma_{3}} [MeV]", true, {}, {66.,180.});
+
+    draw2D(Form("angle_eisr_bdt_non_reson_%s", tree_name), "#angle_{#gamma#gamma} vs. E_{#gamma_{3}} (Non-resonant)",
+	   hAngle_eisr_bdt_non_reson, "#angle_{#gamma#gamma} [#circ]", "E_{#gamma_{3}} [MeV]", true, {}, {66.,180.});
+
     if (hasTrue) {
         drawTriple("energy_pulls", "Energy Pulls (BDT-selected)",
                    hE1_pull, hE2_pull, hE3_pull,
@@ -618,9 +629,9 @@ void test_bdt() {
                    "M_{#gamma#gamma} pull [MeV/c^{2}]", "M_{3#pi} pull [MeV/c^{2}]", "M_{2#pi} pull [MeV/c^{2}]",
                    "Normalized entries", kRed);
 	draw2D(Form("m3pi_correlation_peak_%s", tree_name), "M_{3#pi} Correlation (BDT-selected)",
-               hM3pi_bdt_corr_peak, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
+               hM3pi_bdt_corr_peak, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800}, {760, 800});
 	draw2D(Form("m3pi_correlation_non_reso_%s", tree_name), "M_{3#pi} Correlation Non-resonance (BDT-selected)",
-               hM3pi_bdt_corr_non_reson, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800});
+               hM3pi_bdt_corr_non_reson, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800}, {760, 800});
     }
 
     // Write histograms to output ROOT file

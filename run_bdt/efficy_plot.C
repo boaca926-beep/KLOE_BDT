@@ -1,7 +1,13 @@
 #include "../header_plot/plot.h"
 
-const TString infile = "/home/kloe/Desktop/input_bdt_TDATA_chain/hist/hist.root";
 
+const TString TYPE_LIST[2] = {"bdt", "kloe"};
+//const TString HISR_LIST[2] = {"HSIG", ""};
+
+//const TString infile = "/home/kloe/Desktop/input_bdt_TDATA_chain/hist/hist.root";
+//const TString infile = "/home/kloe/Desktop/input_kloe_TDATA_norm/hist/hist.root";
+
+const TString sample_type = "kloe";
 const int color_indx = 4;
 const int mstyle_indx = 22;
 const TString hefficy_type = "hefficy";
@@ -20,6 +26,7 @@ const double M3pi_max = 870;
 
 TCanvas *plot_efficy(TH1D *h1d, TH1D* h1d_1, TString cv_nm, TString cv_title) {
 
+  
   TCanvas *cv = new TCanvas(cv_nm, cv_title, 1100, 600);
 
   cv -> SetBottomMargin(0.15);
@@ -81,6 +88,8 @@ double binomial_err(double nb_true, double nb_gen) {
 //
 TH1D *get_efficy(TH1D *hsig_true, TH1D *hsig_gen) {
 
+
+
   int binsize = hsig_true -> GetNbinsX();
   
   double hmin = hsig_true -> GetXaxis() -> GetXmin();
@@ -131,6 +140,19 @@ int efficy_plot() {
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
 
+  TString infile = "/home/kloe/Desktop/input_" +  sample_type + "_TDATA_chain/hist/hist.root";
+  
+  if (sample_type == TYPE_LIST[0]){
+    cout << "Reading " << sample_type << " at " << infile << endl;
+  }
+  else if (sample_type == TYPE_LIST[1]) {
+    cout << "Reading " << sample_type << " at " << infile << endl;
+  }
+  else {
+    cout << "Wraong sample type!" << endl;
+  }
+  
+
   TKey *key;
 
   // get efficiency histos
@@ -168,8 +190,15 @@ int efficy_plot() {
 
   TList *HSIG = (TList *) intree -> Get("HSIG");
 
-  TH1D* htrue = (TH1D*)HSIG -> FindObject("hsig_true");
-  
+  TH1D* htrue = nullptr;
+
+  if (sample_type == "kloe"){
+    htrue = (TH1D*)HSIG -> FindObject("hsig_true");
+  }
+  else if (sample_type == "bdt"){
+    TList *HPeakNonReson = (TList *) intree -> Get("HPeakNonReson");
+    htrue = (TH1D*)HPeakNonReson -> FindObject("h1d_IM3pi_TISR3PI_SIG_PEAK_TRUE");
+  }
   format_h(htrue, color_indx, 2);
   htrue -> SetLineStyle(2);
 
@@ -289,7 +318,8 @@ int efficy_plot() {
   legtextsize(legd_cv1, 0.1);
   
   // save
-  cv_ratio -> SaveAs("../efficy_plot/" + cv_tit + ".pdf");
+  cv_ratio->cd();
+  cv_ratio -> SaveAs("../plots_efficy/" + cv_tit + "_" + sample_type + ".pdf");
 
   // Clean up
   delete htrue;

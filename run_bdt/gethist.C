@@ -11,12 +11,13 @@ int gethist(){
   
   /// save histos
   HIM3pi_fit -> Write("HIM3pi_fit", 1);
+  HPeakNonReson -> Write("HPeakNonReson", 1);
   HSFW2D -> Write("HSFW2D", 1);
   HSFW1D -> Write("HSFW1D", 1);
   HSIG -> Write("HSIG",1);  
   HIM3pi_crx -> Write("HIM3pi_crx",1);
   HppIM_vs_betapi0->Write("HppIM_vs_betapi0", 1);
-  
+  Heisr_vs_angle->Write("Heisr_vs_angle", 1);
   f_output -> Close();
   
   return 0;

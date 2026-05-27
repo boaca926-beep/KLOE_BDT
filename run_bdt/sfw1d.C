@@ -265,7 +265,7 @@ void sfw1d() {
   //     but BEFORE closing the input file (to avoid memory corruption).
   //     sfw2d.C does not close input until the end, so we follow that.
   // ------------------------------------------------------------------
-  TFile *fout = new TFile(outputSfw1D + "corrected_isr3pi_sample.root", "RECREATE");
+  TFile *fout = new TFile(outputSfw1D + "sfw1d.root", "RECREATE");
   h_isr3pi_corrected->Write();
   h_signal->Write();
   h_signal_true->Write();
@@ -325,7 +325,7 @@ void sfw1d() {
   ftree->Close();
   delete ftree;
   
-  std::cout << "\nSaved " << outputSfw1D << "corrected_isr3pi_sample.root and omega_correction_template.pdf\n";
+  std::cout << "\nSaved " << outputSfw1D << "sfw1d.root and omega_correction_template.pdf\n";
   gSystem->Exit(0);
 
 }

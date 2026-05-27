@@ -84,6 +84,7 @@ int omega_fit(){
 
   // efficiency
   get_efficy();
+  hefficy->Draw();
   
   // smearing matrix and smearing signal IM3pi MC true distr.
   TRandom *generator = new TRandom();
