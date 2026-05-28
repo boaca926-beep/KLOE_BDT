@@ -1,13 +1,10 @@
 #include "../header_plot/plot.h"
-
-
-const TString TYPE_LIST[2] = {"bdt", "kloe"};
-//const TString HISR_LIST[2] = {"HSIG", ""};
+#include "../header_bdt/efficy_plot.h"
 
 //const TString infile = "/home/kloe/Desktop/input_bdt_TDATA_chain/hist/hist.root";
 //const TString infile = "/home/kloe/Desktop/input_kloe_TDATA_norm/hist/hist.root";
 
-const TString sample_type = "kloe";
+//const TString sample_type = "bdt";
 const int color_indx = 4;
 const int mstyle_indx = 22;
 const TString hefficy_type = "hefficy";
@@ -23,6 +20,25 @@ const TString y_tit = "#varepsilon_{3#pi}";
 //const TString efficy_path = "efficy_output";
 const double M3pi_min = 740;
 const double M3pi_max = 870;
+
+
+//
+double binomial_err(double nb_true, double nb_gen) {
+  double error = 0.;
+  double ratio = 0.; 
+
+  if (nb_gen != 0.) {
+    ratio = nb_true / nb_gen;
+    error = TMath::Sqrt(ratio * (1. - ratio) / nb_gen);
+  }
+   
+  //cout << "true = " << nb_true << ", gen = " << nb_gen << ", ratio = " << ratio << ", error = " << error << endl;
+
+  return error;
+}
+
+
+
 
 TCanvas *plot_efficy(TH1D *h1d, TH1D* h1d_1, TString cv_nm, TString cv_title) {
 
@@ -70,25 +86,15 @@ TCanvas *plot_efficy(TH1D *h1d, TH1D* h1d_1, TString cv_nm, TString cv_title) {
   
 }
 
-//
-double binomial_err(double nb_true, double nb_gen) {
-  double error = 0.;
-  double ratio = 0.; 
-
-  if (nb_gen != 0.) {
-    ratio = nb_true / nb_gen;
-    error = TMath::Sqrt(ratio * (1. - ratio) / nb_gen);
-  }
-   
-  //cout << "true = " << nb_true << ", gen = " << nb_gen << ", ratio = " << ratio << ", error = " << error << endl;
-
-  return error;
-}
 
 //
 TH1D *get_efficy(TH1D *hsig_true, TH1D *hsig_gen) {
 
-
+  gErrorIgnoreLevel = kError;
+  TGaxis::SetMaxDigits(4);
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  gStyle->SetFitFormat("6.4g");
 
   int binsize = hsig_true -> GetNbinsX();
   
@@ -133,26 +139,17 @@ TH1D *get_efficy(TH1D *hsig_true, TH1D *hsig_gen) {
 }
 
 
-int efficy_plot() {
+int get_efficy() {
 
   //gROOT->SetBatch(kTRUE);
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
 
-  TString infile = "/home/kloe/Desktop/input_" +  sample_type + "_TDATA_chain/hist/hist.root";
+  //TString infile = "/home/kloe/Desktop/input_" +  sample_type + "_TDATA_chain/hist/hist.root";
   
-  if (sample_type == TYPE_LIST[0]){
-    cout << "Reading " << sample_type << " at " << infile << endl;
-  }
-  else if (sample_type == TYPE_LIST[1]) {
-    cout << "Reading " << sample_type << " at " << infile << endl;
-  }
-  else {
-    cout << "Wraong sample type!" << endl;
-  }
-  
-
+  cout << "Reading " << sample_type << " at " << infile << endl;
+ 
   TKey *key;
 
   // get efficiency histos
@@ -215,7 +212,7 @@ int efficy_plot() {
   double binwidth = getbinwidth(htrue);
   const double xrange0 = 760., xrange1 = 820.;
   
-  TCanvas *cv_ratio = new TCanvas("cv_ratio", cv_tit, 0, 0, 1000, 700);
+  TCanvas *cv_efficy = new TCanvas("cv_efficy", cv_tit, 0, 0, 1000, 700);
 
   TPad *p2 = new TPad("p2", "p2", 0., 0., 1., 0.49);
   p2 -> Draw();
@@ -316,16 +313,23 @@ int efficy_plot() {
   //legd_cv1 -> Draw("Same");
   
   legtextsize(legd_cv1, 0.1);
-  
-  // save
-  cv_ratio->cd();
-  cv_ratio -> SaveAs("../plots_efficy/" + cv_tit + "_" + sample_type + ".pdf");
 
+  // save
+  cv_efficy->cd();
+  //cv_efficy -> SaveAs("../plots_efficy/" + cv_tit + "_" + sample_type + ".pdf");
+  cv_efficy -> SaveAs(output_folder + "cv_tit_" + sample_type + ".pdf");
+
+  TFile * f_output = new TFile(output_folder + "efficy_" + sample_type + ".root", "recreate");
+  hefficy->Write();
+  
+  f_output -> Close();
+  
   // Clean up
   delete htrue;
   delete hgen;
   delete hefficy;
-  delete cv_ratio;
+  delete cv_efficy;
+
   
   return 0;
   
