@@ -16,7 +16,7 @@ TCanvas *plotting_efficy(const TString cv_title, const TString cv_nm, TGraphErro
   const double mass_min = 760., mass_max = 800.;
   
   
-  TCanvas *cv = new TCanvas(cv_title, cv_nm, 1000, 800);
+  TCanvas *cv = new TCanvas(cv_title, cv_nm, 1200, 800);
   
   TPad *p2 = new TPad("p2", "p2", 0., 0., 1., 0.35);
   p2 -> Draw();
@@ -84,7 +84,7 @@ TCanvas *plotting_efficy(const TString cv_title, const TString cv_nm, TGraphErro
 
   //gf_ratio -> GetYaxis() -> SetRangeUser(0., gf_ratio -> GetMaximum() * 1.2);
   gf_ratio -> GetYaxis() -> CenterTitle();
-  gf_ratio -> GetYaxis() -> SetTitle("Ratio #varepsilon_{KLOE}/#varepsilon_{bdt}");
+  gf_ratio -> GetYaxis() -> SetTitle("#varepsilon_{KLOE}/#varepsilon_{bdt}");
 
   gf_ratio -> GetXaxis() -> SetRangeUser(mass_min, mass_max);
   gf_ratio -> GetXaxis() -> SetTitleOffset(.8);
@@ -252,6 +252,10 @@ int plot_efficy() {
 
   // plot
   TCanvas *cv_efficy = plotting_efficy("cv_efficy", "Efficiency Comparsion", efficy_bdt_gf, efficy_kloe_gf, gf_ratio);
+
+  // save
+  cv_efficy->cd();
+  cv_efficy->SaveAs(output_folder + "cv_efficy_ratio.pdf");
 
   return 0;
   

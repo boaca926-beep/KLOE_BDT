@@ -35,3 +35,15 @@ done
 
 echo "Efficiency plots are created!"
 rm $efficy_script
+
+
+plot_script=plot_script.C
+echo "void plot_script() {" > $plot_script
+echo '  gROOT->ProcessLine(".L ../run_bdt/plot_efficy.C");' >> $plot_script
+echo '  gROOT->ProcessLine("plot_efficy()");' >> $plot_script
+echo '}' >> $plot_script
+root -l -n -q -b $plot_script
+
+echo "Efficiency ratio plot is created!"
+rm $plot_script
+
