@@ -1,6 +1,5 @@
 // correct_and_plot_2sideband_chebyshev.C
-// Combined macro with two‑sideband Chebyshev polynomial (2nd order) background
-// (lower sideband: 680-730 MeV, upper sideband: 830-890 MeV)
+// Improved two‑sideband Chebyshev fit (3rd order) with full plotting
 
 #include <TFile.h>
 #include <TTree.h>
@@ -19,15 +18,15 @@
 #include "../header_bdt/correct_omega.h"
 #include "../header_bdt/path.h"
 
-// Global pointer for signal template
 TH1D *gSigTemplate = nullptr;
 
-// Fit function: α * signal_template + Chebyshev polynomial (2nd order)
-Double_t template_chebyshev2(Double_t *x, Double_t *par) {
+// Fit function: α * signal_template + Chebyshev polynomial (3rd order)
+Double_t template_chebyshev3(Double_t *x, Double_t *par) {
     int bin = gSigTemplate->FindBin(x[0]);
     Double_t sig = gSigTemplate->GetBinContent(bin);
-    // Chebyshev polynomial: c0 + c1*x + c2*(2*x*x - 1)
-    Double_t cheb = par[1] + par[2] * x[0] + par[3] * (2.0 * x[0] * x[0] - 1.0);
+    // Chebyshev: T0=1, T1=x, T2=2x²-1, T3=4x³-3x
+    Double_t X = x[0];
+    Double_t cheb = par[1] + par[2]*X + par[3]*(2*X*X - 1) + par[4]*(4*X*X*X - 3*X);
     return par[0] * sig + cheb;
 }
 
@@ -52,7 +51,6 @@ void correct_and_plot_2sideband_chebyshev() {
     TTree *tdata = (TTree*) ftree->Get("TDATA");
     if (!tdata) { std::cerr << "ERROR: TDATA not found." << std::endl; return; }
 
-    // Fixed binning
     const double mass_min = 600.0;
     const double mass_max = 1000.0;
     const int nbins = 200;
@@ -159,57 +157,71 @@ void correct_and_plot_2sideband_chebyshev() {
     gSigTemplate = h_signal_template;
 
     // ------------------------------------------------------------------
-    // 6. Two‑sideband Chebyshev polynomial fit
+    // 6. Two‑sideband Chebyshev fit (3rd order, simultaneous)
     // ------------------------------------------------------------------
     double peak_low = 740.0;
     double peak_high = 820.0;
-    // Lower sideband (clean, away from peak)
-    double sb_low1 = 680.0;
+    double sb_low1 = 670.0;    // widened lower sideband
     double sb_high1 = 730.0;
-    // Upper sideband (avoid the known bump; adjust range if needed)
     double sb_low2 = 830.0;
-    double sb_high2 = 890.0;
+    double sb_high2 = 890.0;   // back to original upper limit
 
-    // Clone for sideband fit (blank peak region)
+    // Clone and zero peak region
     TH1D *h_side = (TH1D*) h_data_isr->Clone("h_side");
     for (int bin = 1; bin <= h_side->GetNbinsX(); ++bin) {
         double x = h_side->GetBinCenter(bin);
         if (x >= peak_low && x <= peak_high) h_side->SetBinContent(bin, 0);
     }
 
-    // Fit 2nd order Chebyshev polynomial to sidebands
-    TF1 *bkg_cheb = new TF1("bkg_cheb", "chebyshev2", sb_low1, sb_high2);
-    h_side->Fit(bkg_cheb, "QN", "", sb_low1, sb_high1);
-    h_side->Fit(bkg_cheb, "QN+", "", sb_low2, sb_high2);
+    // 3rd‑order Chebyshev polynomial: c0 + c1*x + c2*(2x²-1) + c3*(4x³-3x)
+    TF1 *bkg_cheb = new TF1("bkg_cheb", 
+        "[0] + [1]*x + [2]*(2*x*x - 1) + [3]*(4*x*x*x - 3*x)", 
+        sb_low1, sb_high2);
+
+    // Simultaneous fit over both sidebands
+    h_side->Fit(bkg_cheb, "QN", "", sb_low1, sb_high2);
+
     double c0 = bkg_cheb->GetParameter(0);
     double c1 = bkg_cheb->GetParameter(1);
     double c2 = bkg_cheb->GetParameter(2);
-    std::cout << "Two‑sideband Chebyshev fit:\n"
+    double c3 = bkg_cheb->GetParameter(3);
+    std::cout << "Two‑sideband Chebyshev fit (3rd order, simultaneous):\n"
               << "  Lower: " << sb_low1 << "-" << sb_high1 << " MeV\n"
               << "  Upper: " << sb_low2 << "-" << sb_high2 << " MeV\n"
-              << "  Chebyshev: c0 = " << c0 << ", c1 = " << c1 << ", c2 = " << c2 << "\n";
+              << "  Chebyshev: c0 = " << c0 << ", c1 = " << c1 
+              << ", c2 = " << c2 << ", c3 = " << c3 << "\n";
 
-    // Total fit function (4 parameters: alpha, c0, c1, c2)
-    TF1 *total_func = new TF1("total_func", template_chebyshev2, mass_min, mass_max, 4);
-    total_func->SetParameters(1000, c0, c1, c2);
-    total_func->SetParNames("alpha", "c0", "c1", "c2");
-    // Allow parameters to vary within ±30% of sideband values
-    total_func->SetParLimits(1, c0 - 0.3*std::abs(c0), c0 + 0.3*std::abs(c0));
-    total_func->SetParLimits(2, c1 - 0.3*std::abs(c1), c1 + 0.3*std::abs(c1));
-    total_func->SetParLimits(3, c2 - 0.3*std::abs(c2), c2 + 0.3*std::abs(c2));
+    // Total fit function (5 parameters: alpha, c0, c1, c2, c3)
+    TF1 *total_func = new TF1("total_func", template_chebyshev3, mass_min, mass_max, 5);
+    total_func->SetParameters(1000, c0, c1, c2, c3);
+    total_func->SetParNames("alpha", "c0", "c1", "c2", "c3");
+
+    // Parameter limits with fallback
+    auto setLim = [](TF1 *f, int ipar, double val) {
+        double lim = 0.3 * std::abs(val);
+        if (lim < 1e-6) lim = 1.0;
+        f->SetParLimits(ipar, val - lim, val + lim);
+    };
+    setLim(total_func, 1, c0);
+    setLim(total_func, 2, c1);
+    setLim(total_func, 3, c2);
+    setLim(total_func, 4, c3);
 
     TFitResultPtr r = h_data_isr->Fit(total_func, "RQS", "", peak_low, peak_high);
     double alpha = total_func->GetParameter(0);
     double cheb0 = total_func->GetParameter(1);
     double cheb1 = total_func->GetParameter(2);
     double cheb2 = total_func->GetParameter(3);
+    double cheb3 = total_func->GetParameter(4);
 
     double chi2 = r->Chi2();
     int ndf = r->Ndf();
     double chi2_ndf = chi2 / ndf;
     std::cout << "Fit results: α = " << alpha
-              << ", Chebyshev: c0 = " << cheb0 << ", c1 = " << cheb1 << ", c2 = " << cheb2 << "\n";
-    std::cout << "Fit quality: χ² = " << chi2 << ", ndf = " << ndf << ", χ²/ndf = " << chi2_ndf << std::endl;
+              << ", Chebyshev: c0 = " << cheb0 << ", c1 = " << cheb1 
+              << ", c2 = " << cheb2 << ", c3 = " << cheb3 << "\n";
+    std::cout << "Fit quality: χ² = " << chi2 << ", ndf = " << ndf 
+              << ", χ²/ndf = " << chi2_ndf << std::endl;
 
     // ------------------------------------------------------------------
     // 7. Create corrected signal and background histograms
@@ -225,8 +237,7 @@ void correct_and_plot_2sideband_chebyshev() {
     h_background->Reset();
     for (int bin = 1; bin <= h_background->GetNbinsX(); ++bin) {
         double x = h_background->GetBinCenter(bin);
-        // Evaluate Chebyshev polynomial: c0 + c1*x + c2*(2*x*x - 1)
-        double val = cheb0 + cheb1 * x + cheb2 * (2.0 * x * x - 1.0);
+        double val = cheb0 + cheb1*x + cheb2*(2*x*x - 1) + cheb3*(4*x*x*x - 3*x);
         if (val < 0) val = 0;
         h_background->SetBinContent(bin, val);
         h_background->SetBinError(bin, TMath::Sqrt(val));
@@ -313,7 +324,7 @@ void correct_and_plot_2sideband_chebyshev() {
     // ------------------------------------------------------------------
     // 11. Plotting
     // ------------------------------------------------------------------
-    TCanvas *c = new TCanvas("c", "3π mass projection (Chebyshev)", 1200, 700);
+    TCanvas *c = new TCanvas("c", "3π mass projection (Chebyshev, 3rd order)", 1200, 700);
     c->SetBottomMargin(0.12);
     c->SetLeftMargin(0.12);
 
@@ -354,7 +365,7 @@ void correct_and_plot_2sideband_chebyshev() {
     leg->AddEntry(h_ksl, "K_{S}K_{L}", "l");
     leg->AddEntry(h_etagam, "#eta#gamma", "l");
     leg->AddEntry(h_signal, "Corrected #omega peak", "l");
-    leg->AddEntry(h_background, "Chebyshev background", "l");
+    leg->AddEntry(h_background, "Chebyshev background (3rd order)", "l");
     leg->AddEntry(h_mcrest, "Others", "l");
     leg->Draw();
 
@@ -424,7 +435,7 @@ void correct_and_plot_2sideband_chebyshev() {
     leg2->SetTextSize(0.04);
     leg2->AddEntry(h_signal_data, "Data - backgrounds", "lep");
     leg2->AddEntry(h_signal, "Corrected #omega peak", "l");
-    leg2->AddEntry(h_background, "Chebyshev background", "l");
+    leg2->AddEntry(h_background, "Chebyshev background (3rd order)", "l");
     leg2->Draw();
     c22->SaveAs(output_path + "background_subtracted_combined_2sideband_chebyshev.pdf");
     delete c22;

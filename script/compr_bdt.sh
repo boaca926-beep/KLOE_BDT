@@ -11,13 +11,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200 100 180 200 100 100 200 200 200)
 
 ##################################################################
-#VAR_NM="betapi0_bdt"
-#VAR_SYMB="#beta_{#pi}"
-#UNIT=""
+VAR_NM="betapi0_bdt"
+VAR_SYMB="#beta_{#pi}"
+UNIT=""
 
-#XMIN=0.3
-#XMAX=1
-#BINS=150
+XMIN=0.3
+XMAX=1
+BINS=150
 
 ##################################################################
 #VAR_NM="lagvalue_min_7C"
@@ -42,9 +42,9 @@ echo -e "\nPlotting histo comparison ..."
 #VAR_SYMB=("M_{3#pi}")
 #UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(770) #300 600
-#XMAX=(800) #1020 1050
-#BINS=(100)
+#XMIN=(300) #300 600
+#XMAX=(1020) #1020 1050
+#BINS=(200)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -101,13 +101,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=550
 
 ##################################################################
-VAR_NM="bdt_score"
-VAR_SYMB="BDT value"
-UNIT=""
+#VAR_NM="bdt_score"
+#VAR_SYMB="BDT value"
+#UNIT=""
 
-XMIN=0
-XMAX=1
-BINS=150
+#XMIN=0
+#XMAX=1
+#BINS=150
 
 
 output_folder="../output_"${VAR_NM[0]}
@@ -155,7 +155,6 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     echo '  gROOT->ProcessLine("plot_compr()");' >> $plot_script
     echo '}' >> $plot_script
     root -l -n -q -b $plot_script >> ${output_folder}/output.txt
-    rm $plot_script
 done
 
 rm $compr_script

@@ -154,7 +154,7 @@ int plot_compr() {
   hist_mcrest_sc->Draw("hist same");
   hist_eeg_sc->Draw("hist same");
   hist_mcsum_sc->Draw("hist same");
-  gPad->SetLogy();
+  //gPad->SetLogy();
   
   // Axis formatting
   hist_data->GetXaxis()->SetTitle("");
@@ -206,10 +206,14 @@ int plot_compr() {
   hresidul->GetYaxis()->SetTitleSize(0.12);
   hresidul->GetYaxis()->SetTitleOffset(0.5);
   hresidul->GetYaxis()->SetLabelSize(0.08);
-  hresidul->GetYaxis()->SetRangeUser(-10, 10);
+  hresidul->GetYaxis()->SetRangeUser(-20, 20);
   hresidul->GetYaxis()->SetNdivisions(505);
   hresidul->GetYaxis()->CenterTitle();
   hresidul->Draw("P");
+
+  pad2->cd();
+  gPad->SetGrid();        // add this line
+  
 
   TLine *line = new TLine(var_min, 0, var_max, 0);
   line->SetLineStyle(2);
