@@ -48,7 +48,7 @@ void correct_omega_peak_hybrid() {
     bool is_mev = (mtest > 10);
     double low = is_mev ? 600 : 0.6;
     double high = is_mev ? 1000 : 1.0;
-    int nbins = 200;
+    int nbins = 150;
     std::cout << "Mass unit: " << (is_mev ? "MeV" : "GeV")
               << " range [" << low << ", " << high << "]\n";
 

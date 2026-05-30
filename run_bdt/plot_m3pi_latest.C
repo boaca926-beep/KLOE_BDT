@@ -6,17 +6,6 @@
 
 // In your current approach, the correction does not affect bin‑by‑bin efficiency because you are only using it for plotting. The original MC (unweighted) remains the source for efficiency. This is perfectly valid as long as you do not claim that the corrected shape is part of the analysis model – it is a diagnostic tool.
 
-// plot_m3pi_latest.C
-// Uses the latest scaling factors from the RooFit 2D fit (IMpp vs deltaE)
-// to produce the 3π mass projection, with optional corrected ISR3π shape.
-// Follows line styles from plot_compr.C (numeric styles: 2,3,4,5,6,7)
-// Colors remain as originally defined.
-
-// plot_m3pi_latest.C
-// Uses the latest scaling factors from the RooFit 2D fit (IMpp vs deltaE)
-// to produce the 3π mass projection, with corrected ISR3π shape from either
-// corrected_isr3pi_sample.root or corrected_isr3pi_tmp.root.
-
 /*
 The template fit is generally better for the reasons discussed earlier:
 
@@ -43,6 +32,11 @@ The template fit is generally better for the reasons discussed earlier:
 #include "../header_bdt/correct_omega.h"
 #include "../header_bdt/path.h"
 
+// ========== MINIMAL ADAPTATION: define the plot range here ==========
+const double XMIN = 600.0;   // change as needed
+const double XMAX = 1000.0;   // change as needed
+// ===================================================================
+
 void pt_style(TPaveText *pt, TString text) {
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
@@ -50,8 +44,6 @@ void pt_style(TPaveText *pt, TString text) {
   pt->SetTextSize(0.04);
   pt->SetTextFont(42);
   pt->AddText(text);
-  //pt->AddText(line4);
-  
 }
 
 void plot_m3pi_latest() {
@@ -62,8 +54,7 @@ void plot_m3pi_latest() {
   gStyle->SetErrorX(0.8);
   TH1::SetDefaultSumw2();
 
-  
-  // Latest scaling factors
+  // Print scaling factors
   std::cout << "Using latest scaling factors from RooFit 2D fit:\n"
             << "  EEG     : " << eeg_sfw << "\n"
             << "  ISR3pi  : " << isr3pi_sfw << "\n"
@@ -80,16 +71,12 @@ void plot_m3pi_latest() {
     return;
   }
 
-  // 3π mass range (MeV)
-  TTree *tdata = (TTree*) ftree->Get("TDATA");
-  if (!tdata) { std::cerr << "No TDATA tree.\n"; return; }
-  double mass_min = 600.0;
-  double mass_max = 1000.0;
-
-  double omega_min = mass_min; // 760.0
-  double omega_max = mass_max; // 1000.0
-  
-  const int nBins = 200;
+  // Use the global XMIN, XMAX
+  const double mass_min = XMIN;
+  const double mass_max = XMAX;
+  const double omega_min = mass_min;
+  const double omega_max = mass_max;
+  const int nBins = 150;
 
   // Helper to fill a histogram from a tree
   auto fillHist = [&](const char* treeName, double scale, int color, int style, const char* title) -> TH1D* {
@@ -110,6 +97,8 @@ void plot_m3pi_latest() {
   };
 
   // Data
+  TTree *tdata = (TTree*) ftree->Get("TDATA");
+  if (!tdata) { std::cerr << "No TDATA tree.\n"; return; }
   TH1D *h_data = new TH1D("h_data", "", nBins, mass_min, mass_max);
   h_data->SetMarkerStyle(21);
   h_data->SetMarkerSize(0.7);
@@ -145,12 +134,11 @@ void plot_m3pi_latest() {
   
   const char* corrFiles[2];
   TString file1 = output_path + "corrected_isr3pi_hybrid.root";
-  //TString file1 = output_path + "corrected_isr3pi_hybrid_lower_linear.root";
   TString file2 = output_path + "corrected_isr3pi_tmp.root";
   corrFiles[0] = file1.Data();
   corrFiles[1] = file2.Data();
 
-  TFile *fcorr = nullptr;   // <-- DECLARE and initialise
+  TFile *fcorr = nullptr;
   
   for (int i = 0; i < 1; ++i) {
     fcorr = TFile::Open(corrFiles[i]);
@@ -256,7 +244,6 @@ void plot_m3pi_latest() {
   for (auto h : comps) if (h) h->Draw("hist same");
   h_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
   h_data->GetXaxis()->SetLabelOffset(0.1);
-  //h_data->GetYaxis()->SetLabelOffset(0.005);
   h_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
   h_data->GetXaxis()->SetRangeUser(omega_min, omega_max);
   h_data->GetYaxis()->CenterTitle();
@@ -266,7 +253,7 @@ void plot_m3pi_latest() {
   h_data->GetYaxis()->SetLabelSize(0.04);
   h_data->GetYaxis()->SetNdivisions(505);
   
-  // Legend – order must match comps vector
+  // Legend
   TLegend *leg = new TLegend(0.65, 0.25, 0.9, 0.9);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
@@ -275,26 +262,17 @@ void plot_m3pi_latest() {
   leg->AddEntry(h_mc_total, "Total MC", "l");
 
   int idx = 0;
-  // EEG
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "EEG", "l");
-  // OmegaPi
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "#omega#pi^{0}", "l");
-  // KSL
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "K_{S}K_{L}", "l");
-  // EtaGamma
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "#eta#gamma", "l");
 
-  // ISR3π part – conditional on whether we have separated peak+background
   if (h_isr_peak && h_isr_bkg) {
-
-    // Two entries: peak (corrected) and non‑resonant background
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "3#pi (peak) corrected", "l");
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "Combinatorial", "l");
   } else if (h_isr_peak && !h_isr_bkg) {
-    // Fallback: single ISR3π component
     if (comps.size() > idx) leg->AddEntry(comps[idx++], "ISR3#pi", "l");
   }
-  // MC Rest (Others)
   if (comps.size() > idx) leg->AddEntry(comps[idx++], "Others", "l");
 
   leg->Draw();
@@ -307,17 +285,16 @@ void plot_m3pi_latest() {
   pad2->SetLeftMargin(0.12);
   pad2->Draw();
   pad2->cd();
-  gPad->SetGrid();   // adds grid lines to both X and Y axes
+  gPad->SetGrid();
 
   h_pull->GetXaxis()->SetTitle("M_{3#pi} [MeV]");
   h_pull->GetXaxis()->SetTitleSize(0.12);
   h_pull->GetXaxis()->SetTitleOffset(1.0);
   h_pull->GetXaxis()->SetLabelSize(0.1);
   h_pull->GetYaxis()->SetTitle("Pull");
-  h_pull->GetYaxis()->SetTitleSize(0.2);       // increased for readability
-  h_pull->GetYaxis()->SetTitleOffset(0.2);      // avoid overlap
+  h_pull->GetYaxis()->SetTitleSize(0.2);
+  h_pull->GetYaxis()->SetTitleOffset(0.2);
   h_pull->GetYaxis()->SetLabelSize(0.1);
-  //h_pull->GetXaxis()->SetRangeUser(760, 820);   // optional: zoom to ω peak
   h_pull->GetYaxis()->SetRangeUser(-50, 50);
   h_pull->GetYaxis()->SetNdivisions(505);
   h_pull->GetXaxis()->CenterTitle();
@@ -332,7 +309,7 @@ void plot_m3pi_latest() {
   std::cout << "\nSaved " + output_path + "m3pi_projection_with_pulls_sample.pdf\n";
   delete c;
   
-  // --- Minimal addition: background‑subtracted ω signal ---
+  // --- Background‑subtracted ω signal ---
   TH1D *h_signal_data = (TH1D*) h_data->Clone("h_signal_data");
   h_signal_data->Add(h_eeg, -1.0);
   h_signal_data->Add(h_omegapi, -1.0);
@@ -340,7 +317,6 @@ void plot_m3pi_latest() {
   h_signal_data->Add(h_etagam, -1.0);
   h_signal_data->Add(h_mcrest, -1.0);
   if (h_isr_bkg) h_signal_data->Add(h_isr_bkg, -1.0);
-  // Set negative bins to zero
   for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin)
     if (h_signal_data->GetBinContent(bin) < 0) h_signal_data->SetBinContent(bin, 0);
 
@@ -350,7 +326,7 @@ void plot_m3pi_latest() {
 
   h_signal_data->SetMarkerStyle(20);
   h_signal_data->SetMarkerSize(0.6);
-  h_signal_data->GetXaxis()->SetLabelOffset(0.007);   // keep default small value
+  h_signal_data->GetXaxis()->SetLabelOffset(0.007);
   h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
   h_signal_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
   h_signal_data->GetXaxis()->SetRangeUser(omega_min, omega_max - 50.0);
@@ -368,11 +344,9 @@ void plot_m3pi_latest() {
     h_isr_bkg->SetLineColor(kRed);
     h_isr_bkg->Draw("hist same");
 
-    // Define the mass window (MeV/c²)
     double low = 650.0, high = 900.0;
     int bin_low = h_isr_peak->FindBin(low);
     int bin_high = h_isr_peak->FindBin(high);
-    
     double peak_entries = h_isr_peak->Integral(bin_low, bin_high);
     double comb_entries = h_isr_bkg->Integral(bin_low, bin_high);
     double total = peak_entries + comb_entries;
@@ -383,26 +357,20 @@ void plot_m3pi_latest() {
          << "combinatorial entries: " << comb_entries << "\n"
          << "purity: " << purity << "%\n";
 
-    // mass range for purity estimation
     TLine *line1 = new TLine(650, 0, 650, 400);
     line1->SetLineColor(kBlack);
     line1->SetLineWidth(3);
-
     TLine *line2 = new TLine(900, 0, 900, 400);
     line2->SetLineColor(kBlack);
     line2->SetLineWidth(3);
     line2->Draw();
-  
     line1->Draw();
-    line2->Draw("same");
   
-    // Create a transparent TPaveText
     TPaveText *pt = new TPaveText(0.6, 0.6, 0.7, 0.68, "NDC");
-    TString line = Form("Data-driven purity = %.2f", purity* 1e-2);
-    pt_style(pt, line);
+    TString line_txt = Form("Data-driven purity = %.2f", purity* 1e-2);
+    pt_style(pt, line_txt);
     pt->SetTextColor(kRed);
     pt->Draw("same");
-    
   }
 
   TLegend *leg2 = new TLegend(0.6, 0.7, 0.9, 0.9);
@@ -418,7 +386,7 @@ void plot_m3pi_latest() {
   delete c2;
 
   if (h_isr_peak && h_isr_bkg) {
-    TString outFileName = output_path + "hist_sample.root";   // use same directory as PDFs
+    TString outFileName = output_path + "hist_sample.root";
     TFile *f_output = new TFile(outFileName, "RECREATE");
     if (f_output && !f_output->IsZombie()) {
       h_signal_data->Write();
@@ -433,5 +401,4 @@ void plot_m3pi_latest() {
   if (fcorr) fcorr->Close();
 
   gSystem->Exit(0);
-  
 }

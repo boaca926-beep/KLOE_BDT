@@ -48,7 +48,7 @@ void correct_omega_peak_sample() {
   //double high = is_mev ? 1000 : 1.0;
   double low = 600;
   double high = 1000;
-  int nbins = 200;
+  int nbins = 150;
   std::cout << "Mass unit: " << (is_mev ? "MeV" : "GeV")
 	    << " range [" << low << ", " << high << "]\n";
   
@@ -177,6 +177,49 @@ void correct_omega_peak_sample() {
   double alpha = total_func->GetParameter(0);
   double beta  = total_func->GetParameter(1);
   std::cout << "Fit results: α = " << alpha << ", β = " << beta << std::endl;
+
+  // ------------------------------------------------------------------
+  // Fit quality assessment
+  // ------------------------------------------------------------------
+  // 1. Get χ² and ndf
+  TFitResultPtr r = h_data_isr->Fit(total_func, "RQS", "", peak_low, peak_high);
+  double chi2 = r->Chi2();
+  int ndf = r->Ndf();
+  double chi2_ndf = chi2 / ndf;
+  std::cout << "Fit quality: χ² = " << chi2 << ", ndf = " << ndf << ", χ²/ndf = " << chi2_ndf << std::endl;
+  
+  // 2. Pull distribution in the peak region
+  TH1D *h_pull = new TH1D("h_pull", "Pull distribution", 50, -5, 5);
+  for (int bin = 1; bin <= h_data_isr->GetNbinsX(); ++bin) {
+    double x = h_data_isr->GetBinCenter(bin);
+    if (x < peak_low || x > peak_high) continue;
+    double data = h_data_isr->GetBinContent(bin);
+    double err = h_data_isr->GetBinError(bin);
+    double fit_val = total_func->Eval(x);
+    if (err > 0) {
+      double pull = (data - fit_val) / err;
+      h_pull->Fill(pull);
+    }
+  }
+  TCanvas *c_pull = new TCanvas("c_pull", "Pull Distribution", 600, 400);
+  h_pull->Draw();
+  c_pull->SaveAs(output_path + "pull_distribution.pdf");
+  delete c_pull;
+  
+  // 3. Residuals vs mass
+  TH1D *h_resid = (TH1D*)h_data_isr->Clone("h_resid");
+  h_resid->Add(total_func, -1);
+  TCanvas *c_res = new TCanvas("c_res", "Residuals", 800, 600);
+  h_resid->SetMarkerStyle(20);
+  h_resid->SetMarkerSize(0.6);
+  h_resid->Draw("E");
+  c_res->SaveAs(output_path + "residuals.pdf");
+  delete c_res;
+  
+  // 4. Compute mean and RMS of pull (optional)
+  double pull_mean = h_pull->GetMean();
+  double pull_rms = h_pull->GetRMS();
+  std::cout << "Pull distribution: mean = " << pull_mean << ", RMS = " << pull_rms << std::endl;
   
   // ------------------------------------------------------------------
   // 7. Create signal & background histograms (scaled)
