@@ -84,7 +84,7 @@ TCanvas *plotting_efficy(const TString cv_title, const TString cv_nm, TGraphErro
 
   //gf_ratio -> GetYaxis() -> SetRangeUser(0., gf_ratio -> GetMaximum() * 1.2);
   gf_ratio -> GetYaxis() -> CenterTitle();
-  gf_ratio -> GetYaxis() -> SetTitle("#varepsilon_{KLOE}/#varepsilon_{bdt}");
+  gf_ratio -> GetYaxis() -> SetTitle("#varepsilon_{KLOE}#slash#varepsilon_{bdt}");
 
   gf_ratio -> GetXaxis() -> SetRangeUser(mass_min, mass_max);
   gf_ratio -> GetXaxis() -> SetTitleOffset(.8);

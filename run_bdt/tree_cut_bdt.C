@@ -485,6 +485,7 @@ int tree_cut_bdt() {
         else if (angle_pi0gam12_bdt > angle_cut) continue;
 	//else if (angle_pi0gam12_bdt > 66.0) continue;
 	else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+	else if (bdt_score < BDT_CUT_VALUE) continue;
 	
         // ---------- Classification and filling (identical to tree_cut.C) ----------
         if (data_type == "exp") {

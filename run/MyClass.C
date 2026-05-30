@@ -132,6 +132,15 @@ void MyClass::Main()
 
   double ppl_E_true = 0., ppl_px_true = 0., ppl_py_true = 0., ppl_pz_true = 0.;
   double pmi_E_true = 0., pmi_px_true = 0., pmi_py_true = 0., pmi_pz_true = 0.;
+
+  // generator information
+  // After the existing branch declarations, add:
+  double true_px_piplus, true_py_piplus, true_pz_piplus, true_E_piplus;
+  double true_px_piminus, true_py_piminus, true_pz_piminus, true_E_piminus;
+  double true_px_pi0, true_py_pi0, true_pz_pi0, true_E_pi0;
+  double true_px_isr1, true_py_isr1, true_pz_isr1, true_E_isr1;
+  double true_px_isr2, true_py_isr2, true_pz_isr2, true_E_isr2;
+  double true_m3pi;               // generated 3π invariant mass
  
   //
   TTree ALLCHAIN_CUT ("ALLCHAIN_CUT", "recreate");
@@ -173,6 +182,34 @@ void MyClass::Main()
   ALLCHAIN_CUT.Branch("Br_Emax_clust", &Emax_clust, "Br_Emax_clust/D");
   ALLCHAIN_CUT.Branch("Br_Esum_clust", &Esum_clust, "Br_Esum_clust/D");
 
+  //
+  ALLCHAIN_CUT.Branch("true_px_piplus", &true_px_piplus, "true_px_piplus/D");
+  ALLCHAIN_CUT.Branch("true_py_piplus", &true_py_piplus, "true_py_piplus/D");
+  ALLCHAIN_CUT.Branch("true_pz_piplus", &true_pz_piplus, "true_pz_piplus/D");
+  ALLCHAIN_CUT.Branch("true_E_piplus", &true_E_piplus, "true_E_piplus/D");
+  
+  ALLCHAIN_CUT.Branch("true_px_piminus", &true_px_piminus, "true_px_piminus/D");
+  ALLCHAIN_CUT.Branch("true_py_piminus", &true_py_piminus, "true_py_piminus/D");
+  ALLCHAIN_CUT.Branch("true_pz_piminus", &true_pz_piminus, "true_pz_piminus/D");
+  ALLCHAIN_CUT.Branch("true_E_piminus", &true_E_piminus, "true_E_piminus/D");
+  
+  ALLCHAIN_CUT.Branch("true_px_pi0", &true_px_pi0, "true_px_pi0/D");
+  ALLCHAIN_CUT.Branch("true_py_pi0", &true_py_pi0, "true_py_pi0/D");
+  ALLCHAIN_CUT.Branch("true_pz_pi0", &true_pz_pi0, "true_pz_pi0/D");
+  ALLCHAIN_CUT.Branch("true_E_pi0", &true_E_pi0, "true_E_pi0/D");
+  
+  ALLCHAIN_CUT.Branch("true_px_isr1", &true_px_isr1, "true_px_isr1/D");
+  ALLCHAIN_CUT.Branch("true_py_isr1", &true_py_isr1, "true_py_isr1/D");
+  ALLCHAIN_CUT.Branch("true_pz_isr1", &true_pz_isr1, "true_pz_isr1/D");
+  ALLCHAIN_CUT.Branch("true_E_isr1", &true_E_isr1, "true_E_isr1/D");
+
+  ALLCHAIN_CUT.Branch("true_px_isr2", &true_px_isr2, "true_px_isr2/D");
+  ALLCHAIN_CUT.Branch("true_py_isr2", &true_py_isr2, "true_py_isr2/D");
+  ALLCHAIN_CUT.Branch("true_pz_isr2", &true_pz_isr2, "true_pz_isr2/D");
+  ALLCHAIN_CUT.Branch("true_E_isr2", &true_E_isr2, "true_E_isr2/D");
+  
+  ALLCHAIN_CUT.Branch("true_m3pi", &true_m3pi, "true_m3pi/D");
+  
   //
   ALLCHAIN_CUT.Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
   ALLCHAIN_CUT.Branch("Br_pvalue", &pvalue, "Br_pvalue/D");
@@ -414,6 +451,34 @@ void MyClass::Main()
 
     }// end loop emc
 
+    true_px_piplus  = piplusMC_TLvect.Px();
+    true_py_piplus  = piplusMC_TLvect.Py();
+    true_pz_piplus  = piplusMC_TLvect.Pz();
+    true_E_piplus   = piplusMC_TLvect.E();
+
+    true_px_piminus = piminusMC_TLvect.Px();
+    true_py_piminus = piminusMC_TLvect.Py();
+    true_pz_piminus = piminusMC_TLvect.Pz();
+    true_E_piminus  = piminusMC_TLvect.E();
+    
+    true_px_pi0     = pi0MC_TLvect.Px();
+    true_py_pi0     = pi0MC_TLvect.Py();
+    true_pz_pi0     = pi0MC_TLvect.Pz();
+    true_E_pi0      = pi0MC_TLvect.E();
+    
+    true_px_isr1     = pho_radiv1_TLvect.Px();
+    true_py_isr1     = pho_radiv1_TLvect.Py();
+    true_pz_isr1     = pho_radiv1_TLvect.Pz();
+    true_E_isr1      = pho_radiv1_TLvect.E();
+
+    true_px_isr2     = pho_radiv2_TLvect.Px();
+    true_py_isr2     = pho_radiv2_TLvect.Py();
+    true_pz_isr2     = pho_radiv2_TLvect.Pz();
+    true_E_isr2      = pho_radiv2_TLvect.E();
+    
+    true_m3pi       = (piplusMC_TLvect + piminusMC_TLvect + pi0MC_TLvect).M();
+    // or simply (piplusMC_TLvect + piminusMC_TLvect + pi0MC_TLvect).M() if you treat ISR as separate.
+    
     /// MC info
     finalstate_TLvect = piminusMC_TLvect + piplusMC_TLvect + pi0MC_TLvect + pho_radiv1_TLvect + pho_radiv2_TLvect;
     threepi_TLvect = piminusMC_TLvect + piplusMC_TLvect + pi0gam1_TLvect + pi0gam2_TLvect;

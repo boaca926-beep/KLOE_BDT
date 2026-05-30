@@ -1,8 +1,8 @@
-// correct_omega_peak_poly.C
+// correct_omega_peak_exponential.C
 // Data-driven correction for ω → 3π shape using:
 //   - signal template from TISR3PI_SIG (recon_indx_bdt==2 && bkg_indx==1)
-//   - 2nd‑order polynomial background, doble side band
-// Outputs: corrected_isr3pi_poly.root (h_isr3pi_corrected, h_signal, h_background, h_data_isr, h_weight_smooth)
+//   - exponential background (fitted to sidebands of data - MC backgrounds)
+// Outputs: corrected_isr3pi_exponential.root (h_isr3pi_corrected, h_signal, h_background, h_data_isr, h_weight_smooth)
 
 #include <TFile.h>
 #include <TTree.h>
@@ -19,19 +19,20 @@
 // Global pointer to signal template (detached from file)
 TH1D *gSigTemplate = nullptr;
 
-// Fit function: α * signal_template + polynomial
-Double_t template_poly(Double_t *x, Double_t *par) {
+// Fit function: α * signal_template + exponential background
+// Exponential form: a * exp(b * x)   (same as ROOT's "expo")
+Double_t template_exp(Double_t *x, Double_t *par) {
     int bin = gSigTemplate->FindBin(x[0]);
     Double_t sig = gSigTemplate->GetBinContent(bin);
-    Double_t poly = par[1] + par[2] * x[0] + par[3] * x[0] * x[0];
-    return par[0] * sig + poly;
+    Double_t expo = par[1] * exp(par[2] * x[0]);   // a * exp(b*x)
+    return par[0] * sig + expo;
 }
 
-void correct_omega_peak_hybrid() {
+void correct_omega_peak_exponential() {
     // ------------------------------------------------------------------
     // 1. Open tree file
     // ------------------------------------------------------------------
-    TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+    TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
     TFile *ftree = TFile::Open(treeFile);
     if (!ftree || ftree->IsZombie()) {
         std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -149,51 +150,54 @@ void correct_omega_peak_hybrid() {
     gSigTemplate = h_signal_template;
 
     // ------------------------------------------------------------------
-    // 6. Template + polynomial fit
+    // 6. Exponential background fit to sidebands
     // ------------------------------------------------------------------
     double peak_low = is_mev ? 740 : 0.74;
     double peak_high = is_mev ? 820 : 0.82;
+    double sb_low1 = is_mev ? 700 : 0.70;
+    double sb_high1 = is_mev ? 740 : 0.74;
+    double sb_low2 = is_mev ? 820 : 0.82;
+    double sb_high2 = is_mev ? 900 : 0.90;
 
-    // First, estimate polynomial background from sidebands only
-    double sb_low1 = is_mev ? 680 : 0.68;
-    double sb_high1 = is_mev ? 730 : 0.73;
-    double sb_low2 = is_mev ? 830 : 0.83;
-    double sb_high2 = is_mev ? 890 : 0.89;
-    
-    // Create a temporary histogram for sideband fit (only background)
+    // Create temporary histogram for sideband fit (blank peak region)
     TH1D *h_side = (TH1D*) h_data_isr->Clone("h_side");
-    // Blank the peak region
     for (int bin = 1; bin <= h_side->GetNbinsX(); ++bin) {
         double x = h_side->GetBinCenter(bin);
         if (x >= peak_low && x <= peak_high) h_side->SetBinContent(bin, 0);
     }
-    TF1 *bkg_poly = new TF1("bkg_poly", "pol2", sb_low1, sb_high2);
-    h_side->Fit(bkg_poly, "QN", "", sb_low1, sb_high1);
-    h_side->Fit(bkg_poly, "QN+", "", sb_low2, sb_high2);
-    double p0 = bkg_poly->GetParameter(0);
-    double p1 = bkg_poly->GetParameter(1);
-    double p2 = bkg_poly->GetParameter(2);
 
-    // Now total model: α * signal_template + polynomial (with initial values from sideband)
-    TF1 *total_func = new TF1("total_func", template_poly, low, high, 4);
-    total_func->SetParameters(1000, p0, p1, p2);
-    total_func->SetParNames("alpha", "p0", "p1", "p2");
-    // Fix polynomial parameters? Let them vary within limits
-    total_func->SetParLimits(1, p0 - 0.5*std::abs(p0), p0 + 0.5*std::abs(p0));
-    total_func->SetParLimits(2, p1 - 0.5*std::abs(p1), p1 + 0.5*std::abs(p1));
-    total_func->SetParLimits(3, p2 - 0.5*std::abs(p2), p2 + 0.5*std::abs(p2));
+    // Exponential fit to sidebands
+    TF1 *bkg_exp = new TF1("bkg_exp", "expo", sb_low1, sb_high2);
+    // Fit lower sideband first
+    h_side->Fit(bkg_exp, "QN", "", sb_low1, sb_high1);
+    // Then add upper sideband (use '+' to keep previous parameters as start values)
+    h_side->Fit(bkg_exp, "QN+", "", sb_low2, sb_high2);
+    double a0 = bkg_exp->GetParameter(0);   // amplitude
+    double a1 = bkg_exp->GetParameter(1);   // slope
+
+    std::cout << "Sideband exponential fit: a = " << a0 << ", b = " << a1 << std::endl;
+
+    // ------------------------------------------------------------------
+    // 7. Fit peak region: α * signal_template + a * exp(b*x)
+    // ------------------------------------------------------------------
+    // Total function has 3 parameters: par[0]=alpha, par[1]=a, par[2]=b
+    TF1 *total_func = new TF1("total_func", template_exp, low, high, 3);
+    total_func->SetParameters(1000, a0, a1);
+    total_func->SetParNames("alpha", "a", "b");
+    // Optionally set limits to keep exponential reasonable (allow ±50% variation)
+    total_func->SetParLimits(1, a0 - 0.5*std::abs(a0), a0 + 0.5*std::abs(a0));
+    total_func->SetParLimits(2, a1 - 0.5*std::abs(a1), a1 + 0.5*std::abs(a1));
 
     h_data_isr->Fit(total_func, "RQ", "", peak_low, peak_high);
     double alpha = total_func->GetParameter(0);
-    double poly0 = total_func->GetParameter(1);
-    double poly1 = total_func->GetParameter(2);
-    double poly2 = total_func->GetParameter(3);
+    double a_fit = total_func->GetParameter(1);
+    double b_fit = total_func->GetParameter(2);
 
-    std::cout << "Fit results: α = " << alpha << ", poly: "
-              << poly0 << " + " << poly1 << "·x + " << poly2 << "·x²\n";
+    std::cout << "Fit results: α = " << alpha 
+              << ", background: " << a_fit << " * exp(" << b_fit << " * x)\n";
 
     // ------------------------------------------------------------------
-    // 7. Create signal & background histograms
+    // 8. Create signal & background histograms
     // ------------------------------------------------------------------
     TH1D *h_signal = (TH1D*) h_signal_template->Clone("h_signal");
     h_signal->SetDirectory(0);
@@ -204,14 +208,14 @@ void correct_omega_peak_hybrid() {
     h_background->Reset();
     for (int bin = 1; bin <= h_background->GetNbinsX(); ++bin) {
         double x = h_background->GetBinCenter(bin);
-        double poly_val = poly0 + poly1*x + poly2*x*x;
-        if (poly_val < 0) poly_val = 0;
-        h_background->SetBinContent(bin, poly_val);
-        h_background->SetBinError(bin, TMath::Sqrt(poly_val));
+        double expo_val = a_fit * exp(b_fit * x);
+        if (expo_val < 0) expo_val = 0;
+        h_background->SetBinContent(bin, expo_val);
+        h_background->SetBinError(bin, TMath::Sqrt(expo_val));
     }
 
     // ------------------------------------------------------------------
-    // 8. Compute correction weights (desired shape = h_signal)
+    // 9. Compute correction weights (desired shape = h_signal)
     // ------------------------------------------------------------------
     TH1D *h_weight = (TH1D*) h_data_isr->Clone("h_weight");
     h_weight->SetDirectory(0);
@@ -240,7 +244,7 @@ void correct_omega_peak_hybrid() {
     }
 
     // ------------------------------------------------------------------
-    // 9. Apply correction to ISR3pi MC
+    // 10. Apply correction to ISR3pi MC
     // ------------------------------------------------------------------
     TH1D *h_isr3pi_corrected = (TH1D*) h_isr3pi->Clone("h_isr3pi_corrected");
     h_isr3pi_corrected->SetDirectory(0);
@@ -261,12 +265,12 @@ void correct_omega_peak_hybrid() {
     }
 
     // ------------------------------------------------------------------
-    // 10. Save results (close input file first)
+    // 11. Save results (close input file first)
     // ------------------------------------------------------------------
     ftree->Close();
     delete ftree;
 
-    TFile *fout = new TFile(output_path + "corrected_isr3pi_hybrid.root", "RECREATE");
+    TFile *fout = new TFile(output_path + "corrected_isr3pi_exponential.root", "RECREATE");
     h_isr3pi_corrected->Write();
     h_signal->Write();
     h_background->Write();
@@ -275,9 +279,9 @@ void correct_omega_peak_hybrid() {
     fout->Close();
 
     // ------------------------------------------------------------------
-    // 11. Visualise
+    // 12. Visualise
     // ------------------------------------------------------------------
-    TCanvas *c = new TCanvas("c", "ω peak correction (Template + polynomial)", 1000, 600);
+    TCanvas *c = new TCanvas("c", "ω peak correction (Template + exponential)", 1000, 600);
     c->Divide(2,1);
     c->cd(1);
     h_data_isr->SetMarkerStyle(20);
@@ -300,9 +304,9 @@ void correct_omega_peak_hybrid() {
     leg->AddEntry(h_data_isr, "Data - other backgrounds", "lep");
     leg->AddEntry(h_isr3pi, "Original ISR3pi MC", "l");
     leg->AddEntry(h_isr3pi_corrected, "Corrected ISR3pi MC", "l");
-    leg->AddEntry(total_func, "Fit: α·signal_template + polynomial", "l");
+    leg->AddEntry(total_func, "Fit: α·signal_template + exponential", "l");
     leg->AddEntry(h_signal, "Fitted signal (α·template)", "l");
-    leg->AddEntry(h_background, "Fitted background (polynomial)", "l");
+    leg->AddEntry(h_background, "Fitted background (exponential)", "l");
     leg->Draw();
 
     c->cd(2);
@@ -310,14 +314,11 @@ void correct_omega_peak_hybrid() {
     h_weight_smooth->GetXaxis()->SetTitle(is_mev ? "M_{3π} [MeV]" : "M_{3π} [GeV]");
     h_weight_smooth->GetYaxis()->SetTitle("Weight");
     h_weight_smooth->Draw();
-    c->SaveAs(output_path + "omega_correction_hybrid.pdf");
+    c->SaveAs(output_path + "omega_correction_exponential.pdf");
 
     gSigTemplate = nullptr;
     delete total_func;
     delete c;
 
-    std::cout << "\nSaved " + output_path + "corrected_isr3pi_hybrid.root and omega_correction_hybrid.pdf\n";
-
-    gSystem->Exit(0);
-  
+    std::cout << "\nSaved " + output_path + "corrected_isr3pi_exponential.root and omega_correction_exponential.pdf\n";
 }

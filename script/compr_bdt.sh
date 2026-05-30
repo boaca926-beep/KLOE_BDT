@@ -100,6 +100,15 @@ echo -e "\nPlotting histo comparison ..."
 #XMAX=450
 #BINS=550
 
+##################################################################
+VAR_NM="bdt_score"
+VAR_SYMB="BDT value"
+UNIT=""
+
+XMIN=0
+XMAX=1
+BINS=150
+
 
 output_folder="../output_"${VAR_NM[0]}
 
@@ -123,13 +132,13 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
 
     echo ${VAR_NM[i]}
     
-    sed -i 's/\(const int binsize =\)\(.*\)/\1 '${BINS[i]}';/' $compr
-    sed -i 's/\(const double var_min =\)\(.*\)/\1 '${XMIN[i]}';/' $compr
-    sed -i 's/\(const double var_max =\)\(.*\)/\1 '${XMAX[i]}';/' $compr
-    
-    sed -i 's/\(const TString var_nm =\)\(.*\)/\1 "'${VAR_NM[i]}'";/' $compr
-    sed -i 's/\(const TString unit =\)\(.*\)/\1 "'${UNIT[i]}'";/' $compr
-    sed -i 's/\(const TString var_symb =\)\(.*\)/\1 "'${VAR_SYMB[i]}'";/' $compr
+    sed -i "s/\(const int binsize =\).*/\1 ${BINS[i]};/" $compr
+    sed -i "s/\(const double var_min =\).*/\1 ${XMIN[i]};/" $compr
+    sed -i "s/\(const double var_max =\).*/\1 ${XMAX[i]};/" $compr
+
+    sed -i "s/\(const TString var_nm =\).*/\1 \"${VAR_NM[i]}\";/" $compr
+    sed -i "s/\(const TString unit =\).*/\1 \"${UNIT[i]}\";/" $compr
+    sed -i "s/\(const TString var_symb =\).*/\1 \"${VAR_SYMB[i]}\";/" $compr
 
     compr_script=compr_script.C
     echo '#include <iostream>' > $compr_script

@@ -24,6 +24,7 @@ constexpr int N_BINS_PULL = 150;
 constexpr int N_BINS_CHI2 = 100; 
 constexpr int N_BINS_ANGLE = 180;
 constexpr int N_BINS_BETA  = 150;
+constexpr int N_BINS_BDT_SCORE  = 150;
 constexpr double BETA_RANGE_MIN = 0.3;
 constexpr double BETA_RANGE_MAX = 1.0;
 constexpr double ENERGY_RANGE_MAX = 500.0;      // MeV
@@ -39,7 +40,7 @@ constexpr double PULL_RANGE_MIN = -30;          // MeV/c² / MeV
 constexpr double PULL_RANGE_MAX = 30;
 constexpr double CHI2_RANGE_MAX = 50.0;
 constexpr double ANGLE_RANGE_MAX = 180.0;       // deg
-
+constexpr double BDT_SCORE_MAX = 1.0;       
 
 // Event data structure (unchanged)
 struct EventData {
@@ -147,8 +148,13 @@ void test_bdt() {
 
     TH1D* hM3pi_bdt = hists.create("hM3pi_bdt", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
 
+    //
     TH1D* h1dM3pi_bdt_corr_peak = hists.create("h1dM3pi_bdt_corr_peak", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
     TH1D* h1dM3pi_bdt_corr_non_reson = hists.create("h1dM3pi_bdt_corr_non_reson", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+
+    //
+    TH1D* h1dbdtscore_peak = hists.create("h1dbdtscore_peak", "", N_BINS_BDT_SCORE, 0, BDT_SCORE_MAX);
+    TH1D* h1dbdtscore_non_reson = hists.create("h1dbdtscore_non_reson", "", N_BINS_BDT_SCORE, 0, BDT_SCORE_MAX);
     
     TH1D* hAngle_bdt = hists.create("hAngle_bdt", "", N_BINS_ANGLE, 0, ANGLE_RANGE_MAX);
 
@@ -225,7 +231,8 @@ void test_bdt() {
     double E3_true, px3_true, py3_true, pz3_true;
     double ppl_E_true, ppl_px_true, ppl_py_true, ppl_pz_true;
     double pmi_E_true, pmi_px_true, pmi_py_true, pmi_pz_true;
-
+    double bdt_score = 0;
+    
     int recon_indx_bdt = 0, recon_indx = 0;
     int bkg_indx = 0;
 
@@ -259,7 +266,8 @@ void test_bdt() {
     tree->SetBranchAddress("Br_angle_pi0gam12", &angle_pi0gam12);
     tree->SetBranchAddress("Br_angle_pi0gam12_bdt", &angle);
     tree->SetBranchAddress("Br_ppIM", &ppIM);
-
+    tree->SetBranchAddress("Br_bdt_score", &bdt_score);
+ 
     bool hasTrue = (tree->GetBranch("Br_E1_true") != nullptr);
     if (hasTrue) {
         tree->SetBranchAddress("Br_E1_true", &E1_true);
@@ -359,6 +367,7 @@ void test_bdt() {
 	      hAngle_eisr_bdt_peak->Fill(angle, e3);
 	      hBeta0_eisr_bdt_peak->Fill(betapi0_bdt, e3);
 	      hDeltaE_eisr_bdt_peak->Fill(deltaE, e3);
+	      h1dbdtscore_peak->Fill(bdt_score);
 	    }
 	    else {
 	      hM3pi_bdt_corr_non_reson->Fill(m3pi_true, m3pi);
@@ -367,6 +376,7 @@ void test_bdt() {
 	      hAngle_eisr_bdt_non_reson->Fill(angle, e3);
 	      hBeta0_eisr_bdt_non_reson->Fill(betapi0_bdt, e3);
 	      hDeltaE_eisr_bdt_non_reson->Fill(deltaE, e3);
+	      h1dbdtscore_non_reson->Fill(bdt_score);
 	    }
 	    
             hE1_pull->Fill(e1 - e1_true);
@@ -449,9 +459,10 @@ void test_bdt() {
       h1->Draw("HIST");
       h2->Draw("HIST SAME");
       if (logy) gPad->SetLogy();
-      TLegend* leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-      leg->AddEntry(h2, "#omega peak", "f");
-      leg->AddEntry(h1, "Non-resonant", "f");
+      TLegend* leg = new TLegend(0.2, 0.85, 0.6, 0.9);
+      leg->SetNColumns(2);
+      leg->AddEntry(h2, "#eta peak", "f");
+      leg->AddEntry(h1, "Combinatorial", "f");
       leg->Draw();
       c->SaveAs(Form("../plots_test/%s.pdf", name));
       c->Write();
@@ -598,9 +609,14 @@ void test_bdt() {
     // Produce plots
     // m3pi_bdt_peak and m3pi_bdt_non_reson comparison
 
-    drawDoubleCompr("m3pi_bdt_compr", "3pi Invaraint Mass Comparsion",
+    drawDoubleCompr(Form("m3pi_bdt_compr_%s", tree_name), "3pi Invaraint Mass Comparsion",
 		    h1dM3pi_bdt_corr_non_reson, h1dM3pi_bdt_corr_peak,
 		    "M_{3#pi} [MeV/c^{2}]", "Entries", false);
+
+    drawDoubleCompr(Form("bdtscore_compr_%s", tree_name), "BDT score Comparsion",
+		    h1dbdtscore_non_reson, h1dbdtscore_peak,
+		    "BDT value", "Entries", true);
+    
 
     // Photon energies: linear y-axis
     drawTripleOverlay("photon_energies", "Photon Energies",

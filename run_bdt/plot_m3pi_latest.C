@@ -144,7 +144,8 @@ void plot_m3pi_latest() {
   TH1D *h_isr_bkg  = nullptr;
   
   const char* corrFiles[2];
-  TString file1 = output_path + "corrected_isr3pi_sample.root";
+  TString file1 = output_path + "corrected_isr3pi_hybrid.root";
+  //TString file1 = output_path + "corrected_isr3pi_hybrid_lower_linear.root";
   TString file2 = output_path + "corrected_isr3pi_tmp.root";
   corrFiles[0] = file1.Data();
   corrFiles[1] = file2.Data();
@@ -233,7 +234,7 @@ void plot_m3pi_latest() {
   h_pull->SetLineWidth(0);
 
   // Canvas and pads
-  TCanvas *c = new TCanvas("c", "3π mass projection with pulls", 800, 800);
+  TCanvas *c = new TCanvas("c", "3π mass projection with pulls", 1200, 700);
   c->SetBottomMargin(0.12);
   c->SetLeftMargin(0.12);
 
@@ -317,7 +318,7 @@ void plot_m3pi_latest() {
   h_pull->GetYaxis()->SetTitleOffset(0.2);      // avoid overlap
   h_pull->GetYaxis()->SetLabelSize(0.1);
   //h_pull->GetXaxis()->SetRangeUser(760, 820);   // optional: zoom to ω peak
-  h_pull->GetYaxis()->SetRangeUser(-10, 10);
+  h_pull->GetYaxis()->SetRangeUser(-50, 50);
   h_pull->GetYaxis()->SetNdivisions(505);
   h_pull->GetXaxis()->CenterTitle();
   h_pull->GetYaxis()->CenterTitle();

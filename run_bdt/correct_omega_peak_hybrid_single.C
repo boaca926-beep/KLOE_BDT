@@ -1,8 +1,8 @@
-// correct_omega_peak_poly.C
+// correct_omega_peak_hybrid_lower_linear.C
 // Data-driven correction for ω → 3π shape using:
 //   - signal template from TISR3PI_SIG (recon_indx_bdt==2 && bkg_indx==1)
-//   - 2nd‑order polynomial background, doble side band
-// Outputs: corrected_isr3pi_poly.root (h_isr3pi_corrected, h_signal, h_background, h_data_isr, h_weight_smooth)
+//   - 1st‑order (linear) polynomial background, using ONLY the lower sideband (680-730 MeV)
+// Outputs: corrected_isr3pi_hybrid_lower_linear.root
 
 #include <TFile.h>
 #include <TTree.h>
@@ -19,15 +19,15 @@
 // Global pointer to signal template (detached from file)
 TH1D *gSigTemplate = nullptr;
 
-// Fit function: α * signal_template + polynomial
-Double_t template_poly(Double_t *x, Double_t *par) {
+// Fit function: α * signal_template + linear polynomial
+Double_t template_linear(Double_t *x, Double_t *par) {
     int bin = gSigTemplate->FindBin(x[0]);
     Double_t sig = gSigTemplate->GetBinContent(bin);
-    Double_t poly = par[1] + par[2] * x[0] + par[3] * x[0] * x[0];
+    Double_t poly = par[1] + par[2] * x[0];   // linear
     return par[0] * sig + poly;
 }
 
-void correct_omega_peak_hybrid() {
+void correct_omega_peak_hybrid_single() {
     // ------------------------------------------------------------------
     // 1. Open tree file
     // ------------------------------------------------------------------
@@ -149,17 +149,15 @@ void correct_omega_peak_hybrid() {
     gSigTemplate = h_signal_template;
 
     // ------------------------------------------------------------------
-    // 6. Template + polynomial fit
+    // 6. Template + linear polynomial fit – using ONLY lower sideband
     // ------------------------------------------------------------------
     double peak_low = is_mev ? 740 : 0.74;
     double peak_high = is_mev ? 820 : 0.82;
 
-    // First, estimate polynomial background from sidebands only
-    double sb_low1 = is_mev ? 680 : 0.68;
-    double sb_high1 = is_mev ? 730 : 0.73;
-    double sb_low2 = is_mev ? 830 : 0.83;
-    double sb_high2 = is_mev ? 890 : 0.89;
-    
+    // Lower sideband only (avoid bump above 800 MeV)
+    double sb_low = is_mev ? 680 : 0.68;
+    double sb_high = is_mev ? 730 : 0.73;
+
     // Create a temporary histogram for sideband fit (only background)
     TH1D *h_side = (TH1D*) h_data_isr->Clone("h_side");
     // Blank the peak region
@@ -167,30 +165,30 @@ void correct_omega_peak_hybrid() {
         double x = h_side->GetBinCenter(bin);
         if (x >= peak_low && x <= peak_high) h_side->SetBinContent(bin, 0);
     }
-    TF1 *bkg_poly = new TF1("bkg_poly", "pol2", sb_low1, sb_high2);
-    h_side->Fit(bkg_poly, "QN", "", sb_low1, sb_high1);
-    h_side->Fit(bkg_poly, "QN+", "", sb_low2, sb_high2);
-    double p0 = bkg_poly->GetParameter(0);
-    double p1 = bkg_poly->GetParameter(1);
-    double p2 = bkg_poly->GetParameter(2);
 
-    // Now total model: α * signal_template + polynomial (with initial values from sideband)
-    TF1 *total_func = new TF1("total_func", template_poly, low, high, 4);
-    total_func->SetParameters(1000, p0, p1, p2);
-    total_func->SetParNames("alpha", "p0", "p1", "p2");
-    // Fix polynomial parameters? Let them vary within limits
-    total_func->SetParLimits(1, p0 - 0.5*std::abs(p0), p0 + 0.5*std::abs(p0));
-    total_func->SetParLimits(2, p1 - 0.5*std::abs(p1), p1 + 0.5*std::abs(p1));
-    total_func->SetParLimits(3, p2 - 0.5*std::abs(p2), p2 + 0.5*std::abs(p2));
+    // Fit linear polynomial to lower sideband only
+    TF1 *bkg_linear = new TF1("bkg_linear", "pol1", sb_low, sb_high);
+    h_side->Fit(bkg_linear, "QN", "", sb_low, sb_high);
+    double p0 = bkg_linear->GetParameter(0);
+    double p1 = bkg_linear->GetParameter(1);
+    std::cout << "Lower sideband linear fit (680-730 MeV): "
+              << p0 << " + " << p1 << "·x\n";
+
+    // Total model: α * signal_template + linear polynomial (3 parameters)
+    TF1 *total_func = new TF1("total_func", template_linear, low, high, 3);
+    total_func->SetParameters(1000, p0, p1);
+    total_func->SetParNames("alpha", "p0", "p1");
+    // Allow linear parameters to vary within ±30% of sideband values
+    total_func->SetParLimits(1, p0 - 0.3*std::abs(p0), p0 + 0.3*std::abs(p0));
+    total_func->SetParLimits(2, p1 - 0.3*std::abs(p1), p1 + 0.3*std::abs(p1));
 
     h_data_isr->Fit(total_func, "RQ", "", peak_low, peak_high);
     double alpha = total_func->GetParameter(0);
     double poly0 = total_func->GetParameter(1);
     double poly1 = total_func->GetParameter(2);
-    double poly2 = total_func->GetParameter(3);
 
-    std::cout << "Fit results: α = " << alpha << ", poly: "
-              << poly0 << " + " << poly1 << "·x + " << poly2 << "·x²\n";
+    std::cout << "Fit results: α = " << alpha << ", linear: "
+              << poly0 << " + " << poly1 << "·x\n";
 
     // ------------------------------------------------------------------
     // 7. Create signal & background histograms
@@ -204,7 +202,7 @@ void correct_omega_peak_hybrid() {
     h_background->Reset();
     for (int bin = 1; bin <= h_background->GetNbinsX(); ++bin) {
         double x = h_background->GetBinCenter(bin);
-        double poly_val = poly0 + poly1*x + poly2*x*x;
+        double poly_val = poly0 + poly1 * x;
         if (poly_val < 0) poly_val = 0;
         h_background->SetBinContent(bin, poly_val);
         h_background->SetBinError(bin, TMath::Sqrt(poly_val));
@@ -266,7 +264,7 @@ void correct_omega_peak_hybrid() {
     ftree->Close();
     delete ftree;
 
-    TFile *fout = new TFile(output_path + "corrected_isr3pi_hybrid.root", "RECREATE");
+    TFile *fout = new TFile(output_path + "corrected_isr3pi_hybrid_lower_linear.root", "RECREATE");
     h_isr3pi_corrected->Write();
     h_signal->Write();
     h_background->Write();
@@ -277,7 +275,7 @@ void correct_omega_peak_hybrid() {
     // ------------------------------------------------------------------
     // 11. Visualise
     // ------------------------------------------------------------------
-    TCanvas *c = new TCanvas("c", "ω peak correction (Template + polynomial)", 1000, 600);
+    TCanvas *c = new TCanvas("c", "ω peak correction (lower sideband, linear)", 1000, 600);
     c->Divide(2,1);
     c->cd(1);
     h_data_isr->SetMarkerStyle(20);
@@ -300,9 +298,9 @@ void correct_omega_peak_hybrid() {
     leg->AddEntry(h_data_isr, "Data - other backgrounds", "lep");
     leg->AddEntry(h_isr3pi, "Original ISR3pi MC", "l");
     leg->AddEntry(h_isr3pi_corrected, "Corrected ISR3pi MC", "l");
-    leg->AddEntry(total_func, "Fit: α·signal_template + polynomial", "l");
+    leg->AddEntry(total_func, "Fit: α·signal_template + linear", "l");
     leg->AddEntry(h_signal, "Fitted signal (α·template)", "l");
-    leg->AddEntry(h_background, "Fitted background (polynomial)", "l");
+    leg->AddEntry(h_background, "Fitted background (linear)", "l");
     leg->Draw();
 
     c->cd(2);
@@ -310,14 +308,13 @@ void correct_omega_peak_hybrid() {
     h_weight_smooth->GetXaxis()->SetTitle(is_mev ? "M_{3π} [MeV]" : "M_{3π} [GeV]");
     h_weight_smooth->GetYaxis()->SetTitle("Weight");
     h_weight_smooth->Draw();
-    c->SaveAs(output_path + "omega_correction_hybrid.pdf");
+    c->SaveAs(output_path + "omega_correction_hybrid_lower_linear.pdf");
 
     gSigTemplate = nullptr;
     delete total_func;
     delete c;
 
-    std::cout << "\nSaved " + output_path + "corrected_isr3pi_hybrid.root and omega_correction_hybrid.pdf\n";
+    std::cout << "\nSaved " << output_path + "corrected_isr3pi_hybrid_lower_linear.root and omega_correction_hybrid_lower_linear.pdf\n";
 
     gSystem->Exit(0);
-  
 }

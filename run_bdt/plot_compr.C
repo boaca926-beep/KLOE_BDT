@@ -154,6 +154,7 @@ int plot_compr() {
   hist_mcrest_sc->Draw("hist same");
   hist_eeg_sc->Draw("hist same");
   hist_mcsum_sc->Draw("hist same");
+  gPad->SetLogy();
   
   // Axis formatting
   hist_data->GetXaxis()->SetTitle("");
@@ -165,9 +166,9 @@ int plot_compr() {
   
   // Set y-axis range if ymax > 0, otherwise use auto
   if (ymax > 0)
-    hist_data->GetYaxis()->SetRangeUser(0, ymax * 1.6);
+    hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
   else
-    hist_data->GetYaxis()->SetRangeUser(0, 1);  // fallback, but will show empty
+    hist_data->GetYaxis()->SetRangeUser(0.01, 1);  // fallback, but will show empty
 
   // Legend
   TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
