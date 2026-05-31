@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-sample_size=chain # norm; small; mini; chain
+sample_size=norm # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 
 exp_type=TDATA # DATA
@@ -28,6 +28,7 @@ chi2_cut=43
 angle_cut=138
 deltaE_cut=-150
 beta_cut=1.98
+bdt_cut=0.4
 c0=0.11
 c1=0.8
 cut_nm=""
@@ -39,6 +40,7 @@ const double chi2_cut = $chi2_cut;
 const double angle_cut = $angle_cut;
 const double deltaE_cut = $deltaE_cut;
 const double beta_cut = $beta_cut;
+const double bdt_cut = $bdt_cut;
 const double c0 = $c0;
 const double c1 = $c1;
 double cut_value = -1;

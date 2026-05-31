@@ -18,7 +18,7 @@ using namespace TMVA::Experimental;
 #define BDT_MODEL_PATH "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root"
 
 constexpr double ENERGY_THRESHOLD = 5.0;   // MeV
-constexpr double BDT_CUT_VALUE = 0.4;     // BDT score threshold (kept for reference, not used in classification)
+//constexpr double BDT_CUT_VALUE = 0.4;     // BDT score threshold (kept for reference, not used in classification)
 
 // ----------------------------------------------------------------------
 // Structures and helper prototypes
@@ -485,7 +485,7 @@ int tree_cut_bdt() {
         else if (angle_pi0gam12_bdt > angle_cut) continue;
 	//else if (angle_pi0gam12_bdt > 66.0) continue;
 	else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-	else if (bdt_score < BDT_CUT_VALUE) continue;
+	//else if (bdt_score < bdt_cut) continue;
 	
         // ---------- Classification and filling (identical to tree_cut.C) ----------
         if (data_type == "exp") {
