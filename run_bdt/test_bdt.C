@@ -205,7 +205,15 @@ void test_bdt() {
     TH2D* hM3pi_bdt_corr_non_reson = new TH2D("hM3pi_bdt_corr_reson", "M_{3#pi} Correlation (Non-resonant)",
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
                                     N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
-    
+
+    // m3pi true vs generated true
+    TH2D* hM3pi_bdt_corr_peak_true = new TH2D("hM3pi_bdt_corr_peak_true", "M_{3#pi} Correlation (#omega peak)",
+					      N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
+					      N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+    TH2D* hM3pi_bdt_corr_non_reson_true = new TH2D("hM3pi_bdt_corr_reson_true", "M_{3#pi} Correlation (Non-resonant)",
+						   N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX,
+						   N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
+
     // --- Pull histograms (if true branches exist) ---
     TH1D* hE1_pull = hists.create("hE1_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
     TH1D* hE2_pull = hists.create("hE2_pull", "", N_BINS_PULL, PULL_RANGE_MIN, PULL_RANGE_MAX);
@@ -232,6 +240,7 @@ void test_bdt() {
     double ppl_E_true, ppl_px_true, ppl_py_true, ppl_pz_true;
     double pmi_E_true, pmi_px_true, pmi_py_true, pmi_pz_true;
     double bdt_score = 0;
+    double true_m3pi = 0;
     
     int recon_indx_bdt = 0, recon_indx = 0;
     int bkg_indx = 0;
@@ -267,6 +276,7 @@ void test_bdt() {
     tree->SetBranchAddress("Br_angle_pi0gam12_bdt", &angle);
     tree->SetBranchAddress("Br_ppIM", &ppIM);
     tree->SetBranchAddress("Br_bdt_score", &bdt_score);
+    tree->SetBranchAddress("Br_true_m3pi", &true_m3pi);
  
     bool hasTrue = (tree->GetBranch("Br_E1_true") != nullptr);
     if (hasTrue) {
@@ -359,9 +369,11 @@ void test_bdt() {
 	    //cout << recon_indx_bdt << ", " << bkg_indx << endl;
 	    //cout << m2pi << ", " << angle << endl;
 	    //cout << betapi0_bdt << endl;
+	    //cout << true_m3pi << endl;
 	    
 	    if (recon_indx_bdt == 2 && bkg_indx == 1) {
 	      hM3pi_bdt_corr_peak->Fill(m3pi_true, m3pi);
+	      hM3pi_bdt_corr_peak_true->Fill(m3pi_true, true_m3pi);
 	      h1dM3pi_bdt_corr_peak->Fill(m3pi);
 	      hM2pi_eisr_bdt_peak->Fill(m2pi, e3);
 	      hAngle_eisr_bdt_peak->Fill(angle, e3);
@@ -371,6 +383,7 @@ void test_bdt() {
 	    }
 	    else {
 	      hM3pi_bdt_corr_non_reson->Fill(m3pi_true, m3pi);
+	      hM3pi_bdt_corr_non_reson_true->Fill(m3pi_true, m3pi_true);
 	      h1dM3pi_bdt_corr_non_reson->Fill(m3pi);
 	      hM2pi_eisr_bdt_non_reson->Fill(m2pi, e3);
 	      hAngle_eisr_bdt_non_reson->Fill(angle, e3);
@@ -612,7 +625,7 @@ void test_bdt() {
     drawDoubleCompr(Form("m3pi_bdt_compr_%s", tree_name), "3pi Invaraint Mass Comparsion",
 		    h1dM3pi_bdt_corr_non_reson, h1dM3pi_bdt_corr_peak,
 		    "M_{3#pi} [MeV/c^{2}]", "Entries", false);
-
+    
     drawDoubleCompr(Form("bdtscore_compr_%s", tree_name), "BDT score Comparsion",
 		    h1dbdtscore_non_reson, h1dbdtscore_peak,
 		    "BDT value", "Entries", true);
@@ -631,7 +644,7 @@ void test_bdt() {
     // M_{2#pi} vs. E_{#gamma_{3}}
     draw2D(Form("angle_eisr_bdt_peak_%s", tree_name), "#angle_{#gamma#gamma} vs. E_{#gamma_{3}} (omega-peak)",
 	   hAngle_eisr_bdt_peak, "#angle_{#gamma#gamma} [#circ]", "E_{#gamma_{3}} [MeV]", true, {}, {66.,180.});
-
+    
     draw2D(Form("angle_eisr_bdt_non_reson_%s", tree_name), "#angle_{#gamma#gamma} vs. E_{#gamma_{3}} (Non-resonant)",
 	   hAngle_eisr_bdt_non_reson, "#angle_{#gamma#gamma} [#circ]", "E_{#gamma_{3}} [MeV]", true, {}, {66.,180.});
 
@@ -644,10 +657,16 @@ void test_bdt() {
                    hMgg_pull, hM3pi_pull, hM2pi_pull,
                    "M_{#gamma#gamma} pull [MeV/c^{2}]", "M_{3#pi} pull [MeV/c^{2}]", "M_{2#pi} pull [MeV/c^{2}]",
                    "Normalized entries", kRed);
+	
+	draw2D(Form("m3pi_correlation_peak_%s_true", tree_name), "M_{3#pi} Correlation (BDT-selected)",
+               hM3pi_bdt_corr_peak_true, "M^{true, bdt}_{3#pi} [MeV/c^{2}]", "M^{true, gen}_{3#pi} [MeV/c^{2}]", true, {760, 800}, {760, 800});
 	draw2D(Form("m3pi_correlation_peak_%s", tree_name), "M_{3#pi} Correlation (BDT-selected)",
                hM3pi_bdt_corr_peak, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800}, {760, 800});
+
 	draw2D(Form("m3pi_correlation_non_reso_%s", tree_name), "M_{3#pi} Correlation Non-resonance (BDT-selected)",
                hM3pi_bdt_corr_non_reson, "M^{true}_{3#pi} [MeV/c^{2}]", "M^{rec}_{3#pi} [MeV/c^{2}]", true, {760, 800}, {760, 800});
+	draw2D(Form("m3pi_correlation_non_reso_%s_true", tree_name), "M_{3#pi} Correlation Non-resonance (BDT-selected)",
+               hM3pi_bdt_corr_non_reson_true, "M^{true, bdt}_{3#pi} [MeV/c^{2}]", "M^{true, gen}_{3#pi} [MeV/c^{2}]", true, {760, 800}, {760, 800});
     }
 
     // Write histograms to output ROOT file

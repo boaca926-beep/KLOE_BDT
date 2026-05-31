@@ -485,7 +485,7 @@ void MyClass::Main()
     //threepi_TLvect = piminusMC_TLvect + piplusMC_TLvect + pi0MC_TLvect;
     isrpho_TLvect = Beam - (pi0MC_TLvect + piplusMC_TLvect + piminusMC_TLvect);
 
-    IM_3pi = threepi_TLvect.M();//
+    IM_3pi = threepi_TLvect.M();
     //IM_3pi = (Beam - (pho_radiv1_TLvect + pho_radiv2_TLvect)).M(); //threepi_TLvect.M();
     IM_pi0 = (pi0gam1_TLvect + pi0gam2_TLvect).M();//(Beam - (pho_radiv1_TLvect + pho_radiv2_TLvect)).M(); //threepi_TLvect.M();
     ppIM_true = (piplusMC_TLvect + piminusMC_TLvect).M();

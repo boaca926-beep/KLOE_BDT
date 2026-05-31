@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-sample_size=norm # norm; small; mini; chain
+sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 
 exp_type=TDATA # DATA
@@ -99,9 +99,10 @@ mkdir ${omega_path} # omega parameters
 mkdir ${log_path} # log files   
 echo "Results folder is created at ${result_path}"
 
-echo "Initializing $path_header and log files!"
 ## Initializing path_header and log files
 path_header=../header_bdt/path.h
+echo "Initializing $path_header and log files!"
+
 echo -e 'const TString rootFile = "";' > $path_header
 echo -e 'const TString sampleFile = "";' >> $path_header
 echo -e 'const TString outputCut = "";' >> $path_header

@@ -41,7 +41,7 @@ void correct_and_plot_2sideband_chebyshev() {
     // ------------------------------------------------------------------
     // 1. Open tree file
     // ------------------------------------------------------------------
-    TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+    TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
     TFile *ftree = TFile::Open(treeFile);
     if (!ftree || ftree->IsZombie()) {
         std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -324,8 +324,8 @@ void correct_and_plot_2sideband_chebyshev() {
     // ------------------------------------------------------------------
     // 11. Plotting
     // ------------------------------------------------------------------
-    TCanvas *c = new TCanvas("c", "3π mass projection (Chebyshev, 3rd order)", 1200, 700);
-    c->SetBottomMargin(0.12);
+    TCanvas *c = new TCanvas("c", "3π mass projection (Chebyshev 3nd order)", 1200, 700);
+    c->SetBottomMargin(0.13);
     c->SetLeftMargin(0.12);
 
     TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1);
@@ -350,11 +350,12 @@ void correct_and_plot_2sideband_chebyshev() {
     h_data->GetXaxis()->SetTitleSize(0.06);
     h_data->GetYaxis()->SetTitleSize(0.07);
     h_data->GetYaxis()->SetTitleOffset(0.7);
-    h_data->GetYaxis()->SetLabelSize(0.04);
+    h_data->GetYaxis()->SetLabelSize(0.06);
     h_data->GetYaxis()->SetNdivisions(505);
-
+    h_data->GetXaxis()->SetLabelOffset(0.2);
+    
     // Legend
-    TLegend *leg = new TLegend(0.65, 0.25, 0.9, 0.9);
+    TLegend *leg = new TLegend(0.55, 0.25, 0.9, 0.9);
     leg->SetFillStyle(0);
     leg->SetBorderSize(0);
     leg->SetTextSize(0.04);
@@ -365,7 +366,7 @@ void correct_and_plot_2sideband_chebyshev() {
     leg->AddEntry(h_ksl, "K_{S}K_{L}", "l");
     leg->AddEntry(h_etagam, "#eta#gamma", "l");
     leg->AddEntry(h_signal, "Corrected #omega peak", "l");
-    leg->AddEntry(h_background, "Chebyshev background (3rd order)", "l");
+    leg->AddEntry(h_background, "Non-resonant background (Chebyshev)", "l");
     leg->AddEntry(h_mcrest, "Others", "l");
     leg->Draw();
 
@@ -373,21 +374,22 @@ void correct_and_plot_2sideband_chebyshev() {
     c->cd();
     TPad *pad2 = new TPad("pad2", "pad2", 0, 0, 1, 0.3);
     pad2->SetTopMargin(0.02);
-    pad2->SetBottomMargin(0.3);
+    pad2->SetBottomMargin(0.35);
     pad2->SetLeftMargin(0.12);
     pad2->Draw();
     pad2->cd();
     gPad->SetGrid();
 
     h_pull->GetXaxis()->SetTitle("M_{3#pi} [MeV]");
-    h_pull->GetXaxis()->SetTitleSize(0.12);
-    h_pull->GetXaxis()->SetTitleOffset(1.0);
-    h_pull->GetXaxis()->SetLabelSize(0.1);
+    h_pull->GetXaxis()->SetTitleSize(0.15);
+    h_pull->GetXaxis()->SetTitleOffset(1.);
+    h_pull->GetXaxis()->SetLabelSize(0.15);
     h_pull->GetYaxis()->SetTitle("Pull");
     h_pull->GetYaxis()->SetTitleSize(0.2);
     h_pull->GetYaxis()->SetTitleOffset(0.2);
-    h_pull->GetYaxis()->SetLabelSize(0.1);
+    h_pull->GetYaxis()->SetLabelSize(0.15);
     h_pull->GetYaxis()->SetRangeUser(-50, 50);
+    h_pull->GetXaxis()->SetNdivisions(505);
     h_pull->GetYaxis()->SetNdivisions(505);
     h_pull->GetXaxis()->CenterTitle();
     h_pull->GetYaxis()->CenterTitle();
@@ -413,33 +415,46 @@ void correct_and_plot_2sideband_chebyshev() {
     for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin)
         if (h_signal_data->GetBinContent(bin) < 0) h_signal_data->SetBinContent(bin, 0);
 
-    TCanvas *c22 = new TCanvas("c22", "Background‑subtracted ω signal", 1200, 700);
-    c22->SetBottomMargin(0.12);
+    TCanvas *c22 = new TCanvas("c22", "Background‑subtracted #omega signal", 1200, 700);
+    c22->SetBottomMargin(0.13);
     c22->SetLeftMargin(0.12);
+
     h_signal_data->SetMarkerStyle(20);
     h_signal_data->SetMarkerSize(0.6);
+    h_signal_data->GetXaxis()->SetNdivisions(505);
+    h_signal_data->GetYaxis()->SetNdivisions(505);
     h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
     h_signal_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
+    h_signal_data->GetXaxis()->SetTitleSize(0.05);
+    h_signal_data->GetXaxis()->SetTitleOffset(1.2);   // was 1.0, increase
+    h_signal_data->GetXaxis()->SetLabelSize(0.06);
+    h_signal_data->GetXaxis()->SetLabelOffset(0.01);   // small positive
+    h_signal_data->GetXaxis()->SetTickLength(0.03);
+    h_signal_data->GetYaxis()->SetTitleOffset(0.9);
     h_signal_data->GetXaxis()->SetRangeUser(mass_min, mass_max);
     h_signal_data->GetXaxis()->CenterTitle();
     h_signal_data->GetYaxis()->CenterTitle();
-    h_signal_data->Draw("E0");
     h_signal->SetLineColor(kBlue);
-    h_signal->Draw("hist same");
     h_background->SetLineColor(kRed);
+    
+    // Draw and force update before adding legend
+    h_signal_data->Draw("E0");
+    h_signal->Draw("hist same");
     h_background->Draw("hist same");
-
-    TLegend *leg2 = new TLegend(0.6, 0.7, 0.9, 0.9);
+    
+    TLegend *leg2 = new TLegend(0.55, 0.7, 0.9, 0.9);
     leg2->SetFillStyle(0);
     leg2->SetBorderSize(0);
     leg2->SetTextSize(0.04);
     leg2->AddEntry(h_signal_data, "Data - backgrounds", "lep");
     leg2->AddEntry(h_signal, "Corrected #omega peak", "l");
-    leg2->AddEntry(h_background, "Chebyshev background (3rd order)", "l");
+    leg2->AddEntry(h_background, "Non-resonant background", "l");
     leg2->Draw();
+
+    c22->Update();
     c22->SaveAs(output_path + "background_subtracted_combined_2sideband_chebyshev.pdf");
     delete c22;
-
+    
     // ------------------------------------------------------------------
     // 13. Save output ROOT file
     // ------------------------------------------------------------------
@@ -463,6 +478,8 @@ void correct_and_plot_2sideband_chebyshev() {
     delete ftree;
     delete fout;
     gSigTemplate = nullptr;
+
+    gSystem->Exit(0);
 
     std::cout << "\nAll done. Outputs saved to " << output_path << std::endl;
 }

@@ -11,13 +11,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200 100 180 200 100 100 200 200 200)
 
 ##################################################################
-#VAR_NM="betapi0_bdt"
-#VAR_SYMB="#beta_{#pi}"
-#UNIT=""
+VAR_NM="betapi0_bdt"
+VAR_SYMB="#beta_{#pi}"
+UNIT=""
 
-#XMIN=0.3
-#XMAX=1
-#BINS=150
+XMIN=0.3
+XMAX=1
+BINS=150
 
 ##################################################################
 #VAR_NM="lagvalue_min_7C"
@@ -101,13 +101,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=550
 
 ##################################################################
-VAR_NM="bdt_score"
-VAR_SYMB="BDT value"
-UNIT=""
+#VAR_NM="bdt_score"
+#VAR_SYMB="BDT value"
+#UNIT=""
 
-XMIN=0
-XMAX=1
-BINS=150
+#XMIN=0
+#XMAX=1
+#BINS=150
 
 
 output_folder="../output_"${VAR_NM[0]}
