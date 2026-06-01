@@ -26,7 +26,7 @@ sed -i 's/\(nb_sigma_T_clust =\)\(.*\)/\1 '$nb_sigma_T_clust';/' $class_header
 # Selection cuts
 chi2_cut=43
 angle_cut=138
-deltaE_cut=-150
+deltaE_cut=-240 #-150
 beta_cut=1.98
 bdt_cut=0.4
 c0=0.11
@@ -203,8 +203,8 @@ echo "Selection cuts applied!"
 # Reset path.h for aggregated steps (no data_type)
 # ----------------------------------------------------------------------
 cat > "$path_header" <<EOF
-const TString rootFile = "";
-const TString sampleFile = "";
+const TString rootFile = "${INPUT_FILE}";
+const TString sampleFile = "${ROOT_FILE}";
 const TString outputCut = "${cut_path}";
 const TString sig_path = "${input_path}";
 const TString outputGen = "${gen_path}";

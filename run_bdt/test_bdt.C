@@ -383,7 +383,7 @@ void test_bdt() {
 	    }
 	    else {
 	      hM3pi_bdt_corr_non_reson->Fill(m3pi_true, m3pi);
-	      hM3pi_bdt_corr_non_reson_true->Fill(m3pi_true, m3pi_true);
+	      hM3pi_bdt_corr_non_reson_true->Fill(m3pi_true, true_m3pi);
 	      h1dM3pi_bdt_corr_non_reson->Fill(m3pi);
 	      hM2pi_eisr_bdt_non_reson->Fill(m2pi, e3);
 	      hAngle_eisr_bdt_non_reson->Fill(angle, e3);
@@ -474,7 +474,8 @@ void test_bdt() {
       if (logy) gPad->SetLogy();
       TLegend* leg = new TLegend(0.2, 0.85, 0.6, 0.9);
       leg->SetNColumns(2);
-      leg->AddEntry(h2, "#eta peak", "f");
+      //leg->AddEntry(h2, "#eta peak", "f");
+      leg->AddEntry(h2, "#omega peak", "f");
       leg->AddEntry(h1, "Combinatorial", "f");
       leg->Draw();
       c->SaveAs(Form("../plots_test/%s.pdf", name));

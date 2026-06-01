@@ -82,6 +82,8 @@ int tree_cut_bdt() {
     double IM_pi0_7C = 0.;
     double Eisr = 0., Epi0_pho1 = 0., Epi0_pho2 = 0.;
     double pull_E1 = 0., pull_x1 = 0., pull_y1 = 0., pull_z1 = 0., pull_t1 = 0.;
+    double pull_E2 = 0., pull_x2 = 0., pull_y2 = 0., pull_z2 = 0., pull_t2 = 0.;
+    double pull_E3 = 0., pull_x3 = 0., pull_y3 = 0., pull_z3 = 0., pull_t3 = 0.;
     double ppl_E = 0., ppl_px = 0., ppl_py = 0., ppl_pz = 0.;
     double pmi_E = 0., pmi_px = 0., pmi_py = 0., pmi_pz = 0.;
     double pho_E1 = 0., pho_px1 = 0., pho_py1 = 0., pho_pz1 = 0.;
@@ -111,7 +113,10 @@ int tree_cut_bdt() {
     double true_px_piminus, true_py_piminus, true_pz_piminus, true_E_piminus;
     double true_px_pi0, true_py_pi0, true_pz_pi0, true_E_pi0;
     double true_m3pi;
-  
+    double angle_ppl_pmi, angle_trk_neutral;
+    double e_asym;
+    double beta_3pi;
+    
     // Pull variables
     double e1_pull = 0., e2_pull = 0., e3_pull = 0.;
     double px1_pull = 0., py1_pull = 0., pz1_pull = 0.;
@@ -185,7 +190,20 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_pull_y1", &pull_y1, "Br_pull_y1/D");
         tree_tmp->Branch("Br_pull_z1", &pull_z1, "Br_pull_z1/D");
         tree_tmp->Branch("Br_pull_t1", &pull_t1, "Br_pull_t1/D");
-        tree_tmp->Branch("Br_sig_type", &sig_type, "Br_sig_type/I");
+
+	tree_tmp->Branch("Br_pull_E2", &pull_E2, "Br_pull_E2/D");
+        tree_tmp->Branch("Br_pull_x2", &pull_x2, "Br_pull_x2/D");
+        tree_tmp->Branch("Br_pull_y2", &pull_y2, "Br_pull_y2/D");
+        tree_tmp->Branch("Br_pull_z2", &pull_z2, "Br_pull_z2/D");
+        tree_tmp->Branch("Br_pull_t2", &pull_t2, "Br_pull_t2/D");
+
+	tree_tmp->Branch("Br_pull_E3", &pull_E3, "Br_pull_E3/D");
+        tree_tmp->Branch("Br_pull_x3", &pull_x3, "Br_pull_x3/D");
+        tree_tmp->Branch("Br_pull_y3", &pull_y3, "Br_pull_y3/D");
+        tree_tmp->Branch("Br_pull_z3", &pull_z3, "Br_pull_z3/D");
+        tree_tmp->Branch("Br_pull_t3", &pull_t3, "Br_pull_t3/D");
+
+	tree_tmp->Branch("Br_sig_type", &sig_type, "Br_sig_type/I");
         tree_tmp->Branch("Br_bkg_indx", &bkg_indx, "Br_bkg_indx/I");
         tree_tmp->Branch("Br_recon_indx", &recon_indx, "Br_recon_indx/I");
         tree_tmp->Branch("Br_IM3pi_7C", &IM3pi_7C, "Br_IM3pi_7C/D");
@@ -217,6 +235,11 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_angle_pi0gam12_bdt_true", &angle_pi0gam12_bdt_true, "Br_angle_pi0gam12_bdt_true/D");
         tree_tmp->Branch("Br_betapi0_bdt", &betapi0_bdt, "Br_betapi0_bdt/D");
         tree_tmp->Branch("Br_betapi0_bdt_true", &betapi0_bdt_true, "Br_betapi0_bdt_true/D");
+	tree_tmp->Branch("Br_angle_ppl_pmi", &angle_ppl_pmi, "Br_angle_ppl_pmi/D");
+	tree_tmp->Branch("Br_angle_trk_neutral", &angle_trk_neutral, "Br_angle_trk_neutral/D");
+	tree_tmp->Branch("Br_beta_3pi", &beta_3pi, "Br_beta_3pi/D");
+	tree_tmp->Branch("Br_e_asym", &e_asym, "Br_e_asym/D");
+	
         // generator MC true
         tree_tmp->Branch("Br_true_px_piminus", &true_px_piminus, "Br_true_px_piminus/D");
         tree_tmp->Branch("Br_true_py_piminus", &true_py_piminus, "Br_true_py_piminus/D");
@@ -252,6 +275,7 @@ int tree_cut_bdt() {
     }
 
     TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
+    TLorentzVector trksum, neutralsum, system_3pi;
 
     // ---------- ONE‑TIME BRANCH ADDRESSES FOR TRUE MC (reconstructed level) ----------
     // Reconstructed true tracks
@@ -263,6 +287,7 @@ int tree_cut_bdt() {
     ALLCHAIN_CUT->SetBranchAddress("Br_pmi_px_true", &pmi_px_true);
     ALLCHAIN_CUT->SetBranchAddress("Br_pmi_py_true", &pmi_py_true);
     ALLCHAIN_CUT->SetBranchAddress("Br_pmi_pz_true", &pmi_pz_true);
+
     // Reconstructed true photons
     ALLCHAIN_CUT->SetBranchAddress("Br_E1_true", &pho_E1_true);
     ALLCHAIN_CUT->SetBranchAddress("Br_px1_true", &pho_px1_true);
@@ -290,6 +315,9 @@ int tree_cut_bdt() {
     ALLCHAIN_CUT->SetBranchAddress("true_py_pi0", &true_py_pi0);
     ALLCHAIN_CUT->SetBranchAddress("true_pz_pi0", &true_pz_pi0);
     ALLCHAIN_CUT->SetBranchAddress("true_E_pi0", &true_E_pi0);
+
+    
+    
     
     // ---------- Event loop ----------
     Long64_t nentries = ALLCHAIN_CUT->GetEntries();
@@ -341,6 +369,18 @@ int tree_cut_bdt() {
         pull_z1 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(3);
         pull_t1 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(4);
 
+	pull_E2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(5);
+        pull_x2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(6);
+        pull_y2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(7);
+        pull_z2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(8);
+        pull_t2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(9);
+
+	pull_E3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(10);
+        pull_x3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(11);
+        pull_y3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(12);
+        pull_z3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(13);
+        pull_t3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(14);
+
         bkg_indx = ALLCHAIN_CUT->GetLeaf("Br_bkg_indx")->GetValue(0);
         recon_indx = ALLCHAIN_CUT->GetLeaf("Br_recon_indx")->GetValue(0);
 
@@ -367,7 +407,10 @@ int tree_cut_bdt() {
         isrgam.SetPxPyPzE(pho_px3, pho_py3, pho_pz3, pho_E3);
         trkplus.SetPxPyPzE(ppl_px, ppl_py, ppl_pz, ppl_E);
         trkmin.SetPxPyPzE(pmi_px, pmi_py, pmi_pz, pmi_E);
-
+	trksum = trkplus + trkmin;
+	neutralsum = pi0gam1 + pi0gam2 + isrgam;
+	angle_ppl_pmi = trkplus.Angle(trkmin.Vect())*TMath::RadToDeg();
+	angle_trk_neutral = trksum.Angle(neutralsum.Vect())*TMath::RadToDeg();
         m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
         evnt_tot++;
@@ -487,6 +530,13 @@ int tree_cut_bdt() {
         m3pi_pull = m3pi_bdt - m3pi_true;
         m2pi_pull = compute_dipion_mass(event.tracks) - m2pi_true;
 
+	// e_asy
+	e_asym = abs(e1_bdt - e2_bdt) / (e1_bdt + e2_bdt);
+
+	// beta_3pi
+	system_3pi = pi0gam1_bdt + pi0gam2_bdt + trkplus + trkmin;
+	beta_3pi = system_3pi.P() / system_3pi.E();
+ 
         // Compute BDT-based recon_indx_bdt
         int correct_bdt = 0;
         bool checked[2] = {false, false};
@@ -510,7 +560,8 @@ int tree_cut_bdt() {
         else if (deltaE > deltaE_cut) continue;
         else if (angle_pi0gam12_bdt > angle_cut) continue;
         else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-        
+        //else if (m3pi_bdt > 840.) continue;
+	
         // Classification and filling
         if (data_type == "exp") {
             TTList[0]->Fill();

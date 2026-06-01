@@ -31,10 +31,9 @@ The template fit is generally better for the reasons discussed earlier:
 #include "../header_bdt/sfw2d_bdt.txt"
 #include "../header_bdt/correct_omega.h"
 #include "../header_bdt/path.h"
+#include "../header_bdt/binning.h"
 
-// ========== MINIMAL ADAPTATION: define the plot range here ==========
-const double XMIN = 600.0;   // change as needed
-const double XMAX = 1000.0;   // change as needed
+
 // ===================================================================
 
 void pt_style(TPaveText *pt, TString text) {
@@ -64,7 +63,7 @@ void plot_m3pi_latest() {
             << "  MC Rest : " << mcrest_sfw << std::endl;
 
   // Open tree file
-  TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+  TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
   TFile *ftree = TFile::Open(treeFile);
   if (!ftree || ftree->IsZombie()) {
     std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -72,11 +71,11 @@ void plot_m3pi_latest() {
   }
 
   // Use the global XMIN, XMAX
-  const double mass_min = XMIN;
-  const double mass_max = XMAX;
+  const double mass_min = MASS_MIN;
+  const double mass_max = MASS_MAX;
   const double omega_min = mass_min;
   const double omega_max = mass_max;
-  const int nBins = 150;
+  const int nBins = NBINS;
 
   // Helper to fill a histogram from a tree
   auto fillHist = [&](const char* treeName, double scale, int color, int style, const char* title) -> TH1D* {
@@ -133,8 +132,10 @@ void plot_m3pi_latest() {
   TH1D *h_isr_bkg  = nullptr;
   
   const char* corrFiles[2];
-  TString file1 = output_path + "corrected_isr3pi_hybrid.root";
-  TString file2 = output_path + "corrected_isr3pi_tmp.root";
+  TString file1 = output_path + "corrected_isr3pi_hybrid_lower_linear.root";
+  //TString file1 = output_path + "corrected_isr3pi.root";
+  //TString file1 = output_path + "corrected_isr3pi_hybrid.root";
+  TString file2 = output_path + "corrected_isr3pi.root";
   corrFiles[0] = file1.Data();
   corrFiles[1] = file2.Data();
 
@@ -166,6 +167,13 @@ void plot_m3pi_latest() {
     }
   }
 
+  if (h_isr_peak && h_isr_bkg) {
+    std::cout << "h_isr_peak bins: " << h_isr_peak->GetNbinsX()
+              << " range [" << h_isr_peak->GetXaxis()->GetXmin()
+              << ", " << h_isr_peak->GetXaxis()->GetXmax() << "]\n";
+    std::cout << "h_isr_bkg  bins: " << h_isr_bkg->GetNbinsX() << "\n";
+  }
+  
   // Fallback if no correction file worked
   if (!h_isr_peak || !h_isr_bkg) {
     h_isr_peak = fillHist("TISR3PI_SIG", isr3pi_sfw, 4, 2, "ISR3#pi");
@@ -208,6 +216,21 @@ void plot_m3pi_latest() {
   h_mc_total->SetLineWidth(2);
   h_mc_total->SetLineStyle(1);
 
+  // Diagnostic prints
+  std::cout << "\n========== DIAGNOSTIC ==========\n";
+  double total_sum = 0;
+  for (size_t i = 0; i < comps.size(); ++i) {
+    if (comps[i]) {
+      double integral = comps[i]->Integral();
+      total_sum += integral;
+      std::cout << "Component " << i << " (" << comps[i]->GetTitle() 
+		<< ") integral: " << integral << std::endl;
+    }
+  }
+  std::cout << "Sum of all components: " << total_sum << std::endl;
+  std::cout << "h_mc_total integral after Add: " << h_mc_total->Integral() << std::endl;
+  std::cout << "================================\n";
+  
   // Pulls
   TH1D *h_pull = new TH1D("h_pull", "", nBins, mass_min, mass_max);
   for (int bin = 1; bin <= nBins; ++bin) {
@@ -305,8 +328,8 @@ void plot_m3pi_latest() {
   line->SetLineStyle(2);
   line->Draw();
 
-  c->SaveAs(output_path + "m3pi_projection_with_pulls_sample.pdf");
-  std::cout << "\nSaved " + output_path + "m3pi_projection_with_pulls_sample.pdf\n";
+  c->SaveAs(output_path + "m3pi_projection_with_pulls.pdf");
+  std::cout << "\nSaved " + output_path + "m3pi_projection_with_pulls.pdf\n";
   delete c;
   
   // --- Background‑subtracted ω signal ---

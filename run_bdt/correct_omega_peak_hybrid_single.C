@@ -15,6 +15,7 @@
 
 #include "../header_bdt/sfw2d.txt"
 #include "../header_bdt/correct_omega.h"
+#include "../header_bdt/binning.h"
 
 // Global pointer to signal template (detached from file)
 TH1D *gSigTemplate = nullptr;
@@ -31,7 +32,7 @@ void correct_omega_peak_hybrid_single() {
     // ------------------------------------------------------------------
     // 1. Open tree file
     // ------------------------------------------------------------------
-    TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+    TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
     TFile *ftree = TFile::Open(treeFile);
     if (!ftree || ftree->IsZombie()) {
         std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -46,9 +47,16 @@ void correct_omega_peak_hybrid_single() {
     tdata->SetBranchAddress("Br_m3pi_bdt", &mtest);
     tdata->GetEntry(0);
     bool is_mev = (mtest > 10);
-    double low = is_mev ? 600 : 0.6;
-    double high = is_mev ? 1000 : 1.0;
-    int nbins = 200;
+    double low, high;
+    int nbins = NBINS;
+    
+    if (is_mev) {
+        low  = MASS_MIN;          // e.g., 600.0 MeV
+        high = MASS_MAX;          // e.g., 1000.0 MeV
+    } else {
+        low  = MASS_MIN / 1000.0; // convert to GeV
+        high = MASS_MAX / 1000.0;
+    }
     std::cout << "Mass unit: " << (is_mev ? "MeV" : "GeV")
               << " range [" << low << ", " << high << "]\n";
 
