@@ -153,7 +153,7 @@ int plot_compr() {
   hist_ksl_sc->Draw("hist same");
   hist_mcrest_sc->Draw("hist same");
   hist_eeg_sc->Draw("hist same");
-  hist_mcsum_sc->Draw("hist same");
+  //hist_mcsum_sc->Draw("hist same");
   //gPad->SetLogy();
   
   // Axis formatting
@@ -179,7 +179,7 @@ int plot_compr() {
   legd_cv->SetBorderSize(0);
   legd_cv->SetNColumns(1);
   legd_cv->AddEntry(hist_data, "Data", "lep");
-  legd_cv->AddEntry(hist_mcsum_sc, "MC sum", "l");
+  //legd_cv->AddEntry(hist_mcsum_sc, "MC sum", "l");
   legd_cv->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma", "l");
   legd_cv->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
   legd_cv->AddEntry(hist_etagam_sc, "#eta#gamma", "l");
