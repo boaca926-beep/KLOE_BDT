@@ -153,6 +153,10 @@ void test_bdt() {
     TH1D* h1dM3pi_bdt_corr_non_reson = hists.create("h1dM3pi_bdt_corr_non_reson", "", N_BINS_MASS, MASS_3PI_RANGE_MIN, MASS_3PI_RANGE_MAX);
 
     //
+    TH1D* h1dpullE1_peak = hists.create("h1dpullE1_peak", "", 100, -10, 10);
+    TH1D* h1dpullE1_non_reson = hists.create("h1dpullE1_non_reson", "", 100, -10, 10);
+
+    //
     TH1D* h1dbdtscore_peak = hists.create("h1dbdtscore_peak", "", N_BINS_BDT_SCORE, 0, BDT_SCORE_MAX);
     TH1D* h1dbdtscore_non_reson = hists.create("h1dbdtscore_non_reson", "", N_BINS_BDT_SCORE, 0, BDT_SCORE_MAX);
     
@@ -241,6 +245,7 @@ void test_bdt() {
     double pmi_E_true, pmi_px_true, pmi_py_true, pmi_pz_true;
     double bdt_score = 0;
     double true_m3pi = 0;
+    double pull_E3 = 0;
     
     int recon_indx_bdt = 0, recon_indx = 0;
     int bkg_indx = 0;
@@ -277,6 +282,7 @@ void test_bdt() {
     tree->SetBranchAddress("Br_ppIM", &ppIM);
     tree->SetBranchAddress("Br_bdt_score", &bdt_score);
     tree->SetBranchAddress("Br_true_m3pi", &true_m3pi);
+    tree->SetBranchAddress("Br_pull_E3", &pull_E3);
  
     bool hasTrue = (tree->GetBranch("Br_E1_true") != nullptr);
     if (hasTrue) {
@@ -380,6 +386,7 @@ void test_bdt() {
 	      hBeta0_eisr_bdt_peak->Fill(betapi0_bdt, e3);
 	      hDeltaE_eisr_bdt_peak->Fill(deltaE, e3);
 	      h1dbdtscore_peak->Fill(bdt_score);
+	      h1dpullE1_peak->Fill(pull_E3);
 	    }
 	    else {
 	      hM3pi_bdt_corr_non_reson->Fill(m3pi_true, m3pi);
@@ -390,6 +397,7 @@ void test_bdt() {
 	      hBeta0_eisr_bdt_non_reson->Fill(betapi0_bdt, e3);
 	      hDeltaE_eisr_bdt_non_reson->Fill(deltaE, e3);
 	      h1dbdtscore_non_reson->Fill(bdt_score);
+	      h1dpullE1_non_reson->Fill(pull_E3);
 	    }
 	    
             hE1_pull->Fill(e1 - e1_true);
@@ -626,6 +634,10 @@ void test_bdt() {
     drawDoubleCompr(Form("m3pi_bdt_compr_%s", tree_name), "3pi Invaraint Mass Comparsion",
 		    h1dM3pi_bdt_corr_non_reson, h1dM3pi_bdt_corr_peak,
 		    "M_{3#pi} [MeV/c^{2}]", "Entries", false);
+
+    drawDoubleCompr(Form("pullE1_compr_%s", tree_name), "Pull E1 Mass Comparsion",
+		    h1dpullE1_non_reson, h1dpullE1_peak,
+		    "Pull E_{3}", "Entries", false);
     
     drawDoubleCompr(Form("bdtscore_compr_%s", tree_name), "BDT score Comparsion",
 		    h1dbdtscore_non_reson, h1dbdtscore_peak,

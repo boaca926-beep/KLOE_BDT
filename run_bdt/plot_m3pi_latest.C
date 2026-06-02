@@ -63,7 +63,7 @@ void plot_m3pi_latest() {
             << "  MC Rest : " << mcrest_sfw << std::endl;
 
   // Open tree file
-  TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+  TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
   TFile *ftree = TFile::Open(treeFile);
   if (!ftree || ftree->IsZombie()) {
     std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -132,7 +132,8 @@ void plot_m3pi_latest() {
   TH1D *h_isr_bkg  = nullptr;
   
   const char* corrFiles[2];
-  TString file1 = output_path + "corrected_isr3pi_hybrid_lower_linear.root";
+  TString file1 = output_path + "corrected_isr3pi_sample.root";
+  //TString file1 = output_path + "corrected_isr3pi_hybrid_lower_linear.root";
   //TString file1 = output_path + "corrected_isr3pi.root";
   //TString file1 = output_path + "corrected_isr3pi_hybrid.root";
   TString file2 = output_path + "corrected_isr3pi.root";

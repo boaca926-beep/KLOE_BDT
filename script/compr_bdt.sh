@@ -11,13 +11,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200 100 180 200 100 100 200 200 200)
 
 ##################################################################
-#VAR_NM="betapi0_bdt"
-#VAR_SYMB="#beta_{#pi}"
-#UNIT=""
+VAR_NM="betapi0_bdt"
+VAR_SYMB="#beta_{#pi}"
+UNIT=""
 
-#XMIN=0.3
-#XMAX=1
-#BINS=150
+XMIN=0.3
+XMAX=1
+BINS=150
 
 ##################################################################
 #VAR_NM="lagvalue_min_7C"
@@ -101,13 +101,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200) #150, 550 
 
 ##################################################################
-VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-VAR_SYMB=("M_{#gamma#gamma}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+#VAR_SYMB=("M_{#gamma#gamma}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(100)
-XMAX=(180)
-BINS=(180)
+#XMIN=(100)
+#XMAX=(180)
+#BINS=(180)
 
 ##################################################################
 #VAR_NM="ppIM"
@@ -128,14 +128,14 @@ BINS=(180)
 #BINS=150
 
 ##################################################################
-name_tmp="t3"
-VAR_NM="pull_"${name_tmp}
-VAR_SYMB="Pull "${name_tmp}
+#name_tmp="t3"
+#VAR_NM="pull_"${name_tmp}
+#VAR_SYMB="Pull "${name_tmp}
 
-UNIT="[]"
-XMIN=-10
-XMAX=10
-BINS=200
+#UNIT="[]"
+#XMIN=-10
+#XMAX=10
+#BINS=200
 
 ##################################################################
 #VAR_NM="e_asym"
