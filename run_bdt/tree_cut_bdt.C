@@ -221,7 +221,9 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
         tree_tmp->Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
         tree_tmp->Branch("Br_m3pi", &m3pi, "Br_m3pi/D");
-        // BDT branches
+	tree_tmp->Branch("Br_Eprompt_max", &Eprompt_max, "Br_Eprompt_max/D");
+	
+	// BDT branches
         tree_tmp->Branch("Br_bdt_score", &bdt_score, "Br_bdt_score/D");
         tree_tmp->Branch("Br_e1_bdt", &e1_bdt, "Br_e1_bdt/D");
         tree_tmp->Branch("Br_e2_bdt", &e2_bdt, "Br_e2_bdt/D");
@@ -557,9 +559,10 @@ int tree_cut_bdt() {
         
         // Selection cuts
         if (lagvalue_min_7C > chi2_cut) continue;
-        else if (deltaE > deltaE_cut) continue;
+        else if (deltaE < -440. || deltaE > deltaE_cut) continue;
         else if (angle_pi0gam12_bdt > angle_cut) continue;
         else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+	else if (Eprompt_max > Eprompt_max_cut) continue;
         //else if (m3pi_bdt > 840.) continue;
 	//if (m3pi_bdt < 760. || m3pi_bdt > 820. || bdt_score <= bdt_cut) continue; // clear sample of omega gamma
 	if (beta_3pi < 0.22) continue;

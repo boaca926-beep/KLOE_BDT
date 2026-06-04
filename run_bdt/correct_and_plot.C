@@ -325,7 +325,7 @@ void correct_and_plot() {
     for (auto h : comps) if (h) h->Draw("hist same");
     h_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
     h_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-    h_data->GetXaxis()->SetRangeUser(mass_min, mass_max);
+    //h_data->GetXaxis()->SetRangeUser(mass_min, mass_max);
     h_data->GetYaxis()->CenterTitle();
     h_data->GetXaxis()->SetTitleSize(0.06);
     h_data->GetYaxis()->SetTitleSize(0.07);

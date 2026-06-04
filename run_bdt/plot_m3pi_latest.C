@@ -63,7 +63,7 @@ void plot_m3pi_latest() {
             << "  MC Rest : " << mcrest_sfw << std::endl;
 
   // Open tree file
-  TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+  //TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
   TFile *ftree = TFile::Open(treeFile);
   if (!ftree || ftree->IsZombie()) {
     std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -319,7 +319,7 @@ void plot_m3pi_latest() {
   h_pull->GetYaxis()->SetTitleSize(0.2);
   h_pull->GetYaxis()->SetTitleOffset(0.2);
   h_pull->GetYaxis()->SetLabelSize(0.1);
-  h_pull->GetYaxis()->SetRangeUser(-50, 50);
+  h_pull->GetYaxis()->SetRangeUser(-5, 15);
   h_pull->GetYaxis()->SetNdivisions(505);
   h_pull->GetXaxis()->CenterTitle();
   h_pull->GetYaxis()->CenterTitle();

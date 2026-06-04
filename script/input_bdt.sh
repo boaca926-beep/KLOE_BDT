@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-sample_size=chain # norm; small; mini; chain
+sample_size=norm # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 
 exp_type=TDATA # DATA
@@ -24,7 +24,8 @@ sed -i 's/\(Zvmax =\)\(.*\)/\1 '$Zvmax';/' $class_header
 sed -i 's/\(nb_sigma_T_clust =\)\(.*\)/\1 '$nb_sigma_T_clust';/' $class_header
 
 # Selection cuts
-chi2_cut=43
+Eprompt_max_cut=300
+chi2_cut=20 #43 20
 angle_cut=138
 deltaE_cut=-240 #-150
 beta_cut=1.98
@@ -36,6 +37,7 @@ cut_value=0
 
 cut_header=../header_bdt/cut_para.h
 cat > $cut_header <<EOF
+const double Eprompt_max_cut = $Eprompt_max_cut;
 const double chi2_cut = $chi2_cut;
 const double angle_cut = $angle_cut;
 const double deltaE_cut = $deltaE_cut;

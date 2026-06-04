@@ -4,7 +4,7 @@
 # ./plot.sh sfw2d             # for the original sideband plots
 # ./plot.sh ppIM_vs_betapi0   # for the new dipion mass vs π⁰ β correlation
 
-hist_root="/home/kloe/Desktop/input_bdt_TDATA_chain/hist/hist.root"
+hist_root="/home/kloe/Desktop/input_bdt_TDATA_norm/hist/hist.root"
 
 # Usage: ./plot.sh [sfw2d|ppIM_vs_betapi0]
 plot_type=${1:-sfw2d}

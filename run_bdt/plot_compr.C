@@ -171,8 +171,8 @@ int plot_compr() {
     hist_data->GetYaxis()->SetRangeUser(0.01, 1);  // fallback, but will show empty
 
   // Legend
-  TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
-  //TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
+  //TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
+  TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
   
   legd_cv->SetTextFont(132);
   legd_cv->SetFillStyle(0);
@@ -208,7 +208,7 @@ int plot_compr() {
   hresidul->GetYaxis()->SetTitleSize(0.12);
   hresidul->GetYaxis()->SetTitleOffset(0.5);
   hresidul->GetYaxis()->SetLabelSize(0.08);
-  hresidul->GetYaxis()->SetRangeUser(-5, 5);
+  hresidul->GetYaxis()->SetRangeUser(-20, 10);
   hresidul->GetYaxis()->SetNdivisions(505);
   hresidul->GetYaxis()->CenterTitle();
   hresidul->Draw("P");

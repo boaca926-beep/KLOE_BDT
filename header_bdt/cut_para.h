@@ -1,4 +1,5 @@
-const double chi2_cut = 43;
+const double Eprompt_max_cut = 300;
+const double chi2_cut = 20;
 const double angle_cut = 138;
 const double deltaE_cut = -240;
 const double beta_cut = 1.98;
