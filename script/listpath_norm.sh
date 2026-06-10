@@ -1,7 +1,7 @@
 #!/bin/bash
-#INPATH=/media/bo/Backup/DATA_PEAK/ROOTINPUT #Backup
+INPATH=/media/bo/Backup/DATA_PEAK/ROOTINPUT #Backup
 #INPATH=/media/bo/8E97-E8DD/DATA_PEAK/ROOTINPUT #8E97-E8DD
-INPATH=/media/kloe/Analysis_Disk/ROOTINPUT #laptop kloe
+#INPATH=/media/kloe/Analysis_Disk/ROOTINPUT #laptop kloe
 
 OUTPATH=../path_norm
 

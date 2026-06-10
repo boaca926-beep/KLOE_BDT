@@ -301,7 +301,7 @@ if __name__ == '__main__':
             category = "background"
         elif base_br_nm == "TETAGAM":
             br_title = rf"$e^{{+}}e^{{-}}\to\phi\to\eta\gamma$"
-            category = "signal"
+            category = "background" # "background"
         else:
             continue
 

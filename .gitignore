@@ -22,6 +22,9 @@ etagam_plots/
 plots_trees/
 signal_plots/
 plots2d/
+script/listpath_chain.sh
+script/listpath_norm.sh
+path_chain
 
 # Backup files
 *~

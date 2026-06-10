@@ -23,6 +23,7 @@ sed -i 's/\(Zvmax =\)\(.*\)/\1 '$Zvmax';/' $class_header
 sed -i 's/\(nb_sigma_T_clust =\)\(.*\)/\1 '$nb_sigma_T_clust';/' $class_header
 
 # Selection cuts
+Eprompt_max_cut=300
 chi2_cut=43
 angle_cut=138
 deltaE_cut=-150
@@ -33,6 +34,7 @@ cut_nm=""
 cut_value=0
 
 cut_header=../header/cut_para.h
+echo -e 'const double Eprompt_max_cut = -1;' > $cut_header
 echo -e 'const double chi2_cut = -1;' > $cut_header
 echo -e 'const double angle_cut = -1;' >> $cut_header
 echo -e 'const double deltaE_cut = -1;' >> $cut_header
@@ -42,6 +44,7 @@ echo -e 'const double c1 = -1;' >> $cut_header
 echo -e 'double cut_value = -1;' >> $cut_header
 echo -e 'const TString cut_nm = "";' >> $cut_header
 
+sed -i 's/\(const double Eprompt_max_cut =\)\(.*\)/\1 '$Eprompt_max_cut';/' $cut_header
 sed -i 's/\(const double chi2_cut =\)\(.*\)/\1 '$chi2_cut';/' $cut_header
 sed -i 's/\(const double angle_cut =\)\(.*\)/\1 '$angle_cut';/' $cut_header
 sed -i 's/\(const double deltaE_cut =\)\(.*\)/\1 '$deltaE_cut';/' $cut_header
@@ -195,7 +198,6 @@ EOF
     echo '  gROOT->ProcessLine("Analys_class(rootFile, sampleFile)");' >> $run_script
     echo '}' >> $run_script
     root -l -n -q -b $run_script >> ${log_input}
-    
     ## Selection cuts
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script

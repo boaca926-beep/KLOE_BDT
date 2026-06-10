@@ -240,7 +240,8 @@ int tree_cut(){
     else if (deltaE > deltaE_cut) continue;
     else if (angle_pi0gam12 > angle_cut) continue;
     else if (betapi0 > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-
+    else if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
+    	
     // Fill only the tree(s) corresponding to the current sample type
     if (data_type == "exp") {
       TTList[0]->Fill();   // data tree

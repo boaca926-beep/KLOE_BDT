@@ -562,10 +562,10 @@ int tree_cut_bdt() {
         else if (deltaE < -440. || deltaE > deltaE_cut) continue;
         else if (angle_pi0gam12_bdt > angle_cut) continue;
         else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-	else if (Eprompt_max > Eprompt_max_cut) continue;
+	else if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
         //else if (m3pi_bdt > 840.) continue;
 	//if (m3pi_bdt < 760. || m3pi_bdt > 820. || bdt_score <= bdt_cut) continue; // clear sample of omega gamma
-	if (beta_3pi < 0.22) continue;
+	if (beta_3pi < 0.22) continue; // suppress missing MC sigma1+pi0
 	
         // Classification and filling
         if (data_type == "exp") {
