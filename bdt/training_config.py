@@ -4,11 +4,11 @@ import numpy as np
 import random
 
 # =================================================================
-# Prpare 3 photon paris
+# Prpare 3 photon pairs
 # =================================================================
-def prepare_3photon_paris(df_events):
+def prepare_3photon_pairs(df_events):
     """
-    Convert 3-photon events into training paris with EXACT pi0 invariant masses.
+    Convert 3-photon events into training pairs with EXACT pi0 invariant masses.
 
     Assumes your DataFrame has columns:
     E1, px1, py1, pz1,  # OR E1, pt1, eta1, phi1

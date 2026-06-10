@@ -115,7 +115,7 @@ def create_dataset(df, category): # For photon 4-momentum
     # pi0 features for ML learning
     # MODIFIED: Only create pairs if we have data
     if len(all_df) > 0:
-        pi0_all_df = prepare_3photon_paris(all_df)
+        pi0_all_df = prepare_3photon_pairs(all_df)
     else:
         pi0_all_df = pd.DataFrame()
         
@@ -144,9 +144,9 @@ def data_splitting(all_df):
 
     #print("CREATING PAIRS FROM EACH SPLIT")
 
-    pair_train = prepare_3photon_paris(all_df_train)
-    pair_val = prepare_3photon_paris(all_df_val)
-    pair_test = prepare_3photon_paris(all_df_test)
+    pair_train = prepare_3photon_pairs(all_df_train)
+    pair_val = prepare_3photon_pairs(all_df_val)
+    pair_test = prepare_3photon_pairs(all_df_test)
 
     # Verify event column preservation
     for name, pair_df in [('Train', pair_train), ('Val', pair_val), ('Test', pair_test)]:
@@ -185,11 +185,11 @@ def data_splitting(all_df):
     return all_df_train, all_df_val, all_df_test, X_train, y_train, X_val, y_val, X_test, y_test, pair_train, pair_val, pair_test
 
 # =================================================================
-# Prpare 3 photon paris
+# Prpare 3 photon pairs
 # =================================================================
-def prepare_3photon_paris(df_events):
+def prepare_3photon_pairs(df_events):
     """
-    Convert 3-photon events into training paris with EXACT pi0 invariant masses.
+    Convert 3-photon events into training pairs with EXACT pi0 invariant masses.
 
     Assumes your DataFrame has columns:
     E1, px1, py1, pz1,  # OR E1, pt1, eta1, phi1

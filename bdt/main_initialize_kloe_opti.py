@@ -19,7 +19,7 @@ import awkward as ak
 import gc
 
 # Local import (same directory)
-from training_config import prepare_3photon_paris
+from training_config import prepare_3photon_pairs
 
 """
 python main_initialize_kloe_opti.py \
@@ -160,7 +160,7 @@ def create_dataset(df, category): # For photon 4-momentum
     # pi0 features for ML learning
     # MODIFIED: Only create pairs if we have data
     if len(all_df) > 0:
-        pi0_all_df = prepare_3photon_paris(all_df)
+        pi0_all_df = prepare_3photon_pairs(all_df)
     else:
         pi0_all_df = pd.DataFrame()
         
@@ -186,9 +186,9 @@ def data_splitting(all_df):
 
     #print("CREATING PAIRS FROM EACH SPLIT")
 
-    pair_train = prepare_3photon_paris(all_df_train)
-    pair_val = prepare_3photon_paris(all_df_val)
-    pair_test = prepare_3photon_paris(all_df_test)
+    pair_train = prepare_3photon_pairs(all_df_train)
+    pair_val = prepare_3photon_pairs(all_df_val)
+    pair_test = prepare_3photon_pairs(all_df_test)
 
     # Verify event column preservation
     for name, pair_df in [('Train', pair_train), ('Val', pair_val), ('Test', pair_test)]:
@@ -629,7 +629,7 @@ if __name__ == '__main__':
         # Create datasets
         all_df_comb = df_comb
         print("\nCreating pairs for combined dataset...")
-        pi0_all_df_comb = prepare_3photon_paris(all_df_comb)
+        pi0_all_df_comb = prepare_3photon_pairs(all_df_comb)
 
         # Split
         #all_df_train_comb, all_df_val_comb, all_df_test_comb, X_train_comb, y_train_comb, X_val_comb, y_val_comb, X_test_comb, y_test_comb, pair_train_comb, pair_val_comb, pair_test_comb = data_splitting(all_df_comb)
