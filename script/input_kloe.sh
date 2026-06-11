@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sample_size=chain # norm; small; mini; chain
+sample_size=norm # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 
 exp_type=TDATA # DATA
@@ -35,7 +35,7 @@ cut_value=0
 
 cut_header=../header/cut_para.h
 echo -e 'const double Eprompt_max_cut = -1;' > $cut_header
-echo -e 'const double chi2_cut = -1;' > $cut_header
+echo -e 'const double chi2_cut = -1;' >> $cut_header
 echo -e 'const double angle_cut = -1;' >> $cut_header
 echo -e 'const double deltaE_cut = -1;' >> $cut_header
 echo -e 'const double beta_cut = -1;' >> $cut_header

@@ -40,7 +40,6 @@ const double hmin = 740; //770, 700
 const double hmax = 820; //800, 820
 const int hbins = TMath::Nint((hmax - hmin) / 0.25 / IM3pi_sigma);
 
-
 TList *HIM3pi_fit = new TList(); // IM3pi distr. for fit omega parameters
 TList *HPeakNonReson = new TList(); // IM3pi distr. for peak and non-resonant
 TList *HSFW2D = new TList(); // Eisr vs. ppIM distr. for MC normalization
@@ -50,8 +49,7 @@ TList *HIM3pi_crx = new TList(); // IM3pi distr. for crx3pi obs.
 TList *HppIM_vs_betapi0 = new TList();   // 2D for ppIM vs betapi0
 TList *Heisr_vs_angle = new TList();   // 2D for Eisr vs angle
 
-TRandom *rnd=0;
-
+//TRandom *rnd=0;
 
 // methods
 void fillHist() {
@@ -117,9 +115,23 @@ void fillHist() {
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp -> Sumw2();
 
+    TH2D * h2d_tmp_peak = new TH2D("h2d_sfw_" + objnm_tree + "_peak", "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
+    h2d_tmp_peak -> Sumw2();
+
+    TH2D * h2d_tmp_non_reson = new TH2D("h2d_sfw_" + objnm_tree + "_non_reson", "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
+    h2d_tmp_non_reson -> Sumw2();
+
+    //
     TH2D *h2d_ppIM_vs_beta = new TH2D("h2d_ppIM_vs_betapi0_" + objnm_tree, "", 200, 0.25, 0.65, 200, 0.3, 1.);  // range in GeV  
     h2d_ppIM_vs_beta -> Sumw2();
 
+    TH2D *h2d_ppIM_vs_beta_peak = new TH2D("h2d_ppIM_vs_betapi0_" + objnm_tree + "_peak", "", 200, 0.25, 0.65, 200, 0.3, 1.);  // range in GeV  
+    h2d_ppIM_vs_beta_peak -> Sumw2();
+
+    TH2D *h2d_ppIM_vs_beta_non_reson = new TH2D("h2d_ppIM_vs_betapi0_" + objnm_tree + "_non_reson", "", 200, 0.25, 0.65, 200, 0.3, 1.);  // range in GeV  
+    h2d_ppIM_vs_beta_non_reson -> Sumw2();
+
+    //
     TH2D *h2d_angle_vs_eisr = new TH2D("h2d_angle_vs_eisr_" + objnm_tree, "", 180, 0, 180, Eisr_bin, Eisr_min, Eisr_max);    
     h2d_angle_vs_eisr -> Sumw2();
 
@@ -127,33 +139,26 @@ void fillHist() {
 
       tree_tmp -> GetEntry(irow);
       
-      //m3pi = tree_tmp -> GetLeaf("Br_IM3pi_7C") -> GetValue(0);
-      
-      //m3pi_bdt = tree_tmp -> GetLeaf("Br_m3pi_bdt") -> GetValue(0);
-      //m3pi_true = tree_tmp -> GetLeaf("Br_m3pi_true_bdt") -> GetValue(0);
-
-      //Eisr = tree_tmp -> GetLeaf("Br_Eisr") -> GetValue(0);
-      //ppIM = tree_tmp -> GetLeaf("Br_ppIM") -> GetValue(0);
-      
-      // calculate m3pi_bdt
-      
       // filling
-      //h1d_tmp -> Fill(m3pi);
       h1d_tmp -> Fill(m3pi_bdt);
       h1d_tmp_sfw -> Fill(m3pi_bdt);
       h1d_tmp_crx -> Fill(m3pi_bdt);
-      h1d_tmp_true -> Fill(m3pi_true_bdt); // bdt m3pi true
-      h2d_tmp -> Fill(ppIM, Eisr); // Eisr -> e3_bdt
+      h1d_tmp_true -> Fill(m3pi_true_bdt);
+      h2d_tmp -> Fill(ppIM, Eisr);
       h2d_ppIM_vs_beta -> Fill(ppIM * 1e-3, betapi0_bdt);
       h2d_angle_vs_eisr->Fill(angle_bdt, Eisr);
 
       if (recon_indx_bdt == 2 && bkg_indx == 1) {
-	h1d_tmp_peak->Fill(m3pi_bdt);
-	h1d_tmp_peak_true->Fill(m3pi_true_bdt); 
+        h1d_tmp_peak->Fill(m3pi_bdt);
+        h1d_tmp_peak_true->Fill(m3pi_true_bdt);
+        h2d_tmp_peak->Fill(ppIM, Eisr);
+        h2d_ppIM_vs_beta_peak -> Fill(ppIM * 1e-3, betapi0_bdt);
       }
       else {
-	h1d_tmp_non_reson->Fill(m3pi_bdt);
-	h1d_tmp_non_reson_true->Fill(m3pi_true_bdt); 
+        h1d_tmp_non_reson->Fill(m3pi_bdt);
+        h1d_tmp_non_reson_true->Fill(m3pi_true_bdt);
+        h2d_tmp_non_reson->Fill(ppIM, Eisr);
+        h2d_ppIM_vs_beta_non_reson -> Fill(ppIM * 1e-3, betapi0_bdt);
       }
       
     }
@@ -165,9 +170,14 @@ void fillHist() {
        h1d_tmp_non_reson->Scale(eeg_lsf);
        
        h2d_tmp -> Scale(eeg_lsf);
+       h2d_tmp_peak -> Scale(eeg_lsf);
+       h2d_tmp_non_reson -> Scale(eeg_lsf);
+
        h2d_ppIM_vs_beta -> Scale(eeg_lsf);
-       h2d_angle_vs_eisr->Scale(eeg_lsf);
+       h2d_ppIM_vs_beta_peak -> Scale(eeg_lsf);
+       h2d_ppIM_vs_beta_non_reson -> Scale(eeg_lsf);
        
+       h2d_angle_vs_eisr->Scale(eeg_lsf);
     }
 
     HIM3pi_fit -> Add(h1d_tmp);
@@ -179,15 +189,21 @@ void fillHist() {
     HPeakNonReson -> Add(h1d_tmp_non_reson_true);
     
     HSFW1D -> Add(h1d_tmp_sfw);
+
     HSFW2D -> Add(h2d_tmp);
+    HSFW2D -> Add(h2d_tmp_peak);
+    HSFW2D -> Add(h2d_tmp_non_reson);
+    
     HppIM_vs_betapi0 -> Add(h2d_ppIM_vs_beta);
+    HppIM_vs_betapi0 -> Add(h2d_ppIM_vs_beta_peak);
+    HppIM_vs_betapi0 -> Add(h2d_ppIM_vs_beta_non_reson);
+    
     Heisr_vs_angle->Add(h2d_angle_vs_eisr);
     HIM3pi_crx -> Add(h1d_tmp_crx);
     
-  }
+  }  // Close while loop
 
-  // hsig_true
-
+  // ===== SIGNAL TRUE (from f_cut) =====
   TH1D * hsig_true = new TH1D("hsig_true", "", IM3pi_bin, IM3pi_min, IM3pi_max);
   hsig_true -> Sumw2();
 
@@ -198,54 +214,40 @@ void fillHist() {
 
   if (TISR3PI_SIG) {
     double m3pi_true = 0.;
-    //int recon_indx_bdt = 0, bkg_indx = 0;
     TISR3PI_SIG->SetBranchAddress("Br_m3pi_true_bdt", &m3pi_true);
-    //TISR3PI_SIG->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
-    //TISR3PI_SIG->SetBranchAddress("Br_bkg_indx", &bkg_indx);
     
     for (Int_t irow = 0; irow < TISR3PI_SIG -> GetEntries(); irow++) {
       TISR3PI_SIG -> GetEntry(irow);
-      //cout << m3pi_true << endl;
-      //cout << recon_indx_bdt << ", " << bkg_indx << endl;
-      hsig_true -> Fill(m3pi_true); // bdt true?
-      hsig_true_crx -> Fill(m3pi_true); // bdt true?
-    
-      /*
-      if (recon_indx_bdt == 2 && bkg_indx == 1) {
-    	hsig_true -> Fill(m3pi_true); // bdt true?
-	hsig_true_crx -> Fill(m3pi_true); // bdt true?
-      }
-      */
+      hsig_true -> Fill(m3pi_true);
+      hsig_true_crx -> Fill(m3pi_true);
     }
   }
 
   HSIG -> Add(hsig_true);
   HIM3pi_crx -> Add(hsig_true_crx);
-  
-  // hsig_gen
+
+  // ===== SIGNAL GENERATED (from f_gen) =====
   TTree *TISR3PI_SIG_GEN = (TTree*)f_gen -> Get("TISR3PI_SIG_GEN");
 
-  double m3pi_gen = 0.;
-  
-  TH1D * hsig_gen = new TH1D("hsig_gen", "", IM3pi_bin, IM3pi_min, IM3pi_max);
-  hsig_gen -> Sumw2();
+  if (TISR3PI_SIG_GEN) {
+    double m3pi_gen = 0.;
 
-  TH1D * hsig_gen_crx = new TH1D("h1d_IM3pi_TISR3PI_SIG_GEN_CRX", "", hbins, hmin, hmax);
-  hsig_gen_crx -> Sumw2();
+    TH1D * hsig_gen = new TH1D("hsig_gen", "", IM3pi_bin, IM3pi_min, IM3pi_max);
+    hsig_gen -> Sumw2();
 
-  for (Int_t irow = 0; irow < TISR3PI_SIG_GEN -> GetEntries(); irow++) {
-    
-    TISR3PI_SIG_GEN -> GetEntry(irow);
-    
-    m3pi_gen = TISR3PI_SIG_GEN -> GetLeaf("Br_IM3pi_gen") -> GetValue(0);
-    
-    hsig_gen -> Fill(m3pi_gen);
-    hsig_gen_crx -> Fill(m3pi_gen);
-    
+    TH1D * hsig_gen_crx = new TH1D("h1d_IM3pi_TISR3PI_SIG_GEN_CRX", "", hbins, hmin, hmax);
+    hsig_gen_crx -> Sumw2();
+
+    TISR3PI_SIG_GEN->SetBranchAddress("Br_IM3pi_gen", &m3pi_gen);
+
+    for (Int_t irow = 0; irow < TISR3PI_SIG_GEN -> GetEntries(); irow++) {
+      TISR3PI_SIG_GEN -> GetEntry(irow);
+      hsig_gen -> Fill(m3pi_gen);
+      hsig_gen_crx -> Fill(m3pi_gen);
+    }
+
+    HSIG -> Add(hsig_gen);
+    HIM3pi_crx -> Add(hsig_gen_crx);
   }
 
-  HSIG -> Add(hsig_gen);
-  HIM3pi_crx -> Add(hsig_gen_crx);
-  
-}
-
+}  // Close fillHist() function

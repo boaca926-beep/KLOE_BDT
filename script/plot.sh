@@ -4,7 +4,7 @@
 # ./plot.sh sfw2d             # for the original sideband plots
 # ./plot.sh ppIM_vs_betapi0   # for the new dipion mass vs π⁰ β correlation
 
-hist_root="/home/kloe/Desktop/input_bdt_TDATA_norm/hist/hist.root"
+hist_root="/home/bo/Desktop/input_bdt_TDATA_chain/hist/hist.root"
 
 # Usage: ./plot.sh [sfw2d|ppIM_vs_betapi0]
 plot_type=${1:-sfw2d}
@@ -48,21 +48,21 @@ rm -f "$gethist_script"
 # ----------------------------------------------------------------------
 if [ "$plot_type" == "sfw2d" ]; then
     outfile_name="sfw2d_output.root"
-    hist_type=("h2d_sfw_TDATA" "h2d_sfw_TISR3PI_SIG" "h2d_sfw_TETAGAM" "hbkgsum_noeta")
-    cv_nm=("data" "signal" "etagam" "bkgsum_noeta")
-    cv_text=("Data" "Signal" "#eta#gamma" "Others")
-    pt1_x0=(0.5 0.5 0.5 0.5)
-    pt1_x1=(0.8 0.8 0.8 0.8)
+    hist_type=("h2d_sfw_TDATA" "h2d_sfw_TISR3PI_SIG_peak" "h2d_sfw_TISR3PI_SIG_non_reson" "hbkgsum_nosig")
+    cv_nm=("data" "signal_peak" "signal_non_reson" "bkgsum_nosig")
+    cv_text=("Data" "Signal (#omega peak)" "Signal (Non-resonant)" "Others")
+    #pt1_x0=(0.3 0.3 0.3 0.3) #0.5
+    #pt1_x1=(0.4 0.4 0.4 0.4) #0.8
     macro="plot_sfw.C"
     func="plot_sfw"
 elif [ "$plot_type" == "ppIM_vs_betapi0" ]; then
     outfile_name="ppIM_vs_betapi0_output.root"
-    # FIXED: removed stray commas, corrected histogram name "hbkgsum_noeta" (was "hbkgrum_noeta")
-    hist_type=("h2d_ppIM_vs_betapi0_TDATA" "h2d_ppIM_vs_betapi0_TISR3PI_SIG" "h2d_ppIM_vs_betapi0_TETAGAM" "hbkgsum_noeta")
-    cv_nm=("data_ppbeta" "signal_ppbeta" "etagam_ppbeta" "bkgsum_noeta")
-    cv_text=("Data" "Signal" "#eta#gamma" "Others")
-    pt1_x0=(0.6 0.6 0.6 0.6)
-    pt1_x1=(0.85 0.85 0.85 0.85)
+    # FIXED: removed stray commas, corrected histogram name "hbkgsum_nosig" (was "hbkgrum_nosig")
+    hist_type=("h2d_ppIM_vs_betapi0_TDATA" "h2d_ppIM_vs_betapi0_TISR3PI_SIG_peak" "h2d_ppIM_vs_betapi0_TISR3PI_SIG_non_reson" "hbkgsum_nosig")
+    cv_nm=("data_ppbeta" "signal_ppbeta_peak" "signal_ppbeta_non_reson" "bkgsum_nosig")
+    cv_text=("Data" "Signal (#omega peak)" "Signal (Non-resonant)" "Others")
+    #pt1_x0=(0.6 0.6 0.6 0.6)
+    #pt1_x1=(0.85 0.85 0.85 0.85)
     macro="plot_ppbeta.C"
     func="plot_ppbeta"
 else
@@ -76,8 +76,8 @@ fi
 IFS=""
 for ((i=0; i<${#hist_type[@]}; ++i)); do
     # Update header with current histogram settings
-    sed -i 's/\(const double pt1_x0 =\)\(.*\)/\1 '"${pt1_x0[i]}"';/' "$header"
-    sed -i 's/\(const double pt1_x1 =\)\(.*\)/\1 '"${pt1_x1[i]}"';/' "$header"
+    #sed -i 's/\(const double pt1_x0 =\)\(.*\)/\1 '"${pt1_x0[i]}"';/' "$header"
+    #sed -i 's/\(const double pt1_x1 =\)\(.*\)/\1 '"${pt1_x1[i]}"';/' "$header"
     sed -i 's/\(const TString hist_type =\)\(.*\)/\1 "'"${hist_type[i]}"'";/' "$header"
     sed -i 's|\(const TString infile_nm =\)\(.*\)|\1 "'"${output_path}${outfile_name}"'";|' "$header"
     sed -i 's|\(const TString output_path =\)\(.*\)|\1 "'"${output_path}"'";|' "$header"

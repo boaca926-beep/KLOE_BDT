@@ -96,8 +96,8 @@ void test_bdt() {
     gStyle->SetFitFormat("6.4g");
 
     // Configuration
-    const char* model_filename = "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root";
-    const char* data_filename = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+    const char* model_filename = "/home/bo/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root";
+    const char* data_filename = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
     const char* tree_name = "TISR3PI_SIG";   // or "TETAGAM"
     //const char* tree_name = "TETAGAM";
     //const char* tree_name = "TDATA";

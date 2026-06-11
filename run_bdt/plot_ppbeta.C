@@ -63,10 +63,14 @@ TCanvas *plot_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const T
 
   //sprintf(display, "Data");
   
-  TPaveText *pt = new TPaveText(pt1_x0, 0.8, pt1_x1, 0.9, "NDC");
+  //TPaveText *pt = new TPaveText(pt1_x0, 0.8, pt1_x1, 0.9, "NDC");
+  TPaveText *pt = new TPaveText(0.2, 0.2, 0.8, 0.5, "NDC");
 
-  pt -> SetTextSize(0.08);
+  pt->SetBorderSize(0);  
+  pt -> SetTextSize(0.06);
   pt -> SetFillColor(0);
+  pt->SetFillStyle(0);        // Add this - ensures completely transparent
+  pt->SetLineColor(0);
   pt -> SetTextAlign(12);
   
   //pt -> AddText("Relative Error [%]");

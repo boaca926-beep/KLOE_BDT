@@ -4,5 +4,5 @@
 const int NBINS = 150;
 const double MASS_MIN = 600.0;
 const double MASS_MAX = 900.0;
-const TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+const TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
 #endif

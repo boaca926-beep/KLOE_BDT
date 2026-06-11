@@ -46,9 +46,11 @@ TCanvas *plot_cv(const TString cv_title, const TString cv_nm, TH2D *h2d, const T
 
   //sprintf(display, "Data");
   
-  TPaveText *pt = new TPaveText(pt1_x0, 0.7, pt1_x1, 0.85, "NDC");
+  //TPaveText *pt = new TPaveText(pt1_x0, 0.7, pt1_x1, 0.85, "NDC");
+  TPaveText *pt = new TPaveText(0.2, 0.7, 0.8, 0.85, "NDC");
 
-  pt -> SetTextSize(0.1);
+  pt->SetBorderSize(0);  
+  pt -> SetTextSize(0.06);
   pt -> SetFillColor(0);
   pt -> SetTextAlign(12);
   
