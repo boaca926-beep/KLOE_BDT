@@ -1,7 +1,8 @@
+// comparsion for backgrounds including etagam
 #include "../header_bdt/compr.h"
 #include "../header_plot/plot.h"
 #include "../header_method/method.h"
-#include "../header_bdt/sfw2d_bdt.txt"   // provides eeg_sfw, isr3pi_sfw, etc.
+#include "../header_bdt/sfw2d.txt"   // provides eeg_sfw, isr3pi_sfw, etc.
 
 int plot_compr() {
 
@@ -157,6 +158,8 @@ int plot_compr() {
   //gPad->SetLogy();
   
   // Axis formatting
+  const double limit_factor = 0.5;
+  hist_data->GetXaxis()->SetRangeUser(0, var_max * limit_factor);
   hist_data->GetXaxis()->SetTitle("");
   hist_data->GetYaxis()->SetTitle("Events");
   hist_data->GetYaxis()->CenterTitle();
@@ -171,8 +174,8 @@ int plot_compr() {
     hist_data->GetYaxis()->SetRangeUser(0.01, 1);  // fallback, but will show empty
 
   // Legend
-  //TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
-  TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
+  TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
+  //TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
   
   legd_cv->SetTextFont(132);
   legd_cv->SetFillStyle(0);
@@ -199,6 +202,7 @@ int plot_compr() {
 
   hresidul->SetMarkerStyle(20);
   hresidul->SetMarkerSize(0.6);
+  hresidul->GetXaxis()->SetRangeUser(0, var_max * limit_factor);
   hresidul->GetXaxis()->SetTitle(var_symb + " " + unit);
   hresidul->GetXaxis()->SetTitleSize(0.12);
   hresidul->GetXaxis()->SetTitleOffset(1.0);
@@ -208,7 +212,7 @@ int plot_compr() {
   hresidul->GetYaxis()->SetTitleSize(0.12);
   hresidul->GetYaxis()->SetTitleOffset(0.5);
   hresidul->GetYaxis()->SetLabelSize(0.08);
-  hresidul->GetYaxis()->SetRangeUser(-20, 10);
+  hresidul->GetYaxis()->SetRangeUser(-5, 5);
   hresidul->GetYaxis()->SetNdivisions(505);
   hresidul->GetYaxis()->CenterTitle();
   hresidul->Draw("P");
@@ -217,7 +221,7 @@ int plot_compr() {
   gPad->SetGrid();        // add this line
   
 
-  TLine *line = new TLine(var_min, 0, var_max, 0);
+  TLine *line = new TLine(var_min, 0, var_max * limit_factor, 0);
   line->SetLineStyle(2);
   line->Draw();
 

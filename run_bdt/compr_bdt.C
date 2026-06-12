@@ -1,3 +1,4 @@
+// comparsion for backgrounds including etagam
 #include "../header_method/method.h"
 #include "../header_bdt/compr.h"   // defines var_nm, binsize, var_min, var_max
 #include "../header_plot/plot.h"
@@ -13,7 +14,7 @@ int compr_bdt() {
 
   TH1::SetDefaultSumw2();
 
-  const TString tree_file_nm = "/home/kloe/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+  const TString tree_file_nm = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
   
   TFile* tree_file = new TFile(tree_file_nm);
   if (!tree_file || tree_file->IsZombie()) {

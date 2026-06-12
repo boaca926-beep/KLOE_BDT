@@ -101,13 +101,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(100) #120
 
 ##################################################################
-#VAR_NM=("deltaE")
-#VAR_SYMB=("E_{diff}")
-#UNIT=("[MeV]")
+VAR_NM=("deltaE")
+VAR_SYMB=("E_{diff}")
+UNIT=("[MeV]")
 
-#XMIN=(-700) #-700, -500
-#XMAX=(-150) #-200, 50
-#BINS=(200) #150, 550 
+XMIN=(-460) #-700, -500
+XMAX=(-220) #-200, 50
+BINS=(200) #150, 550 
 
 ##################################################################
 #VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
@@ -156,13 +156,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=200
 
 ##################################################################
-VAR_NM="beta_3pi"
-VAR_SYMB="#beta_{3#pi}"
+#VAR_NM="beta_3pi"
+#VAR_SYMB="#beta_{3#pi}"
 
-UNIT="[]"
-XMIN=0.2
-XMAX=0.5
-BINS=200
+#UNIT="[]"
+#XMIN=0.2
+#XMAX=0.5
+#BINS=200
 
 
 
