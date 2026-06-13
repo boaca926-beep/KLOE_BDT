@@ -27,36 +27,36 @@ This project re-analyzes the KLOE experiment's $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{
 | **Approach** | Analytical minimization | Machine learning |
 | **Input features** | Mass difference only | 7+ kinematic variables |
 
-**📖 Thesis Reference:**  
-This analysis is based on the methodology described in:  
+**📖 Thesis Reference:**
+This analysis is based on the methodology described in:
 
-> *A Study of the e⁺e⁻ → π⁺π⁻π⁰ Process Using Initial State Radiation*  
-> Author: Bo Cao 
-> Institution: Uppsala University  
-> DiVA: https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484  
+> *A Study of the e⁺e⁻ → π⁺π⁻π⁰ Process Using Initial State Radiation*
+> Author: Bo Cao
+> Institution: Uppsala University
+> DiVA: https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-551484
 
 ---
 
-## Standard Analysis ($\chi^{2}$) 
+## Standard Analysis ($\chi^{2}$)
 
 See [KLOE_ANALYSIS](KLOE_ANALYSIS.md) for details.
 
 ### Method
-Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using chi-square selection: 
+Reconstructed $\pi^{0}\to\gamma\gamma$ in the final state using chi-square selection:
 
 $$\chi^2_{M_{\gamma\gamma}}=\frac{(M_{\gamma\gamma}-m_{\pi^{\text{0}}})^2}{\sigma^2_{M_{\gamma\gamma}}}, ~~~~~ \frac{\sigma_{M_{\gamma\gamma}}}{M_{\gamma\gamma}}=\frac{1}{2}\sqrt{\left(\frac{\sigma_{1}}{E_1}\right)^{2}+\left(\frac{\sigma_{2}}{E_2}\right)^{2}}$$
 
 **Selection criteria:**
-The pair of photons $\gamma_{1}$ and $\gamma_{2}$ is chosen such that the reconstructed mass $M_{\gamma\gamma}$ is closest to the mass constraint $$m_{\pi^{0}}=\sqrt{2E_{1}E_{2}\left(1-\text{cos}\theta_{12}\right)}.$$ 
+The pair of photons $\gamma_{1}$ and $\gamma_{2}$ is chosen such that the reconstructed mass $M_{\gamma\gamma}$ is closest to the mass constraint $$m_{\pi^{0}}=\sqrt{2E_{1}E_{2}\left(1-\text{cos}\theta_{12}\right)}.$$
 
-The $\chi^{2}$-test is performed on event-by-event basis, and the energy-dependent relative error $\sigma_{M_{\gamma\gamma}}/M_{\gamma\gamma}$ is directly associated with the uncertainties of the photon energies $\sigma_{1}$, $\sigma_{2}$. Uncertainty contributions from both the measured angles and the correlations between $E_{1}$ and $E_{2}$ are considered negligible. The test is conducted for each photon pair, and the combination with the smallest chi-square value $\chi^2_{M_{\gamma\gamma}}$ provides the best candidates for the $\pi^{0}$ decay photons. The efficiency of $\pi^{0}$ decay photon identification can be estimated by comparing the selected photons to the true MC information. 
+The $\chi^{2}$-test is performed on event-by-event basis, and the energy-dependent relative error $\sigma_{M_{\gamma\gamma}}/M_{\gamma\gamma}$ is directly associated with the uncertainties of the photon energies $\sigma_{1}$, $\sigma_{2}$. Uncertainty contributions from both the measured angles and the correlations between $E_{1}$ and $E_{2}$ are considered negligible. The test is conducted for each photon pair, and the combination with the smallest chi-square value $\chi^2_{M_{\gamma\gamma}}$ provides the best candidates for the $\pi^{0}$ decay photons. The efficiency of $\pi^{0}$ decay photon identification can be estimated by comparing the selected photons to the true MC information.
 
 <!--**📂 Reference:** [KLOE_REPO](https://github.com/boaca926-beep/KLOE_REPO.git)
 -->
 
 ## BDT Analysis
 <!--
-**Related repository:** [KLOE_REPO](https://github.com/boaca926-beep/KLOE_BDT.git)    
+**Related repository:** [KLOE_REPO](https://github.com/boaca926-beep/KLOE_BDT.git)
 -->
 
 ## Overview
@@ -93,12 +93,12 @@ This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted
 | **Background** | • **Combinatorial**: Wrong photon pairing (e.g., photons from different $\pi^{0}$ decays or ISR) <br> • **Physical channel**: Events from other processes ($e^{+}e^{-}\to\omega\pi^{0}\to\pi^{+}\pi^{-}\pi^{0}\gamma\gamma$, $e^{+}e^{-}\to e^{+}e^{-}\gamma$, etc.) | 0 | Two uncorrelated photons misidentified as $\pi^{0}$ |
 
 **Training/Validation/Test Split:** 70% / 15% / 15%
-        
+
 
 ## Quick Start {#-quick-start}
-> **🎯 What:** BDT-based $\pi^{0}$ reconstruction replacing traditional $\chi^{2}$ selection  
-> **⚙️ How:** XGBoost with CUDA acceleration on ROOT data from KLOE experiment  
-> **📈 Key improvement:** Better signal/background separation for $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$  
+> **🎯 What:** BDT-based $\pi^{0}$ reconstruction replacing traditional $\chi^{2}$ selection
+> **⚙️ How:** XGBoost with CUDA acceleration on ROOT data from KLOE experiment
+> **📈 Key improvement:** Better signal/background separation for $e^{+}e^{-}\to\pi^{+}\pi^{-}\pi^{0}\gamma$
 > **🚀 Quick start:** `uv sync && uv run main_initialize_kloe_opti.py`
 
 ## Repository Structure
@@ -118,13 +118,13 @@ This analysis replaces the traditional $\chi^{2}$ method with a Gradient Boosted
 - `main_application.py` - Final evaluation on test set
 
 ## Data Preparation
-### 1. Input Raw Data 
+### 1. Input Raw Data
 ```bash
-script/listpath.sh # listing path of raw data root files stored as a text input file  
+script/listpath.sh # listing path of raw data root files stored as a text input file
 # Outputs: path_chain/*
 ```
 
-### 2. Create ROOT Files 
+### 2. Create ROOT Files
 ```bash
 root -l -b -q run_bdt/Process.C #prompt, small samples
 # Outputs: $HOME/Desktop/sig.root
@@ -144,7 +144,7 @@ script/get_bdt_sample.sh        # analysis, large samples
 
 ## BDT Training & Evaluation
 ### Environment Setup
-```bash 
+```bash
 # Install UV if not already installed
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
@@ -161,7 +161,7 @@ source .venv/bin/activate
 # Or using pip/uv with requirements
 uv add -r requirements.txt
 
-# Working Space 
+# Working Space
 cd $HOME/Desktop/KLOE_BDT/bdt
 ```
 
@@ -228,7 +228,7 @@ uv run main_inspect.py
 <em>Figure 6: Feature-target correlations of paired-photon combinations for π⁰ reconstruction</em>
 
 </div>
-    
+
 
 ### Step 3. Hyperparameter Tuning
 
@@ -261,7 +261,7 @@ uv run main_training_chunked.py # Works with arbitrarily large dataset, and gpu-
 # Run validation script
 uv run main_validation.py
 # USE_TEST_SET = True to use 20% test sample
-# USE_TEST_SET = False to use 40% validation sample 
+# USE_TEST_SET = False to use 40% validation sample
 # Output: $HOME/Desktop/KLOE_BDT/plots_val/*.png
 ```
 
@@ -336,7 +336,7 @@ The BDT uses the `any` strategy: an event is classified as **signal** if *any* p
 <img src="plots_ref/event_cm_TCOMB.png" width="800" alt="Confusion matrix"/>
 <br/>
 <em>Figure 9: Confusion matrix</em>
-    
+
 <br/><br/>
 </div>
 
@@ -371,7 +371,7 @@ Background Support	27,911	27,911 (true background events)
 <img src="plots_ref/roc_curv_TCOMB.png" width="500" alt="Confusion matrix"/>
 <br/>
 <em>Figure 10: ROC curve and AUC score</em>
-    
+
 <br/><br/>
 
 </div>
