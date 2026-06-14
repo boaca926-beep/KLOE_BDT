@@ -81,6 +81,8 @@ int compr_bdt() {
   TH1D *hist_etagam  = getHist("hist_etagam");
   TH1D *hist_bkgrest = getHist("hist_bkgrest");
   TH1D *hist_isr3pi  = getHist("hist_isr3pi");
+  //TH1D *hist_isr3pi_peak  = getHist("hist_isr3pi_peak");
+  //TH1D *hist_isr3pi_non_reson  = getHist("hist_isr3pi_non_reson");
 
   // MC rest (background without signal)
   TH1D *hist_mcrest = (TH1D*)hist_bkgrest->Clone();
@@ -94,6 +96,11 @@ int compr_bdt() {
   hist_eeg_sc->SetName("hist_eeg_sc");
   TH1D *hist_isr3pi_sc   = (TH1D*)hist_isr3pi->Clone();
   hist_isr3pi_sc->SetName("hist_isr3pi_sc");
+  //TH1D *hist_isr3pi_peak_sc   = (TH1D*)hist_isr3pi_peak->Clone();
+  //hist_isr3pi_peak_sc->SetName("hist_isr3pi_peak_sc");
+  //TH1D *hist_isr3pi_nonReson_sc   = (TH1D*)hist_isr3pi_non_reson->Clone();
+  //hist_isr3pi_peak_nonReson_sc->SetName("hist_isr3pi_nonReson_sc");
+  
   TH1D *hist_omegapi_sc  = (TH1D*)hist_omegapi->Clone();
   hist_omegapi_sc->SetName("hist_omegapi_sc");
   TH1D *hist_etagam_sc   = (TH1D*)hist_etagam->Clone();

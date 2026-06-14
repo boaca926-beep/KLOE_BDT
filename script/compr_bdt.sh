@@ -207,8 +207,9 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     plot_script=plot_script.C
     echo '#include <iostream>' > $plot_script
     echo "void plot_script() {" >> $plot_script
-    echo '  gROOT->ProcessLine(".L ../run_bdt/plot_compr.C");' >> $plot_script
-    echo '  gROOT->ProcessLine("plot_compr()");' >> $plot_script
+    #echo '  gROOT->ProcessLine(".L ../run_bdt/plot_compr.C");' >> $plot_script
+    echo '  gROOT->ProcessLine(".L ../run_bdt/plot_compr_roofit.C");' >> $plot_script
+    echo '  gROOT->ProcessLine("plot_compr_roofit()");' >> $plot_script
     echo '}' >> $plot_script
     root -l -n -q -b $plot_script >> ${output_folder}/output.txt
 done

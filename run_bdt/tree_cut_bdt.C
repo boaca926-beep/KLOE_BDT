@@ -129,9 +129,9 @@ int tree_cut_bdt() {
     int recon_indx_bdt = 0;
     
     // ---------- Output trees (same as tree_cut.C: 11 trees) ----------
-    const int list_size = 11;
+    const int list_size = 13;
     const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI",
-                                    "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG"};
+                                    "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG", "TISR3PI_SIG_PEAK", "TISR3PI_SIG_NON_RESON"};
     TTree *TTList[list_size];
     TCollection* tree_list = new TList;
 
@@ -233,6 +233,7 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_m_gg_bdt", &m_gg_bdt, "Br_m_gg_bdt/D");
         tree_tmp->Branch("Br_m2pi_true", &m2pi_true, "Br_m2pi_true/D");
         tree_tmp->Branch("Br_m3pi_bdt", &m3pi_bdt, "Br_m3pi_bdt/D");
+	
         tree_tmp->Branch("Br_m3pi_true_bdt", &m3pi_true, "Br_m3pi_true_bdt/D");
         tree_tmp->Branch("Br_angle_pi0gam12_bdt", &angle_pi0gam12_bdt, "Br_angle_pi0gam12_bdt/D");
         tree_tmp->Branch("Br_angle_pi0gam12_bdt_true", &angle_pi0gam12_bdt_true, "Br_angle_pi0gam12_bdt_true/D");
@@ -557,7 +558,8 @@ int tree_cut_bdt() {
             }
         }
         recon_indx_bdt = correct_bdt;
-        
+
+	
         // Selection cuts
         if (lagvalue_min_7C > chi2_cut) continue; //40->20 further suppress kaons background
         else if (deltaE < -440. || deltaE > deltaE_cut) continue;
@@ -577,25 +579,31 @@ int tree_cut_bdt() {
             TTList[9]->Fill();
         } else if (data_type == "sig") {
             TTList[10]->Fill();
-        } else if (data_type == "ksl") {
-            if (phid == 0) {
-                TTList[1]->Fill();
-            } else if (phid == 1) {
-                TTList[2]->Fill();
-            } else if (phid == 2) {
-                TTList[3]->Fill();
-            } else if (phid == 3) {
-                if (sig_type == 1) TTList[4]->Fill();
-                else TTList[5]->Fill();
-            } else if (phid == 5) {
-                if (sig_type == 1) TTList[6]->Fill();
-                else TTList[7]->Fill();
+	    // Separate into peak and non-resonant
+            if (recon_indx_bdt == 2 && bkg_indx == 1) {
+	      TTList[11]->Fill();  // TISR3PI_SIG_PEAK
             } else {
-                TTList[7]->Fill();
+	      TTList[12]->Fill();  // TISR3PI_SIG_NON_RESON
             }
+        } else if (data_type == "ksl") {
+	  if (phid == 0) {
+	    TTList[1]->Fill();
+	  } else if (phid == 1) {
+	    TTList[2]->Fill();
+	  } else if (phid == 2) {
+	    TTList[3]->Fill();
+	  } else if (phid == 3) {
+	    if (sig_type == 1) TTList[4]->Fill();
+	    else TTList[5]->Fill();
+	  } else if (phid == 5) {
+	    if (sig_type == 1) TTList[6]->Fill();
+	    else TTList[7]->Fill();
+	  } else {
+	    TTList[7]->Fill();
+	  }
         }
     }
-
+    
     // Write output file
     TFile *f_output = new TFile(outputCut + "tree_pre_bdt.root", "update");
     f_output->cd();
