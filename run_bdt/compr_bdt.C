@@ -3,7 +3,7 @@
 #include "../header_bdt/compr.h"   // defines var_nm, binsize, var_min, var_max
 #include "../header_plot/plot.h"
 
-TRandom3 *rnd = new TRandom3();
+//TRandom3 *rnd = new TRandom3();
 
 int compr_bdt() {
 
@@ -14,7 +14,7 @@ int compr_bdt() {
 
   TH1::SetDefaultSumw2();
 
-  const TString tree_file_nm = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+  const TString tree_file_nm = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
   
   TFile* tree_file = new TFile(tree_file_nm);
   if (!tree_file || tree_file->IsZombie()) {
@@ -24,7 +24,7 @@ int compr_bdt() {
 
   getObj(tree_file);   // ensure defined in method.h
 
-  const int TLSize = 9;
+  const int TLSize = 10;
   TTree *TDATA      = static_cast<TTree*>(tree_file->Get("TDATA"));
   TTree *TEEG       = static_cast<TTree*>(tree_file->Get("TEEG"));
   TTree *TOMEGAPI   = static_cast<TTree*>(tree_file->Get("TOMEGAPI"));
@@ -34,10 +34,12 @@ int compr_bdt() {
   TTree *TETAGAM    = static_cast<TTree*>(tree_file->Get("TETAGAM"));
   TTree *TBKGREST   = static_cast<TTree*>(tree_file->Get("TBKGREST"));
   TTree *TISR3PI_SIG = static_cast<TTree*>(tree_file->Get("TISR3PI_SIG"));
-
-  TTree *TrList[TLSize] = {TDATA, TEEG, TOMEGAPI, TKSL, TKPM, TRHOPI, TETAGAM, TBKGREST, TISR3PI_SIG};
-  const TString TrNm[TLSize] = {"data", "eeg", "omegapi", "ksl", "kpm", "rhopi", "etagam", "bkgrest", "isr3pi"};
-  int color_list[TLSize] = {1, 6, 7, 28, 46, 42, 3, 37, 4};
+  TTree *TISR3PI_SIG_PEAK = static_cast<TTree*>(tree_file->Get("TISR3PI_SIG_PEAK"));
+  TTree *TISR3PI_SIG_NON_RESON = static_cast<TTree*>(tree_file->Get("TISR3PI_SIG_NON_RESON"));
+  
+  TTree *TrList[TLSize] = {TDATA, TEEG, TOMEGAPI, TKSL, TKPM, TRHOPI, TETAGAM, TBKGREST, TISR3PI_SIG_PEAK, TISR3PI_SIG_NON_RESON};
+  const TString TrNm[TLSize] = {"data", "eeg", "omegapi", "ksl", "kpm", "rhopi", "etagam", "bkgrest", "isr3pi", "nonreson"};
+  int color_list[TLSize] = {1, 6, 7, 28, 46, 42, 3, 37, 4, 9};
 
   TList *Hlist = new TList();   // use TList for proper FindObject
 
@@ -81,16 +83,18 @@ int compr_bdt() {
   TH1D *hist_etagam  = getHist("hist_etagam");
   TH1D *hist_bkgrest = getHist("hist_bkgrest");
   TH1D *hist_isr3pi  = getHist("hist_isr3pi");
-  //TH1D *hist_isr3pi_peak  = getHist("hist_isr3pi_peak");
-  //TH1D *hist_isr3pi_non_reson  = getHist("hist_isr3pi_non_reson");
+  TH1D *hist_nonreson = getHist("hist_nonreson");
 
   // MC rest (background without signal)
   TH1D *hist_mcrest = (TH1D*)hist_bkgrest->Clone();
   hist_mcrest->Add(hist_kpm, 1.);
   hist_mcrest->Add(hist_rhopi, 1.);
+  hist_mcrest->Add(hist_etagam, 1.);
   hist_mcrest->SetName("hist_mcrest");
+
   Hlist->Add(hist_mcrest);
 
+  /*
   // Clone histograms for scaling (no scaling applied yet)
   TH1D *hist_eeg_sc      = (TH1D*)hist_eeg->Clone();
   hist_eeg_sc->SetName("hist_eeg_sc");
@@ -118,14 +122,7 @@ int compr_bdt() {
   hist_bkgsum_sc->Add(hist_mcrest_sc, 1.);
   hist_bkgsum_sc->SetName("hist_bkgsum_sc");
   format_h(hist_bkgsum_sc, 6, 2);
-  
-  Hlist->Add(hist_eeg_sc);
-  Hlist->Add(hist_isr3pi_sc);
-  Hlist->Add(hist_omegapi_sc);
-  Hlist->Add(hist_etagam_sc);
-  Hlist->Add(hist_ksl_sc);
-  Hlist->Add(hist_mcrest_sc);
-  Hlist->Add(hist_bkgsum_sc);
+  */
 
   // Create output directory
   TString out_dir = "../output_" + TString(var_nm);
@@ -135,7 +132,11 @@ int compr_bdt() {
   TFile *f_out = new TFile(outfile_name, "recreate");
   Hlist->Write("Hlist", TObject::kSingleKey);
   f_out->Close();
-  delete Hlist;   
+
+  delete Hlist;
+  delete f_out;
   tree_file->Close();
+  delete tree_file;
+  
   return 0;
 }

@@ -189,9 +189,9 @@ int sfw2d_rootfit() {
                    nb_ksl_sum * scale_to_data * 20.0);
   
   RooRealVar N_mcrest("N_mcrest", "MC Rest yield", 
-                      nb_mcrest_sum * scale_to_data,   // initial: ~8.6
+                      nb_mcrest_sum * scale_to_data * 2.0,   // initial: ~8.6
                       0.0, 
-                      nb_mcrest_sum * scale_to_data * 30.0);
+                      nb_mcrest_sum * scale_to_data * 5.0);
 
   //N_mcrest.setConstant(kTRUE);
   cout << "NOTE: N_mcrest fixed to " << N_mcrest.getVal() << " (low statistics component)" << endl;
@@ -294,7 +294,10 @@ int sfw2d_rootfit() {
     	 << "const double nonReson_sfw = " << sf_nonReson << ";\n"
 	 << "const double omegapi_sfw = " << sf_omegapi << ";\n"
 	 << "const double ksl_sfw = " << sf_ksl << ";\n"
-	 << "const double mcrest_sfw = " << sf_mcrest << ";\n";
+	 << "const double mcrest_sfw = " << sf_mcrest << ";\n"
+	 << "const double scale_to_data = " << scale_to_data << ";\n";
+  
+  
   myfile.close();
 
   cout << "\nScaling factors saved to: " << myfile_nm << endl;

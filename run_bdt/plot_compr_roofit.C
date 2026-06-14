@@ -8,7 +8,7 @@
 int plot_compr_roofit() {
 
   gErrorIgnoreLevel = kError;
-  TGaxis::SetMaxDigits(3);
+  TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
   gStyle->SetErrorX(0.8);
@@ -16,6 +16,7 @@ int plot_compr_roofit() {
 
   // Open the file containing 1D histograms (same as used by compr_bdt)
   TString filename = "../output_" + var_nm + "/hist_" + var_nm + ".root";
+  cout << filename << endl;
   TFile* intree = new TFile(filename);
   if (!intree || intree->IsZombie()) {
     std::cerr << "ERROR: Cannot open input file " << filename << std::endl;
@@ -35,15 +36,23 @@ int plot_compr_roofit() {
   };
 
   // Get histograms - these are already 1D projections
-  TH1D *hist_data              = getHist("hist_data");
-  TH1D *hist_eeg               = getHist("hist_eeg_sc");        // EEG template
-  TH1D *hist_isr3pi_peak       = getHist("hist_isr3pi_peak_sc"); // ISR3pi peak template
-  TH1D *hist_isr3pi_nonReson   = getHist("hist_isr3pi_nonReson_sc"); // Non-resonant template
-  TH1D *hist_omegapi           = getHist("hist_omegapi_sc");     // OmegaPi template
-  TH1D *hist_etagam            = getHist("hist_etagam_sc");      // EtaGamma template
-  TH1D *hist_ksl               = getHist("hist_ksl_sc");         // KSL template
-  TH1D *hist_mcrest            = getHist("hist_mcrest_sc");      // MC Rest (kpm + rhopi + bkgrest) NO etagam!
-  TH1D *hist_bkgsum            = getHist("hist_bkgsum_sc");      // Background sum (from compr_bdt)
+  TH1D *hist_data      = getHist("hist_data");
+  TH1D *hist_eeg       = getHist("hist_eeg");        // EEG template
+  hist_eeg->Scale(2);
+  TH1D *hist_omegapi   = getHist("hist_omegapi");    // OmegaPi template
+  TH1D *hist_ksl       = getHist("hist_ksl");        // KSL template
+  TH1D *hist_kpm       = getHist("hist_kpm");        // KPM template
+  TH1D *hist_rhopi     = getHist("hist_rhopi");      // RHOPI template
+  TH1D *hist_etagam    = getHist("hist_etagam");     // EtaGamma template
+  TH1D *hist_bkgrest   = getHist("hist_bkgrest");    // Background rest template
+  TH1D *hist_isr3pi    = getHist("hist_isr3pi");     // ISR3pi peak template
+  TH1D *hist_nonreson  = getHist("hist_nonreson");   // Non-resonant template
+
+  TH1D *hist_mcrest = (TH1D*)hist_bkgrest->Clone();
+  hist_mcrest->Add(hist_kpm, 1.);
+  hist_mcrest->Add(hist_rhopi, 1.);
+  hist_mcrest->Add(hist_etagam, 1.);
+  hist_mcrest->SetName("hist_mcrest");
 
   if (!hist_data) {
     std::cerr << "ERROR: hist_data not found!" << std::endl;
@@ -52,14 +61,13 @@ int plot_compr_roofit() {
 
   // Print raw integrals before scaling
   std::cout << "\n===== Raw integrals (before scaling) =====" << std::endl;
-  std::cout << "Data                : " << hist_data->Integral() << std::endl;
-  if (hist_eeg) std::cout << "EEG                 : " << hist_eeg->Integral() << std::endl;
-  if (hist_isr3pi_peak) std::cout << "ISR3pi peak         : " << hist_isr3pi_peak->Integral() << std::endl;
-  if (hist_isr3pi_nonReson) std::cout << "ISR3pi non-resonant : " << hist_isr3pi_nonReson->Integral() << std::endl;
-  if (hist_omegapi) std::cout << "OmegaPi             : " << hist_omegapi->Integral() << std::endl;
-  if (hist_etagam) std::cout << "EtaGamma            : " << hist_etagam->Integral() << std::endl;
-  if (hist_ksl) std::cout << "KSL                 : " << hist_ksl->Integral() << std::endl;
-  if (hist_mcrest) std::cout << "MC Rest             : " << hist_mcrest->Integral() << std::endl;
+  std::cout << "Data: " << hist_data->Integral() << std::endl;
+  if (hist_isr3pi) std::cout << "ISR3Pi: " << hist_isr3pi->Integral() << std::endl;
+  if (hist_nonreson) std::cout << "Non-Reson : " << hist_nonreson->Integral() << std::endl;
+  if (hist_eeg) std::cout << "EEG: " << hist_eeg->Integral() << std::endl;
+  if (hist_omegapi) std::cout << "OmegaPi: " << hist_omegapi->Integral() << std::endl;
+  if (hist_ksl) std::cout << "KSL: " << hist_ksl->Integral() << std::endl;
+  if (hist_mcrest) std::cout << "MC Rest: " << hist_mcrest->Integral() << std::endl;
 
   // Force bin errors to sqrt(content) for data
   for (int bin = 1; bin <= hist_data->GetNbinsX(); ++bin) {
@@ -67,33 +75,31 @@ int plot_compr_roofit() {
     hist_data->SetBinError(bin, TMath::Sqrt(content));
   }
 
-  // ------------------------------------------------------------------
-  // IMPORTANT: mcrest in the fit INCLUDES etagam!
-  // So we need to add etagam to mcrest for consistency with the fit
-  // ------------------------------------------------------------------
-  if (hist_mcrest && hist_etagam) {
-    hist_mcrest->Add(hist_etagam, 1.0);
-    std::cout << "\nNOTE: Added etagam to mcrest (to match fit definition)" << std::endl;
-  }
-
   // Apply scaling factors from the fit
-  if (hist_eeg) hist_eeg->Scale(eeg_sfw);
-  if (hist_isr3pi_peak) hist_isr3pi_peak->Scale(isr3pi_sfw);
-  if (hist_isr3pi_nonReson) hist_isr3pi_nonReson->Scale(nonReson_sfw);
-  if (hist_omegapi) hist_omegapi->Scale(omegapi_sfw);
-  if (hist_ksl) hist_ksl->Scale(ksl_sfw);
-  if (hist_mcrest) hist_mcrest->Scale(mcrest_sfw);  // mcrest now includes etagam
+  cout << "\neeg_sfw = " << eeg_sfw << "\n"
+       << "isr3pi_sfw = " << isr3pi_sfw << "\n"
+       << "nonReson_sfw = " << nonReson_sfw << "\n"
+       << "omegapi_sfw = " << omegapi_sfw << "\n"
+       << "ksl_sfw = " << ksl_sfw << "\n"
+       << "mcrest_sfw = " << mcrest_sfw << "\n";
+    
+  if (hist_eeg) hist_eeg->Scale(eeg_sfw * scale_to_data);
+  if (hist_isr3pi) hist_isr3pi->Scale(isr3pi_sfw * scale_to_data);
+  if (hist_nonreson) hist_nonreson->Scale(nonReson_sfw * scale_to_data);
+  if (hist_omegapi) hist_omegapi->Scale(omegapi_sfw * scale_to_data);
+  if (hist_ksl) hist_ksl->Scale(ksl_sfw * scale_to_data);
+  if (hist_mcrest) hist_mcrest->Scale(mcrest_sfw * scale_to_data);
 
   // Print scaled integrals
   std::cout << "\n===== Scaled integrals (after applying fit scaling factors) =====" << std::endl;
-  if (hist_eeg) std::cout << "EEG                 : " << hist_eeg->Integral() << std::endl;
-  if (hist_isr3pi_peak) std::cout << "ISR3pi peak         : " << hist_isr3pi_peak->Integral() << std::endl;
-  if (hist_isr3pi_nonReson) std::cout << "ISR3pi non-resonant : " << hist_isr3pi_nonReson->Integral() << std::endl;
-  if (hist_omegapi) std::cout << "OmegaPi             : " << hist_omegapi->Integral() << std::endl;
-  if (hist_ksl) std::cout << "KSL                 : " << hist_ksl->Integral() << std::endl;
-  if (hist_mcrest) std::cout << "MC Rest (incl etagam): " << hist_mcrest->Integral() << std::endl;
+  if (hist_eeg) std::cout << "EEG: " << hist_eeg->Integral() << std::endl;
+  if (hist_isr3pi) std::cout << "ISR3pi: " << hist_isr3pi->Integral() << std::endl;
+  if (hist_nonreson) std::cout << "Non-resonant: " << hist_nonreson->Integral() << std::endl;
+  if (hist_omegapi) std::cout << "OmegaPi: " << hist_omegapi->Integral() << std::endl;
+  if (hist_ksl) std::cout << "KSL: " << hist_ksl->Integral() << std::endl;
+  if (hist_mcrest) std::cout << "MC Rest: " << hist_mcrest->Integral() << std::endl;
 
-  // Recompute background sum (all backgrounds, etagam now in mcrest)
+  // Recompute background sum
   TH1D *hist_bkgsum_scaled = nullptr;
   if (hist_eeg) {
     hist_bkgsum_scaled = (TH1D*)hist_eeg->Clone("hist_bkgsum_scaled");
@@ -104,9 +110,9 @@ int plot_compr_roofit() {
 
   // Total MC sum (signal + backgrounds)
   TH1D *hist_mcsum_sc = nullptr;
-  if (hist_isr3pi_peak) {
-    hist_mcsum_sc = (TH1D*)hist_isr3pi_peak->Clone("hist_mcsum_sc");
-    if (hist_isr3pi_nonReson) hist_mcsum_sc->Add(hist_isr3pi_nonReson, 1.);
+  if (hist_isr3pi) {
+    hist_mcsum_sc = (TH1D*)hist_isr3pi->Clone("hist_mcsum_sc");
+    if (hist_nonreson) hist_mcsum_sc->Add(hist_nonreson, 1.);
     if (hist_bkgsum_scaled) hist_mcsum_sc->Add(hist_bkgsum_scaled, 1.);
   }
 
@@ -118,43 +124,38 @@ int plot_compr_roofit() {
   std::cout << "\nTotal MC sum integral: " << hist_mcsum_sc->Integral() << std::endl;
   std::cout << "Data integral (unchanged): " << hist_data->Integral() << std::endl;
 
-  if (hist_mcsum_sc->Integral() == 0) {
-    std::cerr << "ERROR: Total MC sum is zero. Nothing to plot." << std::endl;
-    return 1;
-  }
-
   // Style histograms
-  hist_mcsum_sc->SetLineColor(kBlack);
-  hist_mcsum_sc->SetLineWidth(3);
+  hist_mcsum_sc->SetLineColor(kRed);
+  hist_mcsum_sc->SetLineWidth(2);
   hist_mcsum_sc->SetLineStyle(kSolid);
   hist_mcsum_sc->SetFillStyle(0);
 
-  if (hist_isr3pi_peak) {
-    hist_isr3pi_peak->SetLineColor(kRed);
-    hist_isr3pi_peak->SetLineWidth(2);
-    hist_isr3pi_peak->SetLineStyle(kSolid);
+  if (hist_isr3pi) {
+    hist_isr3pi->SetLineColor(kBlue);
+    hist_isr3pi->SetLineWidth(2);
+    hist_isr3pi->SetLineStyle(kSolid);
   }
   
-  if (hist_isr3pi_nonReson) {
-    hist_isr3pi_nonReson->SetLineColor(kOrange);
-    hist_isr3pi_nonReson->SetLineWidth(2);
-    hist_isr3pi_nonReson->SetLineStyle(kDashed);
+  if (hist_nonreson) {
+    hist_nonreson->SetLineColor(kOrange);
+    hist_nonreson->SetLineWidth(2);
+    hist_nonreson->SetLineStyle(kDashed);
   }
   
   if (hist_omegapi) {
-    hist_omegapi->SetLineColor(kGreen);
+    hist_omegapi->SetLineColor(7);
     hist_omegapi->SetLineWidth(2);
     hist_omegapi->SetLineStyle(kDashed);
   }
   
   if (hist_ksl) {
-    hist_ksl->SetLineColor(kCyan);
+    hist_ksl->SetLineColor(28);
     hist_ksl->SetLineWidth(2);
     hist_ksl->SetLineStyle(kDashDotted);
   }
   
   if (hist_eeg) {
-    hist_eeg->SetLineColor(kBlue);
+    hist_eeg->SetLineColor(6);
     hist_eeg->SetLineWidth(2);
     hist_eeg->SetLineStyle(kDashed);
   }
@@ -170,8 +171,70 @@ int plot_compr_roofit() {
   hist_data->SetLineWidth(1);
   hist_data->SetMarkerColor(kBlack);
 
-  // --- Residuals ---
-  const double ymax = hist_data->GetMaximum();
+  // --- Canvas ---
+  TCanvas *cv = new TCanvas("cv", "Comparison", 900, 900);
+  cv->SetBottomMargin(0.12);
+  cv->SetLeftMargin(0.12);
+
+  TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1);
+  pad1->SetBottomMargin(0.01);
+  pad1->SetLeftMargin(0.12);
+  pad1->Draw();
+  pad1->cd();
+
+  // Draw components (backgrounds first, then signal, then total on top)
+  hist_data->Draw("E1");           // Data points on very top
+  hist_mcsum_sc->Draw("hist same");     // Total MC on top
+  hist_isr3pi->Draw("hist same");
+  hist_eeg->Draw("hist same");
+  hist_mcrest->Draw("hist same");
+  hist_omegapi->Draw("hist same");
+  hist_ksl->Draw("hist same");
+  hist_nonreson->Draw("hist same");
+  
+  // Axis formatting
+  const double limit_factor = 1;
+  hist_data->GetXaxis()->SetRangeUser(0, var_max * limit_factor);
+  hist_data->GetXaxis()->SetTitle("");
+  hist_data->GetYaxis()->SetTitle("Events");
+  hist_data->GetYaxis()->CenterTitle();
+  hist_data->GetYaxis()->SetTitleSize(0.05);
+  hist_data->GetYaxis()->SetTitleOffset(1.2);
+  hist_data->GetYaxis()->SetLabelSize(0.04);
+  
+  // Get ymax AFTER setting x-axis range
+  double ymax = hist_data->GetMaximum();
+  if (ymax > 0)
+    hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
+  else
+    hist_data->GetYaxis()->SetRangeUser(0.01, 1);
+
+  // Legend
+  TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
+  //TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
+  legd_cv->SetTextFont(132);
+  legd_cv->SetFillStyle(0);
+  legd_cv->SetBorderSize(0);
+  legd_cv->SetNColumns(1);
+  legd_cv->AddEntry(hist_data, "Data", "lep");
+  legd_cv->AddEntry(hist_mcsum_sc, "Total MC", "l");
+  legd_cv->AddEntry(hist_isr3pi, "#pi^{+}#pi^{-}#pi^{0}#gamma (peak)", "l");
+  legd_cv->AddEntry(hist_nonreson, "#pi^{+}#pi^{-}#pi^{0}#gamma (non-reson)", "l");
+  legd_cv->AddEntry(hist_omegapi, "#omega#pi^{0}", "l");
+  legd_cv->AddEntry(hist_ksl, "K_{L}K_{S}", "l");
+  legd_cv->AddEntry(hist_eeg, "e^{+}e^{-}#gamma", "l");
+  legd_cv->AddEntry(hist_mcrest, "Others (incl. #eta#gamma)", "l");
+  legd_cv->Draw("Same");
+
+  // --- Residuals (moved after axis formatting) ---
+  cv->cd();
+  TPad *pad2 = new TPad("pad2", "pad2", 0, 0, 1, 0.3);
+  pad2->SetTopMargin(0.02);
+  pad2->SetBottomMargin(0.3);
+  pad2->SetLeftMargin(0.12);
+  pad2->Draw();
+  pad2->cd();
+
   TH1D *hresidul = new TH1D("hresidul", "", binsize, var_min, var_max);
   TH1D *hresidul_distr = new TH1D("hresidul_distr", "", 200, -10, 10);
 
@@ -187,67 +250,6 @@ int plot_compr_roofit() {
       hresidul_distr->Fill(residul);
     }
   }
-
-  // --- Canvas ---
-  TCanvas *cv = new TCanvas("cv", "Comparison", 900, 900);
-  cv->SetBottomMargin(0.12);
-  cv->SetLeftMargin(0.12);
-
-  TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1);
-  pad1->SetBottomMargin(0.01);
-  pad1->SetLeftMargin(0.12);
-  pad1->Draw();
-  pad1->cd();
-
-  // Draw components (backgrounds first, then signal, then data on top)
-  if (hist_mcrest) hist_mcrest->Draw("hist");
-  if (hist_eeg) hist_eeg->Draw("hist same");
-  if (hist_omegapi) hist_omegapi->Draw("hist same");
-  if (hist_ksl) hist_ksl->Draw("hist same");
-  if (hist_isr3pi_nonReson) hist_isr3pi_nonReson->Draw("hist same");
-  if (hist_isr3pi_peak) hist_isr3pi_peak->Draw("hist same");
-  hist_mcsum_sc->Draw("hist same");
-  hist_data->Draw("E1 same");
-
-  // Axis formatting
-  const double limit_factor = 0.5;
-  hist_data->GetXaxis()->SetRangeUser(0, var_max * limit_factor);
-  hist_data->GetXaxis()->SetTitle("");
-  hist_data->GetYaxis()->SetTitle("Events / (0.005 GeV^{2})");
-  hist_data->GetYaxis()->CenterTitle();
-  hist_data->GetYaxis()->SetTitleSize(0.05);
-  hist_data->GetYaxis()->SetTitleOffset(1.2);
-  hist_data->GetYaxis()->SetLabelSize(0.04);
-  
-  if (ymax > 0)
-    hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
-  else
-    hist_data->GetYaxis()->SetRangeUser(0.01, 1);
-
-  // Legend
-  TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
-  legd_cv->SetTextFont(132);
-  legd_cv->SetFillStyle(0);
-  legd_cv->SetBorderSize(0);
-  legd_cv->SetNColumns(1);
-  legd_cv->AddEntry(hist_data, "Data", "lep");
-  legd_cv->AddEntry(hist_mcsum_sc, "Total MC", "l");
-  legd_cv->AddEntry(hist_isr3pi_peak, "#pi^{+}#pi^{-}#pi^{0}#gamma (peak)", "l");
-  legd_cv->AddEntry(hist_isr3pi_nonReson, "#pi^{+}#pi^{-}#pi^{0}#gamma (non-reson)", "l");
-  legd_cv->AddEntry(hist_omegapi, "#omega#pi^{0}", "l");
-  legd_cv->AddEntry(hist_ksl, "K_{L}K_{S}", "l");
-  legd_cv->AddEntry(hist_eeg, "e^{+}e^{-}#gamma", "l");
-  legd_cv->AddEntry(hist_mcrest, "Others (incl. #eta#gamma)", "l");
-  legd_cv->Draw("Same");
-
-  // Lower pad (residuals)
-  cv->cd();
-  TPad *pad2 = new TPad("pad2", "pad2", 0, 0, 1, 0.3);
-  pad2->SetTopMargin(0.02);
-  pad2->SetBottomMargin(0.3);
-  pad2->SetLeftMargin(0.12);
-  pad2->Draw();
-  pad2->cd();
 
   hresidul->SetMarkerStyle(20);
   hresidul->SetMarkerSize(0.6);
@@ -295,6 +297,6 @@ int plot_compr_roofit() {
   delete cv_res;
   intree->Close();
   delete intree;
-
+  
   return 0;
 }

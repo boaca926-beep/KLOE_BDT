@@ -7,7 +7,7 @@
 int plot_compr() {
 
   gErrorIgnoreLevel = kError;
-  TGaxis::SetMaxDigits(3);
+  TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
   gStyle->SetErrorX(0.8);
@@ -174,8 +174,8 @@ int plot_compr() {
     hist_data->GetYaxis()->SetRangeUser(0.01, 1);  // fallback, but will show empty
 
   // Legend
-  TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
-  //TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
+  //TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
+  TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
   
   legd_cv->SetTextFont(132);
   legd_cv->SetFillStyle(0);
