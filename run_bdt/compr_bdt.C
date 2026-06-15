@@ -199,9 +199,11 @@ int compr_bdt() {
   hist_nonreson_sc->Draw("HIST SAME");
   hist_eeg_sc->Draw("HIST SAME");
   hist_isr3pi_sc->Draw("HIST SAME");
-  
+
+  const double ymax = hist_data->GetMaximum();
   hist_data->GetYaxis()->SetTitle("Events");
-  
+  hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
+ 
   
   TLegend *leg = new TLegend(0.65, 0.55, 0.88, 0.88);
   leg->AddEntry(hist_data, "Data", "EP");

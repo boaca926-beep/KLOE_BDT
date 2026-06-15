@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-sample_size=norm # norm; small; mini; chain
+sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 
 exp_type=TDATA # DATA
@@ -241,8 +241,10 @@ echo "Histos are created!"
 ## Normalization
 echo '#include <iostream>' > $sfw2d_script
 echo "void sfw2d_script() {" >> $sfw2d_script
-echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
-echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
+#echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
+#echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
+echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d_noeta.C");' >> $sfw2d_script
+echo 'gROOT->ProcessLine("sfw2d_noeta()");' >> $sfw2d_script
 echo '}' >> $sfw2d_script
 root -l -n -q -b $sfw2d_script >> ${log_sfw2d} 2>&1 || { echo "ROOT failed at sfw2d_script"; exit 1; }
 echo "MC normalization!"
@@ -253,7 +255,7 @@ echo "void sfw1d_script() {" >> $sfw1d_script
 echo 'gROOT->ProcessLine(".L ../run_bdt/sfw1d.C");' >> $sfw1d_script
 echo 'gROOT->ProcessLine("sfw1d()");' >> $sfw1d_script
 echo '}' >> $sfw1d_script
-root -l -n -q -b $sfw1d_script >> ${log_sfw1d} 2>&1 || { echo "ROOT failed at sfw1d_script"; exit 1; }
+#root -l -n -q -b $sfw1d_script >> ${log_sfw1d} 2>&1 || { echo "ROOT failed at sfw1d_script"; exit 1; }
 echo "omega peak correction!"
 
 ## Omega parameters

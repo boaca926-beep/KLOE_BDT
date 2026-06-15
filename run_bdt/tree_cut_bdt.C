@@ -128,10 +128,9 @@ int tree_cut_bdt() {
 
     int recon_indx_bdt = 0;
     
-    // ---------- Output trees (same as tree_cut.C: 11 trees) ----------
+    // ---------- Output trees (same as tree_cut.C: 13 trees) ----------
     const int list_size = 13;
-    const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI",
-                                    "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG", "TISR3PI_SIG_PEAK", "TISR3PI_SIG_NON_RESON"};
+    const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI", "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG", "TISR3PI_SIG_PEAK", "TISR3PI_SIG_NON_RESON"};
     TTree *TTList[list_size];
     TCollection* tree_list = new TList;
 
@@ -568,6 +567,7 @@ int tree_cut_bdt() {
 	else if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
         //else if (m3pi_bdt > 840.) continue;
 	//if (m3pi_bdt < 760. || m3pi_bdt > 820. || bdt_score <= bdt_cut) continue; // clear sample of omega gamma
+	if (bdt_score <= 0.3) continue;
 	if (beta_3pi < 0.22) continue; // suppress missing MC a1+pi0
 	
         // Classification and filling
@@ -607,12 +607,42 @@ int tree_cut_bdt() {
     // Write output file
     TFile *f_output = new TFile(outputCut + "tree_pre_bdt.root", "update");
     f_output->cd();
-    for (int i = 0; i < list_size; i++) {
-        if (TTList[i]->GetEntries() > 0) {
-            TTList[i]->Write();
-            cout << "Tree " << TNM[i] << " written with " << TTList[i]->GetEntries() << " entries" << endl;
-        }
+
+        if (data_type == "exp") {
+        TTList[0]->Write();
+        cout << "TDATA saved with " << TTList[0]->GetEntries() << " entries" << endl;
+    } else if (data_type == "ufo") {
+        TTList[8]->Write();
+        cout << "TUFO saved with " << TTList[8]->GetEntries() << " entries" << endl;
+    } else if (data_type == "eeg") {
+        TTList[9]->Write();
+        cout << "TEEG saved with " << TTList[9]->GetEntries() << " entries" << endl;
+    } else if (data_type == "sig") {
+        TTList[10]->Write();
+        TTList[11]->Write();  // TISR3PI_SIG_PEAK
+        TTList[12]->Write();  // TISR3PI_SIG_NON_RESON
+        cout << "TISR3PI_SIG trees saved: "
+             << TTList[10]->GetEntries() << ", "
+             << TTList[11]->GetEntries() << ", "
+             << TTList[12]->GetEntries() << " entries" << endl;
+    } else if (data_type == "ksl") {
+        TTList[1]->Write();  // TOMEGAPI
+        TTList[2]->Write();  // TKPM
+        TTList[3]->Write();  // TKSL
+        TTList[4]->Write();  // T3PIGAM
+        TTList[5]->Write();  // TRHOPI
+        TTList[6]->Write();  // TETAGAM
+        TTList[7]->Write();  // TBKGREST
+        cout << "KSL trees saved: "
+             << TTList[1]->GetEntries() << ", "
+             << TTList[2]->GetEntries() << ", "
+             << TTList[3]->GetEntries() << ", "
+             << TTList[4]->GetEntries() << ", "
+             << TTList[5]->GetEntries() << ", "
+             << TTList[6]->GetEntries() << ", "
+             << TTList[7]->GetEntries() << " entries" << endl;
     }
+	
     f_output->Close();
 
     f_input->Close();

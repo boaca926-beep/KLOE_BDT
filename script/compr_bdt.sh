@@ -56,13 +56,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("Eisr")
-VAR_SYMB=("E_{#gamma_{3}}")
-UNIT=("[MeV]")
+#VAR_NM=("Eisr")
+#VAR_SYMB=("E_{#gamma_{3}}")
+#UNIT=("[MeV]")
 
-XMIN=(0)
-XMAX=(500)
-BINS=(200)
+#XMIN=(0)
+#XMAX=(500)
+#BINS=(200)
 
 ##################################################################
 #VAR_NM=("Eprompt_max")
@@ -74,13 +74,13 @@ BINS=(200)
 #BINS=(100)
 
 ##################################################################
-#VAR_NM=("angle_pi0gam12_bdt")
-#VAR_SYMB=("#angle_{#gamma#gamma}")
-#UNIT=("[#circ]")
+VAR_NM=("angle_pi0gam12_bdt")
+VAR_SYMB=("#angle_{#gamma#gamma}")
+UNIT=("[#circ]")
 
-#XMIN=(20) #20
-#XMAX=(140) #140
-#BINS=(180) #120
+XMIN=(20) #20
+XMAX=(140) #140
+BINS=(180) #120
 
 ##################################################################
 #VAR_NM=("angle_ppl_pmi")
@@ -183,7 +183,7 @@ else
 fi
 
 compr=../header_bdt/compr.h
-tree_file_nm="/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+tree_file_nm="/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
   
 for ((i=0;i<${#VAR_NM[@]};++i)); do
 
@@ -214,7 +214,7 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     echo '  gROOT->ProcessLine(".L ../run_bdt/plot_compr_roofit.C");' >> $plot_script
     echo '  gROOT->ProcessLine("plot_compr_roofit()");' >> $plot_script
     echo '}' >> $plot_script
-    root -l -n -q -b $plot_script >> ${output_folder}/output.txt
+    #root -l -n -q -b $plot_script >> ${output_folder}/output.txt
 done
 
 rm $compr_script

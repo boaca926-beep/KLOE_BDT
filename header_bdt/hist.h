@@ -13,6 +13,19 @@ const double IM3pi_max = 1020;
 const double IM3pi_sigma = 2.65;
 const int IM3pi_bin = TMath::Nint((IM3pi_max - IM3pi_min) / mass_sigma_nb / IM3pi_sigma);
 
+//Angle_gamm12
+const double angle_min = 20;
+const double angle_max = 140;
+const double angle_sigma = 0.53;
+const int angle_bin = TMath::Nint((angle_max - angle_min) / sfw2d_sigma_nb / angle_sigma);
+
+//mgg
+//mgg_bin, mgg_min, mgg_max
+const double mgg_min = 100;
+const double mgg_max = 180;
+const double mgg_sigma = 2.09;
+const int mgg_bin = TMath::Nint((mgg_max - mgg_min) / sfw2d_sigma_nb / mgg_sigma);
+
 //Eisr:
 const double Eisr_min = 50;
 const double Eisr_max = 500;
@@ -72,13 +85,15 @@ void fillHist() {
 
     // ---- Set branch addresses for this tree ----
     double m3pi_bdt = 0., m3pi_true_bdt = 0., Eisr = 0., ppIM = 0., betapi0_bdt = 0.;
-    double angle_bdt = 0.;
+    double angle_bdt = 0., m_gg = 0., bdt_score = 0.;
     int recon_indx_bdt = 0, bkg_indx = 0;
     
     tree_tmp->SetBranchAddress("Br_m3pi_bdt", &m3pi_bdt);
     tree_tmp->SetBranchAddress("Br_m3pi_true_bdt", &m3pi_true_bdt);
     tree_tmp->SetBranchAddress("Br_e3_bdt", &Eisr);
     tree_tmp->SetBranchAddress("Br_ppIM", &ppIM);
+    tree_tmp->SetBranchAddress("Br_m_gg_bdt", &m_gg);
+    tree_tmp->SetBranchAddress("Br_bdt_score", &bdt_score);
     tree_tmp->SetBranchAddress("Br_betapi0_bdt", &betapi0_bdt);
     tree_tmp->SetBranchAddress("Br_angle_pi0gam12_bdt", &angle_bdt);
     tree_tmp->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
@@ -112,6 +127,7 @@ void fillHist() {
     h1d_tmp_non_reson_true -> Sumw2();
 
     //
+    /*
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp -> Sumw2();
 
@@ -120,7 +136,17 @@ void fillHist() {
 
     TH2D * h2d_tmp_non_reson = new TH2D("h2d_sfw_" + objnm_tree + "_non_reson", "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp_non_reson -> Sumw2();
+    */
 
+    TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", angle_bin, angle_min, angle_max, mgg_bin, mgg_min, mgg_max);
+    h2d_tmp -> Sumw2();
+
+    TH2D * h2d_tmp_peak = new TH2D("h2d_sfw_" + objnm_tree + "_peak", "", angle_bin, angle_min, angle_max, mgg_bin, mgg_min, mgg_max);
+    h2d_tmp_peak -> Sumw2();
+
+    TH2D * h2d_tmp_non_reson = new TH2D("h2d_sfw_" + objnm_tree + "_non_reson", "", angle_bin, angle_min, angle_max, mgg_bin, mgg_min, mgg_max);
+    h2d_tmp_non_reson -> Sumw2();
+    
     //
     TH2D *h2d_ppIM_vs_beta = new TH2D("h2d_ppIM_vs_betapi0_" + objnm_tree, "", 200, 0.25, 0.65, 200, 0.3, 1.);  // range in GeV  
     h2d_ppIM_vs_beta -> Sumw2();
@@ -144,21 +170,28 @@ void fillHist() {
       h1d_tmp_sfw -> Fill(m3pi_bdt);
       h1d_tmp_crx -> Fill(m3pi_bdt);
       h1d_tmp_true -> Fill(m3pi_true_bdt);
-      h2d_tmp -> Fill(ppIM, Eisr);
+      //h2d_tmp -> Fill(ppIM, Eisr);
+      h2d_tmp -> Fill(angle_bdt, m_gg);
+      //cout << "ppIM = " << ppIM << ", Eisr = " << Eisr << endl;
+      //cout << "angle_bdt = " << angle_bdt << ", m_gg = " << m_gg << endl;
+      //cout << "bdt_score = " << bdt_score << ", m_gg = " << m_gg << endl;
+      
       h2d_ppIM_vs_beta -> Fill(ppIM * 1e-3, betapi0_bdt);
       h2d_angle_vs_eisr->Fill(angle_bdt, Eisr);
 
       if (recon_indx_bdt == 2 && bkg_indx == 1) {
         h1d_tmp_peak->Fill(m3pi_bdt);
         h1d_tmp_peak_true->Fill(m3pi_true_bdt);
-        h2d_tmp_peak->Fill(ppIM, Eisr);
+        //h2d_tmp_peak->Fill(ppIM, Eisr);
+	h2d_tmp_peak->Fill(angle_bdt, m_gg);
         h2d_ppIM_vs_beta_peak -> Fill(ppIM * 1e-3, betapi0_bdt);
       }
       else {
         h1d_tmp_non_reson->Fill(m3pi_bdt);
         h1d_tmp_non_reson_true->Fill(m3pi_true_bdt);
-        h2d_tmp_non_reson->Fill(ppIM, Eisr);
-        h2d_ppIM_vs_beta_non_reson -> Fill(ppIM * 1e-3, betapi0_bdt);
+        //h2d_tmp_non_reson->Fill(ppIM, Eisr);
+	h2d_tmp_non_reson->Fill(angle_bdt, m_gg);
+	h2d_ppIM_vs_beta_non_reson -> Fill(ppIM * 1e-3, betapi0_bdt);
       }
       
     }
