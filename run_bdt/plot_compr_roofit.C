@@ -173,11 +173,11 @@ int plot_compr_roofit() {
 
   // --- Canvas ---
   TCanvas *cv = new TCanvas("cv", "Comparison", 900, 900);
-  cv->SetBottomMargin(0.12);
+  cv->SetBottomMargin(0.15);
   cv->SetLeftMargin(0.12);
 
   TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1);
-  pad1->SetBottomMargin(0.01);
+  pad1->SetBottomMargin(0.012);
   pad1->SetLeftMargin(0.12);
   pad1->Draw();
   pad1->cd();
@@ -196,11 +196,12 @@ int plot_compr_roofit() {
   const double limit_factor = 1;
   hist_data->GetXaxis()->SetRangeUser(0, var_max * limit_factor);
   hist_data->GetXaxis()->SetTitle("");
+  hist_data->GetXaxis()->SetLabelOffset(1);
   hist_data->GetYaxis()->SetTitle("Events");
   hist_data->GetYaxis()->CenterTitle();
   hist_data->GetYaxis()->SetTitleSize(0.05);
   hist_data->GetYaxis()->SetTitleOffset(1.2);
-  hist_data->GetYaxis()->SetLabelSize(0.04);
+  hist_data->GetYaxis()->SetLabelSize(0.05);
   
   // Get ymax AFTER setting x-axis range
   double ymax = hist_data->GetMaximum();
@@ -210,8 +211,8 @@ int plot_compr_roofit() {
     hist_data->GetYaxis()->SetRangeUser(0.01, 1);
 
   // Legend
-  TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
-  //TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
+  //TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
+  TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
   legd_cv->SetTextFont(132);
   legd_cv->SetFillStyle(0);
   legd_cv->SetBorderSize(0);
@@ -262,8 +263,8 @@ int plot_compr_roofit() {
   hresidul->GetYaxis()->SetTitle("Pull");
   hresidul->GetYaxis()->SetTitleSize(0.12);
   hresidul->GetYaxis()->SetTitleOffset(0.5);
-  hresidul->GetYaxis()->SetLabelSize(0.08);
-  hresidul->GetYaxis()->SetRangeUser(-5, 5);
+  hresidul->GetYaxis()->SetLabelSize(0.1);
+  hresidul->GetYaxis()->SetRangeUser(-20, 20);
   hresidul->GetYaxis()->SetNdivisions(505);
   hresidul->GetYaxis()->CenterTitle();
   hresidul->Draw("P");

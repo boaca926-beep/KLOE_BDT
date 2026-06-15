@@ -47,22 +47,22 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("m3pi_bdt")
-VAR_SYMB=("M_{3#pi}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m3pi_bdt")
+#VAR_SYMB=("M_{3#pi}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(600) #300 600
-XMAX=(900) #1020 1050
-BINS=(200)
+#XMIN=(600) #300 600
+#XMAX=(900) #1020 1050
+#BINS=(200)
 
 ##################################################################
-#VAR_NM=("Eisr")
-#VAR_SYMB=("E_{#gamma_{3}}")
-#UNIT=("[MeV]")
+VAR_NM=("Eisr")
+VAR_SYMB=("E_{#gamma_{3}}")
+UNIT=("[MeV]")
 
-#XMIN=(0)
-#XMAX=(500)
-#BINS=(200)
+XMIN=(0)
+XMAX=(500)
+BINS=(200)
 
 ##################################################################
 #VAR_NM=("Eprompt_max")
@@ -183,18 +183,21 @@ else
 fi
 
 compr=../header_bdt/compr.h
-
+tree_file_nm="/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+  
 for ((i=0;i<${#VAR_NM[@]};++i)); do
 
     echo ${VAR_NM[i]}
-    
-    sed -i "s/\(const int binsize =\).*/\1 ${BINS[i]};/" $compr
-    sed -i "s/\(const double var_min =\).*/\1 ${XMIN[i]};/" $compr
-    sed -i "s/\(const double var_max =\).*/\1 ${XMAX[i]};/" $compr
 
-    sed -i "s/\(const TString var_nm =\).*/\1 \"${VAR_NM[i]}\";/" $compr
-    sed -i "s/\(const TString unit =\).*/\1 \"${UNIT[i]}\";/" $compr
-    sed -i "s/\(const TString var_symb =\).*/\1 \"${VAR_SYMB[i]}\";/" $compr
+    # Use | as delimiter instead of / to avoid conflicts with paths
+    sed -i "s|\(const TString tree_file_nm =\).*|\1 \"${tree_file_nm}\";|" $compr
+    sed -i "s|\(const int binsize =\).*|\1 ${BINS[i]};|" $compr
+    sed -i "s|\(const double var_min =\).*|\1 ${XMIN[i]};|" $compr
+    sed -i "s|\(const double var_max =\).*|\1 ${XMAX[i]};|" $compr
+
+    sed -i "s|\(const TString var_nm =\).*|\1 \"${VAR_NM[i]}\";|" $compr
+    sed -i "s|\(const TString unit =\).*|\1 \"${UNIT[i]}\";|" $compr
+    sed -i "s|\(const TString var_symb =\).*|\1 \"${VAR_SYMB[i]}\";|" $compr
 
     compr_script=compr_script.C
     echo '#include <iostream>' > $compr_script

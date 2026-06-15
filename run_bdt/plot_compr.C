@@ -212,7 +212,7 @@ int plot_compr() {
   hresidul->GetYaxis()->SetTitleSize(0.12);
   hresidul->GetYaxis()->SetTitleOffset(0.5);
   hresidul->GetYaxis()->SetLabelSize(0.08);
-  hresidul->GetYaxis()->SetRangeUser(-5, 5);
+  hresidul->GetYaxis()->SetRangeUser(-10, 10);
   hresidul->GetYaxis()->SetNdivisions(505);
   hresidul->GetYaxis()->CenterTitle();
   hresidul->Draw("P");
