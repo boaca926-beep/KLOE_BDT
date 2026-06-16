@@ -1,6 +1,6 @@
 const TString hist_root = "/home/bo/Desktop/input_bdt_TDATA_chain/hist/hist.root";
 const TString hist_type = "hbkgsum_nosig";
-const TString infile_nm = "../run_bdt/ppIM_vs_betapi0_output.root";
+const TString infile_nm = "../run_bdt/sfw2d_output.root";
 const TString output_path = "../run_bdt/";
 const TString cv_nm = "bkgsum_nosig";
 const TString cv_text = "Others";

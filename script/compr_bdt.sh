@@ -52,7 +52,7 @@ echo -e "\nPlotting histo comparison ..."
 #UNIT=("[MeV\/c^{2}]")
 
 #XMIN=(600) #300 600
-#XMAX=(900) #1020 1050
+#XMAX=(950) #1020 1050
 #BINS=(200)
 
 ##################################################################
@@ -74,13 +74,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(100)
 
 ##################################################################
-VAR_NM=("angle_pi0gam12_bdt")
-VAR_SYMB=("#angle_{#gamma#gamma}")
-UNIT=("[#circ]")
+#VAR_NM=("angle_pi0gam12_bdt")
+#VAR_SYMB=("#angle_{#gamma#gamma}")
+#UNIT=("[#circ]")
 
-XMIN=(20) #20
-XMAX=(140) #140
-BINS=(180) #120
+#XMIN=(20) #20
+#XMAX=(140) #140
+#BINS=(180) #120
 
 ##################################################################
 #VAR_NM=("angle_ppl_pmi")
@@ -96,7 +96,7 @@ BINS=(180) #120
 #VAR_SYMB=("#angle_{trk_neutral}")
 #UNIT=("[#circ]")
 
-#XMIN=(170) #20
+#XMIN=(150) #20
 #XMAX=(180) #140
 #BINS=(100) #120
 
@@ -128,13 +128,13 @@ BINS=(180) #120
 #BINS=100
 
 ##################################################################
-#VAR_NM="bdt_score"
-#VAR_SYMB="BDT value"
-#UNIT=""
+VAR_NM="bdt_score"
+VAR_SYMB="BDT value"
+UNIT=""
 
-#XMIN=0
-#XMAX=1
-#BINS=150
+XMIN=0
+XMAX=1
+BINS=150
 
 ##################################################################
 #name_tmp="t3"
@@ -202,8 +202,10 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     compr_script=compr_script.C
     echo '#include <iostream>' > $compr_script
     echo "void compr_script() {" >> $compr_script
-    echo '  gROOT->ProcessLine(".L ../run_bdt/compr_bdt.C");' >> $compr_script
-    echo '  gROOT->ProcessLine("compr_bdt()");' >> $compr_script
+    #echo '  gROOT->ProcessLine(".L ../run_bdt/compr_bdt.C");' >> $compr_script
+    #echo '  gROOT->ProcessLine("compr_bdt()");' >> $compr_script
+    echo '  gROOT->ProcessLine(".L ../run_bdt/compr_bdt_merged.C");' >> $compr_script
+    echo '  gROOT->ProcessLine("compr_bdt_merged()");' >> $compr_script
     echo '}' >> $compr_script
     root -l -n -q -b $compr_script 
 
