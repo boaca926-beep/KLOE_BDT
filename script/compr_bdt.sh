@@ -107,16 +107,16 @@ echo -e "\nPlotting histo comparison ..."
 
 #XMIN=(-460) #-700, -500
 #XMAX=(-220) #-200, 50
-#BINS=(200) #150, 550 
+#BINS=(150) #150, 550 
 
 ##################################################################
-#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-#VAR_SYMB=("M_{#gamma#gamma}")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+VAR_SYMB=("M_{#gamma#gamma}")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(100)
-#XMAX=(180)
-#BINS=(180)
+XMIN=(100)
+XMAX=(180)
+BINS=(180)
 
 ##################################################################
 #VAR_NM="ppIM"
@@ -128,13 +128,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=100
 
 ##################################################################
-VAR_NM="bdt_score"
-VAR_SYMB="BDT value"
-UNIT=""
+#VAR_NM="bdt_score"
+#VAR_SYMB="BDT value"
+#UNIT=""
 
-XMIN=0
-XMAX=1
-BINS=150
+#XMIN=0
+#XMAX=1
+#BINS=150
 
 ##################################################################
 #name_tmp="t3"

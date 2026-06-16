@@ -215,8 +215,8 @@ int compr_bdt_merged() {
   hist_data->GetYaxis()->SetTitleOffset(1.2);
   hist_data->GetYaxis()->SetLabelSize(0.04);
 
-  //TLegend *leg = new TLegend(0.65, 0.35, 0.9, 0.9);
-  TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
+  TLegend *leg = new TLegend(0.65, 0.35, 0.9, 0.9);
+  //TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
 
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
@@ -235,7 +235,7 @@ int compr_bdt_merged() {
   line_cut->SetLineColor(2);
   line_cut->SetLineWidth(2);
   //line_cut->SetLineStyle(2);
-  line_cut->Draw();
+  //line_cut->Draw();
   
   // Lower pad - ratio
   TPad *pad2 = (TPad*)c1->cd(2);
@@ -260,7 +260,7 @@ int compr_bdt_merged() {
   hist_ratio->GetYaxis()->SetTitleSize(0.12);
   hist_ratio->GetYaxis()->SetTitleOffset(0.5);
   hist_ratio->GetYaxis()->SetLabelSize(0.08);
-  hist_ratio->GetYaxis()->SetRangeUser(-15, 10);
+  hist_ratio->GetYaxis()->SetRangeUser(-5, 5);
   hist_ratio->GetYaxis()->SetNdivisions(505);
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");

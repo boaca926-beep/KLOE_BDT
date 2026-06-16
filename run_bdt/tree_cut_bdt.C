@@ -568,7 +568,7 @@ int tree_cut_bdt() {
         //else if (m3pi_bdt > 840.) continue;
 	//if (m3pi_bdt < 760. || m3pi_bdt > 820. || bdt_score <= bdt_cut) continue; // clear sample of omega gamma
 	if (bdt_score <= 0.3) continue;
-	//if (beta_3pi < 0.22) continue; // suppress missing MC a1+pi0
+	if (beta_3pi < 0.22) continue; // suppress missing MC a1+pi0
 	
         // Classification and filling
         if (data_type == "exp") {

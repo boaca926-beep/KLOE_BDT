@@ -28,7 +28,7 @@ void pi0gg_select() {
   gStyle->SetOptTitle(0);
   gStyle->SetFitFormat("6.4g");
 
-  const char* data_filename = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+  const char* data_filename = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
   const char* tree_name = "TISR3PI_SIG";
     
   TFile* file = TFile::Open(data_filename);
