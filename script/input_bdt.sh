@@ -243,9 +243,12 @@ echo '#include <iostream>' > $sfw2d_script
 echo "void sfw2d_script() {" >> $sfw2d_script
 #echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d.C");' >> $sfw2d_script
 #echo 'gROOT->ProcessLine("sfw2d()");' >> $sfw2d_script
-#echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d_noeta.C");' >> $sfw2d_script
-echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d_merged.C");' >> $sfw2d_script
-echo 'gROOT->ProcessLine("sfw2d_merged()");' >> $sfw2d_script
+
+echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d_noeta.C");' >> $sfw2d_script
+echo 'gROOT->ProcessLine("sfw2d_noeta()");' >> $sfw2d_script
+
+#echo 'gROOT->ProcessLine(".L ../run_bdt/sfw2d_merged.C");' >> $sfw2d_script
+#echo 'gROOT->ProcessLine("sfw2d_merged()");' >> $sfw2d_script
 echo '}' >> $sfw2d_script
 root -l -n -q -b $sfw2d_script >> ${log_sfw2d} 2>&1 || { echo "ROOT failed at sfw2d_script"; exit 1; }
 echo "MC normalization!"

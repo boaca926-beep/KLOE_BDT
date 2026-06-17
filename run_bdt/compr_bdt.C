@@ -2,15 +2,15 @@
 #include "../header_method/method.h"
 #include "../header_bdt/compr.h"   // defines var_nm, binsize, var_min, var_max
 #include "../header_plot/plot.h"
-#include "../header_bdt/path.h"    // for outputSfw2D
+//#include "../header_bdt/path.h"    // for outputSfw2D
 
 int compr_bdt() {
 
   gErrorIgnoreLevel = kError;
-  TGaxis::SetMaxDigits(3);
-  gStyle->SetOptStat(1110);
+  TGaxis::SetMaxDigits(4);
+  gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
-
+  gStyle->SetErrorX(0.8);
   TH1::SetDefaultSumw2();
 
   TFile* tree_file = new TFile(tree_file_nm);
@@ -180,12 +180,30 @@ int compr_bdt() {
 
   // ===== SCALED Data/MC Comparison Plot =====
   TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 800, 900);
+  c1->SetBottomMargin(0.12);
+  c1->SetLeftMargin(0.12);
+
   c1->Divide(1, 2);
+
+  // --- Residuals ---
+  TH1D *hist_ratio = new TH1D("hist_ratio", "", binsize, var_min, var_max);
+  TH1D *hist_ratio_distr = new TH1D("hist_ratio_distr", "", 200, -10, 10);
+
+  for (int j = 1; j <= binsize; ++j) {
+    double nb_data = hist_data->GetBinContent(j);
+    double nb_mcsum = hist_mcsum->GetBinContent(j);
+    double evnt_err = TMath::Sqrt(nb_data + nb_mcsum);
+    if (evnt_err > 0) {
+      double residul = (nb_data - nb_mcsum) / evnt_err;
+      hist_ratio->SetBinContent(j, residul);
+      hist_ratio_distr->Fill(residul);
+    }
+  }
   
   // Upper pad
   TPad *pad1 = (TPad*)c1->cd(1);
   pad1->SetPad(0, 0.3, 1, 1);
-  pad1->SetBottomMargin(0.02);
+  pad1->SetBottomMargin(0.01);
   pad1->SetLeftMargin(0.12);
 
   hist_data->Draw("E");
@@ -203,9 +221,17 @@ int compr_bdt() {
   const double ymax = hist_data->GetMaximum();
   hist_data->GetYaxis()->SetTitle("Events");
   hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
- 
+  hist_data->GetYaxis()->CenterTitle();
+  hist_data->GetYaxis()->SetTitleSize(0.05);
+  hist_data->GetYaxis()->SetTitleOffset(1.2);
+  hist_data->GetYaxis()->SetLabelSize(0.04);
+
   
   TLegend *leg = new TLegend(0.65, 0.55, 0.88, 0.88);
+  leg->SetTextFont(132);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
+  leg->SetNColumns(1);
   leg->AddEntry(hist_data, "Data", "EP");
   leg->AddEntry(hist_mcsum, "MC Sum", "F");
   leg->AddEntry(hist_isr3pi_sc, "ISR3#pi", "F");
@@ -226,23 +252,28 @@ int compr_bdt() {
   pad2->SetLeftMargin(0.12);
   pad2->SetGridy(1);
   
-  TH1D *hist_ratio = (TH1D*)hist_data->Clone("hist_ratio");
-  hist_ratio->Divide(hist_mcsum);
-  hist_ratio->SetTitle("");
   hist_ratio->SetMarkerStyle(20);
   hist_ratio->SetMarkerSize(0.6);
+  hist_ratio->GetXaxis()->SetTitle(var_symb + " " + unit);
+  hist_ratio->GetXaxis()->SetTitleSize(0.12);
+  hist_ratio->GetXaxis()->SetTitleOffset(1.0);
+  hist_ratio->GetXaxis()->SetLabelSize(0.1);
+  hist_ratio->GetXaxis()->CenterTitle();
   hist_ratio->GetYaxis()->SetTitle("Data/MC");
-  hist_ratio->GetYaxis()->SetRangeUser(0.5, 1.5);
-  hist_ratio->GetXaxis()->SetTitle(var_nm);
+  hist_ratio->GetYaxis()->SetTitleSize(0.12);
+  hist_ratio->GetYaxis()->SetTitleOffset(0.5);
+  hist_ratio->GetYaxis()->SetLabelSize(0.08);
+  hist_ratio->GetYaxis()->SetRangeUser(-5, 5);
+  hist_ratio->GetYaxis()->SetNdivisions(505);
+  hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");
   
-  TLine *line = new TLine(var_min, 1, var_max, 1);
+  TLine *line = new TLine(var_min, 0, var_max, 0);
   line->SetLineColor(2);
   line->SetLineStyle(2);
   line->Draw();
   
   c1->SaveAs(out_dir + "/data_mc_comparison_scaled_" + var_nm + ".pdf");
-  c1->SaveAs(out_dir + "/data_mc_comparison_scaled_" + var_nm + ".png");
   cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << ".pdf" << endl;
   
   delete c1;

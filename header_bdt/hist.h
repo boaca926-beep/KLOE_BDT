@@ -133,7 +133,6 @@ void fillHist() {
     h1d_tmp_non_reson_true -> Sumw2();
 
     //
-    /*
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp -> Sumw2();
 
@@ -142,7 +141,6 @@ void fillHist() {
 
     TH2D * h2d_tmp_non_reson = new TH2D("h2d_sfw_" + objnm_tree + "_non_reson", "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp_non_reson -> Sumw2();
-    */
     
     /*
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", angle_bin, angle_min, angle_max, mgg_bin, mgg_min, mgg_max);
@@ -155,6 +153,7 @@ void fillHist() {
     h2d_tmp_non_reson -> Sumw2();
     */
 
+    /*
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", bdt_score_bin, bdt_score_min, bdt_score_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp -> Sumw2();
 
@@ -163,7 +162,7 @@ void fillHist() {
 
     TH2D * h2d_tmp_non_reson = new TH2D("h2d_sfw_" + objnm_tree + "_non_reson", "", bdt_score_bin, bdt_score_min, bdt_score_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp_non_reson -> Sumw2();
-    
+    */
     //
     TH2D *h2d_ppIM_vs_beta = new TH2D("h2d_ppIM_vs_betapi0_" + objnm_tree, "", 200, 0.25, 0.65, 200, 0.3, 1.);  // range in GeV  
     h2d_ppIM_vs_beta -> Sumw2();
@@ -187,9 +186,9 @@ void fillHist() {
       h1d_tmp_sfw -> Fill(m3pi_bdt);
       h1d_tmp_crx -> Fill(m3pi_bdt);
       h1d_tmp_true -> Fill(m3pi_true_bdt);
-      //h2d_tmp -> Fill(ppIM, Eisr);
+      h2d_tmp -> Fill(ppIM, Eisr);
       //h2d_tmp -> Fill(angle_bdt, m_gg);
-      h2d_tmp -> Fill(bdt_score, Eisr);
+      //h2d_tmp -> Fill(bdt_score, Eisr);
       //cout << "ppIM = " << ppIM << ", Eisr = " << Eisr << endl;
       //cout << "angle_bdt = " << angle_bdt << ", m_gg = " << m_gg << endl;
       //cout << "bdt_score = " << bdt_score << ", m_gg = " << m_gg << endl;
@@ -200,17 +199,17 @@ void fillHist() {
       if (recon_indx_bdt == 2 && bkg_indx == 1) {
         h1d_tmp_peak->Fill(m3pi_bdt);
         h1d_tmp_peak_true->Fill(m3pi_true_bdt);
-        //h2d_tmp_peak->Fill(ppIM, Eisr);
+        h2d_tmp_peak->Fill(ppIM, Eisr);
 	//h2d_tmp_peak->Fill(angle_bdt, m_gg);
-	h2d_tmp_peak -> Fill(bdt_score, Eisr);
+	//h2d_tmp_peak -> Fill(bdt_score, Eisr);
         h2d_ppIM_vs_beta_peak -> Fill(ppIM * 1e-3, betapi0_bdt);
       }
       else {
         h1d_tmp_non_reson->Fill(m3pi_bdt);
         h1d_tmp_non_reson_true->Fill(m3pi_true_bdt);
-        //h2d_tmp_non_reson->Fill(ppIM, Eisr);
+        h2d_tmp_non_reson->Fill(ppIM, Eisr);
 	//h2d_tmp_non_reson->Fill(angle_bdt, m_gg);
-	h2d_tmp_non_reson->Fill(bdt_score, Eisr);
+	//h2d_tmp_non_reson->Fill(bdt_score, Eisr);
         h2d_ppIM_vs_beta_non_reson -> Fill(ppIM * 1e-3, betapi0_bdt);
       }
       

@@ -26,7 +26,7 @@ void MyClass::Main()
   int evtcls_indx = -1;
 
   int pho_indx_save[3];      // indices of the three selected prompt photons in the MC particle array (ntmc)
-  int EPI0NTMC_save[2];      // true π⁰ daughter photon indices in the MC particle array
+  int EPI0NTMC_save[3];      // true π⁰ daughter photon indices in the MC particle array, the third position is reserved for isr photon
 
   
   int test_indx = 0;     
@@ -68,7 +68,7 @@ void MyClass::Main()
   double ENERGYLIST[100];
   double PI0PHORESD[100];
   double E_pho_isr = 0., Emax_pho = 0.;
-  double EPI0GAM[2], EPI0NTMC[2], E_pi0gam1 = 0., E_pi0gam2 = 0.;
+  double EPI0GAM[2], EPI0NTMC[3], E_pi0gam1 = 0., E_pi0gam2 = 0.;
   double deltaE_true = 0.;
   double Emax_clust = 0., Esum_clust = 0.;
   double Esum = 0., E_radiv1 = 0., E_radiv2 = 0.;
@@ -308,7 +308,7 @@ void MyClass::Main()
   ALLCHAIN_TEST.Branch("Br_angle_ppl_3piboost", &angle_ppl_3piboost, "Br_angle_ppl_3piboost/D");
 
   ALLCHAIN_CUT.Branch("Br_pho_indx", &pho_indx_save, "Br_pho_indx[3]/I");
-  ALLCHAIN_CUT.Branch("Br_EPI0NTMC_save", &EPI0NTMC_save, "Br_EPI0NTMC_save[2]/I");
+  ALLCHAIN_CUT.Branch("Br_EPI0NTMC_save", &EPI0NTMC_save, "Br_EPI0NTMC_save[3]/I");
   
   ///
   if (fChain == 0) return;
@@ -343,7 +343,7 @@ void MyClass::Main()
 
     /// define isr 3pi signals
     double nb_pho_radiv = 0, nb_pi = 0, nb_pi0pho = 0;
-    int pi0gam1_ntmc = 0, pi0gam2_ntmc = 0; 
+    int pi0gam1_ntmc = 0, pi0gam2_ntmc = 0, isrgam_ntmc = 0; 
     TVector3 MC_vect;
     TLorentzVector pi0MC_TLvect, piplusMC_TLvect, piminusMC_TLvect, threepi_TLvect, isrpho_TLvect, finalstate_TLvect, pho_radiv1_TLvect, pho_radiv2_TLvect, pi0gam1_TLvect, pi0gam2_TLvect;
 
@@ -365,6 +365,7 @@ void MyClass::Main()
       if (pidmc[i] == 1 && virmom[i] == 1 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 0) {// first radiative photon
 	nb_pho_radiv ++;
 	pho_radiv1_TLvect = GetLorentzVector(MC_vect, 0.);
+	isrgam_ntmc = i;
       }
       else if (pidmc[i] == 1 && virmom[i] == 1 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 1) {// second radiative photon
 	nb_pho_radiv ++;
@@ -375,10 +376,13 @@ void MyClass::Main()
       else if (pidmc[i] == 1 && virmom[i] == 0 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 0) {// first radiative photon
 	nb_pho_radiv ++;
 	pho_radiv1_TLvect = GetLorentzVector(MC_vect, 0.);
+	isrgam_ntmc = i;
+	//cout << "isrgam_ntmc = " << isrgam_ntmc << endl;
       }
       else if (pidmc[i] == 1 && virmom[i] == 0 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 1) {// second radiative photon
 	nb_pho_radiv ++;
 	pho_radiv2_TLvect = GetLorentzVector(MC_vect, 0.);
+	//cout << "isrgam_ntmc = " << i << endl;
       }
       
       // pions (isr str3)
@@ -498,6 +502,7 @@ void MyClass::Main()
     EPI0GAM[1] = pi0gam2_TLvect.E();
     EPI0NTMC[0] = pi0gam1_ntmc; 
     EPI0NTMC[1] = pi0gam2_ntmc;
+    EPI0NTMC[2] = isrgam_ntmc;
     E_pi0gam1 = pi0gam1_TLvect.E();
     E_pi0gam2 = pi0gam2_TLvect.E();
     betapi0_true = (pi0MC_TLvect.Vect()).Mag() / pi0MC_TLvect.E();
@@ -1470,6 +1475,11 @@ void MyClass::Main()
     recon_indx = recon_indx_tmp;
     //cout << "Matched recon pi0 photons = " << recon_indx << endl;
 
+    // ============ ADD ISR MATCHING HERE ============
+    //bool isr_correct = (pho_indx[isrgam_indx] == EPI0NTMC[2]);
+    //int isr_recon_quality = isr_correct ? 1 : 0;
+    //int total_recon_quality = recon_indx + isr_recon_quality;
+ 
     // photon 1 4-mom: true pi0 photon
     pho_E1 = TLVector_pi0pho1_kinfit7C.E();
     pho_px1 = TLVector_pi0pho1_kinfit7C.X();
@@ -1620,6 +1630,7 @@ void MyClass::Main()
     pho_indx_save[2] = pho_indx[isrgam_indx];
     EPI0NTMC_save[0] = pi0gam1_ntmc;
     EPI0NTMC_save[1] = pi0gam2_ntmc;
+    EPI0NTMC_save[2] = isrgam_ntmc;
     
     ALLCHAIN_CUT.Fill();
   }

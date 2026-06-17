@@ -28,7 +28,7 @@ void pi0gg_select() {
   gStyle->SetOptTitle(0);
   gStyle->SetFitFormat("6.4g");
 
-  const char* data_filename = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+  const char* data_filename = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
   const char* tree_name = "TISR3PI_SIG";
     
   TFile* file = TFile::Open(data_filename);
@@ -40,12 +40,19 @@ void pi0gg_select() {
   int recon_indx = -1, recon_indx_bdt = -1;
   int bkg_indx = -1;
   double m3pi_bdt = 0.0, IM3pi_7C = 0.0;
+  double ppIM = 0.;
   tree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
   tree->SetBranchAddress("Br_recon_indx", &recon_indx);
   tree->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
   tree->SetBranchAddress("Br_m3pi_bdt", &m3pi_bdt);
   tree->SetBranchAddress("Br_IM3pi_7C", &IM3pi_7C);
+  tree->SetBranchAddress("Br_ppIM", &ppIM);
       
+  // ===== PPIM BINNING (for background templates) =====
+  const int PPIM_BINS = 100;
+  const double PPIM_MIN = 300;
+  const double PPIM_MAX = 650;
+  
   TH1D* h_chi2 = new TH1D("h_chi2", "; Number of correct-selected #pi^{0} photons;Events", 3, 0, 3);
   TH1D* h_bdt  = new TH1D("h_bdt",  ";  Number of correct-selected #pi^{0} photons (BDT pairing);Events", 3, 0, 3);
   h_chi2->SetLineColor(kBlue);
@@ -118,22 +125,64 @@ void pi0gg_select() {
   leg->Draw();
   c1->SaveAs(Form("../plots_select/pi0gg_recon_compare_%s.pdf", tree_name));
 
-  // Diagonal correct and wrong
-  TH1D* h_diag_correct = new TH1D("h_diag_correct","BDT-selected purely correct #pi^{0} photons (M_{3#pi})",NBINS,MASS_MIN,MASS_MAX);
-  TH1D* h_diag_wrong   = new TH1D("h_diag_wrong",  "BDT-selected purely wrong #pi^{0} photons (M_{3#pi})",NBINS,MASS_MIN,MASS_MAX);
+  // Diagonal correct and wrong (using ppIM)
+  TH1D* h_diag_correct = new TH1D("h_diag_correct","BDT-selected purely correct #pi^{0} photons (ppIM)", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  TH1D* h_diag_wrong   = new TH1D("h_diag_wrong",  "BDT-selected purely wrong #pi^{0} photons (ppIM)", PPIM_BINS, PPIM_MIN, PPIM_MAX);
 
-  // Off-diagonal histograms (renamed for clarity)
-  TH1D* h_off_diag_bdt2 = new TH1D("h_off_diag_bdt2",    "BDT = 2 correct (off-diagonal)", NBINS, MASS_MIN, MASS_MAX); // events where BDT is correct (recon_indx_bdt == 2) but χ² disagrees (recon_indx != 2).
-  TH1D* h_off_diag_bdt_lt2 = new TH1D("h_off_diag_bdt_lt2", "BDT < 2 correct (off-diagonal)", NBINS, MASS_MIN, MASS_MAX);
-  
-  // off-diagonal BDT-wrong only (recon_indx_bdt < 2 and recon_indx > recon_indx_bdt)
-  TH1D* h_offdiag_bdt_wrong = new TH1D("h_offdiag_bdt_wrong", "Off-diag BDT wrong (recon<2 & recon>recon_bdt)", NBINS, MASS_MIN, MASS_MAX); // events where BDT is wrong (recon_indx_bdt < 2) and χ² correctness is higher (recon_indx > recon_indx_bdt).
+  // Off-diagonal histograms (using ppIM)
+  TH1D* h_off_diag_bdt2 = new TH1D("h_off_diag_bdt2",    "BDT = 2 correct (off-diagonal)", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  TH1D* h_off_diag_bdt_lt2 = new TH1D("h_off_diag_bdt_lt2", "BDT < 2 correct (off-diagonal)", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  TH1D* h_offdiag_bdt_wrong = new TH1D("h_offdiag_bdt_wrong", "Off-diag BDT wrong (recon<2 & recon>recon_bdt)", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+
+  // ===== BACKGROUND TEMPLATES (using ppIM) =====
+  // PURE: Both methods fail - USE THIS FOR FITS
+  TH1D* h_background_pure = new TH1D("h_background_pure", 
+      "Pure background (both methods fail: recon<2 && recon_bdt<2) [ppIM]", 
+      PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  h_background_pure->SetLineColor(kBlack);
+  h_background_pure->SetLineWidth(2);
+  h_background_pure->SetFillStyle(3001);
+  h_background_pure->SetFillColor(kGray);
+
+  // CONTAMINATED: BDT < 2 off-diagonal - DO NOT USE FOR FITS
+  TH1D* h_background_contaminated = new TH1D("h_background_contaminated", 
+      "Contaminated (BDT<2 & off-diagonal) - DO NOT USE [ppIM]", 
+      PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  h_background_contaminated->SetLineColor(kRed);
+  h_background_contaminated->SetLineWidth(2);
+  h_background_contaminated->SetLineStyle(2);
+
+  // ===== PEAK IDENTIFICATION HISTOGRAMS =====
+  // Diagonal components (both fail and agree)
+  TH1D* h_diag_00 = new TH1D("h_diag_00", "(0,0): both see 0 correct [ppIM]", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  h_diag_00->SetLineColor(kBlue);
+  h_diag_00->SetLineWidth(2);
+
+  TH1D* h_diag_11 = new TH1D("h_diag_11", "(1,1): both see 1 correct [ppIM]", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  h_diag_11->SetLineColor(kGreen);
+  h_diag_11->SetLineWidth(2);
+
+  // Off-diagonal components (both fail but disagree)
+  TH1D* h_offdiag_01 = new TH1D("h_offdiag_01", "(0,1): BDT=0, χ²=1 [ppIM]", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  h_offdiag_01->SetLineColor(kRed);
+  h_offdiag_01->SetLineWidth(2);
+
+  TH1D* h_offdiag_10 = new TH1D("h_offdiag_10", "(1,0): BDT=1, χ²=0 [ppIM]", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  h_offdiag_10->SetLineColor(kOrange);
+  h_offdiag_10->SetLineWidth(2);
+
+  // χ² correct reference (to confirm no peak)
+  TH1D* h_chi2_correct = new TH1D("h_chi2_correct", "χ²=2 correct (any BDT) [ppIM]", PPIM_BINS, PPIM_MIN, PPIM_MAX);
+  h_chi2_correct->SetLineColor(kMagenta);
+  h_chi2_correct->SetLineWidth(2);
+  h_chi2_correct->SetLineStyle(2);
   
   // 2D correlation (3pi invariant mass)
   TH2D* h_corr_m3pi_bdt_chi2 = new TH2D("h_corr_m3pi_bdt_chi2",";BDT M_{3#pi} [MeV]; #chi^{2} M_{3#pi} [MeV]",NBINS,MASS_MIN,MASS_MAX,NBINS,MASS_MIN,MASS_MAX);
   
   // 2D correlation (absolute counts)
   TH2D* h_corr = new TH2D("h_corr",";BDT-selected correct #pi^{0} photons;#chi^{2}-selected correct #pi^{0} photons",3,0,3,3,0,3);
+  
   for (Long64_t i = 0; i < nentries; ++i) {
     tree->GetEntry(i);
     h_corr_m3pi_bdt_chi2->Fill(m3pi_bdt, IM3pi_7C);
@@ -141,22 +190,58 @@ void pi0gg_select() {
     // Diagonal vs off-diagonal
     if (recon_indx_bdt == recon_indx) {
       if (recon_indx_bdt == 2)
-        h_diag_correct->Fill(m3pi_bdt);
+        h_diag_correct->Fill(ppIM);
       else
-        h_diag_wrong->Fill(m3pi_bdt);
+        h_diag_wrong->Fill(ppIM);
     } else {
       if (recon_indx_bdt == 2) {
-        h_off_diag_bdt2->Fill(m3pi_bdt);
+        h_off_diag_bdt2->Fill(ppIM);
       } else if (recon_indx_bdt < 2) {
-        h_off_diag_bdt_lt2->Fill(m3pi_bdt);
-        // NEW: fill off-diagonal BDT-wrong
+        h_off_diag_bdt_lt2->Fill(ppIM);
         if (recon_indx > recon_indx_bdt)
-          h_offdiag_bdt_wrong->Fill(m3pi_bdt);
+          h_offdiag_bdt_wrong->Fill(ppIM);
       }
+    }
+
+    // ===== FILL BACKGROUND TEMPLATES =====
+    if (!(recon_indx_bdt == 2 && bkg_indx == 1)) {
+      // PURE: Both methods fail - USE THIS FOR FITS
+      if (recon_indx_bdt < 2 && recon_indx < 2) {
+        h_background_pure->Fill(ppIM);
+
+        // Identify which component contributes to the peak
+        if (recon_indx_bdt == recon_indx) {
+          // DIAGONAL: both agree they're wrong
+          if (recon_indx_bdt == 0 && recon_indx == 0) {
+            h_diag_00->Fill(ppIM);
+          } else if (recon_indx_bdt == 1 && recon_indx == 1) {
+            h_diag_11->Fill(ppIM);
+          }
+        } else {
+          // OFF-DIAGONAL: both fail but disagree
+          if (recon_indx_bdt == 0 && recon_indx == 1) {
+            h_offdiag_01->Fill(ppIM);
+          } else if (recon_indx_bdt == 1 && recon_indx == 0) {
+            h_offdiag_10->Fill(ppIM);
+          }
+        }
+      }
+
+      // CONTAMINATED: BDT < 2 off-diagonal - DO NOT USE
+      if (recon_indx_bdt < 2 && recon_indx != recon_indx_bdt) {
+	h_background_contaminated->Fill(ppIM);
+      }
+    }
+
+    
+    // Fill χ² correct for reference
+    if (recon_indx == 2) {
+      h_chi2_correct->Fill(ppIM);
     }
     
     h_corr->Fill(recon_indx_bdt, recon_indx);
   }
+  
   // Integer bin labels
   for (int i = 1; i <= 3; ++i) {
     h_corr->GetXaxis()->SetBinLabel(i, Form("%d", i-1));
@@ -243,15 +328,14 @@ void pi0gg_select() {
   c4->cd(2);
   gPad->SetLeftMargin(0.12);
   gPad->SetRightMargin(0.12);
-  // Off-diagonal shapes (original)
   h_off_diag_bdt2->SetLineColor(kBlue);
   h_off_diag_bdt_lt2->SetLineColor(kRed);
   h_off_diag_bdt2->Draw("hist");
   h_off_diag_bdt_lt2->Draw("same hist");
-  TLegend *leg_off = new TLegend(0.65,0.7,0.9,0.85);
-  leg_off->AddEntry(h_off_diag_bdt2,"BDT = 2 correct (off-diag)","l");
-  leg_off->AddEntry(h_off_diag_bdt_lt2,"BDT < 2 correct (off-diag)","l");
-  leg_off->Draw();
+  TLegend *leg1 = new TLegend(0.65,0.7,0.9,0.85);
+  leg1->AddEntry(h_off_diag_bdt2,"BDT = 2 correct (off-diag)","l");
+  leg1->AddEntry(h_off_diag_bdt_lt2,"BDT < 2 correct (off-diag)","l");
+  leg1->Draw();
 
   gPad->Update();
 
@@ -295,7 +379,6 @@ void pi0gg_select() {
   TH1D* h_off_diag_bdt_lt2_norm = (TH1D*)h_off_diag_bdt_lt2->Clone("h_off_diag_bdt_lt2_norm");
   h_off_diag_bdt2_norm->Scale(1.0/h_off_diag_bdt2_norm->Integral());
   h_off_diag_bdt_lt2_norm->Scale(1.0/h_off_diag_bdt_lt2_norm->Integral());
-  //h_off_diag_bdt2_norm->SetLineColor(kBlue);
   h_off_diag_bdt_lt2_norm->SetLineColor(kRed);
   h_off_diag_bdt2_norm->GetYaxis()->SetTitle("Normalized events");
   h_off_diag_bdt2_norm->Draw("hist");
@@ -306,7 +389,7 @@ void pi0gg_select() {
   leg2->Draw();
   c5->SaveAs("../plots_select/pi0gg_off_diagonal_m3pi_normalized.pdf");
 
-  // ========== NEW: Off-diagonal BDT-wrong shape for template ==========
+  // ========== Off-diagonal BDT-wrong shape for template ==========
   TCanvas* c6 = new TCanvas("c6","Off-diagonal BDT-wrong combinatorial template",900,600);
   h_offdiag_bdt_wrong->SetLineColor(kMagenta);
   h_offdiag_bdt_wrong->SetFillStyle(3001);
@@ -314,12 +397,197 @@ void pi0gg_select() {
   h_offdiag_bdt_wrong->Draw("hist");
   c6->SaveAs("../plots_select/pi0gg_offdiag_bdt_wrong_template.pdf");
 
-  // Save the new histogram to a ROOT file for template fits
-  TFile* fout = new TFile("../plots_select/combinatorial_template_offdiag_wrong.root", "RECREATE");
-  h_offdiag_bdt_wrong->Write();
+  // ========== Pure background template (ppIM) ==========
+  TCanvas* c7 = new TCanvas("c7","Pure Background Template (both methods fail) [ppIM]",900,600);
+  h_background_pure->SetLineColor(kBlack);
+  h_background_pure->SetLineWidth(2);
+  h_background_pure->SetFillStyle(3001);
+  h_background_pure->SetFillColor(kGray);
+  h_background_pure->GetXaxis()->SetTitle("ppIM [MeV]");
+  h_background_pure->Draw("hist");
+  c7->SaveAs("../plots_select/background_pure_ppIM.pdf");
+
+  // ========== Comparison: Pure vs Contaminated ==========
+  TCanvas* c8 = new TCanvas("c8","Background Template Comparison: PURE vs CONTAMINATED (ppIM)",900,600);
+  
+  // Draw highest statistics first
+  if (h_background_contaminated->Integral() > h_background_pure->Integral()) {
+    h_background_contaminated->Draw("hist");
+    h_background_pure->Draw("hist same");
+  } else {
+    h_background_pure->Draw("hist");
+    h_background_contaminated->Draw("hist same");
+  }
+  
+  h_background_pure->GetXaxis()->SetTitle("ppIM [MeV]");
+  
+  TLegend* leg_compare = new TLegend(0.55, 0.7, 0.9, 0.85);
+  leg_compare->AddEntry(h_background_pure, "PURE (both fail) - USE THIS", "l");
+  leg_compare->AddEntry(h_background_contaminated, "CONTAMINATED (has peak)", "l");
+  leg_compare->Draw();
+  
+  c8->SaveAs("../plots_select/background_pure_vs_contaminated_ppIM.pdf");
+
+  // ========== PEAK IDENTIFICATION (NO NORMALIZATION) ==========
+  TCanvas* c_peak = new TCanvas("c_peak", "Peak Source Identification", 1200, 900);
+  c_peak->Divide(2,2);
+
+  // Panel 1: All components (raw counts)
+  c_peak->cd(1);
+  gPad->SetLeftMargin(0.12);
+  
+  // Draw highest statistics first
+  double int_00 = h_diag_00->Integral();
+  double int_11 = h_diag_11->Integral();
+  double int_01 = h_offdiag_01->Integral();
+  double int_10 = h_offdiag_10->Integral();
+  
+  // Find max and draw first
+  double max_int = TMath::Max(TMath::Max(int_00, int_11), TMath::Max(int_01, int_10));
+  
+  if (int_00 == max_int) {
+    h_diag_00->Draw("hist");
+    h_diag_11->Draw("hist same");
+    h_offdiag_01->Draw("hist same");
+    h_offdiag_10->Draw("hist same");
+  } else if (int_11 == max_int) {
+    h_diag_11->Draw("hist");
+    h_diag_00->Draw("hist same");
+    h_offdiag_01->Draw("hist same");
+    h_offdiag_10->Draw("hist same");
+  } else if (int_01 == max_int) {
+    h_offdiag_01->Draw("hist");
+    h_diag_00->Draw("hist same");
+    h_diag_11->Draw("hist same");
+    h_offdiag_10->Draw("hist same");
+  } else {
+    h_offdiag_10->Draw("hist");
+    h_diag_00->Draw("hist same");
+    h_diag_11->Draw("hist same");
+    h_offdiag_01->Draw("hist same");
+  }
+  
+  h_diag_00->SetLineColor(kBlue);
+  h_diag_11->SetLineColor(kGreen);
+  h_offdiag_01->SetLineColor(kRed);
+  h_offdiag_10->SetLineColor(kOrange);
+  
+  h_diag_00->GetXaxis()->SetTitle("ppIM [MeV]");
+  h_diag_00->GetYaxis()->SetTitle("Events");
+  
+  TLegend* leg_peak = new TLegend(0.55, 0.6, 0.9, 0.85);
+  leg_peak->AddEntry(h_diag_00, Form("(0,0): both see 0 (%.0f)", int_00), "l");
+  leg_peak->AddEntry(h_diag_11, Form("(1,1): both see 1 (%.0f)", int_11), "l");
+  leg_peak->AddEntry(h_offdiag_01, Form("(0,1): BDT=0, χ²=1 (%.0f)", int_01), "l");
+  leg_peak->AddEntry(h_offdiag_10, Form("(1,0): BDT=1, χ²=0 (%.0f)", int_10), "l");
+  leg_peak->Draw();
+
+  // Panel 2: Diagonal (0,0) vs (1,1)
+  c_peak->cd(2);
+  gPad->SetLeftMargin(0.12);
+  
+  if (int_00 > int_11) {
+    h_diag_00->Draw("hist");
+    h_diag_11->Draw("hist same");
+  } else {
+    h_diag_11->Draw("hist");
+    h_diag_00->Draw("hist same");
+  }
+  
+  h_diag_00->GetXaxis()->SetTitle("ppIM [MeV]");
+  h_diag_00->GetYaxis()->SetTitle("Events");
+
+  TLegend* leg_diag = new TLegend(0.55, 0.7, 0.9, 0.85);
+  leg_diag->AddEntry(h_diag_00, Form("(0,0): both see 0 (%.0f)", int_00), "l");
+  leg_diag->AddEntry(h_diag_11, Form("(1,1): both see 1 (%.0f)", int_11), "l");
+  leg_diag->Draw();
+
+  // Panel 3: Off-diagonal (0,1) vs (1,0)
+  c_peak->cd(3);
+  gPad->SetLeftMargin(0.12);
+  
+  if (int_01 > int_10) {
+    h_offdiag_01->Draw("hist");
+    h_offdiag_10->Draw("hist same");
+  } else {
+    h_offdiag_10->Draw("hist");
+    h_offdiag_01->Draw("hist same");
+  }
+  
+  h_offdiag_01->GetXaxis()->SetTitle("ppIM [MeV]");
+  h_offdiag_01->GetYaxis()->SetTitle("Events");
+
+  TLegend* leg_off = new TLegend(0.55, 0.7, 0.9, 0.85);
+  leg_off->AddEntry(h_offdiag_01, Form("(0,1): BDT=0, χ²=1 (%.0f)", int_01), "l");
+  leg_off->AddEntry(h_offdiag_10, Form("(1,0): BDT=1, χ²=0 (%.0f)", int_10), "l");
+  leg_off->Draw();
+
+  // Panel 4: Pure vs Contaminated with χ²=2 reference (raw counts)
+  c_peak->cd(4);
+  gPad->SetLeftMargin(0.12);
+  
+  double int_pure = h_background_pure->Integral();
+  double int_contam = h_background_contaminated->Integral();
+  double int_chi2 = h_chi2_correct->Integral();
+  
+  // Draw highest statistics first
+  if (int_pure >= int_contam && int_pure >= int_chi2) {
+    h_background_pure->Draw("hist");
+    h_background_contaminated->Draw("hist same");
+    //h_chi2_correct->Draw("hist same");
+  } else if (int_contam >= int_pure && int_contam >= int_chi2) {
+    h_background_contaminated->Draw("hist");
+    h_background_pure->Draw("hist same");
+    //h_chi2_correct->Draw("hist same");
+  } else {
+    //h_chi2_correct->Draw("hist");
+    h_background_pure->Draw("hist same");
+    h_background_contaminated->Draw("hist same");
+  }
+  
+  h_background_pure->SetLineColor(kBlack);
+  h_background_contaminated->SetLineColor(kRed);
+  h_chi2_correct->SetLineColor(kMagenta);
+  h_chi2_correct->SetLineStyle(2);
+  
+  h_background_pure->GetXaxis()->SetTitle("ppIM [MeV]");
+  h_background_pure->GetYaxis()->SetTitle("Events");
+
+  TLegend* leg_ref = new TLegend(0.55, 0.6, 0.9, 0.85);
+  leg_ref->AddEntry(h_background_pure, Form("Pure (both fail) (%.0f)", int_pure), "l");
+  leg_ref->AddEntry(h_background_contaminated, Form("Contaminated (%.0f)", int_contam), "l");
+  leg_ref->AddEntry(h_chi2_correct, Form("#chi^{2} correct (NO peak) (%.0f)", int_chi2), "l");
+  leg_ref->Draw();
+
+  c_peak->SaveAs("../plots_select/peak_source_identification.pdf");
+
+  // ========== SAVE TEMPLATES ==========
+  TFile* fout = new TFile("../plots_select/background_templates.root", "RECREATE");
+  h_background_pure->Write("background_pure");              // USE THIS for final fits
+  h_background_contaminated->Write("background_contaminated"); // Shows the peak (comparison only)
+  h_offdiag_bdt_wrong->Write("background_bdt_wrong");       // For comparison only
   fout->Close();
 
-  // Print yield for information
-  std::cout << "\n=== Off-diagonal BDT-wrong yield ===\n";
-  std::cout << "Events in h_offdiag_bdt_wrong: " << h_offdiag_bdt_wrong->Integral() << std::endl;
+  // ========== PRINT STATISTICS ==========
+  std::cout << "\n=== Background Template Statistics (ppIM) ===\n";
+  std::cout << "PURE (both methods fail): " 
+            << h_background_pure->Integral() << " events" << std::endl;
+  std::cout << "CONTAMINATED (has peak): " 
+            << h_background_contaminated->Integral() << " events" << std::endl;
+  std::cout << "Difference (peak events to exclude): " 
+            << h_background_contaminated->Integral() - h_background_pure->Integral() 
+            << " events" << std::endl;
+  
+  std::cout << "\n=== Peak Source Identification ===\n";
+  std::cout << "Diagonal (0,0): " << h_diag_00->Integral() << " events" << std::endl;
+  std::cout << "Diagonal (1,1): " << h_diag_11->Integral() << " events" << std::endl;
+  std::cout << "Off-diagonal (0,1): " << h_offdiag_01->Integral() << " events" << std::endl;
+  std::cout << "Off-diagonal (1,0): " << h_offdiag_10->Integral() << " events" << std::endl;
+  std::cout << "χ²=2 correct: " << h_chi2_correct->Integral() << " events (NO peak)" << std::endl;
+  
+  std::cout << "\n=== Saved Templates ===\n";
+  std::cout << "File: ../plots_select/background_templates.root" << std::endl;
+  std::cout << "  - background_pure        : USE THIS (no peak)" << std::endl;
+  std::cout << "  - background_contaminated: Shows the peak (for comparison)" << std::endl;
+  std::cout << "  - background_bdt_wrong   : For comparison only" << std::endl;
 }

@@ -158,14 +158,6 @@ BINS=(180)
 ##################################################################
 #VAR_NM="beta_3pi"
 #VAR_SYMB="#beta_{3#pi}"
-
-#UNIT="[]"
-#XMIN=0.2
-#XMAX=0.5
-#BINS=200
-
-
-
 output_folder="../output_"${VAR_NM[0]}
 
 #check output folder and update output files
@@ -183,7 +175,10 @@ else
 fi
 
 compr=../header_bdt/compr.h
-tree_file_nm="/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+sample_type=chain
+main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
+tree_file_nm="${main_folder}/cut/tree_pre_bdt.root";
+outputSfw2D="${main_folder}/sfw2d/";
   
 for ((i=0;i<${#VAR_NM[@]};++i)); do
 
@@ -191,6 +186,7 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
 
     # Use | as delimiter instead of / to avoid conflicts with paths
     sed -i "s|\(const TString tree_file_nm =\).*|\1 \"${tree_file_nm}\";|" $compr
+    sed -i "s|\(const TString outputSfw2D =\).*|\1 \"${outputSfw2D}\";|" $compr
     sed -i "s|\(const int binsize =\).*|\1 ${BINS[i]};|" $compr
     sed -i "s|\(const double var_min =\).*|\1 ${XMIN[i]};|" $compr
     sed -i "s|\(const double var_max =\).*|\1 ${XMAX[i]};|" $compr
@@ -202,10 +198,11 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     compr_script=compr_script.C
     echo '#include <iostream>' > $compr_script
     echo "void compr_script() {" >> $compr_script
-    #echo '  gROOT->ProcessLine(".L ../run_bdt/compr_bdt.C");' >> $compr_script
-    #echo '  gROOT->ProcessLine("compr_bdt()");' >> $compr_script
-    echo '  gROOT->ProcessLine(".L ../run_bdt/compr_bdt_merged.C");' >> $compr_script
-    echo '  gROOT->ProcessLine("compr_bdt_merged()");' >> $compr_script
+    echo '  gROOT->ProcessLine(".L ../run_bdt/compr_bdt.C");' >> $compr_script
+    echo '  gROOT->ProcessLine("compr_bdt()");' >> $compr_script
+
+    #echo '  gROOT->ProcessLine(".L ../run_bdt/compr_bdt_merged.C");' >> $compr_script
+    #echo '  gROOT->ProcessLine("compr_bdt_merged()");' >> $compr_script
     echo '}' >> $compr_script
     root -l -n -q -b $compr_script 
 

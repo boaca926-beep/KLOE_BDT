@@ -100,7 +100,7 @@ int tree_cut_bdt() {
     double evnt_tot = 0;
     double Eprompt_max = 0.;
 
-    int pho_indx[3], EPI0NTMC[2];
+    int pho_indx[3], EPI0NTMC[3];
     
     // BDT‑specific variables (reco)
     double bdt_score = 0.;
@@ -127,7 +127,9 @@ int tree_cut_bdt() {
     double m2pi_pull = 0.;
 
     int recon_indx_bdt = 0;
-    
+    int isr_recon_quality = 0;      // ADD THIS
+    int total_recon_quality = 0;
+ 
     // ---------- Output trees (same as tree_cut.C: 13 trees) ----------
     const int list_size = 13;
     const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI", "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG", "TISR3PI_SIG_PEAK", "TISR3PI_SIG_NON_RESON"};
@@ -275,6 +277,8 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_m3pi_pull", &m3pi_pull, "Br_m3pi_pull/D");
         tree_tmp->Branch("Br_m2pi_pull", &m2pi_pull, "Br_m2pi_pull/D");
         tree_tmp->Branch("Br_recon_indx_bdt", &recon_indx_bdt, "Br_recon_indx_bdt/I");
+	tree_tmp->Branch("Br_isr_recon_quality", &isr_recon_quality, "Br_isr_recon_quality/I");    // ADD THIS
+tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon_quality/I"); // ADD THIS
     }
 
     TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
@@ -336,6 +340,7 @@ int tree_cut_bdt() {
         pho_indx[2] = ALLCHAIN_CUT->GetLeaf("Br_pho_indx")->GetValue(2);
         EPI0NTMC[0] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(0);
         EPI0NTMC[1] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(1);
+	EPI0NTMC[2] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(2);
  
         ppl_E = ALLCHAIN_CUT->GetLeaf("Br_ppl_E")->GetValue(0);
         ppl_px = ALLCHAIN_CUT->GetLeaf("Br_ppl_px")->GetValue(0);
@@ -558,6 +563,11 @@ int tree_cut_bdt() {
         }
         recon_indx_bdt = correct_bdt;
 
+	// After recon_indx_bdt calculation
+	bool isr_correct = (pho_indx[result.prompt_index] == EPI0NTMC[2]);
+	isr_recon_quality = isr_correct ? 1 : 0;
+	total_recon_quality = recon_indx_bdt + isr_recon_quality;
+	
 	
         // Selection cuts
         if (lagvalue_min_7C > chi2_cut) continue; //40->20 further suppress kaons background

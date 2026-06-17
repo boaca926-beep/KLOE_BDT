@@ -2,7 +2,8 @@
 #include "../header_method/method.h"
 #include "../header_bdt/compr.h"   // defines var_nm, binsize, var_min, var_max
 #include "../header_plot/plot.h"
-#include "../header_bdt/path.h"    // for outputSfw2D
+//#include "../header_bdt/path.h"    // for outputSfw2D
+//const TString outputSfw2D = "../../input_bdt_TDATA_chain/sfw2d/";
 
 int compr_bdt_merged() {
 
@@ -229,6 +230,8 @@ int compr_bdt_merged() {
   leg->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
   leg->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
   leg->AddEntry(hist_mcrest_sc, "Others", "l");
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
   leg->Draw();
 
   TLine *line_cut = new TLine(0.3, 0, 0.3, ymax);
@@ -271,7 +274,6 @@ int compr_bdt_merged() {
   line->Draw();
 
   c1->SaveAs(out_dir + "/data_mc_comparison_merged_" + var_nm + ".pdf");
-  c1->SaveAs(out_dir + "/data_mc_comparison_merged_" + var_nm + ".png");
   cout << "Merged plot saved to: " << out_dir << "/data_mc_comparison_merged_" << var_nm << ".pdf" << endl;
   
   delete c1;
