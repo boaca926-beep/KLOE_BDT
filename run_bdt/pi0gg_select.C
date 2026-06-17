@@ -37,13 +37,14 @@ void pi0gg_select() {
   if (!tree) return;
   std::cout << "Tree " << tree_name << " has " << tree->GetEntries() << " entries." << std::endl;
 
-  int recon_indx = -1, recon_indx_bdt = -1;
+  int recon_indx = -1, recon_indx_bdt = -1, total_recon_quality = -1;
   int bkg_indx = -1;
   double m3pi_bdt = 0.0, IM3pi_7C = 0.0;
   double ppIM = 0.;
   tree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
   tree->SetBranchAddress("Br_recon_indx", &recon_indx);
   tree->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
+  tree->SetBranchAddress("Br_total_recon_quality", &total_recon_quality);
   tree->SetBranchAddress("Br_m3pi_bdt", &m3pi_bdt);
   tree->SetBranchAddress("Br_IM3pi_7C", &IM3pi_7C);
   tree->SetBranchAddress("Br_ppIM", &ppIM);
@@ -204,10 +205,11 @@ void pi0gg_select() {
     }
 
     // ===== FILL BACKGROUND TEMPLATES =====
+    //if (!(total_recon_quality == 3)) {
     if (!(recon_indx_bdt == 2 && bkg_indx == 1)) {
       // PURE: Both methods fail - USE THIS FOR FITS
       if (recon_indx_bdt < 2 && recon_indx < 2) {
-        h_background_pure->Fill(ppIM);
+        //h_background_pure->Fill(ppIM);
 
         // Identify which component contributes to the peak
         if (recon_indx_bdt == recon_indx) {
@@ -233,7 +235,6 @@ void pi0gg_select() {
       }
     }
 
-    
     // Fill χ² correct for reference
     if (recon_indx == 2) {
       h_chi2_correct->Fill(ppIM);

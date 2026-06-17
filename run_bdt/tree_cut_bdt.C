@@ -590,11 +590,14 @@ tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon
         } else if (data_type == "sig") {
             TTList[10]->Fill();
 	    // Separate into peak and non-resonant
-            if (recon_indx_bdt == 2 && bkg_indx == 1) {
-	      TTList[11]->Fill();  // TISR3PI_SIG_PEAK
+	    if (total_recon_quality == 3) {
+	    //if (recon_indx_bdt == 2 && bkg_indx == 1) {
+	      TTList[11]->Fill();  // Perfect reconstruction -> TISR3PI_SIG_PEAK
             } else {
+	      // Good reconstruction (at least pi0 correct)
 	      TTList[12]->Fill();  // TISR3PI_SIG_NON_RESON
             }
+	    // Events with total_recon_quality < 2 are more likely background
         } else if (data_type == "ksl") {
 	  if (phid == 0) {
 	    TTList[1]->Fill();

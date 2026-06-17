@@ -22,6 +22,20 @@ def prepare_3photon_pairs(df_events):
     #print("="*50)
 
     pairs = []
+    
+    # Check if ISR columns exist
+    has_isr_quality = 'Br_isr_recon_quality' in df_events.columns
+    has_total_quality = 'Br_total_recon_quality' in df_events.columns
+    
+    # Track ISR statistics
+    isr_stats = {
+        'total': 0,
+        'correct': 0,
+        'quality_3': 0,
+        'quality_2': 0,
+        'quality_1': 0,
+        'quality_0': 0
+    }
 
     for _, evt in df_events.iterrows():
         # Get 4-vector for all 3 photons
@@ -38,6 +52,26 @@ def prepare_3photon_pairs(df_events):
 
         #print(f"{pair_indices},{type(pair_indices)}, {type(df_events)}")
         #print(photon)
+
+        # Get ISR quality if available
+        isr_quality = 0
+        total_quality = 0
+        if has_isr_quality:
+            isr_quality = evt.Br_isr_recon_quality if not pd.isna(evt.Br_isr_recon_quality) else 0
+        if has_total_quality:
+            total_quality = evt.Br_total_recon_quality if not pd.isna(evt.Br_total_recon_quality) else 0
+            # Update ISR stats
+            isr_stats['total'] += 1
+            if total_quality == 3:
+                isr_stats['quality_3'] += 1
+            elif total_quality == 2:
+                isr_stats['quality_2'] += 1
+            elif total_quality == 1:
+                isr_stats['quality_1'] += 1
+            else:
+                isr_stats['quality_0'] += 1
+            if isr_quality == 1:
+                isr_stats['correct'] += 1
 
         for i, j in pair_indices:
 
@@ -105,9 +139,18 @@ def prepare_3photon_pairs(df_events):
 
             # Is this the correct pi0 pair? (require truth info)
             is_pi0 = 0
+            isr_correct = 0
+
             if 'is_signal' in evt and evt.is_signal == 1:
                 if 'true_pi0_pair' in evt:
                     is_pi0 = 1 if (i, j) == evt.true_pi0_pair else 0
+
+                    # ===== Check if this is the correct ISR assignment =====
+                    # The prompt_index in the BDT result corresponds to the unpaired photon
+                    # We can use total_recon_quality to validate
+                    if has_total_quality and total_quality == 3:
+                    # If quality==3, the unpaired photon is correctly identified as ISR
+                        isr_correct = 1 if is_pi0 == 1 else 0
                 else:
                     # If you don't have exact pair truth,
                     # assume the pair with mass closest to 0.135 GeV is correct
@@ -128,7 +171,11 @@ def prepare_3photon_pairs(df_events):
                 'asym_x_angle': asym_x_angle,
                 'E_diff': e_diff,
                 #'E_ratio': e_ratio,
-                'is_pi0': is_pi0
+                'is_pi0': is_pi0,
+                'isr_recon_quality': isr_quality if has_isr_quality else 0,
+                'total_recon_quality': total_quality if has_total_quality else 0,
+                'isr_correct': isr_correct,
+                'pair_index': i * 10 + j
             })
         
     pi0_all_df = pd.DataFrame(pairs)
