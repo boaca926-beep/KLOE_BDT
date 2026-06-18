@@ -27,6 +27,7 @@ def prepare_3photon_pairs(df_events):
     has_isr_quality = 'Br_isr_recon_quality' in df_events.columns
     has_total_quality = 'Br_total_recon_quality' in df_events.columns
     
+    
     # Track ISR statistics
     isr_stats = {
         'total': 0,

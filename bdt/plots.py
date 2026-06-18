@@ -10,7 +10,6 @@ from sklearn.metrics import confusion_matrix, classification_report
 # =================================================================
 def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
                    
-                   
     all_df = df_set[0].drop(drop_columns, axis=1)
     good_df = df_set[1].drop(drop_columns, axis=1)
     bad_df = df_set[2].drop(drop_columns, axis=1)
@@ -44,22 +43,26 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
             print(f"Odd column length or none integer column length ({col_len}). Not plot is created!")
             return
 
-    # Create subplot grid
-    plot_col = int(col_len / rows) # number of rows and columns to the plot
-    fig, axes = plt.subplots(rows, plot_col, figsize=(16, 10)) # rows and columns to subplots
+    # ========== FIX: Calculate rows dynamically ==========
+    plot_col = rows
+    plot_row = (col_len + plot_col - 1) // plot_col  # Ceiling division
+    # ====================================================
+    
+    fig, axes = plt.subplots(plot_row, plot_col, figsize=(16, 10))
     fig.suptitle(plot_title, fontsize=16, y=1.02)
 
     # Flatten axes array for easy iteration
     axes = axes.flatten()
     columns = all_df.columns
     
-    #for i, label in enumerate(columns_df[:col_len]):
-    for i, label in enumerate(columns):
-        #print(i, label)
-        # desity=True normalized
-        positive_good_df = good_df[label] #good_df[good_df[label] > 0.2][label]
-        positive_bad_df = bad_df[label] #bad_df[bad_df[label] > 0.2][label]
-        positive_all_df = all_df[label] #all_df[all_df[label] > 0.2][label]
+    # ========== FIX: Iterate only up to col_len ==========
+    for i in range(col_len):
+        label = columns[i]
+    # =====================================================
+        
+        positive_good_df = good_df[label]
+        positive_bad_df = bad_df[label]
+        positive_all_df = all_df[label]
 
         if label in ['Br_E1', 'Br_E2', 'Br_E3', 'Br_deltaE']:
             unit = fr'[$\mathrm{{MeV}}$]'
@@ -71,7 +74,6 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
             unit = fr'[$\circ$]'
         else:
             unit = ""
-            #rint("AU")
 
         n1, bin_edges1, patches1 = axes[i].hist([positive_good_df, positive_bad_df], 
                      color=['green', 'blue'], 
@@ -81,7 +83,7 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
                      edgecolor=['green', 'blue'],
                      linewidth=1, 
                      alpha=0.5,
-                     histtype='stepfilled' # Filled histograms
+                     histtype='stepfilled'
                      )
 
         n2, bin_edges2, patches2 = axes[i].hist(positive_all_df, 
@@ -92,27 +94,22 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
                      edgecolor='red',
                      linewidth=1, 
                      alpha=0.5,
-                     histtype='step' # Filled histograms
+                     histtype='step'
                      )
         
-        
-
         bin_width = bin_edges2[1] - bin_edges2[0]
-        #print(f"bin_width: {bin_width:.2f}")
  
         axes[i].set_xlabel(label + ' ' + unit)
-        #axes[i].set_ylabel(fr'Events / {bin_width:.1f} {unit}', fontsize=14)
         axes[i].set_ylabel(fr'Events', fontsize=14)
         axes[i].grid(True, alpha=0.3)
         axes[i].legend(loc='best', fontsize=14) 
     
-    #plt.title(plot_title)
+    # ========== FIX: Hide unused subplots ==========
+    for i in range(col_len, len(axes)):
+        axes[i].set_visible(False)
+    # ================================================
+    
     plt.tight_layout()
-    #plt.savefig('./plots/' + plot_nm + '_compr.png', dpi=300, bbox_inches='tight')
-    #plt.show(block=False)
-    #plt.show()
-    #plt.close()
-
     return fig
 
 # =================================================================
