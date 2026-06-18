@@ -233,13 +233,13 @@ int compr_bdt() {
   leg->SetBorderSize(0);
   leg->SetNColumns(1);
   leg->AddEntry(hist_data, "Data", "EP");
-  leg->AddEntry(hist_mcsum, "MC Sum", "F");
-  leg->AddEntry(hist_isr3pi_sc, "ISR3#pi", "F");
-  leg->AddEntry(hist_eeg_sc, "EEG", "F");
-  leg->AddEntry(hist_omegapi_sc, "#omega#pi", "F");
-  leg->AddEntry(hist_nonreson_sc, "Non-reson", "F");
-  leg->AddEntry(hist_ksl_sc, "K_{S}L", "F");
-  leg->AddEntry(hist_mcrest_sc, "MC Rest", "F");
+  leg->AddEntry(hist_mcsum, "MC Sum", "l");
+  leg->AddEntry(hist_isr3pi_sc, "ISR3#pi", "l");
+  leg->AddEntry(hist_eeg_sc, "EEG", "l");
+  leg->AddEntry(hist_omegapi_sc, "#omega#pi", "l");
+  leg->AddEntry(hist_nonreson_sc, "Non-reson", "l");
+  leg->AddEntry(hist_ksl_sc, "K_{S}L", "l");
+  leg->AddEntry(hist_mcrest_sc, "MC Rest", "l");
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->Draw();
@@ -273,7 +273,7 @@ int compr_bdt() {
   line->SetLineStyle(2);
   line->Draw();
   
-  c1->SaveAs(out_dir + "/data_mc_comparison_scaled_" + var_nm + ".pdf");
+  c1->SaveAs(out_dir + "/data_mc_comparison_scaled_" + var_nm + "_bdt.pdf");
   cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << ".pdf" << endl;
   
   delete c1;

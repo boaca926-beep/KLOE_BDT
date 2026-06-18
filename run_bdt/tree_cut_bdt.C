@@ -577,7 +577,7 @@ tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon
 	else if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
         //else if (m3pi_bdt > 840.) continue;
 	//if (m3pi_bdt < 760. || m3pi_bdt > 820. || bdt_score <= bdt_cut) continue; // clear sample of omega gamma
-	if (bdt_score <= 0.3) continue;
+	if (bdt_score <= bdt_cut) continue;
 	if (beta_3pi < 0.22) continue; // suppress missing MC a1+pi0
 	
         // Classification and filling

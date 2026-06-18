@@ -47,13 +47,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-#VAR_NM=("m3pi_bdt")
-#VAR_SYMB=("M_{3#pi}")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("m3pi_bdt")
+VAR_SYMB=("M_{3#pi}")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(600) #300 600
-#XMAX=(950) #1020 1050
-#BINS=(200)
+XMIN=(600) #300 600
+XMAX=(950) #1020 1050
+BINS=(200)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -110,13 +110,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(150) #150, 550 
 
 ##################################################################
-VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-VAR_SYMB=("M_{#gamma#gamma}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+#VAR_SYMB=("M_{#gamma#gamma}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(100)
-XMAX=(180)
-BINS=(180)
+#XMIN=(100)
+#XMAX=(180)
+#BINS=(180)
 
 ##################################################################
 #VAR_NM="ppIM"
