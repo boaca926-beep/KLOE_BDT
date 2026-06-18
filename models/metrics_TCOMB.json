@@ -1,7 +1,7 @@
 {
-  "auc": 0.9918091516005592,
-  "best_iteration": 148,
-  "best_score": 0.03933156411914691,
+  "auc": 0.991701690066021,
+  "best_iteration": 199,
+  "best_score": 0.03969581409870431,
   "params": {
     "objective": "binary:logistic",
     "tree_method": "hist",
@@ -36,7 +36,7 @@
     "asym_x_angle",
     "E_diff"
   ],
-  "training_time_minutes": 0.7916966835657756,
-  "peak_memory_percent": 44.3,
+  "training_time_minutes": 1.8170019825299581,
+  "peak_memory_percent": 55.9,
   "gpu_enabled": false
 }

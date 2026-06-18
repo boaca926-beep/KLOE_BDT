@@ -53,7 +53,7 @@ int tree_cut(){
   double evnt_tot = 0;
   double Eprompt_max = 0.;
 
-  //int pho_indx[3], EPI0NTMC[3];
+  int pho_indx[3], EPI0NTMC[4];
     
   TFile *f_output = new TFile(outputCut + "tree_pre.root", "update");
 
@@ -139,10 +139,10 @@ int tree_cut(){
     tree_tmp -> Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
     tree_tmp -> Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
     tree_tmp -> Branch("Br_m3pi", &m3pi, "Br_m3pi/D");
-    //tree_tmp -> Branch("Br_pho_indx", pho_indx, "Br_pho_indx[3]/I");
-    //tree_tmp -> Branch("Br_EPI0NTMC_save", EPI0NTMC, "Br_EPI0NTMC_save[3]/I");
-    //tree_tmp -> Branch("Br_isr_recon_quality", &isr_recon_quality, "Br_isr_recon_quality/I");    // ADD THIS
-    //tree_tmp -> Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon_quality/I"); // ADD THIS
+    tree_tmp -> Branch("Br_pho_indx", pho_indx, "Br_pho_indx[3]/I");
+    tree_tmp -> Branch("Br_EPI0NTMC_save", EPI0NTMC, "Br_EPI0NTMC_save[4]/I");
+    tree_tmp -> Branch("Br_isr_recon_quality", &isr_recon_quality, "Br_isr_recon_quality/I");    // ADD THIS
+    tree_tmp -> Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon_quality/I"); // ADD THIS
   }
 
   TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
@@ -207,20 +207,21 @@ int tree_cut(){
     pull_z1 = ALLCHAIN_CUT -> GetLeaf("Br_PULLIST") -> GetValue(3);
     pull_t1 = ALLCHAIN_CUT -> GetLeaf("Br_PULLIST") -> GetValue(4);
 
-    //pho_indx[0] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(0);
-    //pho_indx[1] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(1);
-    //pho_indx[2] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(2);
-    //EPI0NTMC[0] = ALLCHAIN_CUT -> GetLeaf("Br_EPI0NTMC_save") -> GetValue(0);
-    //EPI0NTMC[1] = ALLCHAIN_CUT -> GetLeaf("Br_EPI0NTMC_save") -> GetValue(1);
-    //EPI0NTMC[2] = ALLCHAIN_CUT -> GetLeaf("Br_EPI0NTMC_save") -> GetValue(2);
+    pho_indx[0] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(0);
+    pho_indx[1] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(1);
+    pho_indx[2] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(2);
+    EPI0NTMC[0] = ALLCHAIN_CUT -> GetLeaf("Br_EPI0NTMC_save") -> GetValue(0);
+    EPI0NTMC[1] = ALLCHAIN_CUT -> GetLeaf("Br_EPI0NTMC_save") -> GetValue(1);
+    EPI0NTMC[2] = ALLCHAIN_CUT -> GetLeaf("Br_EPI0NTMC_save") -> GetValue(2);
+    EPI0NTMC[3] = ALLCHAIN_CUT -> GetLeaf("Br_EPI0NTMC_save") -> GetValue(3);
  
     bkg_indx = ALLCHAIN_CUT -> GetLeaf("Br_bkg_indx") -> GetValue(0);
     recon_indx = ALLCHAIN_CUT -> GetLeaf("Br_recon_indx") -> GetValue(0);
 
     // Check ISR photon (pho_indx[2] should match EPI0NTMC[2])
-    //bool isr_correct = (pho_indx[2] == EPI0NTMC[2]);
-    //isr_recon_quality = isr_correct ? 1 : 0;
-    //total_recon_quality = recon_indx + isr_recon_quality;
+    bool isr_correct = (pho_indx[2] == EPI0NTMC[2] || pho_indx[2] == EPI0NTMC[3]);
+    isr_recon_quality = isr_correct ? 1 : 0;
+    total_recon_quality = recon_indx + isr_recon_quality;
     
     phid = ALLCHAIN_CUT -> GetLeaf("Br_phid") -> GetValue(0);
     sig_type = ALLCHAIN_CUT -> GetLeaf("Br_sig_type") -> GetValue(0);

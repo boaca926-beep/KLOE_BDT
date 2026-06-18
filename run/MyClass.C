@@ -26,7 +26,7 @@ void MyClass::Main()
   int evtcls_indx = -1;
 
   int pho_indx_save[3];      // indices of the three selected prompt photons in the MC particle array (ntmc)
-  int EPI0NTMC_save[3];      // true π⁰ daughter photon indices in the MC particle array, the third position is reserved for isr photon
+  int EPI0NTMC_save[4];      // true π⁰ daughter photon indices in the MC particle array, the third position is reserved for isr photon
 
   
   int test_indx = 0;     
@@ -68,7 +68,7 @@ void MyClass::Main()
   double ENERGYLIST[100];
   double PI0PHORESD[100];
   double E_pho_isr = 0., Emax_pho = 0.;
-  double EPI0GAM[2], EPI0NTMC[3], E_pi0gam1 = 0., E_pi0gam2 = 0.;
+  double EPI0GAM[2], EPI0NTMC[4], E_pi0gam1 = 0., E_pi0gam2 = 0.;
   double deltaE_true = 0.;
   double Emax_clust = 0., Esum_clust = 0.;
   double Esum = 0., E_radiv1 = 0., E_radiv2 = 0.;
@@ -308,7 +308,7 @@ void MyClass::Main()
   ALLCHAIN_TEST.Branch("Br_angle_ppl_3piboost", &angle_ppl_3piboost, "Br_angle_ppl_3piboost/D");
 
   ALLCHAIN_CUT.Branch("Br_pho_indx", &pho_indx_save, "Br_pho_indx[3]/I");
-  ALLCHAIN_CUT.Branch("Br_EPI0NTMC_save", &EPI0NTMC_save, "Br_EPI0NTMC_save[3]/I");
+  ALLCHAIN_CUT.Branch("Br_EPI0NTMC_save", &EPI0NTMC_save, "Br_EPI0NTMC_save[4]/I");
   
   ///
   if (fChain == 0) return;
@@ -343,7 +343,8 @@ void MyClass::Main()
 
     /// define isr 3pi signals
     double nb_pho_radiv = 0, nb_pi = 0, nb_pi0pho = 0;
-    int pi0gam1_ntmc = 0, pi0gam2_ntmc = 0, isrgam_ntmc = 0; 
+    int pi0gam1_ntmc = 0, pi0gam2_ntmc = 0;
+    int isrgam1_ntmc = 0, isrgam2_ntmc = 0; 
     TVector3 MC_vect;
     TLorentzVector pi0MC_TLvect, piplusMC_TLvect, piminusMC_TLvect, threepi_TLvect, isrpho_TLvect, finalstate_TLvect, pho_radiv1_TLvect, pho_radiv2_TLvect, pi0gam1_TLvect, pi0gam2_TLvect;
 
@@ -365,26 +366,14 @@ void MyClass::Main()
       if (pidmc[i] == 1 && virmom[i] == 1 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 0) {// first radiative photon
 	nb_pho_radiv ++;
 	pho_radiv1_TLvect = GetLorentzVector(MC_vect, 0.);
-	isrgam_ntmc = i;
+	isrgam1_ntmc = i;
       }
       else if (pidmc[i] == 1 && virmom[i] == 1 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 1) {// second radiative photon
 	nb_pho_radiv ++;
 	pho_radiv2_TLvect = GetLorentzVector(MC_vect, 0.);
+	isrgam2_ntmc = i;
       }
-      
-      // radiative photons (isr phok5)
-      else if (pidmc[i] == 1 && virmom[i] == 0 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 0) {// first radiative photon
-	nb_pho_radiv ++;
-	pho_radiv1_TLvect = GetLorentzVector(MC_vect, 0.);
-	isrgam_ntmc = i;
-	//cout << "isrgam_ntmc = " << isrgam_ntmc << endl;
-      }
-      else if (pidmc[i] == 1 && virmom[i] == 0 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 1) {// second radiative photon
-	nb_pho_radiv ++;
-	pho_radiv2_TLvect = GetLorentzVector(MC_vect, 0.);
-	//cout << "isrgam_ntmc = " << i << endl;
-      }
-      
+
       // pions (isr str3)
       else if (pidmc[i] == 7 && virmom[i] == 54 && mother[indv[i] - 1] == 50) {// pi0
 	nb_pi ++;
@@ -401,7 +390,21 @@ void MyClass::Main()
 	//cout << "vect.X = " << MC_vect.X() << endl;
 	piminusMC_TLvect = GetLorentzVector(MC_vect, masschpion);
       }
-
+      
+      // radiative photons (isr phok5)
+      else if (pidmc[i] == 1 && virmom[i] == 0 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 0) {// first radiative photon
+	nb_pho_radiv ++;
+	pho_radiv1_TLvect = GetLorentzVector(MC_vect, 0.);
+	isrgam1_ntmc = i;
+	cout << "first ISR photon = " << isrgam1_ntmc << endl;
+      }
+      else if (pidmc[i] == 1 && virmom[i] == 0 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 1) {// second radiative photon
+	nb_pho_radiv ++;
+	pho_radiv2_TLvect = GetLorentzVector(MC_vect, 0.);
+	isrgam2_ntmc = i;
+	cout << "second ISR photon = " << isrgam2_ntmc << endl;
+      }
+      
       // pions (isr phok5)
       else if (pidmc[i] == 7 && virmom[i] == 0 && mother[indv[i] - 1] == 50) {// pi0
 	nb_pi ++;
@@ -502,7 +505,8 @@ void MyClass::Main()
     EPI0GAM[1] = pi0gam2_TLvect.E();
     EPI0NTMC[0] = pi0gam1_ntmc; 
     EPI0NTMC[1] = pi0gam2_ntmc;
-    EPI0NTMC[2] = isrgam_ntmc;
+    EPI0NTMC[2] = isrgam1_ntmc;
+    EPI0NTMC[3] = isrgam2_ntmc;
     E_pi0gam1 = pi0gam1_TLvect.E();
     E_pi0gam2 = pi0gam2_TLvect.E();
     betapi0_true = (pi0MC_TLvect.Vect()).Mag() / pi0MC_TLvect.E();
@@ -849,7 +853,8 @@ void MyClass::Main()
     double m3pi_tmp = 0., m3pi_diff_tmp = 0.;
     double error_m3pisq = 0., chi2m3pi_tmp = 0., chi2m3pi_min = 1e14;
     int nr1 = 0, nr2 = 0, nr3 = 0;
-    int isrgam_indx = 0, pi0gam1_indx = 0, pi0gam2_indx = 0;
+    int isrgam_indx = 0;
+    int pi0gam1_indx = 0, pi0gam2_indx = 0;
     const int error_type_indx = 0; // 1 for kin.fitted error
 
     //cout << "!!!! inspect inputvector after kin. fit. " << endl;
@@ -1628,9 +1633,11 @@ void MyClass::Main()
     pho_indx_save[0] = pho_indx[pi0gam1_indx];
     pho_indx_save[1] = pho_indx[pi0gam2_indx];
     pho_indx_save[2] = pho_indx[isrgam_indx];
+    
     EPI0NTMC_save[0] = pi0gam1_ntmc;
     EPI0NTMC_save[1] = pi0gam2_ntmc;
-    EPI0NTMC_save[2] = isrgam_ntmc;
+    EPI0NTMC_save[2] = isrgam1_ntmc;
+    EPI0NTMC_save[3] = isrgam2_ntmc;
     
     ALLCHAIN_CUT.Fill();
   }

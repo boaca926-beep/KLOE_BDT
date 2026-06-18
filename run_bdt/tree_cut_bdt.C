@@ -100,7 +100,7 @@ int tree_cut_bdt() {
     double evnt_tot = 0;
     double Eprompt_max = 0.;
 
-    int pho_indx[3], EPI0NTMC[3];
+    int pho_indx[3], EPI0NTMC[4];
     
     // BDT‑specific variables (reco)
     double bdt_score = 0.;
@@ -341,6 +341,7 @@ tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon
         EPI0NTMC[0] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(0);
         EPI0NTMC[1] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(1);
 	EPI0NTMC[2] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(2);
+	EPI0NTMC[3] = ALLCHAIN_CUT->GetLeaf("Br_EPI0NTMC_save")->GetValue(3);
  
         ppl_E = ALLCHAIN_CUT->GetLeaf("Br_ppl_E")->GetValue(0);
         ppl_px = ALLCHAIN_CUT->GetLeaf("Br_ppl_px")->GetValue(0);
@@ -564,7 +565,7 @@ tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon
         recon_indx_bdt = correct_bdt;
 
 	// After recon_indx_bdt calculation
-	bool isr_correct = (pho_indx[result.prompt_index] == EPI0NTMC[2]);
+	bool isr_correct = (pho_indx[result.prompt_index] == EPI0NTMC[2] || pho_indx[result.prompt_index] == EPI0NTMC[3]);
 	isr_recon_quality = isr_correct ? 1 : 0;
 	total_recon_quality = recon_indx_bdt + isr_recon_quality;
 	
