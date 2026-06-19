@@ -8,39 +8,39 @@ const double mass_sigma_nb = 1;
 const double sfw2d_sigma_nb = 1;
 
 //IM3pi (analysis):
-const double IM3pi_min = 380;
-const double IM3pi_max = 1020;
+const double IM3pi_min = 380.;
+const double IM3pi_max = 1020.;
 const double IM3pi_sigma = 2.65;
 const int IM3pi_bin = TMath::Nint((IM3pi_max - IM3pi_min) / mass_sigma_nb / IM3pi_sigma);
 
 //Angle_gamm12
-const double angle_min = 20;
-const double angle_max = 140;
+const double angle_min = 20.;
+const double angle_max = 140.;
 const double angle_sigma = 0.53;
 const int angle_bin = TMath::Nint((angle_max - angle_min) / sfw2d_sigma_nb / angle_sigma);
 
 //mgg
 //mgg_bin, mgg_min, mgg_max
-const double mgg_min = 100;
-const double mgg_max = 180;
+const double mgg_min = 100.;
+const double mgg_max = 180.;
 const double mgg_sigma = 2.09;
 const int mgg_bin = TMath::Nint((mgg_max - mgg_min) / sfw2d_sigma_nb / mgg_sigma);
 
 //Eisr:
-const double Eisr_min = 50;
-const double Eisr_max = 500;
+const double Eisr_min = 50.;
+const double Eisr_max = 500.;
 const double Eisr_sigma = 2.48;
 const int Eisr_bin = TMath::Nint((Eisr_max - Eisr_min) / sfw2d_sigma_nb / Eisr_sigma);
 
 //bdt_score
 //bdt_score_bin, bdt_score_min, bdt_score_max
-const double bdt_score_min = 0;
-const double bdt_score_max = 1;
+const double bdt_score_min = 0.;
+const double bdt_score_max = 1.;
 const int bdt_score_bin = 150;
   
 //ppIM:
-const double ppIM_min = 200; 
-const double ppIM_max = 700; 
+const double ppIM_min = 200.; 
+const double ppIM_max = 700.; 
 const double ppIM_sigma = 2.30;
 const int ppIM_bin = TMath::Nint((ppIM_max - ppIM_min) / sfw2d_sigma_nb / ppIM_sigma);
 
@@ -50,23 +50,38 @@ const double betapi0_max = 1.0;
 const int betapi0_bin = 50;
 
 //sfw1d
-const double xmin = 770;
-const double xmax = 800;
+const double xmin = 770.;
+const double xmax = 800.;
 const int xbins = 60; 
 
 //crx3pi
-const double hmin = 740; //770, 700
-const double hmax = 820; //800, 820
+const double hmin = 740.; //770, 700
+const double hmax = 820.; //800, 820
 const int hbins = TMath::Nint((hmax - hmin) / 0.25 / IM3pi_sigma);
 
 TList *HIM3pi_fit = new TList(); // IM3pi distr. for fit omega parameters
+HIM3pi_fit->SetOwner(kTRUE);
+
 TList *HPeakNonReson = new TList(); // IM3pi distr. for peak and non-resonant
+HPeakNonReson->SetOwner(kTRUE);
+
 TList *HSFW2D = new TList(); // Eisr vs. ppIM distr. for MC normalization
+HSFW2D->SetOwner(kTRUE);
+
 TList *HSFW1D = new TList(); // IM3pi distr. for signal MC tuning
+HSFW1D->SetOwner(kTRUE);
+
 TList *HSIG = new TList(); // IM3pi distr. signal true and generated
+HSIG->SetOwner(kTRUE);
+
 TList *HIM3pi_crx = new TList(); // IM3pi distr. for crx3pi obs.
+HIM3pi_crx->SetOwner(kTRUE);
+
 TList *HppIM_vs_betapi0 = new TList();   // 2D for ppIM vs betapi0
+HppIM_vs_betapi0->SetOwner(kTRUE);
+
 TList *Heisr_vs_angle = new TList();   // 2D for Eisr vs angle
+Heisr_vs_angle->SetOwner(kTRUE);
 
 //TRandom *rnd=0;
 
@@ -133,6 +148,7 @@ void fillHist() {
     h1d_tmp_non_reson_true -> Sumw2();
 
     //
+    /*
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp -> Sumw2();
 
@@ -141,8 +157,8 @@ void fillHist() {
 
     TH2D * h2d_tmp_non_reson = new TH2D("h2d_sfw_" + objnm_tree + "_non_reson", "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp_non_reson -> Sumw2();
+    */
     
-    /*
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", angle_bin, angle_min, angle_max, mgg_bin, mgg_min, mgg_max);
     h2d_tmp -> Sumw2();
 
@@ -151,8 +167,7 @@ void fillHist() {
 
     TH2D * h2d_tmp_non_reson = new TH2D("h2d_sfw_" + objnm_tree + "_non_reson", "", angle_bin, angle_min, angle_max, mgg_bin, mgg_min, mgg_max);
     h2d_tmp_non_reson -> Sumw2();
-    */
-
+    
     /*
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", bdt_score_bin, bdt_score_min, bdt_score_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp -> Sumw2();
@@ -186,8 +201,8 @@ void fillHist() {
       h1d_tmp_sfw -> Fill(m3pi_bdt);
       h1d_tmp_crx -> Fill(m3pi_bdt);
       h1d_tmp_true -> Fill(m3pi_true_bdt);
-      h2d_tmp -> Fill(ppIM, Eisr);
-      //h2d_tmp -> Fill(angle_bdt, m_gg);
+      //h2d_tmp -> Fill(ppIM, Eisr);
+      h2d_tmp -> Fill(angle_bdt, m_gg);
       //h2d_tmp -> Fill(bdt_score, Eisr);
       //cout << "ppIM = " << ppIM << ", Eisr = " << Eisr << endl;
       //cout << "angle_bdt = " << angle_bdt << ", m_gg = " << m_gg << endl;
@@ -199,16 +214,16 @@ void fillHist() {
       if (recon_indx_bdt == 2 && bkg_indx == 1) {
         h1d_tmp_peak->Fill(m3pi_bdt);
         h1d_tmp_peak_true->Fill(m3pi_true_bdt);
-        h2d_tmp_peak->Fill(ppIM, Eisr);
-	//h2d_tmp_peak->Fill(angle_bdt, m_gg);
+        //h2d_tmp_peak->Fill(ppIM, Eisr);
+	h2d_tmp_peak->Fill(angle_bdt, m_gg);
 	//h2d_tmp_peak -> Fill(bdt_score, Eisr);
         h2d_ppIM_vs_beta_peak -> Fill(ppIM * 1e-3, betapi0_bdt);
       }
       else {
         h1d_tmp_non_reson->Fill(m3pi_bdt);
         h1d_tmp_non_reson_true->Fill(m3pi_true_bdt);
-        h2d_tmp_non_reson->Fill(ppIM, Eisr);
-	//h2d_tmp_non_reson->Fill(angle_bdt, m_gg);
+        //h2d_tmp_non_reson->Fill(ppIM, Eisr);
+	h2d_tmp_non_reson->Fill(angle_bdt, m_gg);
 	//h2d_tmp_non_reson->Fill(bdt_score, Eisr);
         h2d_ppIM_vs_beta_non_reson -> Fill(ppIM * 1e-3, betapi0_bdt);
       }

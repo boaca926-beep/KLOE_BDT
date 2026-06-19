@@ -128,23 +128,23 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=100
 
 ##################################################################
-VAR_NM="bdt_score"
-VAR_SYMB="BDT value"
-UNIT=""
+#VAR_NM="bdt_score"
+#VAR_SYMB="BDT value"
+#UNIT=""
 
-XMIN=0
-XMAX=1
-BINS=150
+#XMIN=0
+#XMAX=1
+#BINS=150
 
 ##################################################################
-#name_tmp="t3"
-#VAR_NM="pull_"${name_tmp}
-#VAR_SYMB="Pull "${name_tmp}
+name_tmp="E3"
+VAR_NM="pull_"${name_tmp}
+VAR_SYMB="Pull "${name_tmp}
 
-#UNIT="[]"
-#XMIN=-10
-#XMAX=10
-#BINS=200
+UNIT="[]"
+XMIN=-10
+XMAX=10
+BINS=200
 
 ##################################################################
 #VAR_NM="e_asym"
@@ -175,7 +175,7 @@ else
 fi
 
 compr=../header_bdt/compr.h
-sample_type=chain
+sample_type=norm
 main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre_bdt.root";
 outputSfw2D="${main_folder}/sfw2d/";
