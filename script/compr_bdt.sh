@@ -29,13 +29,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=150
 
 ##################################################################
-#VAR_NM="lagvalue_min_7C"
-#VAR_SYMB="#chi^{2}_{7C}"
-#UNIT=""
+VAR_NM="lagvalue_min_7C"
+VAR_SYMB="#chi^{2}_{7C}"
+UNIT=""
 
-#XMIN=0
-#XMAX=25
-#BINS=100
+XMIN=0
+XMAX=25
+BINS=100
 
 ##################################################################
 #VAR_NM=("pvalue")
@@ -47,13 +47,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("m3pi_bdt")
-VAR_SYMB=("M_{3#pi}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m3pi_bdt")
+#VAR_SYMB=("M_{3#pi}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(600) #300 600
-XMAX=(950) #1020 1050
-BINS=(200)
+#XMIN=(600) #300 600
+#XMAX=(950) #1020 1050
+#BINS=(200)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -182,7 +182,7 @@ else
 fi
 
 compr=../header_bdt/compr.h
-sample_type=norm
+sample_type=chain
 main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre_bdt.root";
 outputSfw2D="${main_folder}/sfw2d/";

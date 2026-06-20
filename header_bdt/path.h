@@ -1,5 +1,5 @@
-const TString rootFile = "../path_norm/exp_path";
-const TString sampleFile = "../../input_bdt_TDATA_norm/input/exp";
+const TString rootFile = "../path_norm/sig_path";
+const TString sampleFile = "../../input_bdt_TDATA_norm/input/sig";
 const TString outputCut = "../../input_bdt_TDATA_norm/cut/";
 const TString sig_path = "../../input_bdt_TDATA_norm/input/";
 const TString outputGen = "../../input_bdt_TDATA_norm/gen/";
@@ -7,6 +7,6 @@ const TString outputHist = "../../input_bdt_TDATA_norm/hist/";
 const TString outputSfw2D = "../../input_bdt_TDATA_norm/sfw2d/";
 const TString outputSfw1D = "../../input_bdt_TDATA_norm/sfw1d/";
 const TString outputOmega = "../../input_bdt_TDATA_norm/omega_fit/";
-const TString data_type = "exp";
+const TString data_type = "sig";
 const TString exp_type = "TDATA";
 double gsf = 1;

@@ -227,8 +227,8 @@ int compr_bdt() {
   hist_data->GetYaxis()->SetLabelSize(0.04);
 
   
-  //TLegend *leg = new TLegend(0.65, 0.55, 0.88, 0.88);
-  TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
+  TLegend *leg = new TLegend(0.65, 0.35, 0.88, 0.9);
+  //TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
