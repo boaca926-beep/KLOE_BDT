@@ -106,7 +106,7 @@ int tree_cut_bdt() {
     double bdt_score = 0.;
     double e1_bdt = 0., e2_bdt = 0., e3_bdt = 0.;
     double e3_bdt_true = 0.;
-    double m_gg_bdt = 0., m3pi_bdt = 0.;
+    double m_gg_bdt = 0., m3pi_bdt = 0., m_gg_true = 0.;
     double m2pi_true = 0., m3pi_true = 0.;
     double angle_pi0gam12_bdt = 0., betapi0_bdt = 0.;
     double angle_pi0gam12_bdt_true = 0., betapi0_bdt_true = 0.;
@@ -223,7 +223,6 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
         tree_tmp->Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
         tree_tmp->Branch("Br_m3pi", &m3pi, "Br_m3pi/D");
-	tree_tmp->Branch("Br_Eprompt_max", &Eprompt_max, "Br_Eprompt_max/D");
 	
 	// BDT branches
         tree_tmp->Branch("Br_bdt_score", &bdt_score, "Br_bdt_score/D");
@@ -232,6 +231,7 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_e3_bdt", &e3_bdt, "Br_e3_bdt/D");
         tree_tmp->Branch("Br_e3_bdt_true", &e3_bdt_true, "Br_e3_bdt_true/D");
         tree_tmp->Branch("Br_m_gg_bdt", &m_gg_bdt, "Br_m_gg_bdt/D");
+	tree_tmp->Branch("Br_m_gg_true_bdt", &m_gg_true, "Br_m_gg_true_bdt/D");
         tree_tmp->Branch("Br_m2pi_true", &m2pi_true, "Br_m2pi_true/D");
         tree_tmp->Branch("Br_m3pi_bdt", &m3pi_bdt, "Br_m3pi_bdt/D");
 	
@@ -506,7 +506,7 @@ tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon
 
         e3_bdt_true = e3_true;
         
-        double m_gg_true = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], true_photons);
+        m_gg_true = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], true_photons);
         m3pi_true = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], true_photons, true_tracks);
         m2pi_true = compute_dipion_mass(true_tracks);
 

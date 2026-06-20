@@ -129,6 +129,10 @@ if __name__ == '__main__':
         
     ## Accuracy metrics, event basis
     #score_list, var_list, var_str = event_performance(all_df, model)
+    score_list, var_list, var_str = event_performance(all_df, model)
+    fig_var = plot_var_score(var_list, score_list, var_str, rf'Variable Performance - {br_title}')
+    fig_var.savefig(f'{plot_dir}/var_score_{br_nm}.png', dpi=300, bbox_inches='tight')
+    plt.close(fig_var)
 
     ## ROC plot
     #fig_roc = plot_roc(score_list, rf'ROC Curve - $\pi^{0}$ Classifier (validation, {br_title})')

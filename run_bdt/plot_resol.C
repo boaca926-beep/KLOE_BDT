@@ -14,7 +14,7 @@ void plot_resol() {
   gSystem->Exec("mkdir -p ../plots_resol");
 
   // Open tree file
-  TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+  //TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
   TFile *ftree = TFile::Open(treeFile);
   if (!ftree || ftree->IsZombie()) {
     std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -94,7 +94,7 @@ void plot_resol() {
   double err_amp2 = doubleGaus->GetParError(3);
   double amp2 = doubleGaus->GetParameter(3);
   bool stable = (chi2ndf < 10.0) && (err_amp2 / (amp2 + 1e-6) < 2.0);
-
+  
   TF1 *finalFit = doubleGaus;
   TString fitType = "Double Gaussian";
   bool doubleUsed = true;
@@ -132,8 +132,8 @@ void plot_resol() {
   h_diff->GetYaxis()->SetLabelSize(0.05);
   h_diff->GetYaxis()->SetTitleOffset(1.3);
   h_diff->GetYaxis()->SetRangeUser(0., 1.6 * ymax);
-  //h_diff->GetXaxis()->SetRangeUser(range_factor * fit_min, range_factor * fit_max); // or -50,50
-  h_diff->GetXaxis()->SetRangeUser(XMIN, XMAX);   
+  h_diff->GetXaxis()->SetRangeUser(range_factor * fit_min, range_factor * fit_max); // or -50,50
+  //h_diff->GetXaxis()->SetRangeUser(XMIN, XMAX);   
   h_diff->GetYaxis()->SetNdivisions(505);
   h_diff->GetXaxis()->SetNdivisions(505);
 
@@ -154,16 +154,16 @@ void plot_resol() {
       double err_mean = finalFit->GetParError(1);
       double err_sigma = finalFit->GetParError(2);
       line1 = Form("Inner Gaussian (core):");
-      line2 = Form("#mu = %.2f#pm%.2f" + unit, mean_inner, err_mean);
-      line3 = Form("#sigma = %.2f#pm%.2f" + unit, sigma_inner, err_sigma);
+      line2 = Form("#mu = %.2f#pm%.3f " + unit, mean_inner, err_mean);
+      line3 = Form("#sigma = %.2f#pm%.3f " + unit, sigma_inner, err_sigma);
     } else {
       double mean_inner = finalFit->GetParameter(4);
       double sigma_inner = sigma2;
       double err_mean = finalFit->GetParError(4);
       double err_sigma = finalFit->GetParError(5);
       line1 = Form("Inner Gaussian:");
-      line2 = Form("#mu = %.2f#pm%.2f" + unit, mean_inner, err_mean);
-      line3 = Form("#sigma = %.2f#pm%.2f" + unit, sigma_inner, err_sigma);
+      line2 = Form("#mu = %.2f#pm%.3f " + unit, mean_inner, err_mean);
+      line3 = Form("#sigma = %.2f#pm%.3f " + unit, sigma_inner, err_sigma);
     }
   } else {
     // Single Gaussian
@@ -172,8 +172,8 @@ void plot_resol() {
     double err_mean = finalFit->GetParError(1);
     double err_sigma = finalFit->GetParError(2);
     line1 = Form("Gaussian fit:");
-    line2 = Form("#mu = %.2e#pm%.2e %s", mean_sg, err_mean, unit.Data());
-    line3 = Form("#sigma = %.2e#pm%.2e %s", sigma_sg, err_sigma, unit.Data());
+    line2 = Form("#mu = %.2e#pm%.2e %s ", mean_sg, err_mean, unit.Data());
+    line3 = Form("#sigma = %.2e#pm%.2e %s ", sigma_sg, err_sigma, unit.Data());
   }
   TString line4 = Form("#chi^{2}/NDF = %.2f", chi2ndf);
 

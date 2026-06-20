@@ -248,10 +248,13 @@ void test_bdt() {
     double pull_E3 = 0;
     
     int recon_indx_bdt = 0, recon_indx = 0;
+    int total_recon_quality = 0;
     int bkg_indx = 0;
 
     tree->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
     tree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
+    tree->SetBranchAddress("Br_total_recon_quality", &total_recon_quality); 
+   
     
     tree->SetBranchAddress("Br_E1", &E1);
     tree->SetBranchAddress("Br_px1", &px1);
@@ -378,6 +381,8 @@ void test_bdt() {
 	    //cout << true_m3pi << endl;
 	    
 	    if (recon_indx_bdt == 2 && bkg_indx == 1) {
+	    //if (recon_indx_bdt == 2 && bkg_indx == 1) {
+	      //cout << total_recon_quality << endl;
 	      hM3pi_bdt_corr_peak->Fill(m3pi_true, m3pi);
 	      hM3pi_bdt_corr_peak_true->Fill(m3pi_true, true_m3pi);
 	      h1dM3pi_bdt_corr_peak->Fill(m3pi);

@@ -47,13 +47,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-#VAR_NM=("m3pi_bdt")
-#VAR_SYMB=("M_{3#pi}")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("m3pi_bdt")
+VAR_SYMB=("M_{3#pi}")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(600) #300 600
-#XMAX=(950) #1020 1050
-#BINS=(200)
+XMIN=(600) #300 600
+XMAX=(950) #1020 1050
+BINS=(200)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -137,14 +137,14 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=150
 
 ##################################################################
-name_tmp="E3"
-VAR_NM="pull_"${name_tmp}
-VAR_SYMB="Pull "${name_tmp}
+#name_tmp="E3"
+#VAR_NM="pull_"${name_tmp}
+#VAR_SYMB="Pull "${name_tmp}
 
-UNIT="[]"
-XMIN=-10
-XMAX=10
-BINS=200
+#UNIT="[]"
+#XMIN=-10
+#XMAX=10
+#BINS=200
 
 ##################################################################
 #VAR_NM="e_asym"
@@ -158,6 +158,12 @@ BINS=200
 ##################################################################
 #VAR_NM="beta_3pi"
 #VAR_SYMB="#beta_{3#pi}"
+
+#UNIT="[]"
+#XMIN=0
+#XMAX=1
+#BINS=200
+
 output_folder="../output_"${VAR_NM[0]}
 
 #check output folder and update output files
@@ -165,6 +171,7 @@ if [[ -d $output_folder ]]; then
     
     echo updating $output_folder
     rm $output_folder/*.pdf
+    rm $output_folder/*.png
     rm $output_folder/*.root
     
 else

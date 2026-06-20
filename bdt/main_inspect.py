@@ -120,21 +120,24 @@ if __name__ == '__main__':
             ## * Plot gamma 4-momentum 
             df_set = [all_df, pos_df, neg_df]
             drop_columns = ['event', 'Br_betapi0', 'Br_ppIM', 'Br_angle_pi0gam12', 'Br_deltaE', 'Br_m3pi', 
-                            'Br_lagvalue_min_7C', 'Br_recon_indx', 'Br_bkg_indx', 'is_signal', 'true_pi0_pair']
+                            'Br_lagvalue_min_7C', 'Br_recon_indx', 'Br_bkg_indx', 'is_signal', 'true_pi0_pair', 'Br_isr_recon_quality', 'Br_total_recon_quality']
             
             fig_compr_hist = plot_compr_hist(df_set, drop_columns,
-                                             3, 100, 
+                                             4, 100, 
                                              rf"$\gamma$ 4-momentum ({br_title})") # Photon 4-momentum comparison plot
             fig_compr_hist.savefig(f'{plot_dir}/Photon_4-momentum_compr_{br_nm}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_compr_hist)
             #print(all_df.columns.tolist())
+            print(all_df.columns.tolist())
 
             ## * Plot pi0 features
-            drop_columns = ['event', 'pair_id', 'is_pi0']
+            #drop_columns = ['event', 'pair_id', 'is_pi0']
+            drop_columns = ['event', 'pair_id', 'is_pi0', 'isr_recon_quality', 'total_recon_quality', 'isr_correct', 'pair_index']
             pi0_df_set = [pi0_all_df, pi0_pos_df, pi0_neg_df]
-            
+            #print(pi0_all_df.columns.tolist())
+
             fig_compr_hist = plot_compr_hist(pi0_df_set, drop_columns,
-                                             2, 100, 
+                                             5, 100, 
                                              rf"$\pi^{0}$ Candidates ({br_title})") # Pi0 comparison plot
             fig_compr_hist.savefig(f'{plot_dir}/Pi0_compr_{br_nm}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_compr_hist)  

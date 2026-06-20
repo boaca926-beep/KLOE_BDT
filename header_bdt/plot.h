@@ -1,4 +1,4 @@
-const TString hist_root = "/home/bo/Desktop/input_bdt_TDATA_norm/hist/hist.root";
+const TString hist_root = "/home/bo/Desktop/input_bdt_TDATA_chain/hist/hist.root";
 const TString hist_type = "hbkgsum_nosig";
 const TString infile_nm = "../run_bdt/sfw2d_output.root";
 const TString output_path = "../run_bdt/";

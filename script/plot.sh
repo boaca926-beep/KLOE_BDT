@@ -4,7 +4,7 @@
 # ./plot.sh sfw2d             # for the original sideband plots
 # ./plot.sh ppIM_vs_betapi0   # for the new dipion mass vs π⁰ β correlation
 
-sample_type=norm
+sample_type=chain
 main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
 hist_root="${main_folder}/hist/hist.root"
 
@@ -52,7 +52,7 @@ if [ "$plot_type" == "sfw2d" ]; then
     outfile_name="sfw2d_output.root"
     hist_type=("h2d_sfw_TDATA" "h2d_sfw_TISR3PI_SIG_peak" "h2d_sfw_TISR3PI_SIG_non_reson" "hbkgsum_nosig")
     cv_nm=("data" "signal_peak" "signal_non_reson" "bkgsum_nosig")
-    cv_text=("Data" "Signal (#omega peak)" "Signal (Non-resonant)" "Others")
+    cv_text=("Data" "Signal (#omega peak)" "Non-resonant" "Others")
     #pt1_x0=(0.3 0.3 0.3 0.3) #0.5
     #pt1_x1=(0.4 0.4 0.4 0.4) #0.8
     macro="plot_sfw.C"

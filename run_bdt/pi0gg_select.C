@@ -205,8 +205,8 @@ void pi0gg_select() {
     }
 
     // ===== FILL BACKGROUND TEMPLATES =====
-    //if (!(total_recon_quality == 3)) {
-    if (!(recon_indx_bdt == 2 && bkg_indx == 1)) {
+    if (!(total_recon_quality == 3)) {
+    //if (!(recon_indx_bdt == 2 && bkg_indx == 1)) {
       // PURE: Both methods fail - USE THIS FOR FITS
       if (recon_indx_bdt < 2 && recon_indx < 2) {
         //h_background_pure->Fill(ppIM);
