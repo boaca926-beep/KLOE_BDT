@@ -146,7 +146,7 @@ if __name__ == '__main__':
             drop_columns = ['is_signal']
             kine_df_set = [kine_all_df, kine_pos_df, kine_neg_df]
             fig_compr_hist = plot_compr_hist(kine_df_set, drop_columns,
-                                             2, 100, 
+                                             3, 100, 
                                              rf"Selection Cuts ({br_title})") # Kine. var. comparison plot
             fig_compr_hist.savefig(f'{plot_dir}/Kine_compr_{br_nm}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_compr_hist)
