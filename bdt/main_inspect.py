@@ -170,7 +170,7 @@ if __name__ == '__main__':
 
                 ## * Plot pi0 feature-feature correlations
                 print(pi0_all_df.head(5))
-                drop_columns = ['event', 'cos_theta', 'pair_id']
+                drop_columns = ['event', 'cos_theta', 'pair_id', 'isr_recon_quality', 'total_recon_quality', 'isr_correct', 'pair_index']
                 fig_feature_pairs = plot_feature_pairs(pi0_all_df, drop_columns,
                                                        rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red) ({br_title})", 
                                                        "is_pi0")
