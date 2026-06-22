@@ -227,19 +227,19 @@ int compr_bdt() {
   hist_data->GetYaxis()->SetLabelSize(0.04);
 
   
-  TLegend *leg = new TLegend(0.65, 0.35, 0.88, 0.9);
-  //TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
+  //TLegend *leg = new TLegend(0.65, 0.35, 0.88, 0.9);
+  TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetNColumns(1);
   leg->AddEntry(hist_data, "Data", "EP");
-  leg->AddEntry(hist_mcsum, "MC Sum", "l");
-  leg->AddEntry(hist_isr3pi_sc, "ISR3#pi", "l");
-  leg->AddEntry(hist_eeg_sc, "EEG", "l");
-  leg->AddEntry(hist_omegapi_sc, "#omega#pi", "l");
+  leg->AddEntry(hist_mcsum, "MC sum", "l");
+  leg->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma", "l");
+  leg->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
+  leg->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
   leg->AddEntry(hist_nonreson_sc, "Non-reson", "l");
-  leg->AddEntry(hist_ksl_sc, "K_{S}L", "l");
+  leg->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
   leg->AddEntry(hist_mcrest_sc, "MC Rest", "l");
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
@@ -264,7 +264,7 @@ int compr_bdt() {
   hist_ratio->GetYaxis()->SetTitleSize(0.12);
   hist_ratio->GetYaxis()->SetTitleOffset(0.5);
   hist_ratio->GetYaxis()->SetLabelSize(0.08);
-  hist_ratio->GetYaxis()->SetRangeUser(-30., 20.);
+  hist_ratio->GetYaxis()->SetRangeUser(-10., 10.);
   hist_ratio->GetYaxis()->SetNdivisions(505);
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");

@@ -29,13 +29,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=150
 
 ##################################################################
-VAR_NM="lagvalue_min_7C"
-VAR_SYMB="#chi^{2}_{7C}"
-UNIT=""
+#VAR_NM="lagvalue_min_7C"
+#VAR_SYMB="#chi^{2}_{7C}"
+#UNIT=""
 
-XMIN=0
-XMAX=25
-BINS=100
+#XMIN=0
+#XMAX=20
+#BINS=100
 
 ##################################################################
 #VAR_NM=("pvalue")
@@ -74,13 +74,13 @@ BINS=100
 #BINS=(100)
 
 ##################################################################
-#VAR_NM=("angle_pi0gam12_bdt")
-#VAR_SYMB=("#angle_{#gamma#gamma}")
-#UNIT=("[#circ]")
+VAR_NM=("angle_pi0gam12_bdt")
+VAR_SYMB=("#angle_{#gamma#gamma}")
+UNIT=("[#circ]")
 
-#XMIN=(20) #20
-#XMAX=(140) #140
-#BINS=(180) #120
+XMIN=(20) #20
+XMAX=(140) #140
+BINS=(180) #120
 
 ##################################################################
 #VAR_NM=("angle_ppl_pmi")
@@ -159,7 +159,7 @@ BINS=100
 #VAR_NM="beta_3pi"
 #VAR_SYMB="#beta_{3#pi}"
 
-#UNIT="[]"
+#UNIT=""
 #XMIN=0
 #XMAX=1
 #BINS=200
@@ -217,6 +217,8 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     echo '#include <iostream>' > $plot_script
     echo "void plot_script() {" >> $plot_script
     #echo '  gROOT->ProcessLine(".L ../run_bdt/plot_compr.C");' >> $plot_script
+    #echo '  gROOT->ProcessLine("plot_compr()");' >> $plot_script
+    
     echo '  gROOT->ProcessLine(".L ../run_bdt/plot_compr_roofit.C");' >> $plot_script
     echo '  gROOT->ProcessLine("plot_compr_roofit()");' >> $plot_script
     echo '}' >> $plot_script

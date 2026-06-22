@@ -278,7 +278,7 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_m2pi_pull", &m2pi_pull, "Br_m2pi_pull/D");
         tree_tmp->Branch("Br_recon_indx_bdt", &recon_indx_bdt, "Br_recon_indx_bdt/I");
 	tree_tmp->Branch("Br_isr_recon_quality", &isr_recon_quality, "Br_isr_recon_quality/I");    // ADD THIS
-tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon_quality/I"); // ADD THIS
+	tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon_quality/I"); // ADD THIS
     }
 
     TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
@@ -571,15 +571,16 @@ tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon
 	
 	
         // Selection cuts
-        if (lagvalue_min_7C > chi2_cut) continue; //40->20 further suppress kaons background
-        else if (deltaE < -440. || deltaE > deltaE_cut) continue;
-        else if (angle_pi0gam12_bdt > angle_cut) continue;
-        else if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-	else if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
+        if (lagvalue_min_7C > chi2_cut) continue; //43 -> 20 MeV, further suppress kaons background
+        if (deltaE < -440. || deltaE > deltaE_cut) continue; // suppress rhopi->3pi
+        if (angle_pi0gam12_bdt > angle_cut) continue; // suppress e+e- -> e+e-gamma
+        if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+	if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
+	if (bdt_score <= bdt_cut) continue; // suppress ksl and omegpi background
+	if (beta_3pi < 0.22) continue; // suppress missing MC a1+pi0
+	
         //else if (m3pi_bdt > 840.) continue;
 	//if (m3pi_bdt < 760. || m3pi_bdt > 820. || bdt_score <= bdt_cut) continue; // clear sample of omega gamma
-	if (bdt_score <= bdt_cut) continue;
-	if (beta_3pi < 0.22) continue; // suppress missing MC a1+pi0
 	
         // Classification and filling
         if (data_type == "exp") {

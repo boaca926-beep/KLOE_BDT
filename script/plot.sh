@@ -4,7 +4,7 @@
 # ./plot.sh sfw2d             # for the original sideband plots
 # ./plot.sh ppIM_vs_betapi0   # for the new dipion mass vs π⁰ β correlation
 
-sample_type=chain
+sample_type=norm
 main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
 hist_root="${main_folder}/hist/hist.root"
 

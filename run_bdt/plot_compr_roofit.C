@@ -211,8 +211,8 @@ int plot_compr_roofit() {
     hist_data->GetYaxis()->SetRangeUser(0.01, 1);
 
   // Legend
-  //TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
-  TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
+  TLegend *legd_cv = new TLegend(0.15, 0.35, 0.6, 0.9);
+  //TLegend *legd_cv = new TLegend(0.65, 0.35, 0.9, 0.9);
   legd_cv->SetTextFont(132);
   legd_cv->SetFillStyle(0);
   legd_cv->SetBorderSize(0);
