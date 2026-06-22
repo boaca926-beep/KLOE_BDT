@@ -74,13 +74,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(100)
 
 ##################################################################
-VAR_NM=("angle_pi0gam12_bdt")
-VAR_SYMB=("#angle_{#gamma#gamma}")
-UNIT=("[#circ]")
+#VAR_NM=("angle_pi0gam12_bdt")
+#VAR_SYMB=("#angle_{#gamma#gamma}")
+#UNIT=("[#circ]")
 
-XMIN=(20) #20
-XMAX=(140) #140
-BINS=(180) #120
+#XMIN=(20) #20
+#XMAX=(140) #140
+#BINS=(180) #120
 
 ##################################################################
 #VAR_NM=("angle_ppl_pmi")
@@ -110,13 +110,13 @@ BINS=(180) #120
 #BINS=(150) #150, 550 
 
 ##################################################################
-#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-#VAR_SYMB=("M_{#gamma#gamma}")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+VAR_SYMB=("M_{#gamma#gamma}")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(100)
-#XMAX=(180)
-#BINS=(180)
+XMIN=(100)
+XMAX=(180)
+BINS=(180)
 
 ##################################################################
 #VAR_NM="ppIM"
@@ -182,8 +182,9 @@ else
 fi
 
 compr=../header_bdt/compr.h
-sample_type=chain
-main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
+sample_type=norm
+data_type=bdt
+main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre_bdt.root";
 outputSfw2D="${main_folder}/sfw2d/";
   
