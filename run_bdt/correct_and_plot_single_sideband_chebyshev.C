@@ -1,5 +1,5 @@
-// correct_and_plot_single_sideband_chebyshev.C
-// Single lower‑sideband Chebyshev fit (3rd order) with full plotting
+/ correct_and_plot_2sideband_chebyshev.C
+// Improved two‑sideband Chebyshev fit (3rd order) with full plotting
 
 #include <TFile.h>
 #include <TTree.h>
@@ -30,7 +30,7 @@ Double_t template_chebyshev3(Double_t *x, Double_t *par) {
     return par[0] * sig + cheb;
 }
 
-void correct_and_plot_single_sideband_chebyshev() {
+void correct_and_plot_2sideband_chebyshev() {
     gErrorIgnoreLevel = kError;
     TGaxis::SetMaxDigits(4);
     gStyle->SetOptStat(0);
@@ -41,7 +41,7 @@ void correct_and_plot_single_sideband_chebyshev() {
     // ------------------------------------------------------------------
     // 1. Open tree file
     // ------------------------------------------------------------------
-    TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+    TString treeFile = "/home/kloe/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
     TFile *ftree = TFile::Open(treeFile);
     if (!ftree || ftree->IsZombie()) {
         std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -157,14 +157,16 @@ void correct_and_plot_single_sideband_chebyshev() {
     gSigTemplate = h_signal_template;
 
     // ------------------------------------------------------------------
-    // 6. Single lower‑sideband Chebyshev fit (3rd order)
+    // 6. Two‑sideband Chebyshev fit (3rd order, simultaneous)
     // ------------------------------------------------------------------
     double peak_low = 740.0;
     double peak_high = 820.0;
-    double sb_low  = 670.0;
-    double sb_high = 730.0;
+    double sb_low1 = 670.0;    // widened lower sideband
+    double sb_high1 = 730.0;
+    double sb_low2 = 830.0;
+    double sb_high2 = 890.0;   // back to original upper limit
 
-    // Clone and zero peak region (so it does not affect sideband fit)
+    // Clone and zero peak region
     TH1D *h_side = (TH1D*) h_data_isr->Clone("h_side");
     for (int bin = 1; bin <= h_side->GetNbinsX(); ++bin) {
         double x = h_side->GetBinCenter(bin);
@@ -174,17 +176,18 @@ void correct_and_plot_single_sideband_chebyshev() {
     // 3rd‑order Chebyshev polynomial: c0 + c1*x + c2*(2x²-1) + c3*(4x³-3x)
     TF1 *bkg_cheb = new TF1("bkg_cheb", 
         "[0] + [1]*x + [2]*(2*x*x - 1) + [3]*(4*x*x*x - 3*x)", 
-        sb_low, sb_high);
+        sb_low1, sb_high2);
 
-    // Fit only the lower sideband
-    h_side->Fit(bkg_cheb, "QN", "", sb_low, sb_high);
+    // Simultaneous fit over both sidebands
+    h_side->Fit(bkg_cheb, "QN", "", sb_low1, sb_high2);
 
     double c0 = bkg_cheb->GetParameter(0);
     double c1 = bkg_cheb->GetParameter(1);
     double c2 = bkg_cheb->GetParameter(2);
     double c3 = bkg_cheb->GetParameter(3);
-    std::cout << "Single lower‑sideband Chebyshev fit (3rd order):\n"
-              << "  Sideband: " << sb_low << "–" << sb_high << " MeV\n"
+    std::cout << "Two‑sideband Chebyshev fit (3rd order, simultaneous):\n"
+              << "  Lower: " << sb_low1 << "-" << sb_high1 << " MeV\n"
+              << "  Upper: " << sb_low2 << "-" << sb_high2 << " MeV\n"
               << "  Chebyshev: c0 = " << c0 << ", c1 = " << c1 
               << ", c2 = " << c2 << ", c3 = " << c3 << "\n";
 
@@ -321,7 +324,7 @@ void correct_and_plot_single_sideband_chebyshev() {
     // ------------------------------------------------------------------
     // 11. Plotting
     // ------------------------------------------------------------------
-    TCanvas *c = new TCanvas("c", "3π mass projection (Chebyshev 3rd order, single sideband)", 1200, 700);
+    TCanvas *c = new TCanvas("c", "3π mass projection (Chebyshev 3nd order)", 1200, 700);
     c->SetBottomMargin(0.13);
     c->SetLeftMargin(0.12);
 
@@ -396,7 +399,7 @@ void correct_and_plot_single_sideband_chebyshev() {
     line->SetLineStyle(2);
     line->Draw();
 
-    c->SaveAs(output_path + "combined_fit_and_plot_single_sideband_chebyshev.pdf");
+    c->SaveAs(output_path + "combined_fit_and_plot_2sideband_chebyshev.pdf");
     delete c;
 
     // ------------------------------------------------------------------
@@ -423,9 +426,9 @@ void correct_and_plot_single_sideband_chebyshev() {
     h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
     h_signal_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
     h_signal_data->GetXaxis()->SetTitleSize(0.05);
-    h_signal_data->GetXaxis()->SetTitleOffset(1.2);
+    h_signal_data->GetXaxis()->SetTitleOffset(1.2);   // was 1.0, increase
     h_signal_data->GetXaxis()->SetLabelSize(0.06);
-    h_signal_data->GetXaxis()->SetLabelOffset(0.01);
+    h_signal_data->GetXaxis()->SetLabelOffset(0.01);   // small positive
     h_signal_data->GetXaxis()->SetTickLength(0.03);
     h_signal_data->GetYaxis()->SetTitleOffset(0.9);
     h_signal_data->GetXaxis()->SetRangeUser(mass_min, mass_max);
@@ -434,6 +437,7 @@ void correct_and_plot_single_sideband_chebyshev() {
     h_signal->SetLineColor(kBlue);
     h_background->SetLineColor(kRed);
     
+    // Draw and force update before adding legend
     h_signal_data->Draw("E0");
     h_signal->Draw("hist same");
     h_background->Draw("hist same");
@@ -448,13 +452,13 @@ void correct_and_plot_single_sideband_chebyshev() {
     leg2->Draw();
 
     c22->Update();
-    c22->SaveAs(output_path + "background_subtracted_single_sideband_chebyshev.pdf");
+    c22->SaveAs(output_path + "background_subtracted_combined_2sideband_chebyshev.pdf");
     delete c22;
     
     // ------------------------------------------------------------------
     // 13. Save output ROOT file
     // ------------------------------------------------------------------
-    TFile *fout = new TFile(output_path + "corrected_and_plotted_single_sideband_chebyshev.root", "RECREATE");
+    TFile *fout = new TFile(output_path + "corrected_and_plotted_2sideband_chebyshev.root", "RECREATE");
     h_isr3pi_corrected->Write();
     h_signal->Write();
     h_background->Write();
@@ -481,6 +485,6 @@ void correct_and_plot_single_sideband_chebyshev() {
 }
 
 int main() {
-    correct_and_plot_single_sideband_chebyshev();
+    correct_and_plot_2sideband_chebyshev();
     return 0;
 }

@@ -235,6 +235,13 @@ int compr_bdt() {
   hist_eeg_sc->Draw("HIST SAME");
   hist_isr3pi_sc->Draw("HIST SAME");
 
+  //TLine *line = new TLine(var_min, 0, var_max, 0);
+  TLine *line = new TLine(0.28, 0, 0.28, 5e3);
+  line->SetLineColor(2);
+  line->SetLineWidth(2);
+  line->SetLineStyle(2);
+  line->Draw();
+  
   const double ymax = hist_data->GetMaximum();
   hist_data->GetYaxis()->SetTitle("Events");
   hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
@@ -286,10 +293,6 @@ int compr_bdt() {
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");
   
-  TLine *line = new TLine(var_min, 0, var_max, 0);
-  line->SetLineColor(2);
-  line->SetLineStyle(2);
-  line->Draw();
   
   c1->SaveAs(out_dir + "/data_mc_comparison_scaled_" + var_nm + "_bdt.pdf");
   cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << ".pdf" << endl;

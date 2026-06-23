@@ -5,6 +5,6 @@ const TString output_path = "../plots_m3pi_corr/";
 #ifndef BINNING_H
 #define BINNING_H
 const int NBINS = 150;
-const double MASS_MIN = 600.0;
-const double MASS_MAX = 900.0;
+const double MASS_MIN = 760.; //600.0;
+const double MASS_MAX = 800.; //900.0;
 #endif

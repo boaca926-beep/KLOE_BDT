@@ -577,7 +577,7 @@ int tree_cut_bdt() {
         if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
 	if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
 	if (bdt_score <= bdt_cut) continue; // suppress ksl and omegpi background
-	if (beta_3pi < 0.22) continue; // suppress missing MC a1+pi0
+	if (beta_3pi < 0.22 || beta_3pi > 0.28) continue; // suppress missing MC a1+pi0
 	
         //else if (m3pi_bdt > 840.) continue;
 	//if (m3pi_bdt < 760. || m3pi_bdt > 820. || bdt_score <= bdt_cut) continue; // clear sample of omega gamma

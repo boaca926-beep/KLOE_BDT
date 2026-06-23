@@ -4,8 +4,8 @@ TFile *f_gen = new TFile(outputGen + "tree_gen.root");
 //cout << f_gen -> GetName() << endl;
 
 const double eeg_lsf = 2.;
-const double mass_sigma_nb = 1.;
-const double sfw2d_sigma_nb = 1.;
+const double mass_sigma_nb = 1;
+const double sfw2d_sigma_nb = 1;
 
 //IM3pi (analysis):
 const double IM3pi_min = 380.;

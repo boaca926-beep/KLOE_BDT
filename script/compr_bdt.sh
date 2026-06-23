@@ -29,13 +29,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=150
 
 ##################################################################
-VAR_NM="lagvalue_min_7C"
-VAR_SYMB="#chi^{2}_{7C}"
-UNIT=""
+#VAR_NM="lagvalue_min_7C"
+#VAR_SYMB="#chi^{2}_{7C}"
+#UNIT=""
 
-XMIN=0
-XMAX=20
-BINS=100
+#XMIN=0
+#XMAX=20
+#BINS=100
 
 ##################################################################
 #VAR_NM=("pvalue")
@@ -156,13 +156,13 @@ BINS=100
 #BINS=200
 
 ##################################################################
-#VAR_NM="beta_3pi"
-#VAR_SYMB="#beta_{3#pi}"
+VAR_NM="beta_3pi"
+VAR_SYMB="#beta_{3#pi}"
 
-#UNIT=""
-#XMIN=0
-#XMAX=1
-#BINS=200
+UNIT=""
+XMIN=0
+XMAX=1
+BINS=200
 
 output_folder="../output_"${VAR_NM[0]}
 
