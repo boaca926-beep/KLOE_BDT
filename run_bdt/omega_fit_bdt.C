@@ -113,6 +113,12 @@ void omega_fit_bdt() {
   if (!h_isr3pi) { std::cerr << "ERROR: No ISR3pi histogram." << std::endl; return; }
 
   // Summary
-  std::cout << "EEG integral: " << h_eeg->Integral() << std::endl;
+  std::cout << "EEG integral: " << h_eeg->Integral() << ", sfw = " << eeg_sfw * 2. << "\n"
+	    << "ISR3PI integral: " << h_isr3pi->Integral() << ", sfw = " << isr3pi_sfw << "\n"
+	    << "OMEGAPI integral: " << h_omegapi->Integral() << ", sfw = " << omegapi_sfw << "\n"
+	    << "NonReson integral: " << h_nonReson->Integral() << ", sfw = " << nonReson_sfw << "\n"
+	    << "KSL integral: " << h_ksl->Integral() << ", sfw = " << ksl_sfw << "\n"
+	    << "MCREST integral: " << h_mcrest->Integral() << ", sfw = " << mcrest_sfw << "\n"
+    	    << std::endl;
 
 }

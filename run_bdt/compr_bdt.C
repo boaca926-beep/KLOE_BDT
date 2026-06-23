@@ -57,7 +57,7 @@ int compr_bdt() {
     format_h(h, color_list[i], 2);
     Hlist->Add(h);
   }
-
+  
   auto getHist = [&](const char* name) -> TH1D* {
     TH1D* h = (TH1D*)Hlist->FindObject(name);
     if (!h) cerr << "WARNING: histogram " << name << " not found in list" << endl;
@@ -92,13 +92,21 @@ int compr_bdt() {
     TTree *fitTree = (TTree*)f_sfw2d->Get("TRESULT");
     if (fitTree) {
       double feeg, fisr3pi, fomegapi, fnonReson, fksl, fmcrest;
+      double eeg_sfw, isr3pi_sfw, omegapi_sfw, nonReson_sfw, ksl_sfw, mcrest_sfw;
       // FIXED: Add "Br_" prefix to all branch names
       fitTree->SetBranchAddress("Br_feeg", &feeg);
+      fitTree->SetBranchAddress("Br_eeg_sfw", &eeg_sfw);
       fitTree->SetBranchAddress("Br_fisr3pi", &fisr3pi);
+      fitTree->SetBranchAddress("Br_isr3pi_sfw", &isr3pi_sfw);
       fitTree->SetBranchAddress("Br_fomegapi", &fomegapi);
+      fitTree->SetBranchAddress("Br_omegapi_sfw", &omegapi_sfw);
       fitTree->SetBranchAddress("Br_fnonReson", &fnonReson);
+      fitTree->SetBranchAddress("Br_nonReson_sfw", &nonReson_sfw);
       fitTree->SetBranchAddress("Br_fksl", &fksl);
+      fitTree->SetBranchAddress("Br_ksl_sfw", &ksl_sfw);
       fitTree->SetBranchAddress("Br_fmcrest", &fmcrest);
+      fitTree->SetBranchAddress("Br_mcrest_sfw", &mcrest_sfw);
+
       fitTree->GetEntry(0);
       
       double nb_data_sum = hist_data->GetSumOfWeights();
@@ -113,20 +121,20 @@ int compr_bdt() {
         return (N == 0.0) ? 0.0 : Nd * fra / N;
       };
       
-      scale_eeg     = getscale(nb_data_sum, feeg,     nb_eeg_sum);
-      scale_isr3pi  = getscale(nb_data_sum, fisr3pi,  nb_isr3pi_sum);
-      scale_omegapi = getscale(nb_data_sum, fomegapi, nb_omegapi_sum);
-      scale_nonReson= getscale(nb_data_sum, fnonReson, nb_nonReson_sum);
-      scale_ksl     = getscale(nb_data_sum, fksl,     nb_ksl_sum);
-      scale_mcrest  = getscale(nb_data_sum, fmcrest,  nb_mcrest_sum);
+      scale_eeg     = eeg_sfw * 2.; //getscale(nb_data_sum, feeg,     nb_eeg_sum);
+      scale_isr3pi  = isr3pi_sfw; //getscale(nb_data_sum, fisr3pi,  nb_isr3pi_sum);
+      scale_omegapi = omegapi_sfw; //getscale(nb_data_sum, fomegapi, nb_omegapi_sum);
+      scale_nonReson= nonReson_sfw; //getscale(nb_data_sum, fnonReson, nb_nonReson_sum);
+      scale_ksl     = ksl_sfw; //getscale(nb_data_sum, fksl,     nb_ksl_sum);
+      scale_mcrest  = mcrest_sfw; //getscale(nb_data_sum, fmcrest,  nb_mcrest_sum);
       
       cout << "\n=== Scaling factors from SFW2D ===" << endl;
-      cout << "scale_eeg = " << scale_eeg << endl;
-      cout << "scale_isr3pi = " << scale_isr3pi << endl;
-      cout << "scale_omegapi = " << scale_omegapi << endl;
-      cout << "scale_nonReson = " << scale_nonReson << endl;
-      cout << "scale_ksl = " << scale_ksl << endl;
-      cout << "scale_mcrest = " << scale_mcrest << endl;
+      cout << "scale_eeg = " << scale_eeg << ", eeg_sfw = " << eeg_sfw * 2. << endl;
+      cout << "scale_isr3pi = " << scale_isr3pi << ", isr3pi_sfw = " << isr3pi_sfw << endl;
+      cout << "scale_omegapi = " << scale_omegapi << ", omegapi_sfw = " << omegapi_sfw << endl;
+      cout << "scale_nonReson = " << scale_nonReson << ", nonReson_sfw = " << nonReson_sfw << endl;
+      cout << "scale_ksl = " << scale_ksl << ", ksl_sfw = " << ksl_sfw << endl;
+      cout << "scale_mcrest = " << scale_mcrest << ", mcrest_sfw = " << mcrest_sfw << endl;
     } else {
       cout << "WARNING: TRESULT tree not found in sfw2d.root" << endl;
     }
@@ -149,7 +157,16 @@ int compr_bdt() {
   hist_nonreson_sc->Scale(scale_nonReson);
   hist_ksl_sc->Scale(scale_ksl);
   hist_mcrest_sc->Scale(scale_mcrest);
-  
+
+  std::cout << "DATA integral: " << hist_data->Integral() << "\n"
+	    << "EEG integral: " << hist_eeg_sc->Integral() << "\n"
+	    << "ISR3PI integral: " << hist_isr3pi_sc->Integral() << "\n"
+	    << "NonReson integral: " << hist_nonreson_sc->Integral() << "\n"
+	    << "OMEGAPI integral: " << hist_omegapi_sc->Integral() << "\n"
+	    << "KSL integral: " << hist_ksl_sc->Integral() << "\n"
+	    << "MCREST integral: " << hist_mcrest_sc->Integral() << "\n"
+    	    << std::endl;
+
   // Total scaled MC
   TH1D *hist_mcsum = (TH1D*)hist_eeg_sc->Clone("hist_mcsum");
   hist_mcsum->Add(hist_isr3pi_sc, 1.);
