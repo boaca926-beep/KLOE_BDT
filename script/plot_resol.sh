@@ -26,18 +26,18 @@ XTITLE=("#beta^{rec}_{#pi}-#beta^{true}_{#pi}"
 	"M^{rec}_{#gamma#gamma}-M^{true}_{#gamma#gamma}")
 
 BIN_SIZE=(400
-	  400
-	  400
 	  1000
+	  400
+	  2000
 	  400)
 
 FIT_FACTOR=(0.5
+	    0.5
 	    1.0
 	    1.0
-	    1.5
 	    1.0)
 
-RANGE_FACTOR=(15
+RANGE_FACTOR=(10
 	      5
 	      5
 	      5
@@ -70,7 +70,7 @@ else
 fi
 
 header=../header_bdt/plot_resol.h
-sample_type=chain
+sample_type=norm
 main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
 treeFile="${main_folder}/cut/tree_pre_bdt.root";
 

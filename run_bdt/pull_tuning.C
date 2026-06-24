@@ -1,0 +1,242 @@
+void checkFile(TFile *f_input){
+
+  TIter next_tree(f_input -> GetListOfKeys());
+
+  TString objnm_tree, classnm_tree;
+
+  int i = 0;
+  TKey *key;
+  
+  while ( (key = (TKey *) next_tree() ) ) {
+    
+    i ++;
+    
+    objnm_tree   =  key -> GetName();
+    classnm_tree = key -> GetClassName();
+    key -> GetSeekKey();
+    
+    cout << "tree" << i << ": classnm = " << classnm_tree << ", objnm = " << objnm_tree << endl;
+    
+  }
+
+}
+
+// Define FitResult struct BEFORE using it
+struct FitResult {
+    TString name;
+    double mean, mean_err;
+    double sigma, sigma_err;
+    double chi2_ndf;
+    int entries;
+};
+
+void pull_tuning() {
+
+  gROOT->GetListOfCanvases()->Delete();
+  
+  gErrorIgnoreLevel = kError;
+  TGaxis::SetMaxDigits(4);
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  gStyle->SetErrorX(0.8);
+  TH1::SetDefaultSumw2();
+
+  gSystem->Exec("mkdir -p ../pull_tuning");
+
+  TFile *fin_E1 = new TFile("../output_pull_E1/hist_pull_E1.root");
+  if (!fin_E1 || fin_E1->IsZombie()) {
+    std::cerr << "ERROR: cannot open output_pull_E1/hist_pull_E1.root" << std::endl;
+    return;
+  }
+
+  TFile *fin_E2 = new TFile("../output_pull_E2/hist_pull_E2.root");
+  if (!fin_E2 || fin_E2->IsZombie()) {
+    std::cerr << "ERROR: cannot open output_pull_E2/hist_pull_E2.root" << std::endl;
+    return;
+  }
+
+  TFile *fin_E3 = new TFile("../output_pull_E3/hist_pull_E3.root");
+  if (!fin_E3 || fin_E3->IsZombie()) {
+    std::cerr << "ERROR: cannot open output_pull_E3/hist_pull_E3.root" << std::endl;
+    return;
+  }
+
+  // Check file content
+  //checkFile(fin_E1);
+  //checkFile(fin_E2);
+  
+  TH1D* hE1_MC = (TH1D*)fin_E1->Get("hist_isr3pi_sc");
+  TH1D* hE1_DATA = (TH1D*)fin_E1->Get("hist_data");
+
+  TH1D* hE2_MC = (TH1D*)fin_E2->Get("hist_isr3pi_sc");
+  TH1D* hE2_DATA = (TH1D*)fin_E2->Get("hist_data");
+
+  TH1D* hE3_MC = (TH1D*)fin_E3->Get("hist_isr3pi_sc");
+  TH1D* hE3_DATA = (TH1D*)fin_E3->Get("hist_data");
+
+  // histos E1+E2, E3
+  TH1D *hE12_MC = (TH1D*)hE1_MC->Clone("hE12_MC");
+  hE12_MC->Add(hE2_MC, 1.);
+
+  TH1D *hE12_DATA = (TH1D*)hE1_DATA->Clone("hE12_DATA");
+  hE12_DATA->Add(hE2_DATA, 1.);
+
+  hE3_MC->SetName("hE3_MC");
+  hE3_DATA->SetName("hE3_DATA");
+  
+  // Fit the combined distribution
+  const int nb_hist = 4;
+  TH1D *HLIST[nb_hist] = {hE12_MC, hE12_DATA, hE3_MC, hE3_DATA};
+  FitResult results[nb_hist];
+  TF1 *gaus_fits[nb_hist];
+  
+  for (int i = 0; i < nb_hist; i ++) {
+
+    TH1D *h_tmp = (TH1D*)HLIST[i]->Clone(Form("%s", HLIST[i]->GetName()));
+    double mean_est = h_tmp->GetMean();
+    double rms_est = h_tmp->GetRMS();
+    // FIXED: use h_tmp->FindBin instead of hE12_MC->FindBin
+    double amp_est = h_tmp->GetBinContent(h_tmp->FindBin(mean_est));
+
+    const double fit_width = 1.5;
+    const double fit_min = mean_est - fit_width;
+    const double fit_max = mean_est + fit_width;
+    
+    std::cout << "========================================" << std::endl;
+    std::cout << "Sample: " << h_tmp->GetName() << std::endl;
+    std::cout << "Number of entries: " << h_tmp->GetEntries() << std::endl;
+    std::cout << "Mean estimate: " << mean_est << ", RMS: " << rms_est << std::endl;
+    std::cout << "Fit range: [" << fit_min << ", " << fit_max << "]" << std::endl;
+
+    TF1 *gaus = new TF1(Form("gaus_%d", i), "gaus", fit_min, fit_max);
+    gaus->SetParameters(amp_est, mean_est, rms_est * 0.7);
+    gaus->SetParLimits(2, 0.2, 5.0);
+    h_tmp->Fit(gaus, "RQS");
+
+    double mean = gaus->GetParameter(1);
+    double sigma = gaus->GetParameter(2);
+    double mean_err = gaus->GetParError(1);
+    double sigma_err = gaus->GetParError(2);
+    double chi2_ndf = gaus->GetChisquare() / gaus->GetNDF();
+    
+    std::cout << "Mean = " << mean << " +/- " << mean_err << std::endl;
+    std::cout << "Sigma = " << sigma << " +/- " << sigma_err << std::endl;
+    std::cout << "χ²/ndf = " << chi2_ndf << std::endl;
+
+    // Store results
+    results[i].name = TString(h_tmp->GetName());
+    results[i].mean = mean;
+    results[i].mean_err = mean_err;
+    results[i].sigma = sigma;
+    results[i].sigma_err = sigma_err;
+    results[i].chi2_ndf = chi2_ndf;
+    results[i].entries = h_tmp->GetEntries();
+    gaus_fits[i] = gaus;
+    
+  }
+  
+  // Set colors for fits
+  gaus_fits[0]->SetLineColor(kRed);      // hE12_MC
+  gaus_fits[0]->SetLineWidth(2);
+  gaus_fits[1]->SetLineColor(kBlack);    // hE12_DATA
+  gaus_fits[1]->SetLineWidth(2);
+  gaus_fits[2]->SetLineColor(kBlue);     // hE3_MC
+  gaus_fits[2]->SetLineWidth(2);
+  gaus_fits[3]->SetLineColor(kGreen+2);  // hE3_DATA
+  gaus_fits[3]->SetLineWidth(2);
+
+  // ========== Canvas 1: E1+E2 Pull ==========
+  TCanvas *c_E12 = new TCanvas("c_E12", "E1+E2 Pull Distributions", 900, 900);
+
+  c_E12->cd(1);
+  gPad->SetBottomMargin(0.15);
+  gPad->SetLeftMargin(0.15);
+
+  const double ymax_E12 = hE12_DATA->GetMaximum();
+  hE12_DATA->GetYaxis()->SetTitle("Events");
+  hE12_DATA->GetYaxis()->SetRangeUser(0.01, ymax_E12 * 1.6);
+  hE12_DATA->GetYaxis()->CenterTitle();
+  hE12_DATA->GetYaxis()->SetTitleSize(0.05);
+  hE12_DATA->GetYaxis()->SetTitleOffset(1.2);
+  hE12_DATA->GetYaxis()->SetLabelSize(0.04);
+  hE12_DATA->GetXaxis()->SetTitle("E_{1}+E_{2} Pull [MeV]");
+  hE12_DATA->GetXaxis()->SetTitleSize(0.05);
+  hE12_DATA->GetXaxis()->SetTitleOffset(1.2);  // Increased from 1.0
+  hE12_DATA->GetXaxis()->SetLabelSize(0.04);
+  hE12_DATA->GetXaxis()->CenterTitle();
+  
+  hE12_DATA->Draw();
+  gaus_fits[1]->Draw("same");
+  hE12_MC->Draw("same");
+  gaus_fits[0]->Draw("same");
+
+  // FIXED: Use results array instead of undefined result_mc/result_data
+  TLegend *leg_E12 = new TLegend(0.15, 0.7, 0.9, 0.9);
+  leg_E12->SetFillStyle(0);
+  leg_E12->SetBorderSize(0);
+  leg_E12->SetNColumns(2);
+  leg_E12->SetTextSize(0.03);
+  leg_E12->AddEntry(hE12_MC, Form("%s (E1+E2)", results[0].name.Data()), "lep");
+  leg_E12->AddEntry(gaus_fits[0], Form("#mu = %.3f, #sigma = %.3f", results[0].mean, results[0].sigma), "l");
+  leg_E12->AddEntry(hE12_DATA, Form("%s (E1+E2)", results[1].name.Data()), "lep");
+  leg_E12->AddEntry(gaus_fits[1], Form("#mu = %.3f, #sigma = %.3f", results[1].mean, results[1].sigma), "l");
+  leg_E12->Draw();
+    
+  gPad->Update();
+
+  // ========== Canvas 2: E3 Pull ==========
+  TCanvas *c_E3 = new TCanvas("c_E3", "E3 Pull Distributions", 900, 900);
+
+  c_E3->cd(1);
+  gPad->SetBottomMargin(0.15);
+  gPad->SetLeftMargin(0.15);
+
+  const double ymax_E3 = hE3_DATA->GetMaximum();
+  hE3_DATA->GetYaxis()->SetTitle("Events");
+  hE3_DATA->GetYaxis()->SetRangeUser(0.01, ymax_E3 * 1.6);
+  hE3_DATA->GetYaxis()->CenterTitle();
+  hE3_DATA->GetYaxis()->SetTitleSize(0.05);
+  hE3_DATA->GetYaxis()->SetTitleOffset(1.2);
+  hE3_DATA->GetYaxis()->SetLabelSize(0.04);
+  hE3_DATA->GetXaxis()->SetTitle("E_{3} Pull [MeV]");
+  hE3_DATA->GetXaxis()->SetTitleSize(0.05);
+  hE3_DATA->GetXaxis()->SetTitleOffset(1.2);
+  hE3_DATA->GetXaxis()->SetLabelSize(0.04);
+  hE3_DATA->GetXaxis()->CenterTitle();
+  
+  hE3_DATA->Draw();
+  gaus_fits[3]->Draw("same");
+  hE3_MC->Draw("same");
+  gaus_fits[2]->Draw("same");
+
+  TLegend *leg_E3 = new TLegend(0.15, 0.7, 0.9, 0.9);
+  leg_E3->SetFillStyle(0);
+  leg_E3->SetBorderSize(0);
+  leg_E3->SetNColumns(2);
+  leg_E3->SetTextSize(0.03);
+  leg_E3->AddEntry(hE3_MC, results[2].name.Data(), "lep");
+  leg_E3->AddEntry(gaus_fits[2], Form("#mu = %.3f, #sigma = %.3f", results[2].mean, results[2].sigma), "l");
+  leg_E3->AddEntry(hE3_DATA, results[3].name.Data(), "lep");
+  leg_E3->AddEntry(gaus_fits[3], Form("#mu = %.3f, #sigma = %.3f", results[3].mean, results[3].sigma), "l");
+  leg_E3->Draw();
+    
+  gPad->Update();
+
+  // Save canvases
+  c_E12->SaveAs("../pull_tuning/pull_E12.png");
+  c_E12->SaveAs("../pull_tuning/pull_E12.pdf");
+  c_E3->SaveAs("../pull_tuning/pull_E3.png");
+  c_E3->SaveAs("../pull_tuning/pull_E3.pdf");
+
+  // Print summary
+  std::cout << "\n========================================" << std::endl;
+  std::cout << "Summary of Fit Results:" << std::endl;
+  std::cout << "========================================" << std::endl;
+  for (int i = 0; i < nb_hist; i++) {
+    std::cout << Form("%-15s: mean = %6.3f +/- %6.3f, sigma = %6.3f +/- %6.3f, χ²/ndf = %.3f", 
+                      results[i].name.Data(), 
+                      results[i].mean, results[i].mean_err,
+                      results[i].sigma, results[i].sigma_err,
+                      results[i].chi2_ndf) << std::endl;
+  }
+}

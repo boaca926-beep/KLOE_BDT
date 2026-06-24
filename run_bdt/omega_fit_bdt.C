@@ -347,6 +347,8 @@ void omega_fit_bdt() {
   h_data->GetYaxis()->SetRangeUser(0, max_val * 1.2);
   double bin_width = h_data->GetBinWidth(1);
 
+  TH1D *h_signal_data = (TH1D*) h_data->Clone("h_signal_data");
+  
   h_data->SetMarkerStyle(20);
   h_data->SetMarkerSize(0.6);
   h_data->Draw("E0");
@@ -365,7 +367,6 @@ void omega_fit_bdt() {
 
   // Legend - same order as correct_and_plot.C
   TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
-  //TLegend *leg = new TLegend(0.65, 0.25, 0.9, 0.9);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
@@ -407,45 +408,77 @@ void omega_fit_bdt() {
   line->SetLineStyle(2);
   line->Draw();
 
+  c->Update();
+  c->Modified();
+  
   c->SaveAs(output_path + "omega_combined_fit.pdf");
 
   // ------------------------------------------------------------------
-  // 13. Background-subtracted ω signal
+  // 13. Background-subtracted ω signal (ADAPTED: like linear version)
   // ------------------------------------------------------------------
-  TH1D *h_signal_data = (TH1D*) h_data->Clone("h_signal_data");
+  // Start from raw data and subtract ALL backgrounds explicitly
+  //TH1D *h_signal_data = (TH1D*) h_data->Clone("h_signal_data");
   h_signal_data->Add(h_eeg, -1.0);
   h_signal_data->Add(h_omegapi, -1.0);
   h_signal_data->Add(h_ksl, -1.0);
   h_signal_data->Add(h_mcrest, -1.0);
-  h_signal_data->Add(h_background, -1.0);
-  for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin)
-    if (h_signal_data->GetBinContent(bin) < 0) h_signal_data->SetBinContent(bin, 0);
-
+  h_signal_data->Add(h_background, -1.0);  // non-resonant ISR
+  
+  // Set negative bins to zero
+  for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin) {
+    if (h_signal_data->GetBinContent(bin) < 0) {
+      h_signal_data->SetBinContent(bin, 0);
+    }
+  }
+  
   TCanvas *c2 = new TCanvas("c2", "Background-subtracted ω signal", 1200, 700);
-  c2->SetBottomMargin(0.12);
-  c2->SetLeftMargin(0.12);
+  
+  c2->cd();
+  gPad->SetBottomMargin(0.15);
+  gPad->SetLeftMargin(0.15);
+ 
   h_signal_data->SetMarkerStyle(20);
   h_signal_data->SetMarkerSize(0.6);
-  h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
+  
+  // Apply ALL axis settings BEFORE drawing
+  // X-axis settings - FIXED
+  h_signal_data->GetXaxis()->SetNdivisions(505);
   h_signal_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-  h_signal_data->GetYaxis()->CenterTitle();
   h_signal_data->GetXaxis()->CenterTitle();
+  h_signal_data->GetXaxis()->SetTitleSize(0.05);
+  h_signal_data->GetXaxis()->SetTitleOffset(0.8);   // SMALLER = closer to axis
+  h_signal_data->GetXaxis()->SetLabelSize(0.04);
+  //h_signal_data->GetXaxis()->SetRangeUser(700, 900);
+ 
+  h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
+  h_signal_data->GetYaxis()->CenterTitle();
+  h_signal_data->GetYaxis()->SetTitleSize(0.05);
+  h_signal_data->GetYaxis()->SetTitleOffset(1.2);
+  h_signal_data->GetYaxis()->SetLabelSize(0.04);
+  h_signal_data->GetYaxis()->SetNdivisions(505);
+  
+  // Draw with full options
   h_signal_data->Draw("E0");
+  
+  // Overlay fitted signal for comparison
   h_signal->SetLineColor(kBlue);
+  h_signal->SetLineWidth(2);
   h_signal->Draw("hist same");
-  h_background->SetLineColor(kRed);
-  h_background->Draw("hist same");
-
-  TLegend *leg2 = new TLegend(0.6, 0.7, 0.9, 0.9);
+  
+  TLegend *leg2 = new TLegend(0.2, 0.7, 0.5, 0.9);
   leg2->SetFillStyle(0);
   leg2->SetBorderSize(0);
   leg2->SetTextSize(0.04);
-  leg2->AddEntry(h_signal_data, "Data - backgrounds", "lep");
-  leg2->AddEntry(h_signal, "Corrected #omega peak", "l");
-  leg2->AddEntry(h_background, "Non-resonant ISR", "l");
+  leg2->AddEntry(h_signal_data, "Data - all backgrounds", "lep");
+  leg2->AddEntry(h_signal, "Fitted #omega signal", "l");
   leg2->Draw();
+  
+  // Force canvas to update
+  c2->Update();
+  c2->Modified();
+  
   c2->SaveAs(output_path + "omega_background_subtracted.pdf");
-
+  
   // ------------------------------------------------------------------
   // 14. Correction weights canvas
   // ------------------------------------------------------------------

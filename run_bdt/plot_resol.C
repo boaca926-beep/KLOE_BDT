@@ -93,8 +93,9 @@ void plot_resol() {
   double chi2ndf = doubleGaus->GetChisquare() / doubleGaus->GetNDF();
   double err_amp2 = doubleGaus->GetParError(3);
   double amp2 = doubleGaus->GetParameter(3);
-  bool stable = (chi2ndf < 10.0) && (err_amp2 / (amp2 + 1e-6) < 2.0);
-  
+  //bool stable = (chi2ndf < 10.0) && (err_amp2 / (amp2 + 1e-6) < 2.0);
+  bool stable = (chi2ndf < 10.0) && (err_amp2 / (amp2 + 1e-6) < 2.0) && (amp2 > 0.001);
+ 
   TF1 *finalFit = doubleGaus;
   TString fitType = "Double Gaussian";
   bool doubleUsed = true;

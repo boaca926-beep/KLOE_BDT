@@ -287,11 +287,11 @@ int compr_bdt() {
   hist_ratio->GetXaxis()->SetTitleOffset(1.0);
   hist_ratio->GetXaxis()->SetLabelSize(0.1);
   hist_ratio->GetXaxis()->CenterTitle();
-  hist_ratio->GetYaxis()->SetTitle("Data/MC");
+  hist_ratio->GetYaxis()->SetTitle("Pull");
   hist_ratio->GetYaxis()->SetTitleSize(0.12);
   hist_ratio->GetYaxis()->SetTitleOffset(0.5);
   hist_ratio->GetYaxis()->SetLabelSize(0.08);
-  hist_ratio->GetYaxis()->SetRangeUser(-10., 10.);
+  hist_ratio->GetYaxis()->SetRangeUser(-20., 20.);
   hist_ratio->GetYaxis()->SetNdivisions(505);
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");

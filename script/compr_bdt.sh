@@ -29,13 +29,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=150
 
 ##################################################################
-VAR_NM="lagvalue_min_7C"
-VAR_SYMB="#chi^{2}_{7C}"
-UNIT=""
+#VAR_NM="lagvalue_min_7C"
+#VAR_SYMB="#chi^{2}_{7C}"
+#UNIT=""
 
-XMIN=0
-XMAX=20
-BINS=100
+#XMIN=0
+#XMAX=20
+#BINS=100
 
 ##################################################################
 #VAR_NM=("pvalue")
@@ -51,9 +51,9 @@ BINS=100
 #VAR_SYMB=("M_{3#pi}")
 #UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(600) #300 600
-#XMAX=(900) #1020 1050
-#BINS=(200)
+#XMIN=(700) #300 600
+#XMAX=(850) #1020 1050
+#BINS=(150)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -110,13 +110,13 @@ BINS=100
 #BINS=(150) #150, 550 
 
 ##################################################################
-#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-#VAR_SYMB=("M_{#gamma#gamma}")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+VAR_SYMB=("M_{#gamma#gamma}")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(100)
-#XMAX=(180)
-#BINS=(180)
+XMIN=(100)
+XMAX=(180)
+BINS=(180)
 
 ##################################################################
 #VAR_NM="ppIM"
@@ -137,14 +137,14 @@ BINS=100
 #BINS=150
 
 ##################################################################
-name_tmp="E2"
-VAR_NM="pull_"${name_tmp}
-VAR_SYMB="Pull "${name_tmp}
+#name_tmp="E1"
+#VAR_NM="pull_"${name_tmp}
+#VAR_SYMB="Pull "${name_tmp}
 
-UNIT="[]"
-XMIN=-10
-XMAX=10
-BINS=200
+#UNIT="[]"
+#XMIN=-10
+#XMAX=10
+#BINS=200
 
 ##################################################################
 #VAR_NM="e_asym"
@@ -182,7 +182,7 @@ else
 fi
 
 compr=../header_bdt/compr.h
-sample_type=chain
+sample_type=norm
 data_type=bdt
 main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre_bdt.root";

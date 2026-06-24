@@ -30,7 +30,7 @@ struct FitResult {
     int entries;
 };
 
-void E12_tuning() {
+void pull_tuning() {
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
@@ -38,7 +38,7 @@ void E12_tuning() {
   gStyle->SetErrorX(0.8);
   TH1::SetDefaultSumw2();
 
-  gSystem->Exec("mkdir -p ../E12_tuning");
+  gSystem->Exec("mkdir -p ../pull_tuning");
 
   TFile *fin_E1 = new TFile("../output_pull_E1/hist_pull_E1.root");
   if (!fin_E1 || fin_E1->IsZombie()) {
@@ -154,18 +154,40 @@ void E12_tuning() {
   gaus_data->SetLineColor(kBlack);
   gaus_data->SetLineWidth(2);
 
-   TCanvas *c_side = new TCanvas("c_side", "Pull Distributions: E1 + E2", 1400, 700);
- 
+  TCanvas *c_side = new TCanvas("c_side", "Pull Distributions", 1400, 700);
+
+  c_side->Divide(2, 1);
+
+  c_side->cd(1);
+  gPad->SetBottomMargin(0.12);
+  gPad->SetLeftMargin(0.12);
+
+  
+  const double ymax = hE12_DATA->GetMaximum();
+  hE12_DATA->GetYaxis()->SetTitle("Events");
+  hE12_DATA->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
+  hE12_DATA->GetYaxis()->CenterTitle();
+  hE12_DATA->GetYaxis()->SetTitleSize(0.05);
+  hE12_DATA->GetYaxis()->SetTitleOffset(1.2);
+  hE12_DATA->GetYaxis()->SetLabelSize(0.04);
+  hE12_DATA->GetXaxis()->SetTitle("E_{1}+E_{2} Pull [MeV]");
+  hE12_DATA->GetXaxis()->SetTitleSize(0.05);
+  hE12_DATA->GetXaxis()->SetTitleOffset(1.0);
+  hE12_DATA->GetXaxis()->SetLabelSize(0.04);
+  hE12_DATA->GetXaxis()->CenterTitle();
+  
   hE12_DATA->Draw();
   gaus_data->Draw("same");
   hE12_MC->Draw("same");
   gaus_mc->Draw("same");
 
   // Legend - position adjusted for each pad
-  TLegend *leg = new TLegend(0.6, 0.50, 0.92, 0.88);
+  TLegend *leg = new TLegend(0.15, 0.7, 0.9, 0.9);
+  //TLegend *leg = new TLegend(0.6, 0.50, 0.92, 0.88);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
-  leg->SetTextSize(0.04);
+  leg->SetNColumns(2);
+  leg->SetTextSize(0.03);
   leg->AddEntry(hE12_MC, Form("%s (E1+E2)", result_mc.name.Data()), "lep");
   leg->AddEntry(gaus_mc, Form("#mu = %.3f, #sigma = %.3f", result_mc.mean, result_mc.sigma), "l");
   leg->AddEntry(hE12_DATA, Form("%s (E1+E2)", result_data.name.Data()), "lep");

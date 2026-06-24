@@ -8,7 +8,7 @@ const double range_factor = 5;
 const double XMIN = -50;
 const double XMAX = 50;
 
-const TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+const TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
 
 
 
