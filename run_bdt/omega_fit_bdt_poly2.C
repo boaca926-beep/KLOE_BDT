@@ -1,6 +1,6 @@
-// omega_fit_bdt.C – template fit with proper memory management
+// omega_fit_bdt_poly2_peak.C – template fit with 2nd order polynomial in signal region
 // All masses in MeV
-// Non-resonant template + linear background
+// Signal template + 2nd order polynomial (p0 + p1*x + p2*x²) fitted in peak region
 
 #include <TFile.h>
 #include <TTree.h>
@@ -19,28 +19,25 @@
 #include "../header_bdt/sfw2d.txt"
 #include "../header_bdt/omega_fit_bdt.h"
 
-// Global pointers for template histograms (detached from file)
+// Global pointer for signal template (detached from file)
 TH1D *gSigTemplate = nullptr;
-TH1D *gBkgTemplate = nullptr;
 
-// Fit function: α * signal_template + β * nonReson_template + linear (p0 + p1*x)
-Double_t template_linear_sum(Double_t *x, Double_t *par) {
-
-  if (!gSigTemplate || !gBkgTemplate) {
-    return 0.0;
-  }
-
-  int bin_sig = gSigTemplate->FindBin(x[0]);
-  int bin_bkg = gBkgTemplate->FindBin(x[0]);
-  Double_t sig = gSigTemplate->GetBinContent(bin_sig);
-  Double_t nonReson = gBkgTemplate->GetBinContent(bin_bkg);
-  Double_t X = x[0];
-  // Linear polynomial: p0 + p1*x
-  Double_t poly = par[2] + par[3] * X;
-  return par[0] * sig + par[1] * nonReson + poly;
+// Fit function: α * signal_template + 2nd order polynomial (p0 + p1*x + p2*x²)
+Double_t template_poly2_peak(Double_t *x, Double_t *par) {
+    if (!gSigTemplate) {
+        return 0.0;
+    }
+    
+    int bin_sig = gSigTemplate->FindBin(x[0]);
+    Double_t sig = gSigTemplate->GetBinContent(bin_sig);
+    Double_t X = x[0];
+    
+    // 2nd order polynomial: p0 + p1*x + p2*x²
+    Double_t poly = par[1] + par[2] * X + par[3] * X * X;
+    return par[0] * sig + poly;
 }
 
-void omega_fit_bdt_linear() {
+void omega_fit_bdt_poly2() {
     gErrorIgnoreLevel = kError;
     TGaxis::SetMaxDigits(4);
     gStyle->SetOptStat(0);
@@ -133,7 +130,6 @@ void omega_fit_bdt_linear() {
     h_mcrest->SetLineWidth(2);
 
     if (!h_isr3pi) { std::cerr << "ERROR: No ISR3pi histogram." << std::endl; return; }
-    if (!h_nonReson) { std::cerr << "ERROR: No nonReson histogram." << std::endl; return; }
 
     // Summary
     std::cout << "EEG integral: " << h_eeg->Integral() << ", sfw = " << eeg_sfw * 2. << "\n"
@@ -165,7 +161,7 @@ void omega_fit_bdt_linear() {
             bkg_total += h_omegapi->GetBinContent(bin);
             bkg_err_sq += pow(h_omegapi->GetBinError(bin), 2);
         }
-        // nonReson is NOT subtracted (it's used in the fit)
+        // nonReson is NOT subtracted (not used in this fit)
         if (h_ksl) {
             bkg_total += h_ksl->GetBinContent(bin);
             bkg_err_sq += pow(h_ksl->GetBinError(bin), 2);
@@ -187,73 +183,66 @@ void omega_fit_bdt_linear() {
     }
 
     // ------------------------------------------------------------------
-    // 5. Normalize templates to unit area
+    // 5. Normalize signal template to unit area
     // ------------------------------------------------------------------
     double sig_int = h_isr3pi->Integral();
-    double bkg_int = h_nonReson->Integral();
     if (sig_int > 0) h_isr3pi->Scale(1.0 / sig_int);
-    if (bkg_int > 0) h_nonReson->Scale(1.0 / bkg_int);
     
-    // Set global pointers for the fit function
+    // Set global pointer for the fit function
     gSigTemplate = h_isr3pi;
-    gBkgTemplate = h_nonReson;
 
     // ------------------------------------------------------------------
-    // 6. Determine linear background from sidebands
+    // 6. Determine 2nd order polynomial background from signal region
     // ------------------------------------------------------------------
     double peak_low = 740.0;
     double peak_high = 820.0;
     
-    // Use two sidebands for linear fit
-    double sb_low1 = 670.0;
-    double sb_high1 = 720.0;
-    double sb_low2 = 850.0;
-    double sb_high2 = 920.0;
- 
-    std::cout << "\nUsing two sidebands for linear background:\n"
-              << "  Lower: " << sb_low1 << "-" << sb_high1 << " MeV\n"
-              << "  Upper: " << sb_low2 << "-" << sb_high2 << " MeV\n";
+    // Fit polynomial in the signal region (background underneath the peak)
+    double poly_low = 740.0;
+    double poly_high = 820.0;
 
-    // Clone and zero peak region
-    TH1D *h_side = (TH1D*) h_data_isr->Clone("h_side");
-    for (int bin = 1; bin <= h_side->GetNbinsX(); ++bin) {
-        double x = h_side->GetBinCenter(bin);
-        if (x >= peak_low && x <= peak_high) h_side->SetBinContent(bin, 0);
-    }
+    std::cout << "\nUsing 2nd order polynomial in signal region:\n"
+              << "  Range: " << poly_low << "-" << poly_high << " MeV\n";
 
-    // Linear polynomial: p0 + p1*x
-    TF1 *bkg_linear = new TF1("bkg_linear", "[0] + [1]*x", sb_low1, sb_high2);
+    // 2nd order polynomial: p0 + p1*x + p2*x²
+    TF1 *bkg_poly2 = new TF1("bkg_poly2", "[0] + [1]*x + [2]*x*x", poly_low, poly_high);
     
-    // Fit over both sidebands
-    h_side->Fit(bkg_linear, "QN", "", sb_low1, sb_high2);
+    // Fit the polynomial in the signal region (background underneath the peak)
+    h_data_isr->Fit(bkg_poly2, "RQN", "", poly_low, poly_high);
 
-    double p0 = bkg_linear->GetParameter(0);
-    double p1 = bkg_linear->GetParameter(1);
-    std::cout << "Linear sideband fit: p0 = " << p0 << ", p1 = " << p1 << "\n";
+    double p0 = bkg_poly2->GetParameter(0);
+    double p1 = bkg_poly2->GetParameter(1);
+    double p2 = bkg_poly2->GetParameter(2);
+    std::cout << "Polynomial fit: p0 = " << p0 << ", p1 = " << p1 << ", p2 = " << p2 << "\n";
+    std::cout << "Polynomial χ²/ndf = " << bkg_poly2->GetChisquare() / bkg_poly2->GetNDF() << "\n";
 
     // ------------------------------------------------------------------
-    // 7. Template fit with linear background on top
+    // 7. Template fit with 2nd order polynomial background
     // ------------------------------------------------------------------
-    double fit_low = MASS_MIN;    // expanded fit range
-    double fit_high = MASS_MAX;
+    double fit_low = 740.0;
+    double fit_high = 820.0;
     
     std::cout << "\nFitting from " << fit_low << " to " << fit_high << " MeV\n";
 
-    // Total fit function (4 parameters: alpha, beta, p0, p1)
-    TF1 *total_func = new TF1("total_func", template_linear_sum, low, high, 4);
-    total_func->SetParameters(1000, 1000, p0, p1);
-    total_func->SetParNames("alpha", "beta", "p0", "p1");
+    // Total fit function (4 parameters: alpha, p0, p1, p2)
+    TF1 *total_func = new TF1("total_func", template_poly2_peak, low, high, 4);
+    total_func->SetParameters(1000, p0, p1, p2);
+    total_func->SetParNames("alpha", "p0", "p1", "p2");
     
     // Parameter limits
     total_func->SetParLimits(0, 0, 200000);  // alpha
-    total_func->SetParLimits(1, 0, 100000);  // beta
-    // Allow p0 and p1 to vary within reasonable range
-    double lim_p0 = 0.3 * std::abs(p0);
+    
+    // Allow polynomial coefficients to vary within reasonable range
+    double lim_p0 = 0.5 * std::abs(p0);
     if (lim_p0 < 1e-6) lim_p0 = 100.0;
-    double lim_p1 = 0.3 * std::abs(p1);
+    double lim_p1 = 0.5 * std::abs(p1);
     if (lim_p1 < 1e-6) lim_p1 = 1.0;
-    total_func->SetParLimits(2, p0 - lim_p0, p0 + lim_p0);
-    total_func->SetParLimits(3, p1 - lim_p1, p1 + lim_p1);
+    double lim_p2 = 0.5 * std::abs(p2);
+    if (lim_p2 < 1e-6) lim_p2 = 0.01;
+    
+    total_func->SetParLimits(1, p0 - lim_p0, p0 + lim_p0);
+    total_func->SetParLimits(2, p1 - lim_p1, p1 + lim_p1);
+    total_func->SetParLimits(3, p2 - lim_p2, p2 + lim_p2);
     
     // Single fit with quality assessment
     TFitResultPtr r = h_data_isr->Fit(total_func, "RQS", "", fit_low, fit_high);
@@ -261,58 +250,60 @@ void omega_fit_bdt_linear() {
     // Check if fit converged
     if (!r->IsValid()) {
         std::cerr << "WARNING: Fit did not converge!" << std::endl;
+    } else {
+        std::cout << "Fit converged successfully." << std::endl;
     }
     
     double alpha = total_func->GetParameter(0);
-    double beta = total_func->GetParameter(1);
-    double poly0 = total_func->GetParameter(2);
-    double poly1 = total_func->GetParameter(3);
+    double poly0 = total_func->GetParameter(1);
+    double poly1 = total_func->GetParameter(2);
+    double poly2 = total_func->GetParameter(3);
     double chi2 = r->Chi2();
     int ndf = r->Ndf();
     double chi2_ndf = chi2 / ndf;
     
-    std::cout << "Fit results: α = " << alpha << ", β = " << beta 
-              << ", p0 = " << poly0 << ", p1 = " << poly1 << std::endl;
+    std::cout << "Fit results: α = " << alpha 
+              << ", p0 = " << poly0 << ", p1 = " << poly1 << ", p2 = " << poly2 << std::endl;
     std::cout << "Fit quality: χ² = " << chi2 << ", ndf = " << ndf << ", χ²/ndf = " << chi2_ndf << std::endl;
 
     // ------------------------------------------------------------------
     // 8. Create signal & background histograms (scaled)
     // ------------------------------------------------------------------
     TH1D *h_signal = (TH1D*) h_isr3pi->Clone("h_signal");
-    TH1D *h_background_template = (TH1D*) h_nonReson->Clone("h_background_template");
-    h_signal->SetDirectory(0); 
-    h_background_template->SetDirectory(0);
+    h_signal->SetDirectory(0);
     h_signal->Scale(alpha);
-    h_background_template->Scale(beta);
     h_signal->SetLineColor(kBlue);
     h_signal->SetLineWidth(2);
-    h_background_template->SetLineColor(kOrange + 1);
-    h_background_template->SetLineStyle(5);
-    h_background_template->SetLineWidth(2);
 
-    TH1D *h_background_linear = (TH1D*) h_data_isr->Clone("h_background_linear");
-    h_background_linear->SetDirectory(0);
-    h_background_linear->Reset();
-    for (int bin = 1; bin <= h_background_linear->GetNbinsX(); ++bin) {
-        double x = h_background_linear->GetBinCenter(bin);
-        double val = poly0 + poly1 * x;
+    TH1D *h_background_poly2 = (TH1D*) h_data_isr->Clone("h_background_poly2");
+    h_background_poly2->SetDirectory(0);
+    h_background_poly2->Reset();
+    for (int bin = 1; bin <= h_background_poly2->GetNbinsX(); ++bin) {
+        double x = h_background_poly2->GetBinCenter(bin);
+        double val = poly0 + poly1 * x + poly2 * x * x;
         if (val < 0) val = 0;
-        h_background_linear->SetBinContent(bin, val);
-        h_background_linear->SetBinError(bin, TMath::Sqrt(val));
+        h_background_poly2->SetBinContent(bin, val);
+        h_background_poly2->SetBinError(bin, TMath::Sqrt(val));
     }
-    h_background_linear->SetLineColor(kRed);
-    h_background_linear->SetLineStyle(3);
-    h_background_linear->SetLineWidth(2);
+    h_background_poly2->SetLineColor(kRed);
+    h_background_poly2->SetLineStyle(3);
+    h_background_poly2->SetLineWidth(2);
 
-    // Total background (nonReson + linear)
-    TH1D *h_background_total = (TH1D*) h_background_template->Clone("h_background_total");
-    h_background_total->Add(h_background_linear);
+    // Other backgrounds (from MC)
+    TH1D *h_background_mc = (TH1D*) h_mcrest->Clone("h_background_mc");
+    h_background_mc->Add(h_eeg);
+    h_background_mc->Add(h_omegapi);
+    h_background_mc->Add(h_ksl);
+    h_background_mc->SetLineColor(kOrange);
+    h_background_mc->SetLineStyle(4);
+    h_background_mc->SetLineWidth(2);
+
+    // Total background (MC backgrounds + polynomial)
+    TH1D *h_background_total = (TH1D*) h_background_mc->Clone("h_background_total");
+    h_background_total->Add(h_background_poly2);
     h_background_total->SetLineColor(kMagenta);
     h_background_total->SetLineStyle(4);
     h_background_total->SetLineWidth(2);
-
-    // For the legend, use the total background
-    TH1D *h_background = h_background_total;
     
     // ------------------------------------------------------------------
     // 9. Compute correction weights (using h_signal as desired shape)
@@ -346,7 +337,6 @@ void omega_fit_bdt_linear() {
     // ------------------------------------------------------------------
     // 10. Apply correction to ISR3pi MC (use original scaled MC)
     // ------------------------------------------------------------------
-    // Reload original ISR3pi with proper normalization for correction
     TH1D *h_isr3pi_orig = makeScaledHist("TISR3PI_SIG_PEAK", isr3pi_sfw);
     if (!h_isr3pi_orig) {
         std::cerr << "ERROR: Cannot reload ISR3pi for correction" << std::endl;
@@ -382,14 +372,14 @@ void omega_fit_bdt_linear() {
     comps.push_back(h_ksl);
     comps.push_back(h_mcrest);
     comps.push_back(h_signal);
-    comps.push_back(h_background_template);
-    comps.push_back(h_background_linear);
+    comps.push_back(h_background_poly2);
 
     TH1D *h_mc_total = (TH1D*) h_mcrest->Clone("h_mc_total");
     h_mc_total->Reset();
     h_mc_total->Sumw2();
     for (auto h : comps) if (h) h_mc_total->Add(h);
     h_mc_total->SetLineColor(kRed);
+    h_mc_total->SetLineStyle(1);
     h_mc_total->SetLineWidth(2);
 
     // ------------------------------------------------------------------
@@ -408,9 +398,9 @@ void omega_fit_bdt_linear() {
     h_pull->SetLineWidth(0);
 
     // ------------------------------------------------------------------
-    // 13. Main plotting (like correct_and_plot.C)
+    // 13. Main plotting
     // ------------------------------------------------------------------
-    TCanvas *c = new TCanvas("c", "3π mass projection (template + linear)", 1200, 700);
+    TCanvas *c = new TCanvas("c", "3π mass projection (polynomial in peak)", 1200, 700);
     c->SetBottomMargin(0.12);
     c->SetLeftMargin(0.12);
 
@@ -443,8 +433,7 @@ void omega_fit_bdt_linear() {
     h_data->GetYaxis()->SetNdivisions(505);
 
     // Legend
-    TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
-    //TLegend *leg = new TLegend(0.50, 0.15, 0.9, 0.9);
+    TLegend *leg = new TLegend(0.15, 0.30, 0.6, 0.9);
     leg->SetFillStyle(0);
     leg->SetBorderSize(0);
     leg->SetTextSize(0.035);
@@ -453,10 +442,9 @@ void omega_fit_bdt_linear() {
     leg->AddEntry(h_eeg, "EEG", "l");
     leg->AddEntry(h_omegapi, "#omega#pi^{0}", "l");
     leg->AddEntry(h_ksl, "K_{S}K_{L}", "l");
-    leg->AddEntry(h_signal, "Corrected #omega peak", "l");
-    leg->AddEntry(h_background_template, "Non-resonant template", "l");
-    leg->AddEntry(h_background_linear, "Linear background", "l");
     leg->AddEntry(h_mcrest, "Others", "l");
+    leg->AddEntry(h_signal, "Corrected #omega peak", "l");
+    leg->AddEntry(h_background_poly2, "Polynomial background (peak)", "l");
     leg->Draw();
 
     // Add fit info to plot
@@ -465,8 +453,8 @@ void omega_fit_bdt_linear() {
     pt->SetBorderSize(0);
     pt->SetTextSize(0.04);
     pt->AddText(Form("#chi^{2}/ndf = %.2f", chi2_ndf));
-    pt->AddText(Form("#alpha = %.0f, #beta = %.0f", alpha, beta));
-    //pt->Draw();
+    pt->AddText(Form("#alpha = %.0f", alpha));
+    pt->Draw();
 
     // Pull pad
     c->cd();
@@ -496,7 +484,7 @@ void omega_fit_bdt_linear() {
     line->SetLineStyle(2);
     line->Draw();
 
-    c->SaveAs(output_path + "omega_combined_fit.pdf");
+    c->SaveAs(output_path + "omega_poly2_peak_fit.pdf");
 
     // ------------------------------------------------------------------
     // 14. Background-subtracted ω signal
@@ -506,8 +494,7 @@ void omega_fit_bdt_linear() {
     h_signal_data->Add(h_omegapi, -1.0);
     h_signal_data->Add(h_ksl, -1.0);
     h_signal_data->Add(h_mcrest, -1.0);
-    h_signal_data->Add(h_background_template, -1.0);
-    h_signal_data->Add(h_background_linear, -1.0);
+    h_signal_data->Add(h_background_poly2, -1.0);
     for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin)
         if (h_signal_data->GetBinContent(bin) < 0) h_signal_data->SetBinContent(bin, 0);
 
@@ -531,7 +518,7 @@ void omega_fit_bdt_linear() {
     leg2->AddEntry(h_signal_data, "Data - backgrounds", "lep");
     leg2->AddEntry(h_signal, "Corrected #omega peak", "l");
     leg2->Draw();
-    c2->SaveAs(output_path + "omega_background_subtracted.pdf");
+    c2->SaveAs(output_path + "omega_background_subtracted_poly2_peak.pdf");
 
     // ------------------------------------------------------------------
     // 15. Correction weights canvas
@@ -543,18 +530,17 @@ void omega_fit_bdt_linear() {
     h_weight_smooth->SetLineColor(kBlue);
     h_weight_smooth->SetLineWidth(2);
     h_weight_smooth->Draw();
-    c_weight->SaveAs(output_path + "omega_correction_weights.pdf");
+    c_weight->SaveAs(output_path + "omega_correction_weights_poly2_peak.pdf");
 
     // ------------------------------------------------------------------
     // 16. Save results
     // ------------------------------------------------------------------
-    TFile *fout = new TFile(output_path + "omega_fit_results.root", "RECREATE");
+    TFile *fout = new TFile(output_path + "omega_fit_poly2_peak.root", "RECREATE");
     h_data_isr->Write();
     h_isr3pi->Write();
-    h_nonReson->Write();
     h_signal->Write();
-    h_background_template->Write();
-    h_background_linear->Write();
+    h_background_poly2->Write();
+    h_background_mc->Write();
     h_background_total->Write();
     h_weight_smooth->Write();
     h_isr3pi_corrected->Write();
@@ -564,45 +550,39 @@ void omega_fit_bdt_linear() {
     fout->Close();
 
     // ------------------------------------------------------------------
-    // 17. Clean up (COMPLETE FIX)
+    // 17. Clean up
     // ------------------------------------------------------------------
-    // Delete fit functions (not owned by canvases)
     delete total_func;
-    delete bkg_linear;
-    delete h_side;
+    delete bkg_poly2;
 
     gSigTemplate = nullptr;
-    gBkgTemplate = nullptr;
     
-    // Delete histograms that are NOT drawn on canvases
-    delete h_background_total;      // Was missing
-    delete h_isr3pi_corrected;      // Was missing  
-    delete h_isr3pi_orig;           // Was missing
-    // delete h_signal_data;        // COMMENTED - drawn on c2, canvas owns it
-    // delete h_weight_smooth;      // COMMENTED - drawn on c_weight, canvas owns it
+    delete h_data_isr;
+    delete h_background_mc;
+    delete h_background_total;
+    delete h_isr3pi_corrected;
+    delete h_isr3pi_orig;
+    delete h_weight;
     
-    // Delete canvases - this handles all their child objects
     delete c;
     delete c2;
     delete c_weight;
-    delete h_weight;
     
-    // Close files
     if (ftree) {
-      ftree->Close();
-      delete ftree;
+        ftree->Close();
+        delete ftree;
     }
     
     if (fout) {
-      fout->Close();
-      delete fout;
+        fout->Close();
+        delete fout;
     }
     
     std::cout << "\n=== Summary ===" << std::endl;
-    std::cout << "Saved " << output_path << "omega_fit_results.root" << std::endl;
-    std::cout << "Saved " << output_path << "omega_combined_fit.pdf" << std::endl;
-    std::cout << "Saved " << output_path << "omega_background_subtracted.pdf" << std::endl;
-    std::cout << "Saved " << output_path << "omega_correction_weights.pdf" << std::endl;
-    std::cout << "Fit: α = " << alpha << ", β = " << beta << std::endl;
+    std::cout << "Saved " << output_path << "omega_fit_poly2_peak.root" << std::endl;
+    std::cout << "Saved " << output_path << "omega_poly2_peak_fit.pdf" << std::endl;
+    std::cout << "Saved " << output_path << "omega_background_subtracted_poly2_peak.pdf" << std::endl;
+    std::cout << "Saved " << output_path << "omega_correction_weights_poly2_peak.pdf" << std::endl;
+    std::cout << "Fit: α = " << alpha << std::endl;
     std::cout << "χ²/ndf = " << chi2_ndf << std::endl;
 }

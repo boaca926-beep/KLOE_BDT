@@ -10,7 +10,7 @@ const double sfw2d_sigma_nb = 1;
 //IM3pi (analysis):
 const double IM3pi_min = 380.;
 const double IM3pi_max = 1020.;
-const double IM3pi_sigma = 1.71;
+const double IM3pi_sigma = 1.66;
 const int IM3pi_bin = TMath::Nint((IM3pi_max - IM3pi_min) / mass_sigma_nb / IM3pi_sigma);
 
 //Angle_gamm12

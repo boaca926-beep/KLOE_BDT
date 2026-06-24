@@ -184,6 +184,7 @@ int compr_bdt() {
 
   // Save histograms (including scaled ones)
   TString outfile_name = out_dir + "/hist_" + var_nm + ".root";
+  cout << outfile_name << endl;
   TFile *f_out = new TFile(outfile_name, "recreate");
   Hlist->Write("Hlist", TObject::kSingleKey);
   hist_eeg_sc->Write();
@@ -193,6 +194,8 @@ int compr_bdt() {
   hist_ksl_sc->Write();
   hist_mcrest_sc->Write();
   hist_mcsum->Write();
+  hist_data->Write();
+  
   f_out->Close();
 
   // ===== SCALED Data/MC Comparison Plot =====
@@ -240,7 +243,7 @@ int compr_bdt() {
   line->SetLineColor(2);
   line->SetLineWidth(2);
   line->SetLineStyle(2);
-  line->Draw();
+  //line->Draw();
   
   const double ymax = hist_data->GetMaximum();
   hist_data->GetYaxis()->SetTitle("Events");

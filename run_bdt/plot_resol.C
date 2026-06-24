@@ -21,7 +21,7 @@ void plot_resol() {
     return;
   }
 
-  TTree *ttree = (TTree*) ftree->Get("TISR3PI_SIG");
+  TTree *ttree = (TTree*) ftree->Get("TISR3PI_SIG_PEAK");
   if (!ttree) { std::cerr << "No such tree.\n"; return; }
 
   // Histogram for difference: (reco – true) mass

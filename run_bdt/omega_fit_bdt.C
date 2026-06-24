@@ -25,6 +25,11 @@ TH1D *gBkgTemplate = nullptr;
 
 // Fit function
 Double_t template_sum(Double_t *x, Double_t *par) {
+
+  if (!gSigTemplate || !gBkgTemplate) {
+    return 0.0;
+  }
+
   int bin = gSigTemplate->FindBin(x[0]);
   Double_t sig = gSigTemplate->GetBinContent(bin);
   Double_t bkg = gBkgTemplate->GetBinContent(bin);
@@ -305,6 +310,7 @@ void omega_fit_bdt() {
   h_mc_total->Sumw2();
   for (auto h : comps) if (h) h_mc_total->Add(h);
   h_mc_total->SetLineColor(kRed);
+  h_mc_total->SetLineStyle(1);
   h_mc_total->SetLineWidth(2);
 
   // ------------------------------------------------------------------
@@ -358,17 +364,18 @@ void omega_fit_bdt() {
   h_data->GetYaxis()->SetNdivisions(505);
 
   // Legend - same order as correct_and_plot.C
-  TLegend *leg = new TLegend(0.65, 0.25, 0.9, 0.9);
+  TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
+  //TLegend *leg = new TLegend(0.65, 0.25, 0.9, 0.9);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
   leg->AddEntry(h_data, "Data", "lep");
   leg->AddEntry(h_mc_total, "Total MC", "l");
+  leg->AddEntry(h_signal, "Corrected #omega peak", "l");
+  leg->AddEntry(h_background, "Non-resonant ISR", "l");
   leg->AddEntry(h_eeg, "EEG", "l");
   leg->AddEntry(h_omegapi, "#omega#pi^{0}", "l");
   leg->AddEntry(h_ksl, "K_{S}K_{L}", "l");
-  leg->AddEntry(h_signal, "Corrected #omega peak", "l");
-  leg->AddEntry(h_background, "Non-resonant ISR", "l");
   leg->AddEntry(h_mcrest, "Others", "l");
   leg->Draw();
 

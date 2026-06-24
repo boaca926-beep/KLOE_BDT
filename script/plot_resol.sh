@@ -70,7 +70,7 @@ else
 fi
 
 header=../header_bdt/plot_resol.h
-sample_type=norm
+sample_type=chain
 main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
 treeFile="${main_folder}/cut/tree_pre_bdt.root";
 
