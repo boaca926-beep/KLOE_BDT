@@ -110,13 +110,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(150) #150, 550 
 
 ##################################################################
-VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-VAR_SYMB=("M_{#gamma#gamma}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+#VAR_SYMB=("M_{#gamma#gamma}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(100)
-XMAX=(180)
-BINS=(180)
+#XMIN=(100)
+#XMAX=(180)
+#BINS=(180)
 
 ##################################################################
 #VAR_NM="ppIM"
@@ -137,14 +137,14 @@ BINS=(180)
 #BINS=150
 
 ##################################################################
-#name_tmp="E1"
-#VAR_NM="pull_"${name_tmp}
-#VAR_SYMB="Pull "${name_tmp}
+name_tmp="E1"
+VAR_NM="pull_"${name_tmp}
+VAR_SYMB="Pull "${name_tmp}
 
-#UNIT="[]"
-#XMIN=-10
-#XMAX=10
-#BINS=200
+UNIT="[MeV]"
+XMIN=-10
+XMAX=10
+BINS=200
 
 ##################################################################
 #VAR_NM="e_asym"

@@ -262,10 +262,10 @@ int compr_bdt() {
   leg->SetNColumns(1);
   leg->AddEntry(hist_data, "Data", "EP");
   leg->AddEntry(hist_mcsum, "MC sum", "l");
-  leg->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma", "l");
+  leg->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma (signal)", "l");
+  leg->AddEntry(hist_nonreson_sc, "Distorted signal", "l");
   leg->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
   leg->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
-  leg->AddEntry(hist_nonreson_sc, "Non-reson", "l");
   leg->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
   leg->AddEntry(hist_mcrest_sc, "MC Rest", "l");
   leg->SetFillStyle(0);
@@ -291,7 +291,7 @@ int compr_bdt() {
   hist_ratio->GetYaxis()->SetTitleSize(0.12);
   hist_ratio->GetYaxis()->SetTitleOffset(0.5);
   hist_ratio->GetYaxis()->SetLabelSize(0.08);
-  hist_ratio->GetYaxis()->SetRangeUser(-20., 20.);
+  hist_ratio->GetYaxis()->SetRangeUser(-10., 10.);
   hist_ratio->GetYaxis()->SetNdivisions(505);
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");

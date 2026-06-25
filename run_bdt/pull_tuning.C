@@ -138,7 +138,7 @@ void pull_tuning() {
   // Set colors for fits
   gaus_fits[0]->SetLineColor(kRed);      // hE12_MC
   gaus_fits[0]->SetLineWidth(2);
-  gaus_fits[1]->SetLineColor(kBlack);    // hE12_DATA
+  gaus_fits[1]->SetLineColor(kGreen+2);    // hE12_DATA
   gaus_fits[1]->SetLineWidth(2);
   gaus_fits[2]->SetLineColor(kBlue);     // hE3_MC
   gaus_fits[2]->SetLineWidth(2);
@@ -157,7 +157,7 @@ void pull_tuning() {
   hE12_DATA->GetYaxis()->SetRangeUser(0.01, ymax_E12 * 1.6);
   hE12_DATA->GetYaxis()->CenterTitle();
   hE12_DATA->GetYaxis()->SetTitleSize(0.05);
-  hE12_DATA->GetYaxis()->SetTitleOffset(1.2);
+  hE12_DATA->GetYaxis()->SetTitleOffset(1.4);
   hE12_DATA->GetYaxis()->SetLabelSize(0.04);
   hE12_DATA->GetXaxis()->SetTitle("E_{1}+E_{2} Pull [MeV]");
   hE12_DATA->GetXaxis()->SetTitleSize(0.05);
@@ -167,18 +167,20 @@ void pull_tuning() {
   
   hE12_DATA->Draw();
   gaus_fits[1]->Draw("same");
-  hE12_MC->Draw("same");
+  hE12_MC->Draw("same hist");
   gaus_fits[0]->Draw("same");
 
   // FIXED: Use results array instead of undefined result_mc/result_data
-  TLegend *leg_E12 = new TLegend(0.15, 0.7, 0.9, 0.9);
+  TLegend *leg_E12 = new TLegend(0.2, 0.7, 0.9, 0.9);
   leg_E12->SetFillStyle(0);
   leg_E12->SetBorderSize(0);
   leg_E12->SetNColumns(2);
   leg_E12->SetTextSize(0.03);
-  leg_E12->AddEntry(hE12_MC, Form("%s (E1+E2)", results[0].name.Data()), "lep");
+  //leg_E12->AddEntry(hE12_MC, Form("%s", results[0].name.Data()), "l");
+  leg_E12->AddEntry(hE12_MC, Form("%s", "MC"), "l");
   leg_E12->AddEntry(gaus_fits[0], Form("#mu = %.3f, #sigma = %.3f", results[0].mean, results[0].sigma), "l");
-  leg_E12->AddEntry(hE12_DATA, Form("%s (E1+E2)", results[1].name.Data()), "lep");
+  leg_E12->AddEntry(hE12_DATA, Form("%s", "Data"), "lep");
+  //leg_E12->AddEntry(hE12_DATA, Form("%s", results[1].name.Data()), "lep");
   leg_E12->AddEntry(gaus_fits[1], Form("#mu = %.3f, #sigma = %.3f", results[1].mean, results[1].sigma), "l");
   leg_E12->Draw();
     
@@ -196,7 +198,7 @@ void pull_tuning() {
   hE3_DATA->GetYaxis()->SetRangeUser(0.01, ymax_E3 * 1.6);
   hE3_DATA->GetYaxis()->CenterTitle();
   hE3_DATA->GetYaxis()->SetTitleSize(0.05);
-  hE3_DATA->GetYaxis()->SetTitleOffset(1.2);
+  hE3_DATA->GetYaxis()->SetTitleOffset(1.4);
   hE3_DATA->GetYaxis()->SetLabelSize(0.04);
   hE3_DATA->GetXaxis()->SetTitle("E_{3} Pull [MeV]");
   hE3_DATA->GetXaxis()->SetTitleSize(0.05);
@@ -206,26 +208,26 @@ void pull_tuning() {
   
   hE3_DATA->Draw();
   gaus_fits[3]->Draw("same");
-  hE3_MC->Draw("same");
+  hE3_MC->Draw("same hist");
   gaus_fits[2]->Draw("same");
 
-  TLegend *leg_E3 = new TLegend(0.15, 0.7, 0.9, 0.9);
+  TLegend *leg_E3 = new TLegend(0.2, 0.7, 0.9, 0.9);
   leg_E3->SetFillStyle(0);
   leg_E3->SetBorderSize(0);
   leg_E3->SetNColumns(2);
   leg_E3->SetTextSize(0.03);
-  leg_E3->AddEntry(hE3_MC, results[2].name.Data(), "lep");
+  //leg_E3->AddEntry(hE3_MC, results[2].name.Data(), "l");
+  leg_E3->AddEntry(hE3_MC, "MC", "l");
   leg_E3->AddEntry(gaus_fits[2], Form("#mu = %.3f, #sigma = %.3f", results[2].mean, results[2].sigma), "l");
-  leg_E3->AddEntry(hE3_DATA, results[3].name.Data(), "lep");
+  //leg_E3->AddEntry(hE3_DATA, results[3].name.Data(), "lep");
+  leg_E3->AddEntry(hE3_DATA, "Data", "lep");
   leg_E3->AddEntry(gaus_fits[3], Form("#mu = %.3f, #sigma = %.3f", results[3].mean, results[3].sigma), "l");
   leg_E3->Draw();
     
   gPad->Update();
 
   // Save canvases
-  c_E12->SaveAs("../pull_tuning/pull_E12.png");
   c_E12->SaveAs("../pull_tuning/pull_E12.pdf");
-  c_E3->SaveAs("../pull_tuning/pull_E3.png");
   c_E3->SaveAs("../pull_tuning/pull_E3.pdf");
 
   // Print summary

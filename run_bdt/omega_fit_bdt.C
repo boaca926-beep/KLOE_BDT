@@ -347,6 +347,10 @@ void omega_fit_bdt() {
   h_data->GetYaxis()->SetRangeUser(0, max_val * 1.2);
   double bin_width = h_data->GetBinWidth(1);
 
+  h_signal->SetLineColor(kBlue);
+  h_signal->SetLineStyle(1);
+  h_signal->SetLineWidth(2);
+  
   TH1D *h_signal_data = (TH1D*) h_data->Clone("h_signal_data");
   
   h_data->SetMarkerStyle(20);
@@ -372,9 +376,9 @@ void omega_fit_bdt() {
   leg->SetTextSize(0.04);
   leg->AddEntry(h_data, "Data", "lep");
   leg->AddEntry(h_mc_total, "Total MC", "l");
-  leg->AddEntry(h_signal, "Corrected #omega peak", "l");
-  leg->AddEntry(h_background, "Non-resonant ISR", "l");
-  leg->AddEntry(h_eeg, "EEG", "l");
+  leg->AddEntry(h_signal, "#omega peak (signal)", "l");
+  leg->AddEntry(h_background, "Distorted signal", "l");
+  leg->AddEntry(h_eeg, "e^{+}e^{-}#gamma", "l");
   leg->AddEntry(h_omegapi, "#omega#pi^{0}", "l");
   leg->AddEntry(h_ksl, "K_{S}K_{L}", "l");
   leg->AddEntry(h_mcrest, "Others", "l");
@@ -458,11 +462,9 @@ void omega_fit_bdt() {
   h_signal_data->GetYaxis()->SetNdivisions(505);
   
   // Draw with full options
-  h_signal_data->Draw("E0");
+  h_signal_data->Draw("E1");
   
   // Overlay fitted signal for comparison
-  h_signal->SetLineColor(kBlue);
-  h_signal->SetLineWidth(2);
   h_signal->Draw("hist same");
   
   TLegend *leg2 = new TLegend(0.2, 0.7, 0.5, 0.9);
@@ -470,7 +472,7 @@ void omega_fit_bdt() {
   leg2->SetBorderSize(0);
   leg2->SetTextSize(0.04);
   leg2->AddEntry(h_signal_data, "Data - all backgrounds", "lep");
-  leg2->AddEntry(h_signal, "Fitted #omega signal", "l");
+  leg2->AddEntry(h_signal, "Fitted #omega peak (signal)", "l");
   leg2->Draw();
   
   // Force canvas to update
