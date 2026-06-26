@@ -194,8 +194,13 @@ EOF
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script
     echo "void tree_cut_script() {" >> $tree_cut_script
-    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt.C");' >> $tree_cut_script
-    echo 'gROOT->ProcessLine("tree_cut_bdt()");' >> $tree_cut_script
+    #echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt.C");' >> $tree_cut_script
+    #echo 'gROOT->ProcessLine("tree_cut_bdt()");' >> $tree_cut_script
+
+    # Test is p0 photon energy scaling factor works properly
+    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt_scaled.C");' >> $tree_cut_script
+    echo 'gROOT->ProcessLine("tree_cut_bdt_scaled()");' >> $tree_cut_script
+
     echo '}' >> $tree_cut_script
     root -l -n -q -b $tree_cut_script >> ${log_cut} 2>&1 || { echo "ROOT failed at tree_cut_script for $data_type"; exit 1; }
 done

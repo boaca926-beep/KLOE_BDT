@@ -68,8 +68,22 @@ void plot_resol() {
   std::cout << "Fit range for normalized var_diff: [" << fit_min << ", " << fit_max << "] " << unit << std::endl;
 
   double peak = h_diff->GetMaximum();
-  
-  // Double Gaussian fit
+
+  // ------------------------------------------------------------------
+  // 1. Fit single Gaussian to get baseline χ²
+  // ------------------------------------------------------------------
+  TF1 *singleGaus = new TF1("singleGaus", "gaus", fit_min, fit_max);
+  singleGaus->SetParameters(peak, mean, rms * 0.7);
+  singleGaus->SetParLimits(2, 0.1, 30.0);
+  singleGaus->SetLineColor(kRed);
+  singleGaus->SetLineWidth(2);
+  h_diff->Fit(singleGaus, "RQS");
+  double chi2_single = singleGaus->GetChisquare();
+  int ndf_single = singleGaus->GetNDF();
+
+  // ------------------------------------------------------------------
+  // 2. Fit double Gaussian
+  // ------------------------------------------------------------------
   TF1 *doubleGaus = new TF1("doubleGaus", "gaus(0)+gaus(3)", fit_min, fit_max);
   doubleGaus->SetParameter(0, peak * 0.8);
   doubleGaus->SetParameter(1, mean);
@@ -77,37 +91,66 @@ void plot_resol() {
   doubleGaus->SetParameter(3, peak * 0.2);
   doubleGaus->SetParameter(4, mean + 2.0);
   doubleGaus->SetParameter(5, rms * 1.2);
-  doubleGaus->SetParLimits(2, 0.5, 30.0);
-  doubleGaus->SetParLimits(5, 1.0, 50.0);
-  doubleGaus->SetParLimits(4, mean - 10.0, mean + 20.0);
-  doubleGaus->SetParLimits(0, 0.0, peak * 2.0);
-  doubleGaus->SetParLimits(3, 0.0, peak * 1.5);
+  doubleGaus->SetParLimits(0, 0.0, peak * 3.0);
+  doubleGaus->SetParLimits(1, mean - 3.0, mean + 3.0);
+  doubleGaus->SetParLimits(2, 0.1, 30.0);
+  doubleGaus->SetParLimits(3, 0.0, peak * 2.0);
+  doubleGaus->SetParLimits(4, mean - 5.0, mean + 5.0);
+  doubleGaus->SetParLimits(5, 0.1, 30.0);
   doubleGaus->SetLineColor(kRed);
   doubleGaus->SetLineWidth(2);
+  h_diff->Fit(doubleGaus, "RQS");
 
-  h_diff->Fit(doubleGaus, "R");
-  
-  double chi2ndf = doubleGaus->GetChisquare() / doubleGaus->GetNDF();
-  double err_amp2 = doubleGaus->GetParError(3);
+  double chi2_double = doubleGaus->GetChisquare();
+  int ndf_double = doubleGaus->GetNDF();
+
+  double amp1 = doubleGaus->GetParameter(0);
   double amp2 = doubleGaus->GetParameter(3);
-  bool stable = (chi2ndf < 10.0) && (err_amp2 / (amp2 + 1e-6) < 2.0) && (amp2 > 0.001);
- 
-  TF1 *finalFit = doubleGaus;
-  TString fitType = "Double Gaussian";
-  bool doubleUsed = true;
+  double sigma1 = doubleGaus->GetParameter(2);
+  double sigma2 = doubleGaus->GetParameter(5);
 
-  if (!stable) {
-    std::cout << "Double Gaussian unstable, falling back to single Gaussian." << std::endl;
-    TF1 *singleGaus = new TF1("singleGaus", "gaus", fit_min, fit_max);
-    singleGaus->SetParameters(peak, mean, rms * 0.7);
-    singleGaus->SetParLimits(2, 0.5, 30.0);
-    singleGaus->SetLineColor(kRed);
-    singleGaus->SetLineWidth(2);
-    h_diff->Fit(singleGaus, "R");
+  std::cout << "Double Gaussian parameters:" << std::endl;
+  std::cout << "  amp1 = " << amp1 << " +/- " << doubleGaus->GetParError(0) << std::endl;
+  std::cout << "  mean1 = " << doubleGaus->GetParameter(1) << " +/- " << doubleGaus->GetParError(1) << std::endl;
+  std::cout << "  sigma1 = " << sigma1 << " +/- " << doubleGaus->GetParError(2) << std::endl;
+  std::cout << "  amp2 = " << amp2 << " +/- " << doubleGaus->GetParError(3) << std::endl;
+  std::cout << "  mean2 = " << doubleGaus->GetParameter(4) << " +/- " << doubleGaus->GetParError(4) << std::endl;
+  std::cout << "  sigma2 = " << sigma2 << " +/- " << doubleGaus->GetParError(5) << std::endl;
+  std::cout << "  χ²/ndf = " << doubleGaus->GetChisquare() / doubleGaus->GetNDF() << std::endl;
+  
+  
+  // ------------------------------------------------------------------
+  // 3. Decide which fit to use
+  // ------------------------------------------------------------------
+  double chi2_improvement = chi2_single - chi2_double;
+  double amp_ratio = TMath::Max(amp1, amp2) / TMath::Min(amp1, amp2);
+  double sigma_ratio = TMath::Max(sigma1, sigma2) / TMath::Min(sigma1, sigma2);
+  bool distinct = (amp_ratio > 1.2) && (sigma_ratio > 1.1);
+
+  cout << "chi2_improvement = " << chi2_improvement << ", amp_ratio = " << amp_ratio << ", sigma_ratio = " << sigma_ratio << ", chi2_improvement / chi2_single = " << chi2_improvement / chi2_single << endl;
+  
+  bool double_better = (chi2_improvement > 10.0) && (chi2_improvement / chi2_single > 0.05);
+
+  TF1 *finalFit;
+  TString fitType;
+  bool doubleUsed;
+  double chi2ndf;
+
+  if (double_better && distinct) {
+  //if (distinct) { // only double gaussian
+    std::cout << "Double Gaussian is significantly better, keeping it." << std::endl;
+    finalFit = doubleGaus;
+    fitType = "Double Gaussian";
+    doubleUsed = true;
+    chi2ndf = chi2_double / ndf_double;
+    delete singleGaus;  // clean up
+  } else {
+    std::cout << "Double Gaussian not significantly better, using single Gaussian." << std::endl;
     finalFit = singleGaus;
     fitType = "Single Gaussian";
     doubleUsed = false;
-    chi2ndf = singleGaus->GetChisquare() / singleGaus->GetNDF();
+    chi2ndf = chi2_single / ndf_single;
+    delete doubleGaus;
   }
 
   // Draw histogram and fit
@@ -131,38 +174,35 @@ void plot_resol() {
   h_diff->GetYaxis()->SetRangeUser(0., 1.6 * ymax);
   
   // ============================================================
-  // FIX: Set x-axis range for each variable
+  // Set x-axis range for each variable
   // ============================================================
   double x_min, x_max;
   
-  // Special cases for different variables
   if (TString(var_type) == "Br_m3pi_bdt") {
     x_min = -20.0;
     x_max = 20.0;
   }
   else if (TString(var_type) == "Br_m_gg_bdt") {
-    x_min = -12.0;
-    x_max = 12.0;
+    x_min = -20.0;
+    x_max = 20.0;
   }
-  else if (TString(var_type) == "Br_e3_bdt" || TString(var_type) == "Br_e1_bdt") {
-    x_min = -15.0;   // Show [-16, 16] MeV
-    x_max = 15.0;
+  else if (TString(var_type) == "Br_e1_bdt" || TString(var_type) == "Br_e2_bdt" || TString(var_type) == "Br_e3_bdt") {
+    x_min = -20.0;
+    x_max = 20.0;
   }
   else if (TString(var_type) == "Br_betapi0_bdt") {
     x_min = -0.02;
     x_max = 0.02;
   }
   else if (TString(var_type) == "Br_angle_pi0gam12_bdt") {
-    x_min = -5.0;    // Show [-5, 5] degrees
+    x_min = -5.0;
     x_max = 5.0;
   }
   else {
-    // Default: use fit range with range_factor
     x_min = fit_min * range_factor;
     x_max = fit_max * range_factor;
   }
   
-  // Keep within histogram limits
   if (x_min < XMIN) x_min = XMIN;
   if (x_max > XMAX) x_max = XMAX;
   
@@ -180,7 +220,6 @@ void plot_resol() {
   if (doubleUsed) {
     double sigma1 = finalFit->GetParameter(2);
     double sigma2 = finalFit->GetParameter(5);
-    // Choose the narrower sigma (smaller value) as the inner resolution
     if (sigma1 < sigma2) {
       double mean_inner = finalFit->GetParameter(1);
       double sigma_inner = sigma1;
@@ -210,7 +249,6 @@ void plot_resol() {
   }
   TString line4 = Form("#chi^{2}/NDF = %.2f", chi2ndf);
 
-  // Create a transparent TPaveText
   TPaveText *pt = new TPaveText(0.3, 0.72, 0.9, 0.88, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
@@ -222,7 +260,6 @@ void plot_resol() {
   pt->AddText(line3);
   pt->Draw();
 
-  // Legend for fit line
   TLegend *leg = new TLegend(0.55, 0.60, 0.9, 0.68);
   leg->SetTextSize(0.035);
   leg->SetFillColor(0);

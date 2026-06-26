@@ -37,7 +37,7 @@ void mc_tuning() {
     return;
   }
 
-  TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+  //TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
   TFile *ftree = TFile::Open(treeFile);
   if (!ftree || ftree->IsZombie()) {
     std::cerr << "ERROR: cannot open " << treeFile << std::endl;
