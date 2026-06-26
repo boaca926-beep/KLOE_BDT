@@ -2,12 +2,14 @@
 
 ##################################################################
 VAR_TYPE=("Br_betapi0_bdt"
+	  "Br_e1_bdt"
 	  "Br_e3_bdt"
 	  "Br_m3pi_bdt"
 	  "Br_angle_pi0gam12_bdt"
 	  "Br_m_gg_bdt")
 
 VAR_TYPE_TRUE=("Br_betapi0_bdt_true"
+	       "Br_e1_bdt_true"
 	       "Br_e3_bdt_true"
 	       "Br_m3pi_true_bdt"
 	       "Br_angle_pi0gam12_bdt_true"
@@ -15,45 +17,53 @@ VAR_TYPE_TRUE=("Br_betapi0_bdt_true"
 
 UNIT=(""
       "[MeV]"
+      "[MeV]"
       "[MeV/c^{2}]"
       "[#circ]"
       "[MeV/c^{2}]")
 
 XTITLE=("#beta^{rec}_{#pi}-#beta^{true}_{#pi}"
-	"E^{rec}_{#gamma}-E^{true}_{#gamma}"
+	"E^{rec}_{1}-E^{true}_{1}"
+	"E^{rec}_{3}-E^{true}_{3}"
 	"M^{rec}_{3#pi}-M^{true}_{3#pi}"
 	"#angle^{rec}_{#gamma#gamma}-#angle^{true}_{#gamma#gamma}"
 	"M^{rec}_{#gamma#gamma}-M^{true}_{#gamma#gamma}")
 
 BIN_SIZE=(400
 	  1000
-	  400
+	  1000
+	  1000
 	  2000
-	  400)
+	  1000)
 
 FIT_FACTOR=(0.5
+	    0.5
 	    0.5
 	    1.0
 	    1.0
 	    1.0)
 
-RANGE_FACTOR=(10
-	      5
-	      5
-	      5
-	      5)
+# UPDATED: More reasonable range factors
+RANGE_FACTOR=(2
+	      5.0
+	      5.0
+	      1.5
+	      5.0
+	      1.5)
 
 XMIN=(-0.05
-      -50
-      -50
-      -50
-      -50)
+      -100
+      -100
+      -100
+      -100
+      -100)
 
 XMAX=(0.05
-      50
-      50
-      50
-      50)
+      100
+      100
+      100
+      100
+      100)
 
 output_folder="../plots_resol"
 
@@ -70,7 +80,7 @@ else
 fi
 
 header=../header_bdt/plot_resol.h
-sample_type=norm
+sample_type=chain
 main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
 treeFile="${main_folder}/cut/tree_pre_bdt.root";
 

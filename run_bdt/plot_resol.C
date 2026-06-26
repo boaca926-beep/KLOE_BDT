@@ -14,7 +14,6 @@ void plot_resol() {
   gSystem->Exec("mkdir -p ../plots_resol");
 
   // Open tree file
-  //TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
   TFile *ftree = TFile::Open(treeFile);
   if (!ftree || ftree->IsZombie()) {
     std::cerr << "ERROR: cannot open " << treeFile << std::endl;
@@ -45,7 +44,6 @@ void plot_resol() {
     if (recon_indx_bdt == 2 && bkg_indx == 1) {
       var_diff = var - var_true;
       h_diff->Fill(var_diff);
-      //cout << var_diff << endl;
     }
   }
 
@@ -58,9 +56,8 @@ void plot_resol() {
     return;
   }
 
-  // Fit range: mean ± 3σ
-  //double mean = h_diff->GetMean();
-  double mean = 0.0;
+  // Fit range: mean ± factor * RMS
+  double mean = h_diff->GetMean();
   double rms  = h_diff->GetRMS();
   double fit_min = mean - fit_factor * rms;
   double fit_max = mean + fit_factor * rms;
@@ -93,7 +90,6 @@ void plot_resol() {
   double chi2ndf = doubleGaus->GetChisquare() / doubleGaus->GetNDF();
   double err_amp2 = doubleGaus->GetParError(3);
   double amp2 = doubleGaus->GetParameter(3);
-  //bool stable = (chi2ndf < 10.0) && (err_amp2 / (amp2 + 1e-6) < 2.0);
   bool stable = (chi2ndf < 10.0) && (err_amp2 / (amp2 + 1e-6) < 2.0) && (amp2 > 0.001);
  
   TF1 *finalFit = doubleGaus;
@@ -133,15 +129,51 @@ void plot_resol() {
   h_diff->GetYaxis()->SetLabelSize(0.05);
   h_diff->GetYaxis()->SetTitleOffset(1.3);
   h_diff->GetYaxis()->SetRangeUser(0., 1.6 * ymax);
-  h_diff->GetXaxis()->SetRangeUser(range_factor * fit_min, range_factor * fit_max); // or -50,50
-  //h_diff->GetXaxis()->SetRangeUser(XMIN, XMAX);   
+  
+  // ============================================================
+  // FIX: Set x-axis range for each variable
+  // ============================================================
+  double x_min, x_max;
+  
+  // Special cases for different variables
+  if (TString(var_type) == "Br_m3pi_bdt") {
+    x_min = -20.0;
+    x_max = 20.0;
+  }
+  else if (TString(var_type) == "Br_m_gg_bdt") {
+    x_min = -12.0;
+    x_max = 12.0;
+  }
+  else if (TString(var_type) == "Br_e3_bdt" || TString(var_type) == "Br_e1_bdt") {
+    x_min = -15.0;   // Show [-16, 16] MeV
+    x_max = 15.0;
+  }
+  else if (TString(var_type) == "Br_betapi0_bdt") {
+    x_min = -0.02;
+    x_max = 0.02;
+  }
+  else if (TString(var_type) == "Br_angle_pi0gam12_bdt") {
+    x_min = -5.0;    // Show [-5, 5] degrees
+    x_max = 5.0;
+  }
+  else {
+    // Default: use fit range with range_factor
+    x_min = fit_min * range_factor;
+    x_max = fit_max * range_factor;
+  }
+  
+  // Keep within histogram limits
+  if (x_min < XMIN) x_min = XMIN;
+  if (x_max > XMAX) x_max = XMAX;
+  
+  h_diff->GetXaxis()->SetRangeUser(x_min, x_max);
+  // ============================================================
+
   h_diff->GetYaxis()->SetNdivisions(505);
   h_diff->GetXaxis()->SetNdivisions(505);
 
   h_diff->Draw("hist");
   finalFit->Draw("same");
-
-  //cout << "x range: " << range_factor * fit_min << ", " << range_factor * fit_max << endl;
 
   // ----- Extract inner (narrower) Gaussian values if double Gaussian -----
   TString line1, line2, line3;
@@ -188,12 +220,10 @@ void plot_resol() {
   if (doubleUsed) pt->AddText(line1);
   pt->AddText(line2);
   pt->AddText(line3);
-  //pt->AddText(line4);
   pt->Draw();
 
   // Legend for fit line
   TLegend *leg = new TLegend(0.55, 0.60, 0.9, 0.68);
-  //leg->SetTextFont(132);
   leg->SetTextSize(0.035);
   leg->SetFillColor(0);
   leg->SetBorderSize(0);
@@ -202,5 +232,5 @@ void plot_resol() {
 
   // Save canvas
   c1->SaveAs("../plots_resol/" + var_type + "_diff_fit_normalized.png");
-  std::cout << "\nPlot saved to ../plots_resol/" + var_type + "diff_fit_normalized.png" << std::endl;
+  std::cout << "\nPlot saved to ../plots_resol/" + var_type + "_diff_fit_normalized.png" << std::endl;
 }

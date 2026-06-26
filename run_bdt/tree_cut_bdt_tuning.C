@@ -2,6 +2,7 @@
 #include "../header_bdt/path.h"
 #include "../header_bdt/cut_para.h"
 #include "../header_bdt/method.h"
+#include "../header_bdt/tuning.txt"   // ← ADD THIS
 #include <TStopwatch.h>
 #include <TMVA/RBDT.hxx>
 #include <TMVA/RTensor.hxx>
@@ -53,7 +54,7 @@ std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx,
 BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& bdt);
 
 // ----------------------------------------------------------------------
-int tree_cut_bdt() {
+int tree_cut_bdt_tuning() {
     TStopwatch timer;
     timer.Start();
 
@@ -105,7 +106,7 @@ int tree_cut_bdt() {
     // BDT‑specific variables (reco)
     double bdt_score = 0.;
     double e1_bdt = 0., e2_bdt = 0., e3_bdt = 0.;
-    double e1_bdt_true = 0., e2_bdt_true = 0., e3_bdt_true = 0.;
+    double e3_bdt_true = 0.;
     double m_gg_bdt = 0., m3pi_bdt = 0., m_gg_true = 0.;
     double m2pi_true = 0., m3pi_true = 0.;
     double angle_pi0gam12_bdt = 0., betapi0_bdt = 0.;
@@ -227,9 +228,7 @@ int tree_cut_bdt() {
 	// BDT branches
         tree_tmp->Branch("Br_bdt_score", &bdt_score, "Br_bdt_score/D");
         tree_tmp->Branch("Br_e1_bdt", &e1_bdt, "Br_e1_bdt/D");
-	tree_tmp->Branch("Br_e1_bdt_true", &e1_bdt_true, "Br_e1_bdt_true/D");
         tree_tmp->Branch("Br_e2_bdt", &e2_bdt, "Br_e2_bdt/D");
-	tree_tmp->Branch("Br_e2_bdt_true", &e2_bdt_true, "Br_e2_bdt_true/D");
         tree_tmp->Branch("Br_e3_bdt", &e3_bdt, "Br_e3_bdt/D");
         tree_tmp->Branch("Br_e3_bdt_true", &e3_bdt_true, "Br_e3_bdt_true/D");
         tree_tmp->Branch("Br_m_gg_bdt", &m_gg_bdt, "Br_m_gg_bdt/D");
@@ -459,10 +458,16 @@ int tree_cut_bdt() {
         BDTResult result = find_best_pion_pair(event, bdt);
         if (!result.is_valid) continue;
 
+	/*
         // Fill BDT‑selected variables (reco)
         e1_bdt = event.photons[result.pi0_indices[0]][0];
         e2_bdt = event.photons[result.pi0_indices[1]][0];
         e3_bdt = event.photons[result.prompt_index][0];
+	*/
+	double e1_raw = event.photons[result.pi0_indices[0]][0];
+        double e2_raw = event.photons[result.pi0_indices[1]][0];
+        double e3_raw = event.photons[result.prompt_index][0];
+	
         double px1_bdt = event.photons[result.pi0_indices[0]][1];
         double py1_bdt = event.photons[result.pi0_indices[0]][2];
         double pz1_bdt = event.photons[result.pi0_indices[0]][3];
@@ -472,7 +477,59 @@ int tree_cut_bdt() {
         double px3_bdt = event.photons[result.prompt_index][1];
         double py3_bdt = event.photons[result.prompt_index][2];
         double pz3_bdt = event.photons[result.prompt_index][3];
+	
+	// ============================================================
+        // APPLY MC-ONLY RESOLUTION CORRECTIONS
+        // ============================================================
+        // Correction factors from pull tuning (tuning.txt)
+        // MC:   bias_E12 = -0.127, sigma_scale_E12 = 1.022
+        //       bias_E3  = -0.186, sigma_scale_E3  = 1.050
+        // Data: No correction (Data is reference)
+        // ============================================================
 
+	const double bias_MeV_E12 = bias_E12 * resol_E12;  
+	const double bias_MeV_E3 = bias_E3 * resol_E3;
+	
+        if (data_type == "sig") {
+            // MC events: Apply corrections
+            e1_bdt = (e1_raw - bias_MeV_E12) / sigma_scale_E12;
+            e2_bdt = (e2_raw - bias_MeV_E12) / sigma_scale_E12;
+            e3_bdt = (e3_raw - bias_MeV_E3) / sigma_scale_E3;
+            
+            // Also correct momenta (scale them too)
+            px1_bdt = px1_bdt / sigma_scale_E12;
+            py1_bdt = py1_bdt / sigma_scale_E12;
+            pz1_bdt = pz1_bdt / sigma_scale_E12;
+            px2_bdt = px2_bdt / sigma_scale_E12;
+            py2_bdt = py2_bdt / sigma_scale_E12;
+            pz2_bdt = pz2_bdt / sigma_scale_E12;
+            px3_bdt = px3_bdt / sigma_scale_E3;
+            py3_bdt = py3_bdt / sigma_scale_E3;
+            pz3_bdt = pz3_bdt / sigma_scale_E3;
+
+	    // UPDATE event.photons WITH CORRECTED VALUES
+            event.photons[result.pi0_indices[0]][0] = e1_bdt;
+            event.photons[result.pi0_indices[0]][1] = px1_bdt;
+            event.photons[result.pi0_indices[0]][2] = py1_bdt;
+            event.photons[result.pi0_indices[0]][3] = pz1_bdt;
+
+            event.photons[result.pi0_indices[1]][0] = e2_bdt;
+            event.photons[result.pi0_indices[1]][1] = px2_bdt;
+            event.photons[result.pi0_indices[1]][2] = py2_bdt;
+            event.photons[result.pi0_indices[1]][3] = pz2_bdt;
+
+            event.photons[result.prompt_index][0] = e3_bdt;
+            event.photons[result.prompt_index][1] = px3_bdt;
+            event.photons[result.prompt_index][2] = py3_bdt;
+            event.photons[result.prompt_index][3] = pz3_bdt;
+	    
+        } else {
+            // Data (exp) and other samples: No correction
+            e1_bdt = e1_raw;
+            e2_bdt = e2_raw;
+            e3_bdt = e3_raw;
+        }
+	
         m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
         m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
         
@@ -506,9 +563,6 @@ int tree_cut_bdt() {
         double py3_true = true_photons[result.prompt_index][2];
         double pz3_true = true_photons[result.prompt_index][3];
 
-	
-        e1_bdt_true = e1_true;
-        e2_bdt_true = e2_true;
         e3_bdt_true = e3_true;
         
         m_gg_true = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], true_photons);

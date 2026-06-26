@@ -241,4 +241,21 @@ void pull_tuning() {
                       results[i].sigma, results[i].sigma_err,
                       results[i].chi2_ndf) << std::endl;
   }
+
+  double bias_E12 = results[0].mean;
+  double sigma_scale_E12 = results[0].sigma;
+
+  double bias_E3 = results[2].mean;
+  double sigma_scale_E3 = results[2].sigma;
+
+  std::ofstream myfile;
+  TString myfile_nm = "../header_bdt/tuning.txt";
+  myfile.open(myfile_nm.Data());
+  
+  myfile << "const double bias_E12 = " << bias_E12 << ";\n"
+	 << "const double sigma_scale_E12 = " << sigma_scale_E12 << ";\n"
+	 << "const double bias_E3 = " << bias_E3 << ";\n"
+	 << "const double sigma_scale_E3 = " << sigma_scale_E3 << ";\n\n";
+  myfile.close();
+  
 }

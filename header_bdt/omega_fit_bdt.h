@@ -1,4 +1,4 @@
-const TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_norm/cut/tree_pre_bdt.root";
+const TString treeFile = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
 const TString output_path = "../plots_m3pi_corr/";
 
 // binning.h
