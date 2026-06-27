@@ -158,13 +158,23 @@ int compr_bdt() {
   hist_ksl_sc->Scale(scale_ksl);
   hist_mcrest_sc->Scale(scale_mcrest);
 
-  std::cout << "DATA integral: " << hist_data->Integral() << "\n"
-	    << "EEG integral: " << hist_eeg_sc->Integral() << "\n"
-	    << "ISR3PI integral: " << hist_isr3pi_sc->Integral() << "\n"
-	    << "NonReson integral: " << hist_nonreson_sc->Integral() << "\n"
-	    << "OMEGAPI integral: " << hist_omegapi_sc->Integral() << "\n"
-	    << "KSL integral: " << hist_ksl_sc->Integral() << "\n"
-	    << "MCREST integral: " << hist_mcrest_sc->Integral() << "\n"
+  cout << "\n=== Summary ===" << endl;
+  double peak_nb = hist_isr3pi_sc->Integral();
+  double distorted_nb = hist_nonreson_sc->Integral();
+  double signal_sum = peak_nb + distorted_nb;
+  double purity = peak_nb / signal_sum;
+  double hist_low = hist_data->GetXaxis()->GetXmin();
+  double hist_max = hist_data->GetXaxis()->GetXmax();
+  
+  std::cout << "Mass range [" << hist_low << ", " << hist_max << "] MeV/c²\n";
+  std::cout << "DATA: " << hist_data->Integral() << "\n"
+	    << "SIGNAL: " << signal_sum << ", purity = " << purity * 100. << "%\n"
+	    << "\tpeak: " << peak_nb << ", sfw = "<< scale_isr3pi << "\n"
+	    << "\tdistorted: " << distorted_nb << "\n"
+	    << "EEG: " << hist_eeg_sc->Integral() << "\n"
+	    << "OMEGAPI: " << hist_omegapi_sc->Integral() << "\n"
+	    << "KSL: " << hist_ksl_sc->Integral() << "\n"
+	    << "MCREST: " << hist_mcrest_sc->Integral() << "\n"
     	    << std::endl;
 
   // Total scaled MC
@@ -176,7 +186,8 @@ int compr_bdt() {
   hist_mcsum->Add(hist_mcrest_sc, 1.);
   hist_mcsum->SetLineColor(kRed);
 
-  hist_nonreson_sc->SetLineColor(kYellow);
+  hist_nonreson_sc->SetLineColor(kBlue);
+  hist_nonreson_sc->SetLineStyle(3);
   
   // Create output directory
   TString out_dir = "../output_" + TString(var_nm);
@@ -199,7 +210,7 @@ int compr_bdt() {
   f_out->Close();
 
   // ===== SCALED Data/MC Comparison Plot =====
-  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 800, 900);
+  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 1200, 700);
   c1->SetBottomMargin(0.12);
   c1->SetLeftMargin(0.12);
 
@@ -226,7 +237,7 @@ int compr_bdt() {
   pad1->SetBottomMargin(0.01);
   pad1->SetLeftMargin(0.12);
 
-  hist_data->Draw("E");
+  hist_data->Draw("E1");
   
   hist_data->SetMarkerStyle(20);
   hist_data->SetMarkerSize(0.8);
@@ -254,11 +265,12 @@ int compr_bdt() {
   hist_data->GetYaxis()->SetLabelSize(0.04);
 
   
-  //TLegend *leg = new TLegend(0.65, 0.35, 0.88, 0.9);
+  //TLegend *leg = new TLegend(0.5, 0.35, 0.88, 0.9);
   TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
+  leg->SetTextSize(0.04);
   leg->SetNColumns(1);
   leg->AddEntry(hist_data, "Data", "EP");
   leg->AddEntry(hist_mcsum, "MC sum", "l");
@@ -295,7 +307,6 @@ int compr_bdt() {
   hist_ratio->GetYaxis()->SetNdivisions(505);
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");
-  
   
   c1->SaveAs(out_dir + "/data_mc_comparison_scaled_" + var_nm + "_bdt.pdf");
   cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << ".pdf" << endl;

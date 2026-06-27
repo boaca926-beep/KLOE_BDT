@@ -197,7 +197,7 @@ EOF
     #echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt.C");' >> $tree_cut_script
     #echo 'gROOT->ProcessLine("tree_cut_bdt()");' >> $tree_cut_script
 
-    # Test is p0 photon energy scaling factor works properly
+    # Test if p0 photon energy scaling factor works properly
     echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt_scaled.C");' >> $tree_cut_script
     echo 'gROOT->ProcessLine("tree_cut_bdt_scaled()");' >> $tree_cut_script
 

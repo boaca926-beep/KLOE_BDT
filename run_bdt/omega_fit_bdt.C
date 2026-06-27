@@ -53,6 +53,12 @@ void omega_fit_bdt() {
     return;
   }
 
+  TFile *fsfw2d = TFile::Open(sfw2dFile);
+  if (!fsfw2d || fsfw2d->IsZombie()) {
+    std::cerr << "ERROR: cannot open " << sfw2dFile << std::endl;
+    return;
+  }
+
   TTree *tdata = (TTree*) ftree->Get("TDATA");
   if (!tdata) { std::cerr << "ERROR: TDATA not found." << std::endl; return; }
   
@@ -76,8 +82,36 @@ void omega_fit_bdt() {
     tdata->GetEntry(i);
     h_data->Fill(mtest);
   }
-  std::cout << "Data integral: " << h_data->Integral() << std::endl;
 
+  // Scaling factors
+  double eeg_sfw, isr3pi_sfw, omegapi_sfw, nonReson_sfw, ksl_sfw, mcrest_sfw;
+      
+  if (fsfw2d && !fsfw2d->IsZombie()) {
+    TTree *fitTree = (TTree*)fsfw2d->Get("TRESULT");
+    if (fitTree) {
+      fitTree->SetBranchAddress("Br_eeg_sfw", &eeg_sfw);
+      fitTree->SetBranchAddress("Br_isr3pi_sfw", &isr3pi_sfw);
+      fitTree->SetBranchAddress("Br_omegapi_sfw", &omegapi_sfw);
+      fitTree->SetBranchAddress("Br_nonReson_sfw", &nonReson_sfw);
+      fitTree->SetBranchAddress("Br_ksl_sfw", &ksl_sfw);
+      fitTree->SetBranchAddress("Br_mcrest_sfw", &mcrest_sfw);
+      fitTree->GetEntry(0);
+      
+      cout << "\n=== Scaling factors from SFW2D ===" << endl;
+      cout << "eeg_sfw = " << eeg_sfw * 2. << endl;
+      cout << "isr3pi_sfw = " << isr3pi_sfw << endl;
+      cout << "omegapi_sfw = " << omegapi_sfw << endl;
+      cout << "nonReson_sfw = " << nonReson_sfw << endl;
+      cout << "ksl_sfw = " << ksl_sfw << endl;
+      cout << "mcrest_sfw = " << mcrest_sfw << endl;
+    } else {
+      cout << "WARNING: TRESULT tree not found in sfw2d.root" << endl;
+    }
+    fsfw2d->Close();
+  } else {
+    cout << "WARNING: sfw2d.root not found, using unscaled MC" << endl;
+  }
+  
   // ------------------------------------------------------------------
   // 3. Load scaled MC components (detach each histogram)
   // ------------------------------------------------------------------
@@ -102,6 +136,7 @@ void omega_fit_bdt() {
   };
 
   // Same color codes and line styles as correct_and_plot.C
+
   TH1D *h_eeg       = makeScaledHist("TEEG", eeg_sfw * 2., 6, 7);
   TH1D *h_isr3pi    = makeScaledHist("TISR3PI_SIG_PEAK", isr3pi_sfw, 4, 2);
   TH1D *h_nonReson  = makeScaledHist("TISR3PI_SIG_NON_RESON", nonReson_sfw, 2, 3);
@@ -131,12 +166,22 @@ void omega_fit_bdt() {
   if (!h_isr3pi) { std::cerr << "ERROR: No ISR3pi histogram." << std::endl; return; }
 
   // Summary
-  std::cout << "EEG integral: " << h_eeg->Integral() << ", sfw = " << eeg_sfw * 2. << "\n"
-	    << "ISR3PI integral: " << h_isr3pi->Integral() << ", sfw = " << isr3pi_sfw << "\n"
-	    << "OMEGAPI integral: " << h_omegapi->Integral() << ", sfw = " << omegapi_sfw << "\n"
-	    << "NonReson integral: " << h_nonReson->Integral() << ", sfw = " << nonReson_sfw << "\n"
-	    << "KSL integral: " << h_ksl->Integral() << ", sfw = " << ksl_sfw << "\n"
-	    << "MCREST integral: " << h_mcrest->Integral() << ", sfw = " << mcrest_sfw << "\n"
+  cout << "\n=== Summary ===" << endl;
+  double peak_nb = h_isr3pi->Integral();
+  double distorted_nb = h_nonReson->Integral();
+  double signal_sum = peak_nb + distorted_nb;
+  double purity = peak_nb / signal_sum;
+  double h_low = h_data->GetXaxis()->GetXmin();
+  double h_max = h_data->GetXaxis()->GetXmax();
+  
+  std::cout << "Data: " << h_data->Integral() << "\n"
+	    << "SIGNAL: " << signal_sum << ", sfw = " << isr3pi_sfw << ", purity = " << purity * 100. << "\n"
+	    << "\tpeak: " << peak_nb  << ", sfw = " << isr3pi_sfw << "\n"
+    	    << "\tdistorted: " << distorted_nb << ", sfw = " << nonReson_sfw << "\n"
+    	    << "EEG: " << h_eeg->Integral() << ", sfw = " << eeg_sfw * 2. << "\n"
+	    << "OMEGAPI: " << h_omegapi->Integral() << ", sfw = " << omegapi_sfw << "\n"
+	    << "KSL: " << h_ksl->Integral() << ", sfw = " << ksl_sfw << "\n"
+	    << "MCREST: " << h_mcrest->Integral() << ", sfw = " << mcrest_sfw << "\n"
     	    << std::endl;
 
   // ------------------------------------------------------------------
@@ -231,7 +276,7 @@ void omega_fit_bdt() {
   h_background->Scale(beta);
   h_signal->SetLineColor(kBlue);
   h_signal->SetLineWidth(2);
-  h_background->SetLineColor(kRed);
+  h_background->SetLineColor(kBlue);
   h_background->SetLineStyle(3);
   h_background->SetLineWidth(2);
   
@@ -264,6 +309,27 @@ void omega_fit_bdt() {
     h_weight_smooth->SetBinContent(bin, w_avg);
   }
 
+  // After the fit (Section 6 or 7), add this:
+  int lowBin  = h_isr3pi->FindBin(peak_low);
+  int highBin = h_isr3pi->FindBin(peak_high);
+  
+  // Optional: If you want to include the full bin width, you can use lowBin and highBin-1, 
+  // but FindBin(peak_high) usually gives the bin where peak_high falls. 
+  // For the range [700, 850], this works correctly.
+  
+  double sig_frac_peak = h_isr3pi->Integral(lowBin, highBin);
+  double bkg_frac_peak = h_nonReson->Integral(lowBin, highBin);
+  
+  double fitted_signal_yield = alpha * sig_frac_peak;
+  double fitted_background_yield = beta * bkg_frac_peak;
+  double fitted_signal_sum = fitted_signal_yield + fitted_background_yield;  
+  double updated_purity = fitted_signal_yield / (fitted_signal_yield + fitted_background_yield);
+  
+  std::cout << "Fitted signal = " << fitted_signal_sum << "\n"
+	    << "\tpeak = " << fitted_signal_yield << "\n"
+	    << "\tdistorted = " << fitted_background_yield << "\n" 
+    	    << "Updated purity (from fit, in peak region): " << updated_purity * 100. << "%" << std::endl;
+ 
   // ------------------------------------------------------------------
   // 9. Apply correction to ISR3pi MC (use original scaled MC)
   // ------------------------------------------------------------------
@@ -355,9 +421,16 @@ void omega_fit_bdt() {
   
   h_data->SetMarkerStyle(20);
   h_data->SetMarkerSize(0.6);
-  h_data->Draw("E0");
+  h_data->Draw("E1");
   h_mc_total->Draw("hist same");
-  for (auto h : comps) if (h) h->Draw("hist same");
+  for (auto h : comps) {
+    if (!h) continue;
+    TString h_nm = h->GetName(); 
+    if (h_nm != "h_TEEG") {
+      //cout << h->GetName() << endl;
+      h->Draw("hist same");
+    }
+  }
   
   h_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
   h_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
@@ -378,7 +451,7 @@ void omega_fit_bdt() {
   leg->AddEntry(h_mc_total, "Total MC", "l");
   leg->AddEntry(h_signal, "#omega peak (signal)", "l");
   leg->AddEntry(h_background, "Distorted signal", "l");
-  leg->AddEntry(h_eeg, "e^{+}e^{-}#gamma", "l");
+  //leg->AddEntry(h_eeg, "e^{+}e^{-}#gamma", "l");
   leg->AddEntry(h_omegapi, "#omega#pi^{0}", "l");
   leg->AddEntry(h_ksl, "K_{S}K_{L}", "l");
   leg->AddEntry(h_mcrest, "Others", "l");
@@ -522,11 +595,17 @@ void omega_fit_bdt() {
   if (h_pull) delete h_pull;
   if (h_signal_data) delete h_signal_data;
   if (h_mc_total) delete h_mc_total;
+
+  if (fsfw2d) {
+    fsfw2d->Close();
+    delete fsfw2d;
+  }
   
   if (ftree) {
     ftree->Close();
     delete ftree;
   }
+
   
   if (fout) {
     fout->Close();

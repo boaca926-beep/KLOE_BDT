@@ -513,7 +513,7 @@ int tree_cut_bdt_scaled() {
 	// Simple scaling to shift MC 3pi mass down by 0.463 MeV (NO pull tuning)
 	double alpha_delta = energy_shift / 353.36;
 	const double MASS_SCALE_PI0 = 1 + alpha_delta;
-	//cout << "MASS_SCALE_PI0 = " << MASS_SCALE_PI0 << endl;
+	//cout << "energy_shift = " << energy_shift << ", MASS_SCALE_PI0 = " << MASS_SCALE_PI0 << endl;
  
 	if (data_type == "sig") {
 	  // ============================================================
