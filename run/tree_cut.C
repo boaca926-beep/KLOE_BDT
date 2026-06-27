@@ -20,6 +20,7 @@ int tree_cut(){
   double deltaE = 0.;
   double angle_pi0gam12 = 0.;  
   double betapi0 = 0.;
+  double beta_3pi;
   double m02 = 0., mplus2 = 0.;
   double m3pi = 0.;
   double ppIM = 0.;
@@ -64,7 +65,8 @@ int tree_cut(){
   TCollection* tree_list = new TList;
 
   for (int i = 0; i < list_size; i ++) {
-    TTList[i] = new TTree(TNM[i], "recreate");
+    //TTList[i] = new TTree(TNM[i], "recreate");
+    TTList[i] = new TTree(TNM[i], TNM[i]);
     TTList[i] -> SetAutoSave(0);
     tree_list -> Add(TTList[i]);
   }
@@ -135,6 +137,7 @@ int tree_cut(){
     tree_tmp -> Branch("Br_Epi0_pho2", &Epi0_pho2, "Br_Epi0_pho2/D");
     tree_tmp -> Branch("Br_angle_pi0gam12", &angle_pi0gam12, "Br_angle_pi0gam12/D");
     tree_tmp -> Branch("Br_betapi0", &betapi0, "Br_betapi0/D");
+    tree_tmp->Branch("Br_beta_3pi", &beta_3pi, "Br_beta_3pi/D");
     tree_tmp -> Branch("Br_Eprompt_max", &Eprompt_max, "Br_Eprompt_max/D");
     tree_tmp -> Branch("Br_lagvalue_min_7C", &lagvalue_min_7C, "Br_lagvalue_min_7C/D");
     tree_tmp -> Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
@@ -146,7 +149,8 @@ int tree_cut(){
   }
 
   TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
-  
+  TLorentzVector system_3pi;
+
   // Event loop
   for (Int_t irow = 0; irow < ALLCHAIN_CUT -> GetEntries(); irow ++) {
     ALLCHAIN_CUT -> GetEntry(irow);
@@ -245,7 +249,10 @@ int tree_cut(){
     isrgam.SetPxPyPzE(pho_px3, pho_py3, pho_pz3, pho_E3);
     trkplus.SetPxPyPzE(ppl_px, ppl_py, ppl_pz, ppl_E);
     trkmin.SetPxPyPzE(pmi_px, pmi_py, pmi_pz, pmi_E);
-  
+
+    system_3pi = pi0gam1 + pi0gam2 + trkplus + trkmin;
+    beta_3pi = system_3pi.P() / system_3pi.E();
+ 
     m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
     evnt_tot ++;
@@ -257,10 +264,12 @@ int tree_cut(){
 
     // Selection cuts
     if (lagvalue_min_7C > chi2_cut) continue;
-    else if (deltaE > deltaE_cut) continue;
-    else if (angle_pi0gam12 > angle_cut) continue;
-    else if (betapi0 > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-    else if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
+    if (deltaE < -440. || deltaE > deltaE_cut) continue; // suppress rhopi->3pi
+    //else if (deltaE > deltaE_cut) continue;
+    if (angle_pi0gam12 > angle_cut) continue;
+    if (betapi0 > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+    if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
+    if (beta_3pi < 0.23 || beta_3pi > 0.28) continue; // suppress missing MC a1+pi
     	
     // Fill only the tree(s) corresponding to the current sample type
     if (data_type == "exp") {
@@ -326,6 +335,8 @@ int tree_cut(){
   cout << "Expected time: " << realTime/60 << " mins" << endl;
   timer.Stop();
   timer.Print();
+
+  delete tree_list;
   
   return 0;
 }

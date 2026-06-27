@@ -399,7 +399,7 @@ void pull_tuning() {
   double sigma_scale_E3 = results[2].sigma; // hE3_MC single sigma
 
   std::ofstream myfile;
-  TString myfile_nm = "../header_bdt/tuning.txt";
+  TString myfile_nm = "../header_bdt/tuning.h";
   myfile.open(myfile_nm.Data());
   
   myfile << "const double bias_E12 = " << bias_E12 << ";\n"

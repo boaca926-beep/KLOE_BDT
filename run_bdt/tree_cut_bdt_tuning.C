@@ -2,7 +2,8 @@
 #include "../header_bdt/path.h"
 #include "../header_bdt/cut_para.h"
 #include "../header_bdt/method.h"
-#include "../header_bdt/tuning.txt"   // ← ADD THIS
+#include "../header_bdt/tuning.h"   // ← ADD THIS
+#include "../header_bdt/resol.h"   // ← ADD THIS
 #include <TStopwatch.h>
 #include <TMVA/RBDT.hxx>
 #include <TMVA/RTensor.hxx>
@@ -485,6 +486,8 @@ int tree_cut_bdt_tuning() {
         // MC:   bias_E12 = -0.127, sigma_scale_E12 = 1.022
         //       bias_E3  = -0.186, sigma_scale_E3  = 1.050
         // Data: No correction (Data is reference)
+	// E12 and E3 resolutions: plot_resol.sh
+	// E1 resolution = 2.85
         // ============================================================
 
 	const double bias_MeV_E12 = bias_E12 * resol_E12;  

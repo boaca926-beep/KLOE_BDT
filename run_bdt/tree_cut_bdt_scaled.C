@@ -2,8 +2,9 @@
 #include "../header_bdt/path.h"
 #include "../header_bdt/cut_para.h"
 #include "../header_bdt/method.h"
-#include "../header_bdt/tuning.txt"   // ← ADD THIS
-#include "../header_bdt/resol.txt"   // ← ADD THIS
+#include "../header_bdt/tuning.h"   // ← ADD THIS
+#include "../header_bdt/bias.h"   // ← ADD THIS
+#include "../header_bdt/resol.h"   // ← ADD THIS
 #include <TStopwatch.h>
 #include <TMVA/RBDT.hxx>
 #include <TMVA/RTensor.hxx>
@@ -145,9 +146,10 @@ int tree_cut_bdt_scaled() {
     TCollection* tree_list = new TList;
 
     for (int i = 0; i < list_size; i++) {
-        TTList[i] = new TTree(TNM[i], "recreate");
-        TTList[i]->SetAutoSave(0);
-        tree_list->Add(TTList[i]);
+      TTList[i] = new TTree(TNM[i], TNM[i]);
+      //TTList[i] = new TTree(TNM[i], "recreate");
+      TTList[i]->SetAutoSave(0);
+      tree_list->Add(TTList[i]);
     }
 
     // Add branches to all trees (same set)
@@ -775,6 +777,9 @@ int tree_cut_bdt_scaled() {
 
     timer.Stop();
     timer.Print();
+
+    delete tree_list;
+  
     return 0;
 }
 
