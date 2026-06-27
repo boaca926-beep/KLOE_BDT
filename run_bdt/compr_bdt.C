@@ -264,6 +264,15 @@ int compr_bdt() {
   hist_data->GetYaxis()->SetTitleOffset(1.2);
   hist_data->GetYaxis()->SetLabelSize(0.04);
 
+  TPaveText *pt0 = new TPaveText(0.65, 0.72, 0.85, 0.82, "NDC");
+  pt0->SetFillColor(0);
+  pt0->SetBorderSize(0);
+  pt0->SetTextAlign(12);
+  pt0->SetTextSize(0.04);
+  pt0->SetTextFont(42);
+  pt0->AddText(Form("Purity = %.1f%%", purity * 100.));
+  pt0->Draw();
+ 
   
   //TLegend *leg = new TLegend(0.5, 0.35, 0.88, 0.9);
   TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
@@ -272,7 +281,7 @@ int compr_bdt() {
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
   leg->SetNColumns(1);
-  leg->AddEntry(hist_data, "Data", "EP");
+  leg->AddEntry(hist_data, "Data", "lep");
   leg->AddEntry(hist_mcsum, "MC sum", "l");
   leg->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma (signal)", "l");
   leg->AddEntry(hist_nonreson_sc, "Distorted signal", "l");

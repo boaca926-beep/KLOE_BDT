@@ -47,13 +47,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-#VAR_NM=("m3pi_bdt")
-#VAR_SYMB=("M_{3#pi}")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("m3pi_bdt")
+VAR_SYMB=("M_{3#pi}")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(700) #300 600 760 (analysis)
-#XMAX=(850) #1020 1050 800 (analysis)
-#BINS=(300)
+XMIN=(760) #300 600 760 (analysis)
+XMAX=(800) #1020 1050 800 (analysis)
+BINS=(100)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -137,14 +137,14 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=150
 
 ##################################################################
-name_tmp="E3"
-VAR_NM="pull_"${name_tmp}
-VAR_SYMB="Pull "${name_tmp}
+#name_tmp="E3"
+#VAR_NM="pull_"${name_tmp}
+#VAR_SYMB="Pull "${name_tmp}
 
-UNIT="[MeV]"
-XMIN=-10
-XMAX=10
-BINS=200
+#UNIT="[MeV]"
+#XMIN=-10
+#XMAX=10
+#BINS=200
 
 ##################################################################
 #VAR_NM="e_asym"
@@ -182,7 +182,7 @@ else
 fi
 
 compr=../header_bdt/compr.h
-sample_type=norm
+sample_type=chain
 data_type=bdt
 main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre_bdt.root";

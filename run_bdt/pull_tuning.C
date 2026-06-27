@@ -350,7 +350,7 @@ void pull_tuning() {
         h_mass_copy->Draw("E");
     }
 
-      bw->Draw("same");
+    bw->Draw("same");
 
     TLegend *leg_mass = new TLegend(0.2, 0.7, 0.65, 0.9);
     leg_mass->SetFillStyle(0);
@@ -405,8 +405,8 @@ void pull_tuning() {
   myfile << "const double bias_E12 = " << bias_E12 << ";\n"
 	 << "const double sigma_scale_E12 = " << sigma_scale_E12 << ";\n"
 	 << "const double bias_E3 = " << bias_E3 << ";\n"
-	 << "const double sigma_scale_E3 = " << sigma_scale_E3 << ";\n"
-	 << "const double energy_shift = " << massResults[1].mean - massResults[0].mean << ";\n";
+    	 << "const double sigma_scale_E3 = " << sigma_scale_E3 << ";\n\n";
+  //<< "const double energy_shift = " << massResults[1].mean - massResults[0].mean << ";\n";
 	 
   myfile.close();
   
