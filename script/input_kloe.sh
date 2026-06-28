@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sample_size=norm # norm; small; mini; chain
+sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 
 exp_type=TDATA # DATA
@@ -24,9 +24,9 @@ sed -i 's/\(nb_sigma_T_clust =\)\(.*\)/\1 '$nb_sigma_T_clust';/' $class_header
 
 # Selection cuts
 Eprompt_max_cut=300
-chi2_cut=43
-angle_cut=138
-deltaE_cut=-150
+chi2_cut=20 #43 20
+angle_cut=138 #138 66
+deltaE_cut=-240 #-150
 beta_cut=1.98
 c0=0.11
 c1=0.8

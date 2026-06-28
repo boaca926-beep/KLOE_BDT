@@ -28,11 +28,9 @@ int tree_cut(){
   double IM_pi0_7C = 0.;
   double Eisr = 0., Epi0_pho1 = 0., Epi0_pho2 = 0.;
   // pulls
-  double pull_E1 = 0.;
-  double pull_x1 = 0.;
-  double pull_y1 = 0.;
-  double pull_z1 = 0.;
-  double pull_t1 = 0.;
+  double pull_E1 = 0., pull_x1 = 0., pull_y1 = 0., pull_z1 = 0., pull_t1 = 0.;
+  double pull_E2 = 0., pull_x2 = 0., pull_y2 = 0., pull_z2 = 0., pull_t2 = 0.;
+  double pull_E3 = 0., pull_x3 = 0., pull_y3 = 0., pull_z3 = 0., pull_t3 = 0.;
   // 4-momentum
   double ppl_E = 0., ppl_px = 0., ppl_py = 0., ppl_pz = 0.;
   double pmi_E = 0., pmi_px = 0., pmi_py = 0., pmi_pz = 0.;
@@ -118,11 +116,25 @@ int tree_cut(){
     tree_tmp -> Branch("Br_px3", &pho_px3, "Br_pho_px3/D");
     tree_tmp -> Branch("Br_py3", &pho_py3, "Br_pho_py3/D");
     tree_tmp -> Branch("Br_pz3", &pho_pz3, "Br_pho_pz3/D");
-    tree_tmp -> Branch("Br_pull_E1", &pull_E1, "Br_pull_E1/D");
-    tree_tmp -> Branch("Br_pull_x1", &pull_x1, "Br_pull_x1/D");
-    tree_tmp -> Branch("Br_pull_y1", &pull_y1, "Br_pull_y1/D");
-    tree_tmp -> Branch("Br_pull_z1", &pull_z1, "Br_pull_z1/D");
-    tree_tmp -> Branch("Br_pull_t1", &pull_t1, "Br_pull_t1/D");
+
+    tree_tmp->Branch("Br_pull_E1", &pull_E1, "Br_pull_E1/D");
+    tree_tmp->Branch("Br_pull_x1", &pull_x1, "Br_pull_x1/D");
+    tree_tmp->Branch("Br_pull_y1", &pull_y1, "Br_pull_y1/D");
+    tree_tmp->Branch("Br_pull_z1", &pull_z1, "Br_pull_z1/D");
+    tree_tmp->Branch("Br_pull_t1", &pull_t1, "Br_pull_t1/D");
+    
+    tree_tmp->Branch("Br_pull_E2", &pull_E2, "Br_pull_E2/D");
+    tree_tmp->Branch("Br_pull_x2", &pull_x2, "Br_pull_x2/D");
+    tree_tmp->Branch("Br_pull_y2", &pull_y2, "Br_pull_y2/D");
+    tree_tmp->Branch("Br_pull_z2", &pull_z2, "Br_pull_z2/D");
+    tree_tmp->Branch("Br_pull_t2", &pull_t2, "Br_pull_t2/D");
+    
+    tree_tmp->Branch("Br_pull_E3", &pull_E3, "Br_pull_E3/D");
+    tree_tmp->Branch("Br_pull_x3", &pull_x3, "Br_pull_x3/D");
+    tree_tmp->Branch("Br_pull_y3", &pull_y3, "Br_pull_y3/D");
+    tree_tmp->Branch("Br_pull_z3", &pull_z3, "Br_pull_z3/D");
+    tree_tmp->Branch("Br_pull_t3", &pull_t3, "Br_pull_t3/D");
+    
     tree_tmp -> Branch("Br_sig_type", &sig_type, "Br_sig_type/I");
     tree_tmp -> Branch("Br_bkg_indx", &bkg_indx, "Br_bkg_indx/I");
     tree_tmp -> Branch("Br_recon_indx", &recon_indx, "Br_recon_indx/I");
@@ -211,6 +223,18 @@ int tree_cut(){
     pull_z1 = ALLCHAIN_CUT -> GetLeaf("Br_PULLIST") -> GetValue(3);
     pull_t1 = ALLCHAIN_CUT -> GetLeaf("Br_PULLIST") -> GetValue(4);
 
+    pull_E2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(5);
+    pull_x2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(6);
+    pull_y2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(7);
+    pull_z2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(8);
+    pull_t2 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(9);
+    
+    pull_E3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(10);
+    pull_x3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(11);
+    pull_y3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(12);
+    pull_z3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(13);
+    pull_t3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(14);
+    
     pho_indx[0] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(0);
     pho_indx[1] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(1);
     pho_indx[2] = ALLCHAIN_CUT -> GetLeaf("Br_pho_indx") -> GetValue(2);
@@ -336,7 +360,7 @@ int tree_cut(){
   timer.Stop();
   timer.Print();
 
-  delete tree_list;
+  //delete tree_list;
   
   return 0;
 }

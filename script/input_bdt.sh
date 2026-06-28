@@ -35,19 +35,19 @@ c1=0.8
 cut_nm=""
 cut_value=0
 
-cut_header=../header_bdt/cut_para.h
-cat > $cut_header <<EOF
-const double Eprompt_max_cut = $Eprompt_max_cut;
-const double chi2_cut = $chi2_cut;
-const double angle_cut = $angle_cut;
-const double deltaE_cut = $deltaE_cut;
-const double beta_cut = $beta_cut;
-const double bdt_cut = $bdt_cut;
-const double c0 = $c0;
-const double c1 = $c1;
-double cut_value = -1;
-const TString cut_nm = "";
-EOF
+#cut_header=../header_bdt/cut_para.h
+#cat > $cut_header <<EOF
+#const double Eprompt_max_cut = $Eprompt_max_cut;
+#const double chi2_cut = $chi2_cut;
+#const double angle_cut = $angle_cut;
+#const double deltaE_cut = $deltaE_cut;
+#const double beta_cut = $beta_cut;
+#const double bdt_cut = $bdt_cut;
+#const double c0 = $c0;
+#const double c1 = $c1;
+#double cut_value = -1;
+#const TString cut_nm = "";
+#EOF
 
 # histo
 mass_sigma_nb=1

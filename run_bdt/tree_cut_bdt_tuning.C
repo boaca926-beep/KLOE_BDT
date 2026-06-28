@@ -1,6 +1,7 @@
+#include "../header/cut_para.h"
+
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
-#include "../header_bdt/cut_para.h"
 #include "../header_bdt/method.h"
 #include "../header_bdt/tuning.h"   // ← ADD THIS
 #include "../header_bdt/resol.h"   // ← ADD THIS

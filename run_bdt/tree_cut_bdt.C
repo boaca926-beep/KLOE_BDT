@@ -1,6 +1,7 @@
+#include "../header/cut_para.h"
+
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
-#include "../header_bdt/cut_para.h"
 #include "../header_bdt/method.h"
 #include <TStopwatch.h>
 #include <TMVA/RBDT.hxx>
@@ -666,7 +667,7 @@ int tree_cut_bdt() {
     f_output->Close();
 
     f_input->Close();
-    delete tree_list;
+    //delete tree_list;
 
     cout << "=========================================\n"
          << "Output file: " << outputCut << "tree_pre_bdt.root" << endl;
