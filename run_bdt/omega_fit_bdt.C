@@ -162,6 +162,8 @@ void omega_fit_bdt() {
   h_isr3pi_unnorm->SetLineStyle(1);
   h_isr3pi_unnorm->SetLineColor(kBlue);
   h_isr3pi_unnorm->SetDirectory(0);
+
+  //h_isr3pi_unnorm->Draw();
   
   // MC Rest
   TH1D *h_mcrest = new TH1D("h_mcrest", "", nbins, low, high);
@@ -283,7 +285,7 @@ void omega_fit_bdt() {
   double chi2_ndf = chi2 / ndf;
   
   std::cout << "Fit results: α = " << alpha << ", β = " << beta << std::endl;
-  std::cout << "Fit quality: χ² = " << chi2 << ", ndf = " << ndf << ", χ²/ndf = " << chi2_ndf << std::endl;
+  std::cout << "Fit quality: χ² = " << chi2 << ", ndf = " << ndf << ", #chi^{2}/ndf = " << chi2_ndf << std::endl;
 
   // ------------------------------------------------------------------
   // 7. Create signal & background histograms (scaled)
@@ -601,12 +603,13 @@ void omega_fit_bdt() {
   TString line0 = Form("%s = %.2f %s %s = %.1f %s", "mass bias", TMath::Abs(mass_bias), "[MeV/c^{2}]", "Purity", updated_purity * 100., "%");
   TString line1 = Form("%s = %.1f %s ", "Purity", updated_purity * 100., "%");
 
-  TPaveText *pt0 = new TPaveText(0.65, 0.72, 0.85, 0.82, "NDC");
+  TPaveText *pt0 = new TPaveText(0.7, 0.62, 0.85, 0.85, "NDC");
   pt0->SetFillColor(0);
   pt0->SetBorderSize(0);
   pt0->SetTextAlign(12);
   pt0->SetTextSize(0.04);
   pt0->SetTextFont(42);
+  pt0->AddText(Form("#chi^{2}/ndf = %.2f", chi2_ndf));
   pt0->AddText(Form("Mass bias = %.2f [MeV/c^{2}]", TMath::Abs(mass_bias)));
   pt0->AddText(Form("Purity = %.1f%%", updated_purity * 100.));
   pt0->Draw();

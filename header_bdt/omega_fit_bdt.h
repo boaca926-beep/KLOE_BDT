@@ -1,5 +1,5 @@
-const TString mainFolder = "/home/bo/Desktop/input_bdt_TDATA_norm";
-const TString treeFile = mainFolder + "/cut/tree_pre_bdt.root";
+const TString mainFolder = "/home/bo/Desktop/input_bdt_TDATA_chain";
+const TString treeFile = mainFolder + "/cut/tree_pre.root";
 const TString sfw2dFile = mainFolder + "/sfw2d/sfw2d.root";
 const TString output_path = "../plots_m3pi_corr/";
 

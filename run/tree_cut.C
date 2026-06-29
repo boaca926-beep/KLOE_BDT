@@ -56,8 +56,8 @@ int tree_cut(){
     
   TFile *f_output = new TFile(outputCut + "tree_pre.root", "update");
 
-  const int list_size = 11;
-  const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI", "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG"};
+  const int list_size = 13;
+  const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI", "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG", "TISR3PI_SIG_PEAK", "TISR3PI_SIG_NON_RESON"};
   
   TTree *TTList[list_size];
   TCollection* tree_list = new TList;
@@ -304,6 +304,15 @@ int tree_cut(){
       TTList[9]->Fill();   // EEG tree
     } else if (data_type == "sig") {
       TTList[10]->Fill();  // signal tree
+      // Separate into peak and non-resonant
+      if (total_recon_quality == 3) {
+	//if (recon_indx_bdt == 2 && bkg_indx == 1) {
+	TTList[11]->Fill();  // Perfect reconstruction -> TISR3PI_SIG_PEAK
+      } else {
+	// Good reconstruction (at least pi0 correct)
+	TTList[12]->Fill();  // TISR3PI_SIG_NON_RESON
+      }
+      // Events with total_recon_quality < 2 are more likely background
     } else if (data_type == "ksl") {
       // For KSL (full MC), classify events into the appropriate background/signal trees
       if (phid == 0) {
@@ -336,6 +345,9 @@ int tree_cut(){
     cout << "TEEG saved" << endl;
   } else if (data_type == "sig") {
     TTList[10]->Write("TISR3PI_SIG");
+    TTList[11]->Write();  // TISR3PI_SIG_PEAK
+    TTList[12]->Write();  // TISR3PI_SIG_NON_RESON
+        
     cout << "TISR3PI_SIG saved" << endl;
   } else if (data_type == "ksl") {
     TTList[1]->Write();

@@ -36,6 +36,8 @@ uv run main_initialize_kloe_opti.py \
 # alternative input data at: /home/kloe/Desktop/input_kloe_TDATA_chain/cut/tree_pre.root (make sure cuts are removed)
 
 uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/input_kloe_TDATA_chain/cut/tree_pre.root --max-events 1000
+
+uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/input_kloe_TDATA_chain/cut/tree_pre.root --chunk-size 50000 --output-dir /home/bo/Desktop/KLOE_BDT/dataset_bdt
 """
 
 # ========== ADDED: Cut constants (matching C++ header_bdt/cut_para.h) ==========
@@ -73,96 +75,43 @@ def create_dataset(df, category): # For photon 4-momentum
     if len(available_cols) < len(br_nm):
         print(f"  Note: Using {len(available_cols)}/{len(br_nm)} available columns")
     
-    # ---------- REPLACED CUT BLOCK (minimal adaptation) ----------
-    # Build a single mask that includes all selection criteria.
-    # mask = pd.Series(True, index=df.index)
-
-    # 1. χ² cut (lagvalue_min_7C)
-    #if 'Br_lagvalue_min_7C' in df.columns:
-    #    mask &= (df['Br_lagvalue_min_7C'] <= CHI2_CUT)
-
-    # 2. ΔE cut
-    #if 'Br_deltaE' in df.columns:
-    #    mask &= (df['Br_deltaE'] <= DELTAE_CUT)
-
-    # 3. Opening angle of π⁰ and γ cut
-    #if 'Br_angle_pi0gam12' in df.columns:
-    #    mask &= (df['Br_angle_pi0gam12'] <= ANGLE_CUT)
-
-    # 4. Beta cut (physical region 0<β<1 + β ≤ fβ(ppIM))
-    #if 'Br_betapi0' in df.columns:
-        #mask &= (df['Br_betapi0'] > 0) & (df['Br_betapi0'] < 1)   # physical range
-    #    if 'Br_ppIM' in df.columns:
-    #        fbeta_vals = df['Br_ppIM'].apply(lambda ppIM: get_fbeta(BETA_CUT, C0, C1, ppIM))
-    #        mask &= (df['Br_betapi0'] <= fbeta_vals)
-
-    # Apply the mask and keep only available columns
-    #df_filtered = df[mask][available_cols].copy()
-    #df = df_filtered
-
+    # ---------- CUT BLOCK REMOVED (cuts are now applied in tree_cut.C) ----------
+    # We simply take all events that survive the tree_cut.C selection.
     df = df[available_cols].copy()
-    # -------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     # Create all_df, pos_df, neg_df for signal and background events
-    if len(available_cols): # Check para length and br_nm length are consistent
+    if len(available_cols):
         
         if category == 'signal':
-            print(f"Creating all_df for {category} {df.columns}...")
+            print(f"Creating all_df for signal ...")
+            # ---------- NEW: use Br_total_recon_quality for signal only ----------
+            # Apply quality cut only if the branch exists (only for signal MC)
+            if 'Br_total_recon_quality' in df.columns:
+                df = df[df['Br_total_recon_quality'] == 3].copy()   # or >= 2
+                print(f"  Signal events after quality cut: {len(df)}")
+            # All remaining events are signal (no pos/neg split)
+            all_df = df.copy()
+            nb_all = [i for i in range(len(all_df))]
+            all_df.insert(0, 'event', nb_all)
+            all_df['is_signal'] = 1
+            all_df['true_pi0_pair'] = [(0, 1)] * len(nb_all)   # correct for your selection
+            # --------------------------------------------------------------------
 
-            # ADDED: Check if classification columns exist
-            if 'Br_recon_indx' in df.columns and 'Br_bkg_indx' in df.columns:
-                pos_df = df[(df['Br_recon_indx'] == 2) & (df['Br_bkg_indx'] == 1)][available_cols]
-                neg_df = df[~((df['Br_recon_indx'] == 2) & (df['Br_bkg_indx'] == 1))][available_cols]
-            else:
-                print(f"  Warning: Missing classification columns, treating all as background")
-                pos_df = pd.DataFrame(columns=available_cols)
-                neg_df = df[available_cols]
-
-            # True positive
-            nb_pos = [i for i in range(len(pos_df))]  
-            if len(pos_df) > 0:
-                pos_df = pos_df.copy()
-                pos_df.insert(0, 'event', nb_pos)  # Add event column
-                pos_df['is_signal'] = 1 # Add is_signal column
-                pos_df['true_pi0_pair'] = [(0, 1)] * len(nb_pos)  # Add true_pi0_pair column
-            
-            # True negative
-            nb_neg = [i for i in range(len(neg_df))]
-            if len(neg_df) > 0:
-                neg_df = neg_df.copy()
-                neg_df.insert(0, 'event', nb_neg) # Add event column 
-                neg_df['is_signal'] = 0 # Add is_signal column
-                neg_df['true_pi0_pair'] = [(-1, -1)] * len(nb_neg) # Add true_pi0_pair column
-
-            # Combine pos + neg dataset and shuffling
-            dfs_to_concat = []
-            if len(pos_df) > 0:
-                dfs_to_concat.append(pos_df)
-            if len(neg_df) > 0:
-                dfs_to_concat.append(neg_df)
-            
-            if dfs_to_concat:
-                all_df = pd.concat(dfs_to_concat, ignore_index=True)
-                all_df = all_df.sample(frac=1).reset_index(drop=True)
-            else:
-                all_df = pd.DataFrame()
-      
         elif category == 'background':
             print(f"Creating pho4mom_all_df for {category} {df.columns} ...")
-
             all_df = df.copy()
-            nb_all_df = [i for i in range(len(all_df))]  
-            all_df.insert(0, 'event', nb_all_df)  # Add event column
-            all_df['is_signal'] = 0 # Add is_signal column
-            all_df['true_pi0_pair'] = [(-1, -1)] * len(all_df) # Add true_pi0_pair column
-        else: # combined or others
+            nb_all_df = [i for i in range(len(all_df))]
+            all_df.insert(0, 'event', nb_all_df)
+            all_df['is_signal'] = 0
+            all_df['true_pi0_pair'] = [(-1, -1)] * len(all_df)
+        else:
             raise ValueError("Only sig and bkg allow!")
-    else: 
+    else:
         print("No dataset other than signal or bkg or combined is expected!")
         raise ValueError("Array length mismatch - cannot proceed")
 
     # pi0 features for ML learning
-    # MODIFIED: Only create pairs if we have data
     if len(all_df) > 0:
         pi0_all_df = prepare_3photon_pairs(all_df)
     else:
@@ -170,7 +119,10 @@ def create_dataset(df, category): # For photon 4-momentum
         
     return all_df, pi0_all_df
 
-##
+# =================================================================
+# DATA SPLITTING (unchanged)
+# =================================================================
+
 def data_splitting(all_df):
     print(f'\n✅ Splitting dataset ...')
 
@@ -179,7 +131,7 @@ def data_splitting(all_df):
         all_df, test_size=0.2, random_state=42
     )
 
-    # Second split: separte validation from training (20% of total)
+    # Second split: separate validation from training (20% of total)
     all_df_train, all_df_val = train_test_split(
         all_df_trainval, test_size=0.25, random_state=42
     )
@@ -187,8 +139,6 @@ def data_splitting(all_df):
     print(f"Training events:   {len(all_df_train)} ({len(all_df_train)/len(all_df)*100:.1f}%)")
     print(f"Validation events: {len(all_df_val)} ({len(all_df_val)/len(all_df)*100:.1f}%)")
     print(f"Test events:       {len(all_df_test)} ({len(all_df_test)/len(all_df)*100:.1f}%)")
-
-    #print("CREATING PAIRS FROM EACH SPLIT")
 
     pair_train = prepare_3photon_pairs(all_df_train)
     pair_val = prepare_3photon_pairs(all_df_val)
@@ -204,14 +154,9 @@ def data_splitting(all_df):
             n_pairs = len(pair_df)
             print(f"✅ {name}: {n_pairs} pairs from {n_events} events ({n_pairs/n_events:.2f} pairs/event)")
 
-    #print(f"Training pairs:   {len(pair_train)}")
-    #print(f"Validation pairs: {len(pair_val)}")
-    #print(f"Test pairs:       {len(pair_test)}")
-
     ## Step 3: Prepare features for training
     features = ['m_gg', 'opening_angle', 'cos_theta', 'E_asym', 'e_min_x_angle', 'E1', 'E2', 'E3', 'asym_x_angle', 'E_diff']
     
-    # ADDED: Check which features actually exist
     available_features = [f for f in features if f in pair_train.columns]
     if len(available_features) < len(features):
         print(f"  Warning: Using {len(available_features)}/{len(features)} available features")
@@ -234,7 +179,6 @@ if __name__ == '__main__':
     #============================================================
     # LOAD INPUT ROOT FILES
     #============================================================
-    # MODIFIED: Allow command line argument for input file
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, default="../data/kloe_sample.root", 
@@ -255,7 +199,6 @@ if __name__ == '__main__':
 
     ## Loop over branches and create phys_map dynamically
     try:
-        # Open the root file
         root_file = uproot.open(f_nm)
         branches = root_file.keys()
         print('All keys:', branches)
@@ -264,24 +207,18 @@ if __name__ == '__main__':
         print('Error opening file: ', e)
         sys.exit(1)
 
-    # Check first few braches and create a phys_map dynamically
     phys_map = {}
 
     for i, br_nm in enumerate(branches):
-        # Remove ROOT cycle number (;1, ;2, etc.) for comparison
         base_br_nm = br_nm.split(';')[0]
-
-        # Skip if already processed (in case of multiple cycles)
         if base_br_nm in phys_map:
             print(f"Skippin duplicate: {br_nm} (already have {base_br_nm})")
             continue
 
-        # SKIP TDATA - real data, no truth labels for training
         if base_br_nm == "TDATA":
             print(f"Skipping {base_br_nm} - real data (no truth labels), use for inference only")
             continue
 
-        #print(base_br_nm)
         if base_br_nm == "TISR3PI_SIG":
             br_title = rf"$e^{{+}}e^{{-}}\to\pi^{{+}}\pi^{{-}}\pi^{{0}}\gamma$"
             category = "signal"
@@ -305,32 +242,26 @@ if __name__ == '__main__':
             category = "background"
         elif base_br_nm == "TETAGAM":
             br_title = rf"$e^{{+}}e^{{-}}\to\phi\to\eta\gamma$"
-            category = "background" # "background"
+            category = "background"
         else:
             continue
 
-        # Fill phys_map entries
         phys_map[base_br_nm] = {
             'br_title': br_title,
             'category': category,
-            'original_name': br_nm # Store original for reference
+            'original_name': br_nm
         }
     
-    # Check phys_map
     for data_type, info in phys_map.items():
-        info_title = info['br_title']
-        info_category = info['category']
-        print(data_type, info_title, info_category)
+        print(data_type, info['br_title'], info['category'])
 
     #============================================================
     # CREATE DATASET - MODIFIED to handle large files with chunking
     #============================================================
-    df_list = []        # List for storing all dataset for combining
-       
-
-    df_train_list = []  # List for storing training splits
-    df_val_list = []    # List for storing validation splits
-    df_test_list = []   # List for storing test splits 
+    df_list = []
+    df_train_list = []
+    df_val_list = []
+    df_test_list = []
     pair_train_list = []
     pair_val_list = []
     pair_test_list = []
@@ -345,47 +276,36 @@ if __name__ == '__main__':
     for data_type, info in phys_map.items():
         try:
             data_nm = data_type.split(';')[0]
-
             ch_indx += 1
             print("="*25 + f"Channel {ch_indx}: {data_type}" + "="*25)
             
-            # Get tree for this channel
-            tree = root_file[data_type] 
-
-            # Debug info for this channel
+            tree = root_file[data_type]
             print(f"Processing {data_type}...")
             total_entries = tree.num_entries
             if args.max_events:
                 total_entries = min(total_entries, args.max_events)
             print(f"Number of entries: {total_entries}")
 
-            # Read as awkward array to determine fields (only first 100)
             ak_array = tree.arrays(library="ak", entry_stop=100)
-
-            # Generate fields_to_use for THIS channel
             exclude_fields = ['Br_pull_E1', 'Br_pull_x1', 'Br_pull_y1', 'Br_pull_z1', 'Br_pull_t1']
             fields_to_use = []
 
             for field in ak_array.fields:
-                # Skip fields that match exclude_fields
                 if any(pattern in field for pattern in exclude_fields):
                     continue
-
-                # Only include 1D fields
                 if ak_array[field].ndim == 1:
                     fields_to_use.append(field)
                 else:
                     print(f"Excluding multi-dim field: {field} (ndim={ak_array[field].ndim})")
 
-            # Check if we have the required branches
             required_br = ['Br_E1', 'Br_px1', 'Br_py1', 'Br_pz1', 
                'Br_E2', 'Br_px2', 'Br_py2', 'Br_pz2', 
                'Br_E3', 'Br_px3', 'Br_py3', 'Br_pz3',
                'Br_m3pi', 'Br_lagvalue_min_7C', 'Br_deltaE',
                'Br_angle_pi0gam12', 'Br_ppIM', 'Br_betapi0',
                'Br_recon_indx', 'Br_bkg_indx',
-               'Br_pho_indx', 'Br_EPI0NTMC_save',      # ADD THESE
-               'Br_isr_recon_quality', 'Br_total_recon_quality']  # ADD THESE
+               'Br_pho_indx', 'Br_EPI0NTMC_save',
+               'Br_isr_recon_quality', 'Br_total_recon_quality']
             
             missing_br = [br for br in required_br if br not in fields_to_use]
             if missing_br:
@@ -396,7 +316,6 @@ if __name__ == '__main__':
             
             print(f"Fields being used: {len(fields_to_use)} fields")
 
-            # MODIFIED: Process in chunks for large files
             chunk_size = min(args.chunk_size, total_entries)
             n_chunks = (total_entries + chunk_size - 1) // chunk_size
             
@@ -407,28 +326,21 @@ if __name__ == '__main__':
             for chunk_idx in range(n_chunks):
                 start = chunk_idx * chunk_size
                 stop = min((chunk_idx + 1) * chunk_size, total_entries)
-                
                 print(f"\n  Processing chunk {chunk_idx+1}/{n_chunks} (entries {start}-{stop})")
                 
-                # Read chunk
                 chunk_df = tree.arrays(fields_to_use, library="pd", 
                                       entry_start=start, entry_stop=stop)
-                
                 print(f"  Chunk shape: {chunk_df.shape}")
                 
-                # Process chunk
                 chunk_all_df, chunk_pi0_df = create_dataset(chunk_df, info['category'])
                 
                 if chunk_all_df is not None and len(chunk_all_df) > 0:
-                    # Add chunk identifier to event numbers to avoid duplicates
                     chunk_all_df['event'] = f"ch{chunk_idx}_" + chunk_all_df['event'].astype(str)
                     all_chunks.append(chunk_all_df)
                 
-                # Clear memory
                 del chunk_df, chunk_all_df, chunk_pi0_df
                 gc.collect()
             
-            # Combine chunks
             if all_chunks:
                 print(f"\nCombining {len(all_chunks)} chunks for {data_type}...")
                 all_df = pd.concat(all_chunks, ignore_index=True)
@@ -437,20 +349,16 @@ if __name__ == '__main__':
                 
                 print(f"Total events after filtering: {len(all_df)}")
                 
-                # Check for anomalies
                 if 'Br_betapi0' in all_df.columns:
                     betapi0_values = all_df['Br_betapi0']
                     print(f"Betapi0 stats: {betapi0_values.describe()}")
                 
-                # Data splitting
                 if len(all_df) < 100:
                     print("WARNING: Very few events!")  
                     continue
                 
-                # MODIFIED: Create pi0 pairs after splitting (original behavior)
                 all_df_train, all_df_val, all_df_test, X_train, y_train, X_val, y_val, X_test, y_test, pair_train, pair_val, pair_test = data_splitting(all_df)
                 
-                # Add to combined list
                 df_list.append(all_df)
                 df_train_list.append(all_df_train)
                 df_val_list.append(all_df_val)
@@ -466,7 +374,6 @@ if __name__ == '__main__':
                 X_test_list.append(X_test)
                 y_test_list.append(y_test)
 
-                # Save files with compression
                 print(f"\nSaving files for {data_nm}...")
                 
                 joblib.dump(all_df, f'{data_dir}/all_df_{data_nm}.pkl', compress=3)
@@ -499,7 +406,6 @@ if __name__ == '__main__':
                 if len(y_test) > 0:
                     joblib.dump(y_test, f'{data_dir}/y_test_{data_nm}.pkl', compress=3)
                 
-                
             else:
                 print(f"No valid events for {data_type}")
   
@@ -514,45 +420,32 @@ if __name__ == '__main__':
     if df_list:
         print(f"\nCombining {len(df_list)} channels ...")
         
-        # Add channel prefix to event IDs to avoid collisions
         for i, (df, (data_type, info)) in enumerate(zip(df_list, list(phys_map.items())[:len(df_list)])):
             channel_name = data_type.split(';')[0]
             df['event'] = f"{channel_name}_" + df['event'].astype(str)
             print(f"    Updated event IDs for {channel_name}")
 
-        # Combine full datasets
         df_comb = pd.concat(df_list, ignore_index=True)
         print(f"Raw combined shape: {df_comb.shape}")
 
-        # Shuffle
         df_comb = df_comb.sample(frac=1, random_state=42).reset_index(drop=True)
         print(f"Shuffled combined shape: {df_comb.shape}")
 
-        # Initialize combined split variables
-        #all_df_train_comb = pd.DataFrame()
-        #all_df_val_comb = pd.DataFrame()
-        #all_df_test_comb = pd.DataFrame()
-      
-
-        # Combine training splits
         if df_train_list:
             print(f"\nCombining training splits from {len(df_train_list)} channels...")
             all_df_train_comb = pd.concat(df_train_list, ignore_index=True)
             all_df_train_comb = all_df_train_comb.sample(frac=1, random_state=42).reset_index(drop=True)
             print(f"Combined training events: {len(all_df_train_comb)}")
 
-            # Combine training pairs if they exist
             if pair_train_list:
                 pair_train_comb = pd.concat(pair_train_list, ignore_index=True)
                 print(f"Combined training pairs: {len(pair_train_comb)}")
             
-            # Combine training features and labels
             if X_train_list and y_train_list:
                 X_train_comb = pd.concat(X_train_list, ignore_index=True)
                 y_train_comb = pd.concat(y_train_list, ignore_index=True)
                 print(f"X_train shape: {X_train_comb.shape}, y_train shape: {y_train_comb.shape}")
             
-            # Save training split
             joblib.dump(all_df_train_comb, f'{data_dir}/all_df_train_TCOMB.pkl', compress=3)
             if pair_train_list:
                 joblib.dump(pair_train_comb, f'{data_dir}/pair_train_TCOMB.pkl', compress=3)
@@ -560,16 +453,12 @@ if __name__ == '__main__':
                 joblib.dump(X_train_comb, f'{data_dir}/X_train_TCOMB.pkl', compress=3)
                 joblib.dump(y_train_comb, f'{data_dir}/y_train_TCOMB.pkl', compress=3)
 
-            
-            # summary
             total_train = sum(len(df) for df in df_train_list)
             print(f"Training events:   {total_train}")
-            # Print training info here where variables are defined
             if X_train_list and y_train_list:
                 print(f"  Training pairs: {sum(len(pairs) for pairs in pair_train_list) if pair_train_list else 0}")
                 print(f"  X_train components: {len(X_train_list)}")
             
-        # Combine validation splits
         if df_val_list:
             print(f"\nCombining validation splits from {len(df_val_list)} channels...")
             all_df_val_comb = pd.concat(df_val_list, ignore_index=True)
@@ -594,14 +483,12 @@ if __name__ == '__main__':
                 joblib.dump(X_val_comb, f'{data_dir}/X_val_TCOMB.pkl', compress=3)
                 joblib.dump(y_val_comb, f'{data_dir}/y_val_TCOMB.pkl', compress=3)
             
-            # summmary
             total_val = sum(len(df) for df in df_val_list)
             print(f"Validation events: {total_val}")
             if X_val_list and y_val_list:
                 print(f"  Validation pairs: {sum(len(pairs) for pairs in pair_val_list) if pair_val_list else 0}")
                 print(f"  X_val components: {len(X_val_list)}")
         
-        # Combine test splits
         if df_test_list:
             print(f"\nCombining test splits from {len(df_test_list)} channels...")
             all_df_test_comb = pd.concat(df_test_list, ignore_index=True)
@@ -632,56 +519,19 @@ if __name__ == '__main__':
                 print(f"  Test pairs: {sum(len(pairs) for pairs in pair_test_list) if pair_test_list else 0}")
                 print(f"  X_test components: {len(X_test_list)}")
 
-        # Create datasets
         all_df_comb = df_comb
         print("\nCreating pairs for combined dataset...")
         pi0_all_df_comb = prepare_3photon_pairs(all_df_comb)
 
-        # Split
-        #all_df_train_comb, all_df_val_comb, all_df_test_comb, X_train_comb, y_train_comb, X_val_comb, y_val_comb, X_test_comb, y_test_comb, pair_train_comb, pair_val_comb, pair_test_comb = data_splitting(all_df_comb)
-
         print(f"\n✅ Data ready for training:")
     
-    
-    
-
-        # Save combined files with compression
         print("\nSaving combined files...")
         
         joblib.dump(all_df_comb, f'{data_dir}/all_df_TCOMB.pkl', compress=3)
         joblib.dump(pi0_all_df_comb, f'{data_dir}/pi0_all_df_TCOMB.pkl', compress=3)
 
-        #if len(all_df_train_comb) > 0:
-        #    joblib.dump(all_df_train_comb, f'{data_dir}/all_df_train_TCOMB.pkl', compress=3)
-        #if len(all_df_val_comb) > 0:
-        #    joblib.dump(all_df_val_comb, f'{data_dir}/all_df_val_TCOMB.pkl', compress=3)
-        #if len(all_df_test_comb) > 0:
-            #joblib.dump(all_df_test_comb, f'{data_dir}/all_df_test_TCOMB.pkl', compress=3)
-
-        #if len(pair_train_comb) > 0:
-        #    joblib.dump(pair_train_comb, f'{data_dir}/pair_train_TCOMB.pkl', compress=3)
-        #if len(pair_val_comb) > 0:
-            #joblib.dump(pair_val_comb, f'{data_dir}/pair_val_TCOMB.pkl', compress=3)
-        #if len(pair_test_comb) > 0:
-        #    joblib.dump(pair_test_comb, f'{data_dir}/pair_test_TCOMB.pkl', compress=3)
-
-        #if len(X_train_comb) > 0:
-        #    joblib.dump(X_train_comb, f'{data_dir}/X_train_TCOMB.pkl', compress=3)
-        #if len(X_val_comb) > 0:
-        #    joblib.dump(X_val_comb, f'{data_dir}/X_val_TCOMB.pkl', compress=3)
-        #if len(X_test_comb) > 0:
-        #    joblib.dump(X_test_comb, f'{data_dir}/X_test_TCOMB.pkl', compress=3)
-
-        #if len(y_train_comb) > 0:
-        #    joblib.dump(y_train_comb, f'{data_dir}/y_train_TCOMB.pkl', compress=3)
-        #if len(y_val_comb) > 0:
-        #    joblib.dump(y_val_comb, f'{data_dir}/y_val_TCOMB.pkl', compress=3)
-        #if len(y_test_comb) > 0:
-        #   joblib.dump(y_test_comb, f'{data_dir}/y_test_TCOMB.pkl', compress=3)
-        
         print(f"Combined data contains: {[k for k in phys_map.keys()]}")
         
-        # Add TCOMB to phys_map
         phys_map['TCOMB'] = {
             'br_title': "MC combined",
             'category': "combined"

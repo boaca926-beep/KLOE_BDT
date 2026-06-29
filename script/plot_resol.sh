@@ -1,78 +1,118 @@
 #!/bin/bash
 
 ##################################################################
-VAR_TYPE=("Br_betapi0_bdt"
-	  "Br_e1_bdt"
-	  "Br_e2_bdt"
-	  "Br_e3_bdt"
-	  "Br_m3pi_bdt"
-	  "Br_angle_pi0gam12_bdt"
-	  "Br_m_gg_bdt")
+#VAR_TYPE=("Br_betapi0_bdt"
+#	  "Br_e1_bdt"
+#	  "Br_e2_bdt"
+#	  "Br_e3_bdt"
+#	  "Br_m3pi_bdt"
+#	  "Br_angle_pi0gam12_bdt"
+#	  "Br_m_gg_bdt")
 
-VAR_TYPE_TRUE=("Br_betapi0_bdt_true"
-	       "Br_e1_bdt_true"
-	       "Br_e2_bdt_true"
-	       "Br_e3_bdt_true"
-	       "Br_m3pi_true_bdt"
-	       "Br_angle_pi0gam12_bdt_true"
-	       "Br_m_gg_true_bdt")
+#VAR_TYPE_TRUE=("Br_betapi0_bdt_true"
+#	       "Br_e1_bdt_true"
+#	       "Br_e2_bdt_true"
+#	       "Br_e3_bdt_true"
+#	       "Br_m3pi_true_bdt"
+#	       "Br_angle_pi0gam12_bdt_true"
+#	       "Br_m_gg_true_bdt")
 
-UNIT=(""
-      "[MeV]"
-      "[MeV]"
-      "[MeV]"
-      "[MeV/c^{2}]"
-      "[#circ]"
-      "[MeV/c^{2}]")
+#UNIT=(""
+#      "[MeV]"
+#      "[MeV]"
+#      "[MeV]"
+#      "[MeV/c^{2}]"
+#      "[#circ]"
+#      "[MeV/c^{2}]")
 
-XTITLE=("#beta^{rec}_{#pi}-#beta^{true}_{#pi}"
-	"E^{rec}_{1}-E^{true}_{1}"
-	"E^{rec}_{2}-E^{true}_{2}"
-	"E^{rec}_{3}-E^{true}_{3}"
-	"M^{rec}_{3#pi}-M^{true}_{3#pi}"
-	"#angle^{rec}_{#gamma#gamma}-#angle^{true}_{#gamma#gamma}"
-	"M^{rec}_{#gamma#gamma}-M^{true}_{#gamma#gamma}")
+#XTITLE=("#beta^{rec}_{#pi}-#beta^{true}_{#pi}"
+#	"E^{rec}_{1}-E^{true}_{1}"
+#	"E^{rec}_{2}-E^{true}_{2}"
+#	"E^{rec}_{3}-E^{true}_{3}"
+#	"M^{rec}_{3#pi}-M^{true}_{3#pi}"
+#	"#angle^{rec}_{#gamma#gamma}-#angle^{true}_{#gamma#gamma}"
+#	"M^{rec}_{#gamma#gamma}-M^{true}_{#gamma#gamma}")
 
-BIN_SIZE=(400
-	  1000
-	  1000
-	  1000
-	  1000
-	  4000
-	  1000)
+#BIN_SIZE=(400
+#	  1000
+#	  1000
+#	  1000
+#	  1000
+#	  4000
+#	  1000)
 
-FIT_FACTOR=(0.5
-	    1.0
-	    1.0
-	    .5
-	    1.0
-	    1.0
-	    1.0)
+#FIT_FACTOR=(0.5
+#	    1.0
+#	    1.0
+#	    .5
+#	    1.0
+#	    1.0
+#	    1.0)
 
 # UPDATED: More reasonable range factors
-RANGE_FACTOR=(2
-	      5.0
-	      5.0
-	      5.0
-	      1.5
-	      5.0
-	      1.5)
+#RANGE_FACTOR=(2
+#	      5.0
+#	      5.0
+#	      5.0
+#	      1.5
+#	      5.0
+#	      1.5)
 
-XMIN=(-0.05
-      -100
-      -100
-      -100
-      -100
-      -100
-      -100)
+#XMIN=(-0.05
+#      -100
+#      -100
+#      -100
+#      -100
+#      -100
+#      -100)
 
-XMAX=(0.05
-      100
-      100
-      100
-      100
-      100
-      100)
+#XMAX=(0.05
+#      100
+#      100
+#      100
+#      100
+#      100
+#      100)
+
+#==============================================================
+# Resolution of kinematic variables (KLOE Raw)
+#==============================================================
+VAR_TYPE=("Br_E1" 
+	  "Br_E2" 
+	  "Br_E3")
+
+VAR_TYPE_TRUE=("Br_E1_true" 
+	       "Br_E2_true" 
+	       "Br_E3_true")
+
+UNIT=("[MeV]" 
+      "[MeV]" 
+      "[MeV]")
+
+XTITLE=("E^{rec}_{1}-E^{true}_{1}" 
+	"E^{rec}_{2}-E^{true}_{2}" 
+	"E^{rec}_{3}-E^{true}_{3}")
+
+BIN_SIZE=(500 
+	  500 
+	  500)
+
+FIT_FACTOR=(1.0 
+	    1.0 
+	    0.5)
+
+RANGE_FACTOR=(2 
+	      2 
+	      2)
+
+XMIN=(-50 
+      -50 
+      -20)
+
+XMAX=(50 
+      50 
+      20)
+
 
 output_folder="../plots_resol"
 
@@ -89,9 +129,10 @@ else
 fi
 
 header=../header_bdt/plot_resol.h
-sample_type=norm
-main_folder="/home/bo/Desktop/input_bdt_TDATA_${sample_type}"
-treeFile="${main_folder}/cut/tree_pre_bdt.root";
+sample_type=chain
+data_type="kloe"
+main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
+treeFile="${main_folder}/cut/tree_pre.root";
 
 for ((i=0;i<${#VAR_TYPE[@]};++i)); do
 

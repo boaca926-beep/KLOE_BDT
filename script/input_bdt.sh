@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-sample_size=norm # norm; small; mini; chain
+sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 
 exp_type=TDATA # DATA
@@ -35,19 +35,19 @@ c1=0.8
 cut_nm=""
 cut_value=0
 
-#cut_header=../header_bdt/cut_para.h
-#cat > $cut_header <<EOF
-#const double Eprompt_max_cut = $Eprompt_max_cut;
-#const double chi2_cut = $chi2_cut;
-#const double angle_cut = $angle_cut;
-#const double deltaE_cut = $deltaE_cut;
-#const double beta_cut = $beta_cut;
-#const double bdt_cut = $bdt_cut;
-#const double c0 = $c0;
-#const double c1 = $c1;
-#double cut_value = -1;
-#const TString cut_nm = "";
-#EOF
+cut_header=../header_bdt/cut_para.h
+cat > $cut_header <<EOF
+const double Eprompt_max_cut = $Eprompt_max_cut;
+const double chi2_cut = $chi2_cut;
+const double angle_cut = $angle_cut;
+const double deltaE_cut = $deltaE_cut;
+const double beta_cut = $beta_cut;
+const double bdt_cut = $bdt_cut;
+const double c0 = $c0;
+const double c1 = $c1;
+double cut_value = -1;
+const TString cut_nm = "";
+EOF
 
 # histo
 mass_sigma_nb=1
@@ -194,12 +194,12 @@ EOF
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script
     echo "void tree_cut_script() {" >> $tree_cut_script
-    #echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt.C");' >> $tree_cut_script
-    #echo 'gROOT->ProcessLine("tree_cut_bdt()");' >> $tree_cut_script
+    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt.C");' >> $tree_cut_script
+    echo 'gROOT->ProcessLine("tree_cut_bdt()");' >> $tree_cut_script
 
     # Test if p0 photon energy scaling factor works properly
-    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt_scaled.C");' >> $tree_cut_script
-    echo 'gROOT->ProcessLine("tree_cut_bdt_scaled()");' >> $tree_cut_script
+    #echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt_scaled.C");' >> $tree_cut_script
+    #echo 'gROOT->ProcessLine("tree_cut_bdt_scaled()");' >> $tree_cut_script
 
     echo '}' >> $tree_cut_script
     root -l -n -q -b $tree_cut_script >> ${log_cut} 2>&1 || { echo "ROOT failed at tree_cut_script for $data_type"; exit 1; }

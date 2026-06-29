@@ -21,6 +21,7 @@ void plot_resol() {
   }
 
   TTree *ttree = (TTree*) ftree->Get("TISR3PI_SIG_PEAK");
+  
   if (!ttree) { std::cerr << "No such tree.\n"; return; }
 
   // Histogram for difference: (reco – true) mass
@@ -32,19 +33,19 @@ void plot_resol() {
 
   double var = 0.0, var_true = 0.0;
   double var_diff = 0.0;
-  int recon_indx_bdt = -1, bkg_indx = -1;
+  //int recon_indx = -1, bkg_indx = -1; //No need, purity conditions are applied at the level of selection
   
-  ttree->SetBranchAddress("Br_recon_indx_bdt", &recon_indx_bdt);
-  ttree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
+  //ttree->SetBranchAddress("Br_recon_indx_bdt", &recon_indx);
+  //ttree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
   ttree->SetBranchAddress(var_type, &var);
   ttree->SetBranchAddress(var_type_true, &var_true);
   
   for (Long64_t i = 0; i < ttree->GetEntries(); ++i) {
     ttree->GetEntry(i);
-    if (recon_indx_bdt == 2 && bkg_indx == 1) {
-      var_diff = var - var_true;
-      h_diff->Fill(var_diff);
-    }
+    //if (recon_indx == 2 && bkg_indx == 1) {
+    var_diff = var - var_true;
+    h_diff->Fill(var_diff);
+      //}
   }
 
   // --- Normalize the histogram (integral = 1) ---
@@ -57,7 +58,7 @@ void plot_resol() {
   }
 
   // Fit range: mean ± factor * RMS
-  double mean = h_diff->GetMean();
+  double mean = 0.; //h_diff->GetMean();
   double rms  = h_diff->GetRMS();
   double fit_min = mean - fit_factor * rms;
   double fit_max = mean + fit_factor * rms;
@@ -176,8 +177,9 @@ void plot_resol() {
   // ============================================================
   // Set x-axis range for each variable
   // ============================================================
+  /*
   double x_min, x_max;
-  
+
   if (TString(var_type) == "Br_m3pi_bdt") {
     x_min = -20.0;
     x_max = 20.0;
@@ -207,6 +209,8 @@ void plot_resol() {
   if (x_max > XMAX) x_max = XMAX;
   
   h_diff->GetXaxis()->SetRangeUser(x_min, x_max);
+  */
+  
   // ============================================================
 
   h_diff->GetYaxis()->SetNdivisions(505);

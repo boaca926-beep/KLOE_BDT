@@ -1,5 +1,12 @@
 #!/bin/bash
 
+compr=../header/compr.h
+sample_type=chain
+data_type=kloe
+main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
+tree_file_nm="${main_folder}/cut/tree_pre.root";
+outputSfw2D="${main_folder}/sfw2d/";
+
 echo -e "\nPlotting histo comparison ..."
 
 #VAR_NM=("IM3pi_7C" "angle_isr_7C" "angle_pi0gam12" "ppIM" "lagvalue_min_7C" "pvalue" "deltaE" "trkmass" "Eisr" "Emax_clust" "betapi0")
@@ -47,13 +54,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-#VAR_NM=("IM3pi_7C")
-#VAR_SYMB=("M_{3#pi}")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("IM3pi_7C")
+VAR_SYMB=("M_{3#pi}")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(760) #300 600 760 (analysis)
-#XMAX=(800) #1020 1050 800 (analysis)
-#BINS=(100)
+XMIN=(760) #300 600 760 (analysis)
+XMAX=(800) #1020 1050 800 (analysis)
+BINS=(100)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -139,15 +146,15 @@ echo -e "\nPlotting histo comparison ..."
 
 
 ##################################################################
-VAR_NM="beta_3pi"
-VAR_SYMB="#beta_{3#pi}"
+#VAR_NM="beta_3pi"
+#VAR_SYMB="#beta_{3#pi}"
 
-UNIT=""
-XMIN=0.1
-XMAX=0.4
-BINS=200
+#UNIT=""
+#XMIN=0.1
+#XMAX=0.4
+#BINS=200
 
-output_folder="../output_"${VAR_NM[0]}
+output_folder="../output_"${VAR_NM[0]}"_"${data_type}
 
 #check output folder and update output files
 if [[ -d $output_folder ]]; then
@@ -164,13 +171,9 @@ else
     
 fi
 
-compr=../header/compr.h
-sample_type=chain
-data_type=kloe
-main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
-tree_file_nm="${main_folder}/cut/tree_pre.root";
-outputSfw2D="${main_folder}/sfw2d/";
-  
+
+sed -i "s|\(const TString out_dir =\).*|\1 \"${output_folder}\";|" $compr
+
 for ((i=0;i<${#VAR_NM[@]};++i)); do
 
     echo ${VAR_NM[i]}
@@ -185,7 +188,8 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     sed -i "s|\(const TString var_nm =\).*|\1 \"${VAR_NM[i]}\";|" $compr
     sed -i "s|\(const TString unit =\).*|\1 \"${UNIT[i]}\";|" $compr
     sed -i "s|\(const TString var_symb =\).*|\1 \"${VAR_SYMB[i]}\";|" $compr
-
+    
+    
     compr_script=compr_script.C
     echo '#include <iostream>' > $compr_script
     echo "void compr_script() {" >> $compr_script

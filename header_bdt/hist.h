@@ -1,4 +1,4 @@
-TFile *f_cut = new TFile(outputCut + "tree_pre_bdt.root");
+TFile *f_cut = new TFile(outputCut + "tree_pre.root");
 TFile *f_gen = new TFile(outputGen + "tree_gen.root");
 
 //cout << f_gen -> GetName() << endl;

@@ -1,5 +1,12 @@
 #!/bin/bash
 
+compr=../header_bdt/compr.h
+sample_type=chain
+data_type=bdt
+main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
+tree_file_nm="${main_folder}/cut/tree_pre.root";
+outputSfw2D="${main_folder}/sfw2d/";
+
 echo -e "\nPlotting histo comparison ..."
 
 #VAR_NM=("IM3pi_7C" "angle_isr_7C" "angle_pi0gam12" "ppIM" "lagvalue_min_7C" "pvalue" "deltaE" "trkmass" "Eisr" "Emax_clust" "betapi0")
@@ -47,7 +54,7 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("m3pi_bdt")
+VAR_NM=("IM3pi_7C") #"m3pi_bdt", "IM3pi_7C"
 VAR_SYMB=("M_{3#pi}")
 UNIT=("[MeV\/c^{2}]")
 
@@ -181,13 +188,8 @@ else
     
 fi
 
-compr=../header_bdt/compr.h
-sample_type=chain
-data_type=bdt
-main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
-tree_file_nm="${main_folder}/cut/tree_pre_bdt.root";
-outputSfw2D="${main_folder}/sfw2d/";
-  
+sed -i "s|\(const TString out_dir =\).*|\1 \"${output_folder}\";|" $compr
+
 for ((i=0;i<${#VAR_NM[@]};++i)); do
 
     echo ${VAR_NM[i]}

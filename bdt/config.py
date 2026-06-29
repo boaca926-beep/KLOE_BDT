@@ -40,7 +40,7 @@ def create_dataset(df, category): # For photon 4-momentum
              'Br_angle_pi0gam12', 'Br_ppIM', 'Br_betapi0',
              'Br_recon_indx', 'Br_bkg_indx']
     
-    # ADDED: Check which columns actually exist
+    # Check which columns actually exist
     available_cols = [col for col in br_nm if col in df.columns]
     if len(available_cols) < len(br_nm):
         print(f"  Note: Using {len(available_cols)}/{len(br_nm)} available columns")
