@@ -1,3 +1,6 @@
+// Normalized pulls of the photon final states distributions using KLOE raw data. E1 and E2 are the first and the second paried photon. E3 is the the unpaired photon. M(E1+E2) gives the reconstructed pi0 invaraint mass.
+// Determine 
+
 void checkFile(TFile *f_input){
 
   TIter next_tree(f_input -> GetListOfKeys());
@@ -30,11 +33,6 @@ struct FitResult {
     int entries;
 };
 
-// Breit-Wigner function: p0 / ((x-p1)^2 + p2^2) with p0 = normalization, p1 = mean, p2 = gamma/2
-Double_t breitwigner(Double_t *x, Double_t *par) {
-    return par[0] / ((x[0] - par[1]) * (x[0] - par[1]) + par[2] * par[2]);
-}
-
 void pull_tuning() {
 
   gROOT->GetListOfCanvases()->Delete();
@@ -48,37 +46,24 @@ void pull_tuning() {
 
   gSystem->Exec("mkdir -p ../pull_tuning");
 
-  TFile *fin_E1 = new TFile("../output_pull_E1/hist_pull_E1.root");
+  TFile *fin_E1 = new TFile("../output_pull_E1_kloe/hist_pull_E1.root");
   if (!fin_E1 || fin_E1->IsZombie()) {
-    std::cerr << "ERROR: cannot open output_pull_E1/hist_pull_E1.root" << std::endl;
+    std::cerr << "ERROR: cannot open output_pull_E1_kloe/hist_pull_E1.root" << std::endl;
     return;
   }
 
-  TFile *fin_E2 = new TFile("../output_pull_E2/hist_pull_E2.root");
+  TFile *fin_E2 = new TFile("../output_pull_E2_kloe/hist_pull_E2.root");
   if (!fin_E2 || fin_E2->IsZombie()) {
-    std::cerr << "ERROR: cannot open output_pull_E2/hist_pull_E2.root" << std::endl;
+    std::cerr << "ERROR: cannot open output_pull_E2_kloe/hist_pull_E2.root" << std::endl;
     return;
   }
 
-  TFile *fin_E3 = new TFile("../output_pull_E3/hist_pull_E3.root");
+  TFile *fin_E3 = new TFile("../output_pull_E3_kloe/hist_pull_E3.root");
   if (!fin_E3 || fin_E3->IsZombie()) {
-    std::cerr << "ERROR: cannot open output_pull_E3/hist_pull_E3.root" << std::endl;
+    std::cerr << "ERROR: cannot open output_pull_E3_kloe/hist_pull_E3.root" << std::endl;
     return;
   }
 
-  TFile *fin_m3pi = new TFile("../output_m3pi_bdt/hist_m3pi_bdt.root");
-  if (!fin_m3pi || fin_m3pi->IsZombie()) {
-    std::cerr << "ERROR: cannot open output_m3pi_bdt/hist_m3pi_bdt.root" << std::endl;
-    return;
-  }
-
-  // Get mass histograms
-  TH1D *hm3pi_MC = (TH1D*)fin_m3pi->Get("hist_isr3pi_sc"); 
-  TH1D *hm3pi_Data = (TH1D*)fin_m3pi->Get("hist_data"); 
-  if (!hm3pi_MC) std::cerr << "WARNING: hm3pi_MC not found." << std::endl;
-  if (!hm3pi_Data) std::cerr << "WARNING: hm3pi_Data not found." << std::endl;
-
-  // Print file contents for debugging
   // checkFile(fin_m3pi);
   
   TH1D* hE1_MC = (TH1D*)fin_E1->Get("hist_isr3pi_sc");
@@ -250,125 +235,9 @@ void pull_tuning() {
   c_E12->SaveAs("../pull_tuning/pull_E12.pdf");
   c_E3->SaveAs("../pull_tuning/pull_E3.pdf");
 
-  // ============================================================
-  // MASS FITS: MC and Data side-by-side (FIXED)
-  // ============================================================
-  const int nb_mass = 2;
-  TH1D *hMassList[nb_mass] = {hm3pi_MC, hm3pi_Data};
-  TString massNameList[nb_mass] = {"MC", "Data"};
-  int massColor[nb_mass] = {kBlue, kRed};
-  FitResult massResults[nb_mass];
-  TF1 *bw_fits[nb_mass];
-
-  // Create canvas for mass fits
-  for (int i = 0; i < nb_mass; i++) {
-    TH1D *h_mass = hMassList[i];
-    if (!h_mass) {
-      std::cerr << "Skipping mass histogram " << massNameList[i] << " (null)." << std::endl;
-      continue;
-    }
-
-    TCanvas *c_mass = new TCanvas("c_mass_" + massNameList[i], "3π Mass Distributions (Breit-Wigner fits)", 700, 700);
-    c_mass->Divide(nb_mass, 1);
-
-  // Clone to avoid modifying original
-    TH1D *h_mass_copy = (TH1D*)h_mass->Clone(Form("h_mass_%s", massNameList[i].Data()));
-    h_mass_copy->SetDirectory(0);
-    h_mass_copy->SetLineColor(massColor[i]);
-
-    double mass_mean = h_mass_copy->GetMean();
-    double mass_rms = h_mass_copy->GetRMS();
-    double mass_peak = h_mass_copy->GetBinContent(h_mass_copy->GetMaximumBin());
-    double mass_peak_pos = h_mass_copy->GetBinCenter(h_mass_copy->GetMaximumBin());
-
-    // Fit range: ±1.5σ around mean (like pulls) but constrained
-    double fit_min_mass = mass_mean - .5 * mass_rms;
-    double fit_max_mass = mass_mean + .5 * mass_rms;
-    if (fit_min_mass < 760) fit_min_mass = 760;
-    if (fit_max_mass > 810) fit_max_mass = 810;
-
-    std::cout << "\n========================================" << std::endl;
-    std::cout << "Mass histogram: " << massNameList[i] << std::endl;
-    std::cout << "Number of entries: " << h_mass_copy->GetEntries() << std::endl;
-    std::cout << "Mean estimate: " << mass_mean << ", RMS: " << mass_rms << std::endl;
-    std::cout << "Fit range: [" << fit_min_mass << ", " << fit_max_mass << "] MeV/c^{2}" << std::endl;
-
-    // Breit-Wigner fit
-    TF1 *bw = new TF1(Form("bw_%s", massNameList[i].Data()), breitwigner, fit_min_mass, fit_max_mass, 3);
-    bw->SetParameters(mass_peak * 4.0, mass_peak_pos, 4.0);
-    bw->SetParLimits(1, 780, 786);
-    bw->SetParLimits(2, 0.5, 10.0);
-    bw->SetLineColor(massColor[i]);
-    bw->SetLineWidth(2);
-
-    h_mass_copy->Fit(bw, "RQS");
-    double mass_mean_fit = bw->GetParameter(1);
-    double mass_gamma_half = bw->GetParameter(2);
-    double mass_mean_err = bw->GetParError(1);
-    double mass_gamma_err = bw->GetParError(2);
-    double chi2ndf_mass = bw->GetChisquare() / bw->GetNDF();
-
-    std::cout << "Breit-Wigner fit: mean = " << mass_mean_fit << " +/- " << mass_mean_err << " MeV/c^{2}" << std::endl;
-    std::cout << "Breit-Wigner gamma/2 = " << mass_gamma_half << " +/- " << mass_gamma_err << " MeV" << std::endl;
-    std::cout << "χ²/ndf = " << chi2ndf_mass << std::endl;
-
-    // Store results
-    massResults[i].name = massNameList[i];
-    massResults[i].mean = mass_mean_fit;
-    massResults[i].mean_err = mass_mean_err;
-    massResults[i].sigma = mass_gamma_half;
-    massResults[i].sigma_err = mass_gamma_err;
-    massResults[i].chi2_ndf = chi2ndf_mass;
-    massResults[i].entries = h_mass_copy->GetEntries();
-    bw_fits[i] = bw;
-
-    // Draw in pad
-    c_mass->cd(i+1);
-    gPad->SetBottomMargin(0.15);
-    gPad->SetLeftMargin(0.15);
-
-    double ymax_mass = h_mass_copy->GetMaximum();
-    h_mass_copy->SetMarkerStyle(20);
-    h_mass_copy->SetMarkerSize(0.6);
-    h_mass_copy->SetLineColor(kBlack);
-    h_mass_copy->GetYaxis()->SetTitle("Events");
-    h_mass_copy->GetYaxis()->SetRangeUser(0.01, ymax_mass * 1.6);
-    h_mass_copy->GetYaxis()->CenterTitle();
-    h_mass_copy->GetYaxis()->SetTitleSize(0.05);
-    h_mass_copy->GetYaxis()->SetTitleOffset(1.4);
-    h_mass_copy->GetYaxis()->SetLabelSize(0.04);
-    h_mass_copy->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-    h_mass_copy->GetXaxis()->SetTitleSize(0.05);
-    h_mass_copy->GetXaxis()->SetTitleOffset(1.2);
-    h_mass_copy->GetXaxis()->SetLabelSize(0.04);
-    h_mass_copy->GetXaxis()->CenterTitle();
-
-    if (massNameList[i] == "MC") {
-      h_mass_copy->Draw("hist");
-    }
-    else {
-        h_mass_copy->Draw("E");
-    }
-
-    bw->Draw("same");
-
-    TLegend *leg_mass = new TLegend(0.2, 0.7, 0.65, 0.9);
-    leg_mass->SetFillStyle(0);
-    leg_mass->SetBorderSize(0);
-    leg_mass->SetTextSize(0.035);
-    leg_mass->AddEntry(h_mass_copy, Form("%s 3#pi mass", massNameList[i].Data()), "lep");
-    leg_mass->AddEntry(bw, Form("BW: M = %.2f, #Gamma/2 = %.2f", mass_mean_fit, mass_gamma_half), "l");
-    leg_mass->Draw();
-
-    c_mass->Update();
-    c_mass->SaveAs("../pull_tuning/mass_fit_" + massNameList[i] + ".pdf");
-    //delete c_mass;
-  }
-
-  
   // Print summary (only for pull fits)
   std::cout << "\n========================================" << std::endl;
-  std::cout << "Summary of Pull Fit Results (Single Gaussian):" << std::endl;
+  std::cout << "Summary of E Pull Fit Results (Single Gaussian):" << std::endl;
   std::cout << "========================================" << std::endl;
   for (int i = 0; i < nb_hist; i++) {
     std::cout << Form("%-15s: mean = %6.3f +/- %6.3f, sigma = %6.3f +/- %6.3f, χ²/ndf = %.3f", 
@@ -376,19 +245,6 @@ void pull_tuning() {
                       results[i].mean, results[i].mean_err,
                       results[i].sigma, results[i].sigma_err,
                       results[i].chi2_ndf) << std::endl;
-  }
-
-  std::cout << "\n========================================" << std::endl;
-  std::cout << "Summary of Mass Fit Results (Breit-Wigner):" << std::endl;
-  std::cout << "========================================" << std::endl;
-  for (int i = 0; i < nb_mass; i++) {
-    if (hMassList[i]) {
-      std::cout << Form("%-10s: mean = %6.3f +/- %6.3f, gamma/2 = %6.3f +/- %6.3f, χ²/ndf = %.3f", 
-                        massResults[i].name.Data(), 
-                        massResults[i].mean, massResults[i].mean_err,
-                        massResults[i].sigma, massResults[i].sigma_err,
-                        massResults[i].chi2_ndf) << std::endl;
-    }
   }
 
   // Use the single Gaussian parameters for MC only
@@ -399,7 +255,7 @@ void pull_tuning() {
   double sigma_scale_E3 = results[2].sigma; // hE3_MC single sigma
 
   std::ofstream myfile;
-  TString myfile_nm = "../header_bdt/tuning.h";
+  TString myfile_nm = "../header/tuning.h";
   myfile.open(myfile_nm.Data());
   
   myfile << "const double bias_E12 = " << bias_E12 << ";\n"

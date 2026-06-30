@@ -2,11 +2,11 @@
 
 sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
-
+pull_type="kloe_raw" #raw: no tuning; scaled: pi0 photon energy scale; tuning; energy scale + pull tuning
 exp_type=TDATA # DATA
 gsf=1 # DATA
 
-result_path=../../input_kloe_${exp_type}_${sample_size}
+result_path=../../input_${pull_type}_${exp_type}_${sample_size}
 #result_path=/media/bo/Analysis_Disk/
 
 ## Initialize the normial conditions
@@ -26,31 +26,34 @@ sed -i 's/\(nb_sigma_T_clust =\)\(.*\)/\1 '$nb_sigma_T_clust';/' $class_header
 Eprompt_max_cut=300
 chi2_cut=20 #43 20
 angle_cut=138 #138 66
-deltaE_cut=-240 #-150
 beta_cut=1.98
+deltaE_min=-440 
+deltaE_max=-240 #-150
+
+beta_3pi_min=0.23
+beta_3pi_max=0.28
+
 c0=0.11
 c1=0.8
 cut_nm=""
 cut_value=0
 
 cut_header=../header/cut_para.h
-echo -e 'const double Eprompt_max_cut = -1;' > $cut_header
-echo -e 'const double chi2_cut = -1;' >> $cut_header
-echo -e 'const double angle_cut = -1;' >> $cut_header
-echo -e 'const double deltaE_cut = -1;' >> $cut_header
-echo -e 'const double beta_cut = -1;' >> $cut_header
-echo -e 'const double c0 = -1;' >> $cut_header
-echo -e 'const double c1 = -1;' >> $cut_header
-echo -e 'double cut_value = -1;' >> $cut_header
-echo -e 'const TString cut_nm = "";' >> $cut_header
+cat > $cut_header <<EOF
+const double chi2_cut = $chi2_cut;
+const double angle_cut = $angle_cut;
+const double beta_cut = $beta_cut;
+const double Eprompt_max_cut = $Eprompt_max_cut;
+const double deltaE_min = $deltaE_min;
+const double deltaE_max = $deltaE_max;
+const double beta_3pi_min = $beta_3pi_min;
+const double beta_3pi_max = $beta_3pi_max;
+const double c0 = $c0;
+const double c1 = $c1;
+double cut_value = -1;
+const TString cut_nm = "";
+EOF
 
-sed -i 's/\(const double Eprompt_max_cut =\)\(.*\)/\1 '$Eprompt_max_cut';/' $cut_header
-sed -i 's/\(const double chi2_cut =\)\(.*\)/\1 '$chi2_cut';/' $cut_header
-sed -i 's/\(const double angle_cut =\)\(.*\)/\1 '$angle_cut';/' $cut_header
-sed -i 's/\(const double deltaE_cut =\)\(.*\)/\1 '$deltaE_cut';/' $cut_header
-sed -i 's/\(const double beta_cut =\)\(.*\)/\1 '$beta_cut';/' $cut_header
-sed -i 's/\(const double c0 =\)\(.*\)/\1 '$c0';/' $cut_header
-sed -i 's/\(const double c1 =\)\(.*\)/\1 '$c1';/' $cut_header
 
 # histo
 mass_sigma_nb=1
@@ -204,6 +207,9 @@ EOF
     echo "void tree_cut_script() {" >> $tree_cut_script
     echo 'gROOT->ProcessLine(".L ../run/tree_cut.C");' >> $tree_cut_script
     echo 'gROOT->ProcessLine("tree_cut()");' >> $tree_cut_script
+
+    #echo 'gROOT->ProcessLine(".L ../run/tree_cut_scaled.C");' >> $tree_cut_script
+    #echo 'gROOT->ProcessLine("tree_cut_scaled()");' >> $tree_cut_script
     echo '}' >> $tree_cut_script
     root -l -n -q -b $tree_cut_script >> ${log_cut}
 done

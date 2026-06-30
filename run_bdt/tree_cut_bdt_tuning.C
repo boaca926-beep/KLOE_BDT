@@ -495,43 +495,54 @@ int tree_cut_bdt_tuning() {
 	const double bias_MeV_E3 = bias_E3 * resol_E3;
 	
         if (data_type == "sig") {
-            // MC events: Apply corrections
-            e1_bdt = (e1_raw - bias_MeV_E12) / sigma_scale_E12;
-            e2_bdt = (e2_raw - bias_MeV_E12) / sigma_scale_E12;
-            e3_bdt = (e3_raw - bias_MeV_E3) / sigma_scale_E3;
-            
-            // Also correct momenta (scale them too)
-            px1_bdt = px1_bdt / sigma_scale_E12;
-            py1_bdt = py1_bdt / sigma_scale_E12;
-            pz1_bdt = pz1_bdt / sigma_scale_E12;
-            px2_bdt = px2_bdt / sigma_scale_E12;
-            py2_bdt = py2_bdt / sigma_scale_E12;
-            pz2_bdt = pz2_bdt / sigma_scale_E12;
-            px3_bdt = px3_bdt / sigma_scale_E3;
-            py3_bdt = py3_bdt / sigma_scale_E3;
-            pz3_bdt = pz3_bdt / sigma_scale_E3;
-
-	    // UPDATE event.photons WITH CORRECTED VALUES
-            event.photons[result.pi0_indices[0]][0] = e1_bdt;
-            event.photons[result.pi0_indices[0]][1] = px1_bdt;
-            event.photons[result.pi0_indices[0]][2] = py1_bdt;
-            event.photons[result.pi0_indices[0]][3] = pz1_bdt;
-
-            event.photons[result.pi0_indices[1]][0] = e2_bdt;
-            event.photons[result.pi0_indices[1]][1] = px2_bdt;
-            event.photons[result.pi0_indices[1]][2] = py2_bdt;
-            event.photons[result.pi0_indices[1]][3] = pz2_bdt;
-
-            event.photons[result.prompt_index][0] = e3_bdt;
-            event.photons[result.prompt_index][1] = px3_bdt;
-            event.photons[result.prompt_index][2] = py3_bdt;
-            event.photons[result.prompt_index][3] = pz3_bdt;
-	    
+	  /* full corrections
+	  // Step 1: Apply mass scale to raw values
+	  double e1_scaled = e1_raw * MASS_SCALE_PI0;
+	  double px1_scaled = px1_raw * MASS_SCALE_PI0;
+	  // ... similarly for others
+	  */
+	  
+	  // Step 2: Apply pull tuning on the scaled values
+	  e1_bdt = (e1_scaled - bias_MeV_E12) / sigma_scale_E12;
+	  px1_bdt = px1_scaled / sigma_scale_E12;
+	  
+	  // MC events: Apply corrections
+	  e1_bdt = (e1_raw - bias_MeV_E12) / sigma_scale_E12;
+	  e2_bdt = (e2_raw - bias_MeV_E12) / sigma_scale_E12;
+	  e3_bdt = (e3_raw - bias_MeV_E3) / sigma_scale_E3;
+          
+	  // Also correct momenta (scale them too)
+	  px1_bdt = px1_bdt / sigma_scale_E12;
+	  py1_bdt = py1_bdt / sigma_scale_E12;
+	  pz1_bdt = pz1_bdt / sigma_scale_E12;
+	  px2_bdt = px2_bdt / sigma_scale_E12;
+	  py2_bdt = py2_bdt / sigma_scale_E12;
+	  pz2_bdt = pz2_bdt / sigma_scale_E12;
+	  px3_bdt = px3_bdt / sigma_scale_E3;
+	  py3_bdt = py3_bdt / sigma_scale_E3;
+	  pz3_bdt = pz3_bdt / sigma_scale_E3;
+	  
+	  // UPDATE event.photons WITH CORRECTED VALUES
+	  event.photons[result.pi0_indices[0]][0] = e1_bdt;
+	  event.photons[result.pi0_indices[0]][1] = px1_bdt;
+	  event.photons[result.pi0_indices[0]][2] = py1_bdt;
+	  event.photons[result.pi0_indices[0]][3] = pz1_bdt;
+	  
+	  event.photons[result.pi0_indices[1]][0] = e2_bdt;
+	  event.photons[result.pi0_indices[1]][1] = px2_bdt;
+	  event.photons[result.pi0_indices[1]][2] = py2_bdt;
+	  event.photons[result.pi0_indices[1]][3] = pz2_bdt;
+	  
+	  event.photons[result.prompt_index][0] = e3_bdt;
+	  event.photons[result.prompt_index][1] = px3_bdt;
+	  event.photons[result.prompt_index][2] = py3_bdt;
+	  event.photons[result.prompt_index][3] = pz3_bdt;
+	  
         } else {
-            // Data (exp) and other samples: No correction
-            e1_bdt = e1_raw;
-            e2_bdt = e2_raw;
-            e3_bdt = e3_raw;
+	  // Data (exp) and other samples: No correction
+	  e1_bdt = e1_raw;
+	  e2_bdt = e2_raw;
+	  e3_bdt = e3_raw;
         }
 	
         m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);

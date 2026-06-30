@@ -1,7 +1,7 @@
 {
-  "auc": 0.9996851048081206,
-  "best_iteration": 57,
-  "best_score": 0.00499156102991346,
+  "auc": 0.9989048789970008,
+  "best_iteration": 146,
+  "best_score": 0.01287675804061282,
   "params": {
     "objective": "binary:logistic",
     "tree_method": "hist",
@@ -14,14 +14,14 @@
       "error"
     ],
     "verbosity": 1,
-    "max_depth": 5,
-    "learning_rate": 0.2387586688716479,
-    "subsample": 0.7217853244146024,
-    "colsample_bytree": 0.7640415835413256,
-    "min_child_weight": 7,
-    "gamma": 0.36386287158866254,
-    "reg_alpha": 0.701862669798288,
-    "reg_lambda": 2.348760585476051
+    "max_depth": 10,
+    "learning_rate": 0.02806554771929606,
+    "subsample": 0.8542916407516681,
+    "colsample_bytree": 0.9349553422213137,
+    "min_child_weight": 9,
+    "gamma": 0.4416576386904311,
+    "reg_alpha": 0.27661707655715034,
+    "reg_lambda": 1.3839684940710453
   },
   "n_features": 10,
   "feature_names": [
@@ -36,7 +36,7 @@
     "asym_x_angle",
     "E_diff"
   ],
-  "training_time_minutes": 0.18431036074956259,
-  "peak_memory_percent": 87.1,
+  "training_time_minutes": 0.10672306617101034,
+  "peak_memory_percent": 90.0,
   "gpu_enabled": false
 }

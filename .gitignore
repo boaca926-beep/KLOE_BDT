@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # output folders
-dataset/
+dataset_root/
 dataset_bdt/
 plots_inspect/
 plots_app/

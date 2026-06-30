@@ -287,14 +287,23 @@ int tree_cut(){
     if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
 
     // Selection cuts
+
+    /*
+    // Cuts used to create BDT training samples
     if (lagvalue_min_7C > chi2_cut) continue;
-    if (deltaE < -440. || deltaE > deltaE_cut) continue; // suppress rhopi->3pi
-    //else if (deltaE > deltaE_cut) continue;
+    if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
+    if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
+    */
+    
+    // Cuts used in the analysis
+    if (lagvalue_min_7C > chi2_cut) continue;
     if (angle_pi0gam12 > angle_cut) continue;
     if (betapi0 > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
     if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
-    if (beta_3pi < 0.23 || beta_3pi > 0.28) continue; // suppress missing MC a1+pi
-    	
+    
+    if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
+    if (beta_3pi < beta_3pi_min || beta_3pi > beta_3pi_max) continue; // suppress missing MC a1+pi
+    
     // Fill only the tree(s) corresponding to the current sample type
     if (data_type == "exp") {
       TTList[0]->Fill();   // data tree

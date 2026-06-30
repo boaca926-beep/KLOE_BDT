@@ -1,8 +1,8 @@
 #!/bin/bash
 
 compr=../header/compr.h
+data_type=kloe_raw
 sample_type=chain
-data_type=kloe
 main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
@@ -142,7 +142,7 @@ BINS=(100)
 #UNIT="[MeV]"
 #XMIN=-10
 #XMAX=10
-#BINS=200
+#BINS=100
 
 
 ##################################################################
