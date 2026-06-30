@@ -88,18 +88,18 @@ if __name__ == '__main__':
     input_data_dir = DATA_DIR
     phys_map = joblib.load(os.path.join(input_data_dir, f'phys_map.pkl'))
     
-    print(phys_map)
+    #print(phys_map)
 
     ## Load dataset
     phys_ch = ['TCOMB', 'combined']
     br_nm = phys_ch[0]
     info = phys_map.get(br_nm, "")
-    print(info)
+    #print(info)
     br_title = info['br_title']
 
     X_val, y_val, all_df = load_data(br_nm, input_data_dir)  # FIXED: Added parameters
     model = joblib.load(os.path.join(MODEL_DIR, f'pi0_classifier_model_{br_nm}.pkl'))
-    print(f"Loading model from: {model}")
+    #print(f"Loading model from: {model}")
     
     plot_dir = PLOT_VAL_DIR
     import shutil

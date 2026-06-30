@@ -194,9 +194,16 @@ if __name__ == '__main__':
     
     f_nm = args.input
 
-    # Create output directory
+    # Create output directory - CLEAR EVERY TIME
     data_dir = args.output_dir
-    os.makedirs(data_dir, exist_ok=True)
+    import shutil
+    
+    if os.path.exists(data_dir):
+        print(f"🧹 Clearing existing directory: {data_dir}")
+        shutil.rmtree(data_dir)  # Delete the folder and all its contents
+    
+    os.makedirs(data_dir, exist_ok=True)  # Create a fresh empty folder
+    print(f"✅ Fresh directory created: {data_dir}")
 
     ## Loop over branches and create phys_map dynamically
     try:
@@ -359,7 +366,14 @@ if __name__ == '__main__':
                     continue
                 
                 all_df_train, all_df_val, all_df_test, X_train, y_train, X_val, y_val, X_test, y_test, pair_train, pair_val, pair_test = data_splitting(all_df)
-                
+
+                # ========== CRITICAL FIX: Add channel prefix to splits ==========
+                # This ensures event IDs are unique across channels BEFORE deduplication
+                all_df_train['event'] = f"{data_nm}_" + all_df_train['event'].astype(str)
+                all_df_val['event'] = f"{data_nm}_" + all_df_val['event'].astype(str)
+                all_df_test['event'] = f"{data_nm}_" + all_df_test['event'].astype(str)
+                # ================================================================
+
                 df_list.append(all_df)
                 df_train_list.append(all_df_train)
                 df_val_list.append(all_df_val)
@@ -421,10 +435,9 @@ if __name__ == '__main__':
     if df_list:
         print(f"\nCombining {len(df_list)} channels ...")
         
-        for i, (df, (data_type, info)) in enumerate(zip(df_list, list(phys_map.items())[:len(df_list)])):
-            channel_name = data_type.split(';')[0]
-            df['event'] = f"{channel_name}_" + df['event'].astype(str)
-            print(f"    Updated event IDs for {channel_name}")
+        # Note: The full dataset (df_list) already has prefixes added inside the loop
+        # We do NOT add prefixes again here, as they were added in the loop above.
+        # The loop above handles prefixes for both full and split DataFrames.
 
         df_comb = pd.concat(df_list, ignore_index=True)
         print(f"Raw combined shape: {df_comb.shape}")
@@ -436,11 +449,19 @@ if __name__ == '__main__':
 
         if df_train_list:
             print(f"\nCombining training splits from {len(df_train_list)} channels...")
+            # ========== DEBUG: Show components ==========
+            print("🔍 Debug: Training components before concat:")
+            for i, df in enumerate(df_train_list):
+                print(f"  df_train_list[{i}]: {len(df)} events, unique: {df['event'].nunique()}")
+            # ============================================
             all_df_train_comb = pd.concat(df_train_list, ignore_index=True)
-            # ========== FIXED: Removed redundant shuffle ==========
-            # all_df_train_comb = all_df_train_comb.sample(frac=1, random_state=42).reset_index(drop=True)
-            # =====================================================
-            print(f"Combined training events: {len(all_df_train_comb)}")
+            print(f"Raw concat: {len(all_df_train_comb)} events")
+            # ========== FIX: Deduplicate by event ID ==========
+            all_df_train_comb = all_df_train_comb.drop_duplicates(subset=['event'], keep='first')
+            print(f"After dedup: {len(all_df_train_comb)} events")
+            # ===================================================
+            # Removed redundant shuffle
+            print(f"Combined training events (final): {len(all_df_train_comb)}")
 
             if pair_train_list:
                 pair_train_comb = pd.concat(pair_train_list, ignore_index=True)
@@ -459,18 +480,26 @@ if __name__ == '__main__':
                 joblib.dump(y_train_comb, f'{data_dir}/y_train_TCOMB.pkl', compress=3)
 
             total_train = sum(len(df) for df in df_train_list)
-            print(f"Training events:   {total_train}")
+            print(f"Training events (sum of parts): {total_train}")
             if X_train_list and y_train_list:
                 print(f"  Training pairs: {sum(len(pairs) for pairs in pair_train_list) if pair_train_list else 0}")
                 print(f"  X_train components: {len(X_train_list)}")
             
         if df_val_list:
             print(f"\nCombining validation splits from {len(df_val_list)} channels...")
+            # ========== DEBUG: Show components ==========
+            print("🔍 Debug: Validation components before concat:")
+            for i, df in enumerate(df_val_list):
+                print(f"  df_val_list[{i}]: {len(df)} events, unique: {df['event'].nunique()}")
+            # ============================================
             all_df_val_comb = pd.concat(df_val_list, ignore_index=True)
-            # ========== FIXED: Removed redundant shuffle ==========
-            # all_df_val_comb = all_df_val_comb.sample(frac=1, random_state=42).reset_index(drop=True)
-            # =====================================================
-            print(f"Combined validation events: {len(all_df_val_comb)}")
+            print(f"Raw concat: {len(all_df_val_comb)} events")
+            # ========== FIX: Deduplicate by event ID ==========
+            all_df_val_comb = all_df_val_comb.drop_duplicates(subset=['event'], keep='first')
+            print(f"After dedup: {len(all_df_val_comb)} events")
+            # ===================================================
+            # Removed redundant shuffle
+            print(f"Combined validation events (final): {len(all_df_val_comb)}")
 
             if pair_val_list:
                 pair_val_comb = pd.concat(pair_val_list, ignore_index=True)
@@ -491,18 +520,26 @@ if __name__ == '__main__':
                 joblib.dump(y_val_comb, f'{data_dir}/y_val_TCOMB.pkl', compress=3)
             
             total_val = sum(len(df) for df in df_val_list)
-            print(f"Validation events: {total_val}")
+            print(f"Validation events (sum of parts): {total_val}")
             if X_val_list and y_val_list:
                 print(f"  Validation pairs: {sum(len(pairs) for pairs in pair_val_list) if pair_val_list else 0}")
                 print(f"  X_val components: {len(X_val_list)}")
         
         if df_test_list:
             print(f"\nCombining test splits from {len(df_test_list)} channels...")
+            # ========== DEBUG: Show components ==========
+            print("🔍 Debug: Test components before concat:")
+            for i, df in enumerate(df_test_list):
+                print(f"  df_test_list[{i}]: {len(df)} events, unique: {df['event'].nunique()}")
+            # ============================================
             all_df_test_comb = pd.concat(df_test_list, ignore_index=True)
-            # ========== FIXED: Removed redundant shuffle ==========
-            # all_df_test_comb = all_df_test_comb.sample(frac=1, random_state=42).reset_index(drop=True)
-            # =====================================================
-            print(f"Combined test events: {len(all_df_test_comb)}")
+            print(f"Raw concat: {len(all_df_test_comb)} events")
+            # ========== FIX: Deduplicate by event ID ==========
+            all_df_test_comb = all_df_test_comb.drop_duplicates(subset=['event'], keep='first')
+            print(f"After dedup: {len(all_df_test_comb)} events")
+            # ===================================================
+            # Removed redundant shuffle
+            print(f"Combined test events (final): {len(all_df_test_comb)}")
 
             if pair_test_list:
                 pair_test_comb = pd.concat(pair_test_list, ignore_index=True)
@@ -523,7 +560,7 @@ if __name__ == '__main__':
                 joblib.dump(y_test_comb, f'{data_dir}/y_test_TCOMB.pkl', compress=3)
 
             total_test = sum(len(df) for df in df_test_list)
-            print(f"Test events:       {total_test}")
+            print(f"Test events (sum of parts): {total_test}")
             if X_test_list and y_test_list:
                 print(f"  Test pairs: {sum(len(pairs) for pairs in pair_test_list) if pair_test_list else 0}")
                 print(f"  X_test components: {len(X_test_list)}")
