@@ -34,10 +34,11 @@ uv run main_initialize_kloe_opti.py \
     --chunk-size 50000 \
     --output-dir /home/kloe/Desktop/KLOE_BDT/dataset_bdt
 # alternative input data at: /home/kloe/Desktop/input_kloe_TDATA_chain/cut/tree_pre.root (make sure cuts are removed)
+# /home/kloe/Desktop/KLOE_BDT/dataset_root/tree_pre.root input_kloe.sh; only chi2 < 100 cut (increase background topology)
 
 uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/input_kloe_TDATA_chain/cut/tree_pre.root --max-events 1000
 
-uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/input_kloe_TDATA_chain/cut/tree_pre.root --chunk-size 50000 --output-dir /home/bo/Desktop/KLOE_BDT/dataset_bdt
+uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/KLOE_BDT/dataset_root/tree_pre.root --chunk-size 50000 --output-dir /home/bo/Desktop/KLOE_BDT/dataset_bdt
 """
 
 # ========== ADDED: Cut constants (matching C++ header_bdt/cut_para.h) ==========
@@ -428,13 +429,17 @@ if __name__ == '__main__':
         df_comb = pd.concat(df_list, ignore_index=True)
         print(f"Raw combined shape: {df_comb.shape}")
 
-        df_comb = df_comb.sample(frac=1, random_state=42).reset_index(drop=True)
-        print(f"Shuffled combined shape: {df_comb.shape}")
+        # ========== FIXED: Removed redundant shuffle ==========
+        # df_comb = df_comb.sample(frac=1, random_state=42).reset_index(drop=True)
+        # =====================================================
+        print(f"Combined shape (preserving event order): {df_comb.shape}")
 
         if df_train_list:
             print(f"\nCombining training splits from {len(df_train_list)} channels...")
             all_df_train_comb = pd.concat(df_train_list, ignore_index=True)
-            all_df_train_comb = all_df_train_comb.sample(frac=1, random_state=42).reset_index(drop=True)
+            # ========== FIXED: Removed redundant shuffle ==========
+            # all_df_train_comb = all_df_train_comb.sample(frac=1, random_state=42).reset_index(drop=True)
+            # =====================================================
             print(f"Combined training events: {len(all_df_train_comb)}")
 
             if pair_train_list:
@@ -462,7 +467,9 @@ if __name__ == '__main__':
         if df_val_list:
             print(f"\nCombining validation splits from {len(df_val_list)} channels...")
             all_df_val_comb = pd.concat(df_val_list, ignore_index=True)
-            all_df_val_comb = all_df_val_comb.sample(frac=1, random_state=42).reset_index(drop=True)
+            # ========== FIXED: Removed redundant shuffle ==========
+            # all_df_val_comb = all_df_val_comb.sample(frac=1, random_state=42).reset_index(drop=True)
+            # =====================================================
             print(f"Combined validation events: {len(all_df_val_comb)}")
 
             if pair_val_list:
@@ -492,7 +499,9 @@ if __name__ == '__main__':
         if df_test_list:
             print(f"\nCombining test splits from {len(df_test_list)} channels...")
             all_df_test_comb = pd.concat(df_test_list, ignore_index=True)
-            all_df_test_comb = all_df_test_comb.sample(frac=1, random_state=42).reset_index(drop=True)
+            # ========== FIXED: Removed redundant shuffle ==========
+            # all_df_test_comb = all_df_test_comb.sample(frac=1, random_state=42).reset_index(drop=True)
+            # =====================================================
             print(f"Combined test events: {len(all_df_test_comb)}")
 
             if pair_test_list:
