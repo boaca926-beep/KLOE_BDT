@@ -39,6 +39,7 @@ uv run main_initialize_kloe_opti.py \
 uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/input_kloe_TDATA_chain/cut/tree_pre.root --max-events 1000
 
 uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/KLOE_BDT/dataset_root/tree_pre.root --chunk-size 50000 --output-dir /home/bo/Desktop/KLOE_BDT/dataset_bdt
+uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/input_kloe_raw_TDATA_chain/cut/tree_pre.root --chunk-size 50000 --output-dir /home/bo/Desktop/KLOE_BDT/dataset_bdt
 """
 
 # ========== ADDED: Cut constants (matching C++ header_bdt/cut_para.h) ==========
