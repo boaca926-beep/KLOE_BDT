@@ -1,7 +1,7 @@
 #!/bin/bash
 
 compr=../header/compr.h
-data_type=kloe_raw
+data_type=kloe_scaled
 sample_type=chain
 main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
@@ -54,7 +54,7 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("IM3pi_7C")
+VAR_NM=("m3pi") # IM3pi_7C (raw); m3pi (scaled or tuned)
 VAR_SYMB=("M_{3#pi}")
 UNIT=("[MeV\/c^{2}]")
 

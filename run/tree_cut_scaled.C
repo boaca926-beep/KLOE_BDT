@@ -3,7 +3,7 @@
 #include "../header/cut_para.h"
 #include "../header/method.h"
 #include "../header/massbias.h"   // for energy_shift
-#include "../header/tuning_para.h"     // optional, but kep
+#include "../header/energy_shift_scaled_sum.h"     // optional, but kep
 
 #include <TStopwatch.h>
 

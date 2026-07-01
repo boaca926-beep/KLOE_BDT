@@ -89,7 +89,8 @@ void fillHist() {
 
       tree_tmp -> GetEntry(irow);
       
-      m3pi = tree_tmp -> GetLeaf("Br_IM3pi_7C") -> GetValue(0);
+      //m3pi = tree_tmp -> GetLeaf("Br_IM3pi_7C") -> GetValue(0);
+      m3pi = tree_tmp -> GetLeaf("Br_m3pi") -> GetValue(0);
       m3pi_true = tree_tmp -> GetLeaf("Br_IM3pi_true") -> GetValue(0);
 
       Eisr = tree_tmp -> GetLeaf("Br_Eisr") -> GetValue(0);

@@ -2,11 +2,11 @@
 
 sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
-pull_type="kloe_raw" #raw: no tuning; scaled: pi0 photon energy scale; tuning; energy scale + pull tuning
 exp_type=TDATA # DATA
+tuning_type="scaled" #raw: no tuning; scaled: pi0 photon energy scale; tuning; energy scale + pull tuning
 gsf=1 # DATA
 
-result_path=../../input_${pull_type}_${exp_type}_${sample_size}
+result_path=../../input_kloe_${tuning_type}_${exp_type}_${sample_size}
 #result_path=/media/bo/Analysis_Disk/
 
 ## Initialize the normial conditions
@@ -87,6 +87,7 @@ gen_path=${result_path}/gen/
 hist_path=${result_path}/hist/
 sfw2d_path=${result_path}/sfw2d/
 sfw1d_path=${result_path}/sfw1d/
+massbias_path=${result_path}/massbias/
 omega_path=${result_path}/omega_fit/
 log_path=${result_path}/log/
 
@@ -120,6 +121,7 @@ echo -e 'const TString outputSfw1D = "";' >> $path_header
 echo -e 'const TString outputOmega = "";' >> $path_header
 echo -e 'const TString data_type = "";' >> $path_header
 echo -e 'const TString exp_type = "'$exp_type'";' >> $path_header
+echo -e 'const TString tuning_type = "'$tuning_type'";' >> $path_header
 echo -e "double gsf = $gsf;" >> $path_header
 
 sed -i 's|\(const TString sig_path =\)\(.*\)|\1 "'"${input_path}"'";|' "$path_header"
@@ -130,7 +132,10 @@ sed -i 's|\(const TString outputSfw2D =\)\(.*\)|\1 "'"${sfw2d_path}"'";|' "$path
 sfw2d_script=sfw2d_script.C
 sed -i 's|\(const TString outputSfw1D =\)\(.*\)|\1 "'"${sfw1d_path}"'";|' "$path_header"
 sfw1d_script=sfw1d_script.C
+
 sed -i 's|\(const TString outputOmega =\)\(.*\)|\1 "'"${omega_path}"'";|' "$path_header"
+omega_fit_script=omega_fit_script.C
+
 
 log_input=${log_path}log_input.txt
 #echo "" > ${log_input}
@@ -183,6 +188,7 @@ const TString outputSfw1D = "${sfw1d_path}";
 const TString outputOmega = "${omega_path}";
 const TString data_type = "${data_type}";
 const TString exp_type = "${exp_type}";
+const TString tuning_type = "${tuning_type}";
 double gsf = ${gsf};
 EOF
 
@@ -205,11 +211,12 @@ EOF
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script
     echo "void tree_cut_script() {" >> $tree_cut_script
-    echo 'gROOT->ProcessLine(".L ../run/tree_cut.C");' >> $tree_cut_script
-    echo 'gROOT->ProcessLine("tree_cut()");' >> $tree_cut_script
+    
+    #echo 'gROOT->ProcessLine(".L ../run/tree_cut.C");' >> $tree_cut_script
+    #echo 'gROOT->ProcessLine("tree_cut()");' >> $tree_cut_script
 
-    #echo 'gROOT->ProcessLine(".L ../run/tree_cut_scaled.C");' >> $tree_cut_script
-    #echo 'gROOT->ProcessLine("tree_cut_scaled()");' >> $tree_cut_script
+    echo "gROOT->ProcessLine(\".L ../run/tree_cut_${tuning_type}.C\");" >> $tree_cut_script
+    echo "gROOT->ProcessLine(\"tree_cut_${tuning_type}()\");" >> $tree_cut_script
     echo '}' >> $tree_cut_script
     root -l -n -q -b $tree_cut_script >> ${log_cut}
 done
@@ -256,8 +263,8 @@ root -l -n -q -b $sfw1d_script >> ${log_sfw1d}
 #ls ${outputSfw1D}
 echo "MC signal tuning!"
 
+
 ## Omega parameters
-omega_fit_script=omega_fit_script.C
 echo '#include <iostream>' > $omega_fit_script
 echo "void omega_fit_script() {" >> $omega_fit_script
 echo 'gROOT->ProcessLine(".L ../run/omega_fit.C");' >> $omega_fit_script
