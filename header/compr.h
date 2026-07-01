@@ -1,9 +1,9 @@
 const TString tree_file_nm = "/home/bo/Desktop/input_kloe_scaled_TDATA_chain/cut/tree_pre.root";
 const TString outputSfw2D = "/home/bo/Desktop/input_kloe_scaled_TDATA_chain/sfw2d/";
-const TString var_nm = "IM3pi_7C";
+const TString var_nm = "m3pi";
 const TString unit = "[MeV/c^{2}]";
 const TString var_symb = "M_{3#pi}";
-const TString out_dir = "../output_IM3pi_7C_kloe_scaled";
+const TString out_dir = "../output_m3pi_kloe_scaled";
 
 const int binsize = 100;
 const double var_min = 760;

@@ -3,7 +3,7 @@
 #include "../header_plot/plot.h"
 #include "../header/path.h"   // for outputHist, tuning_type
 
-const TString tree_file_nm = outputHist + "hist.root";
+const TString tree_file_nm = "../output_m3pi_kloe_scaled/hist_m3pi.root";
 const TString out_dir = "../massBias_" + tuning_type;
 
 const TString var_nm = "IM3pi_7C";
@@ -42,37 +42,46 @@ int massBias() {
 
   checkFile(tree_file); // optional, shows contents
 
-  // ---- Get the TList with cross-section histograms ----
-  TList *list_crx = (TList*)tree_file->Get("HIM3pi_crx");
-  if (!list_crx) {
-    cerr << "ERROR: TList HIM3pi_crx not found!" << endl;
-    tree_file->Close();
-    return 1;
-  }
-
   // ---- Retrieve raw data and signal histograms ----
-  TH1D *hist_data = (TH1D*)list_crx->FindObject("h1d_IM3pi_TDATA_CRX");
-  TH1D *hist_signal   = (TH1D*)list_crx->FindObject("h1d_IM3pi_TISR3PI_SIG_CRX");
-
-  // ---- Ready for background subtraction
-  
+  TH1D *hist_data = (TH1D*)tree_file->Get("hist_data");
+  TH1D *hist_signal = (TH1D*)tree_file->Get("hist_isr3pi_sc");
+  TH1D *hist_eeg = (TH1D*)tree_file->Get("hist_eeg_sc");
+  TH1D *hist_omegapi = (TH1D*)tree_file->Get("hist_omegapi_sc");
+  TH1D *hist_etagam = (TH1D*)tree_file->Get("hist_etagam_sc");
+  TH1D *hist_ksl = (TH1D*)tree_file->Get("hist_ksl_sc");
+  TH1D *hist_mcrest = (TH1D*)tree_file->Get("hist_mcrest_sc");
+ 
   if (!hist_data) {
-    cerr << "ERROR: Data histogram h1d_IM3pi_TDATA_CRX not found!" << endl;
+    cerr << "ERROR: Data histogram not found!" << endl;
     tree_file->Close();
     return 1;
   }
-  if (!hist_signal) {
-    cerr << "ERROR: Signal histogram h1d_IM3pi_TISR3PI_SIG_CRX not found!" << endl;
+  if (!hist_signal || !hist_eeg || !hist_omegapi || !hist_etagam || !hist_ksl || !hist_mcrest) {
+    cerr << "ERROR: Signal histogram not found!" << endl;
     tree_file->Close();
     return 1;
   }
+
+  TH1D *hist_bkg_sum = (TH1D*)hist_data->Clone("hist_bkg_sum");
+  hist_bkg_sum->Reset();
+
+  // Add backgrounds with optional scaling (set to 1.0 for now)
+  if (hist_eeg) hist_bkg_sum->Add(hist_eeg, 1.0);
+  if (hist_omegapi) hist_bkg_sum->Add(hist_omegapi, 1.0);
+  if (hist_etagam) hist_bkg_sum->Add(hist_etagam, 1.0);
+  if (hist_ksl) hist_bkg_sum->Add(hist_ksl, 1.0);
+  if (hist_mcrest) hist_bkg_sum->Add(hist_mcrest, 1.0);
+
+  // ---- Subtract backgrounds from data ----
+  TH1D *hist_data_sub = (TH1D*)hist_data->Clone("hist_data_sub");
+  hist_data_sub->Add(hist_bkg_sum, -1.0);
   
   // ------------------------------------------------------------------
   // * BW fit to determine 3pi mass peak position, mass bias [MeV/c^{2}]
   // ------------------------------------------------------------------
     
   const int nb_mass = 2;
-  TH1D *hMassList[nb_mass] = {hist_signal, hist_data};
+  TH1D *hMassList[nb_mass] = {hist_signal, hist_data_sub};
   TString massNameList[nb_mass] = {"MC", "Data"};
   int massColor[nb_mass] = {kRed, kRed};
   FitResult massResults[nb_mass];
@@ -159,7 +168,7 @@ int massBias() {
     leg_mass->Draw();
 
     c_mass->Update();
-    c_mass->SaveAs(out_dir + "/mass_" + massNameList[i] + ".pdf");
+    c_mass->SaveAs(out_dir + "/mass_fit_" + massNameList[i] + ".pdf");
     delete c_mass;
   }
 
@@ -186,8 +195,54 @@ int massBias() {
   myfile << "const double energy_shift = " << mass_bias << ";\n";
   myfile.close();
 
+  // ---- Optional: Data/MC comparison plot with background‑subtracted data ----
+  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Background Subtracted)", 1400, 900);
+  c1->SetBottomMargin(0.15);
+  c1->SetLeftMargin(0.15);
+
+  hist_data->SetMarkerStyle(20);
+  hist_data->SetMarkerSize(0.6);
+  hist_data->GetYaxis()->SetTitle("Events");
+  hist_data->GetYaxis()->SetRangeUser(0.01, hist_data->GetMaximum() * 1.2);
+  hist_data->GetYaxis()->CenterTitle();
+  hist_data->GetYaxis()->SetTitleSize(0.05);
+  hist_data->GetYaxis()->SetTitleOffset(1.4);
+  hist_data->GetYaxis()->SetLabelSize(0.04);
+  hist_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
+  hist_data->GetXaxis()->SetTitleSize(0.05);
+  hist_data->GetXaxis()->SetTitleOffset(1.2);
+  hist_data->GetXaxis()->SetLabelSize(0.04);
+  hist_data->GetXaxis()->CenterTitle();
+
+  hist_data->Draw("E1");
+  hist_signal->Draw("HIST SAME");
+
+  TPaveText *pt = new TPaveText(0.55, 0.75, 0.85, 0.82, "NDC");
+  pt->SetFillColor(0);
+  pt->SetBorderSize(0);
+  pt->SetTextAlign(12);
+  pt->SetTextSize(0.04);
+  pt->SetTextFont(42);
+  pt->AddText(Form("Mass bias = %.2f [MeV/c^{2}]", TMath::Abs(mass_bias)));
+  pt->Draw();
+
+  TLegend *leg = new TLegend(0.15, 0.6, 0.6, 0.9);
+  leg->SetTextFont(132);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
+  leg->SetTextSize(0.04);
+  leg->AddEntry(hist_data, "Data (bkg sub)", "lep");
+  leg->AddEntry(hist_signal, "Signal MC", "l");
+  leg->Draw();
+
+  c1->SaveAs(out_dir + "/data_mc_comparison_bkg_sub.pdf");
+  cout << "Comparison plot saved to: " << out_dir << "/data_mc_comparison_bkg_sub.pdf" << endl;
+
+  delete c1;
+  delete leg;
+  delete pt;
   tree_file->Close();
   delete tree_file;
-
+  
   return 0;
 }
