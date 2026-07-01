@@ -3,7 +3,7 @@
 #include "../header_plot/plot.h"
 #include "../header/path.h"   // for outputHist, tuning_type
 
-const TString tree_file_nm = "../output_m3pi_kloe_scaled/hist_m3pi.root";
+const TString tree_file_nm = "../output_kloe_" + tuning_type + "_m3pi/hist_m3pi.root";
 const TString out_dir = "../massBias_" + tuning_type;
 
 const TString var_nm = "IM3pi_7C";
@@ -217,11 +217,11 @@ int massBias() {
   hist_data->Draw("E1");
   hist_signal->Draw("HIST SAME");
 
-  TPaveText *pt = new TPaveText(0.55, 0.75, 0.85, 0.82, "NDC");
+  TPaveText *pt = new TPaveText(0.65, 0.8, 0.85, 0.82, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
-  pt->SetTextSize(0.04);
+  pt->SetTextSize(0.03);
   pt->SetTextFont(42);
   pt->AddText(Form("Mass bias = %.2f [MeV/c^{2}]", TMath::Abs(mass_bias)));
   pt->Draw();

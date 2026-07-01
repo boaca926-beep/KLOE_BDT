@@ -1,9 +1,9 @@
 #!/bin/bash
 
 compr=../header/compr.h
-data_type=kloe_scaled
+tuning_type=scaled
 sample_type=chain
-main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
+main_folder="/home/bo/Desktop/input_kloe_${tuning_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
 
@@ -154,7 +154,7 @@ BINS=(100)
 #XMAX=0.4
 #BINS=200
 
-output_folder="../output_"${VAR_NM[0]}"_"${data_type}
+output_folder="../output_kloe_${tuning_type}_${VAR_NM[0]}"
 
 #check output folder and update output files
 if [[ -d $output_folder ]]; then

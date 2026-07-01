@@ -300,9 +300,10 @@ int compr_kloe() {
   hist_ratio->GetYaxis()->SetNdivisions(505);
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");
-  
-  c1->SaveAs(out_dir + "/data_mc_comparison_" + var_nm + "_kloe.pdf");
-  cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << "_kloe.pdf" << endl;
+
+  const TString c1_nm = out_dir + "/data_mc_comparison_" + var_nm + "_kloe.pdf"; 
+  c1->SaveAs(c1_nm);
+  cout << "Scaled plot saved to: " << c1_nm << endl;
 
   
   delete c1;

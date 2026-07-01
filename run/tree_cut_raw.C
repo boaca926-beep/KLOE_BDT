@@ -5,7 +5,7 @@
 #include <TStopwatch.h>
 
 
-int tree_cut(){
+int tree_cut_raw(){
 
   TStopwatch timer;
   timer.Start();

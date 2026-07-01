@@ -3,7 +3,7 @@
 sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 exp_type=TDATA # DATA
-tuning_type="scaled" #raw: no tuning; scaled: pi0 photon energy scale; tuning; energy scale + pull tuning
+tuning_type="raw" #raw: no tuning; scaled: pi0 photon energy scale; tuning; energy scale + pull tuning
 gsf=1 # DATA
 
 result_path=../../input_kloe_${tuning_type}_${exp_type}_${sample_size}
@@ -212,9 +212,6 @@ EOF
     echo '#include <iostream>' > $tree_cut_script
     echo "void tree_cut_script() {" >> $tree_cut_script
     
-    #echo 'gROOT->ProcessLine(".L ../run/tree_cut.C");' >> $tree_cut_script
-    #echo 'gROOT->ProcessLine("tree_cut()");' >> $tree_cut_script
-
     echo "gROOT->ProcessLine(\".L ../run/tree_cut_${tuning_type}.C\");" >> $tree_cut_script
     echo "gROOT->ProcessLine(\"tree_cut_${tuning_type}()\");" >> $tree_cut_script
     echo '}' >> $tree_cut_script

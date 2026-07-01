@@ -257,7 +257,6 @@ void pull_tuning() {
   std::ofstream myfile;
   TString myfile_nm = "../header/tuning.h";
   myfile.open(myfile_nm.Data());
-  
   myfile << "const double bias_E12 = " << bias_E12 << ";\n"
 	 << "const double sigma_scale_E12 = " << sigma_scale_E12 << ";\n"
 	 << "const double bias_E3 = " << bias_E3 << ";\n"
