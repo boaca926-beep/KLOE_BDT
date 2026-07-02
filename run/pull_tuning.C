@@ -1,5 +1,6 @@
 // Normalized pulls of the photon final states distributions using KLOE raw data. E1 and E2 are the first and the second paried photon. E3 is the the unpaired photon. M(E1+E2) gives the reconstructed pi0 invaraint mass.
 // Determine 
+#include "../header/path.h"   // for outputHist, tuning_type
 
 void checkFile(TFile *f_input){
 
@@ -46,19 +47,25 @@ void pull_tuning() {
 
   gSystem->Exec("mkdir -p ../pull_tuning");
 
-  TFile *fin_E1 = new TFile("../output_pull_E1_kloe/hist_pull_E1.root");
+  const TString fin_E1_nm = "../output_kloe_" + tuning_type + "_pull_E1/hist_pull_E1.root";
+
+  TFile *fin_E1 = new TFile(fin_E1_nm);
   if (!fin_E1 || fin_E1->IsZombie()) {
-    std::cerr << "ERROR: cannot open output_pull_E1_kloe/hist_pull_E1.root" << std::endl;
+    std::cerr << "ERROR: cannot open " + fin_E1_nm << std::endl;
     return;
   }
 
-  TFile *fin_E2 = new TFile("../output_pull_E2_kloe/hist_pull_E2.root");
+  const TString fin_E2_nm = "../output_kloe_" + tuning_type + "_pull_E2/hist_pull_E2.root";
+
+  TFile *fin_E2 = new TFile(fin_E2_nm);
   if (!fin_E2 || fin_E2->IsZombie()) {
     std::cerr << "ERROR: cannot open output_pull_E2_kloe/hist_pull_E2.root" << std::endl;
     return;
   }
 
-  TFile *fin_E3 = new TFile("../output_pull_E3_kloe/hist_pull_E3.root");
+  const TString fin_E3_nm = "../output_kloe_" + tuning_type + "_pull_E3/hist_pull_E3.root";
+
+  TFile *fin_E3 = new TFile(fin_E3_nm);
   if (!fin_E3 || fin_E3->IsZombie()) {
     std::cerr << "ERROR: cannot open output_pull_E3_kloe/hist_pull_E3.root" << std::endl;
     return;
@@ -255,7 +262,7 @@ void pull_tuning() {
   double sigma_scale_E3 = results[2].sigma; // hE3_MC single sigma
 
   std::ofstream myfile;
-  TString myfile_nm = "../header/tuning.h";
+  TString myfile_nm = "../header/tuning_" + tuning_type + ".h";
   myfile.open(myfile_nm.Data());
   myfile << "const double bias_E12 = " << bias_E12 << ";\n"
 	 << "const double sigma_scale_E12 = " << sigma_scale_E12 << ";\n"

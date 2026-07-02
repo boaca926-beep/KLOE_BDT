@@ -178,7 +178,7 @@ int massBias() {
   std::cout << "========================================" << std::endl;
   for (int i = 0; i < nb_mass; i++) {
     if (hMassList[i]) {
-      std::cout << Form("%-10s: mean = %6.3f +/- %6.3f, gamma/2 = %6.3f +/- %6.3f, χ²/ndf = %.3f",
+      std::cout << Form("%-10s: mean = %6.3f #pm %6.3f, gamma/2 = %6.3f #pm %6.3f, χ²/ndf = %.3f",
                         massResults[i].name.Data(),
                         massResults[i].mean, massResults[i].mean_err,
                         massResults[i].sigma, massResults[i].sigma_err,
@@ -186,13 +186,18 @@ int massBias() {
     }
   }
   double mass_bias = -(massResults[0].mean - massResults[1].mean);
-  cout << "mass bias = " << mass_bias << endl;
+  double mass_bias_err = TMath::Sqrt(TMath::Power(massResults[0].mean_err, 2) + TMath::Power(massResults[1].mean_err, 2));
+  double mass_bias_Z = TMath::Abs(mass_bias) / mass_bias_err; // significance Z value
+  
+  cout << "mass bias = " << mass_bias << "+/-" << mass_bias_err << endl;
 
   // ---- Write residual bias ----
   std::ofstream myfile;
   TString myfile_nm = "../header/massbias_" + tuning_type + ".h";
   myfile.open(myfile_nm.Data());
-  myfile << "const double energy_shift = " << mass_bias << ";\n";
+  myfile << "const double energy_shift = " << mass_bias / 2.0 << ";\n";
+  myfile << "const double energy_shift_err = " << mass_bias_err / 2.0 << ";\n";
+  myfile << "const double mass_bias_Z = " << mass_bias_Z << ";\n";
   myfile.close();
 
   // ---- Optional: Data/MC comparison plot with background‑subtracted data ----
@@ -200,30 +205,30 @@ int massBias() {
   c1->SetBottomMargin(0.15);
   c1->SetLeftMargin(0.15);
 
-  hist_data->SetMarkerStyle(20);
-  hist_data->SetMarkerSize(0.6);
-  hist_data->GetYaxis()->SetTitle("Events");
-  hist_data->GetYaxis()->SetRangeUser(0.01, hist_data->GetMaximum() * 1.2);
-  hist_data->GetYaxis()->CenterTitle();
-  hist_data->GetYaxis()->SetTitleSize(0.05);
-  hist_data->GetYaxis()->SetTitleOffset(1.4);
-  hist_data->GetYaxis()->SetLabelSize(0.04);
-  hist_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
-  hist_data->GetXaxis()->SetTitleSize(0.05);
-  hist_data->GetXaxis()->SetTitleOffset(1.2);
-  hist_data->GetXaxis()->SetLabelSize(0.04);
-  hist_data->GetXaxis()->CenterTitle();
+  hist_data_sub->SetMarkerStyle(20);
+  hist_data_sub->SetMarkerSize(0.6);
+  hist_data_sub->GetYaxis()->SetTitle("Events");
+  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 1.2);
+  hist_data_sub->GetYaxis()->CenterTitle();
+  hist_data_sub->GetYaxis()->SetTitleSize(0.05);
+  hist_data_sub->GetYaxis()->SetTitleOffset(1.4);
+  hist_data_sub->GetYaxis()->SetLabelSize(0.04);
+  hist_data_sub->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
+  hist_data_sub->GetXaxis()->SetTitleSize(0.05);
+  hist_data_sub->GetXaxis()->SetTitleOffset(1.2);
+  hist_data_sub->GetXaxis()->SetLabelSize(0.04);
+  hist_data_sub->GetXaxis()->CenterTitle();
 
-  hist_data->Draw("E1");
+  hist_data_sub->Draw("E1");
   hist_signal->Draw("HIST SAME");
 
-  TPaveText *pt = new TPaveText(0.65, 0.8, 0.85, 0.82, "NDC");
+  TPaveText *pt = new TPaveText(0.6, 0.85, 0.85, 0.87, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
   pt->SetTextSize(0.03);
   pt->SetTextFont(42);
-  pt->AddText(Form("Mass bias = %.2f [MeV/c^{2}]", TMath::Abs(mass_bias)));
+  pt->AddText(Form("Mass bias = %.2f #pm %.2f [MeV/c^{2}]", mass_bias, mass_bias_err));
   pt->Draw();
 
   TLegend *leg = new TLegend(0.15, 0.6, 0.6, 0.9);
@@ -231,7 +236,7 @@ int massBias() {
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
-  leg->AddEntry(hist_data, "Data (bkg sub)", "lep");
+  leg->AddEntry(hist_data_sub, "Data (bkg sub)", "lep");
   leg->AddEntry(hist_signal, "Signal MC", "l");
   leg->Draw();
 

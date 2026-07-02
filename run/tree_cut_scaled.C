@@ -3,7 +3,7 @@
 #include "../header/cut_para.h"
 #include "../header/method.h"
 #include "../header/massbias.h"   // for energy_shift
-#include "../header/energy_shift_scaled_sum.h"     // optional, but kep
+#include "../header/energy_shift_scaled_sum.h" 
 
 #include <TStopwatch.h>
 
@@ -166,6 +166,7 @@ int tree_cut_scaled() {
   double alpha_delta = energy_shift_total / 353.36;   // Sum of all iterations
   const double MASS_SCALE_PI0 = 1 + alpha_delta;
 
+  cout << "energy_shift_total = " << energy_shift_total << endl;
   cout << MASS_SCALE_PI0 << ", " << alpha_delta << endl;
   
   // ------------------------------------------------------------------
@@ -254,10 +255,12 @@ int tree_cut_scaled() {
     bkg_indx = ALLCHAIN_CUT->GetLeaf("Br_bkg_indx")->GetValue(0);
     recon_indx = ALLCHAIN_CUT->GetLeaf("Br_recon_indx")->GetValue(0);
 
-    // ---- Apply scaling to π⁰ photon energies ----
-    pho_E1 *= MASS_SCALE_PI0;
-    pho_E2 *= MASS_SCALE_PI0;
-
+    // ---- Apply scaling to π⁰ photon energies (only for signal events)----
+    if (data_type == "sig") {
+      pho_E1 *= MASS_SCALE_PI0;
+      pho_E2 *= MASS_SCALE_PI0;
+    }
+    
     // ---- Build four‑vectors with scaled energies ----
     pi0gam1.SetPxPyPzE(pho_px1, pho_py1, pho_pz1, pho_E1);
     pi0gam2.SetPxPyPzE(pho_px2, pho_py2, pho_pz2, pho_E2);

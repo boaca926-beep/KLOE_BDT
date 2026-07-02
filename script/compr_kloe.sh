@@ -1,9 +1,9 @@
 #!/bin/bash
 
 compr=../header/compr.h
-tuning_type=scaled
-sample_type=chain
-main_folder="/home/bo/Desktop/input_kloe_${tuning_type}_TDATA_${sample_type}"
+sample_size=norm
+tuning_type=raw #scaled, raw
+main_folder="/home/bo/Desktop/input_kloe_${tuning_type}_TDATA_${sample_size}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
 
@@ -54,13 +54,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("m3pi") # IM3pi_7C (raw); m3pi (scaled or tuned)
-VAR_SYMB=("M_{3#pi}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m3pi") # IM3pi_7C (raw); m3pi (scaled or tuned)
+#VAR_SYMB=("M_{3#pi}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(760) #300 600 760 (analysis)
-XMAX=(800) #1020 1050 800 (analysis)
-BINS=(100)
+#XMIN=(760) #300 600 760 (analysis)
+#XMAX=(800) #1020 1050 800 (analysis)
+#BINS=(100)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -135,14 +135,14 @@ BINS=(100)
 #BINS=100
 
 ##################################################################
-#name_tmp="E1"
-#VAR_NM="pull_"${name_tmp}
-#VAR_SYMB="Pull "${name_tmp}
+name_tmp="E1"
+VAR_NM="pull_"${name_tmp}
+VAR_SYMB="Pull "${name_tmp}
 
-#UNIT="[MeV]"
-#XMIN=-10
-#XMAX=10
-#BINS=100
+UNIT="[MeV]"
+XMIN=-10
+XMAX=10
+BINS=100
 
 
 ##################################################################

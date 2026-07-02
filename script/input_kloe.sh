@@ -1,9 +1,9 @@
 #!/bin/bash
 
-sample_size=chain # norm; small; mini; chain
+sample_size=norm # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 exp_type=TDATA # DATA
-tuning_type="raw" #raw: no tuning; scaled: pi0 photon energy scale; tuning; energy scale + pull tuning
+tuning_type=scaled #raw: no tuning; scaled: pi0 photon energy scale; tuning; energy scale + pull tuning
 gsf=1 # DATA
 
 result_path=../../input_kloe_${tuning_type}_${exp_type}_${sample_size}
