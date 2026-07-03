@@ -76,7 +76,6 @@ void Z_plot() {
   leg->Draw();
 
   c1->SaveAs("Z_plot.pdf");
-  c1->SaveAs("Z_plot.png");
 
   std::cout << "\n=== Fit Results ===" << std::endl;
   std::cout << "Amplitude (Z0) = " << fit_exp->GetParameter(0) 
