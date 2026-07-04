@@ -159,12 +159,12 @@ int massBias() {
     }
     bw->Draw("same");
 
-    TLegend *leg_mass = new TLegend(0.2, 0.7, 0.65, 0.9);
+    TLegend *leg_mass = new TLegend(0.15, 0.75, 0.65, 0.9);
     leg_mass->SetFillStyle(0);
     leg_mass->SetBorderSize(0);
-    leg_mass->SetTextSize(0.035);
+    leg_mass->SetTextSize(0.03);
     leg_mass->AddEntry(h_mass_copy, Form("%s 3#pi mass", massNameList[i].Data()), "lep");
-    leg_mass->AddEntry(bw, Form("BW: M = %.2f, #Gamma/2 = %.2f", massResults[i].mean, massResults[i].sigma), "l");
+    leg_mass->AddEntry(bw, Form("BW: M = %.2f#pm%.2f [MeV/c^{2}], #Gamma/2 = %.2f [MeV]", massResults[i].mean, massResults[i].mean_err, massResults[i].sigma), "l");
     leg_mass->Draw();
 
     c_mass->Update();

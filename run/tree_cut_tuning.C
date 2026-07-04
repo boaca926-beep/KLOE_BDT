@@ -7,7 +7,7 @@
 
 #include <TStopwatch.h>
 
-int tree_cut_scaled() {
+int tree_cut_tuning() {
 
   TStopwatch timer;
   timer.Start();
@@ -253,10 +253,48 @@ int tree_cut_scaled() {
     bkg_indx = ALLCHAIN_CUT->GetLeaf("Br_bkg_indx")->GetValue(0);
     recon_indx = ALLCHAIN_CUT->GetLeaf("Br_recon_indx")->GetValue(0);
 
+    // ---- Apply pull tuning to pi0 photon energies (only for signal events) ----
+    if (data_type == "sig") {
+      // Photon 1
+      double e1_pull = (pho_E1 - bias_E12) / sigma_scale_E12;
+      double p1_pull = e1_pull;
+      double scale1 = (pho_E1 > 0) ? p1_pull / pho_E1 : 1.0;
+      pho_px1 *= scale1;
+      pho_py1 *= scale1;
+      pho_pz1 *= scale1;
+      pho_E1 = e1_pull;
+      
+      // Photon 2
+      double e2_pull = (pho_E2 - bias_E12) / sigma_scale_E12;
+      double p2_pull = e2_pull;
+      double scale2 = (pho_E2 > 0) ? p2_pull / pho_E2 : 1.0;
+      pho_px2 *= scale2;
+      pho_py2 *= scale2;
+      pho_pz2 *= scale2;
+      pho_E2 = e2_pull;
+
+      // ISR photon
+      double e3_pull = (pho_E3 - bias_E3) / sigma_scale_E3;
+      double p3_pull = e3_pull;
+      double scale3 = (pho_E3 > 0) ? p3_pull / pho_E3 : 1.0;
+      pho_px3 *= scale3;
+      pho_py3 *= scale3;
+      pho_pz3 *= scale3;
+      pho_E3 = e3_pull;
+    }
+
     // ---- Apply scaling to π⁰ photon energies (only for signal events)----
     if (data_type == "sig") {
+      // Apply multiplicative scale factor to photon energies and momenta
       pho_E1 *= MASS_SCALE_PI0;
+      pho_px1 *= MASS_SCALE_PI0;
+      pho_py1 *= MASS_SCALE_PI0;
+      pho_pz1 *= MASS_SCALE_PI0;
+      
       pho_E2 *= MASS_SCALE_PI0;
+      pho_px2 *= MASS_SCALE_PI0;
+      pho_py2 *= MASS_SCALE_PI0;
+      pho_pz2 *= MASS_SCALE_PI0;
     }
     
     // ---- Build four‑vectors with scaled energies ----

@@ -1,6 +1,5 @@
 // Normalized pulls of the photon final states distributions using KLOE raw data. E1 and E2 are the first and the second paried photon. E3 is the the unpaired photon. M(E1+E2) gives the reconstructed pi0 invaraint mass.
 // Determine 
-#include "../header/path.h"   // for outputHist, tuning_type
 
 void checkFile(TFile *f_input){
 
@@ -47,6 +46,8 @@ void pull_tuning() {
 
   gSystem->Exec("mkdir -p ../pull_tuning");
 
+  const TString tuning_type = "raw";
+  
   const TString fin_E1_nm = "../output_kloe_" + tuning_type + "_pull_E1/hist_pull_E1.root";
 
   TFile *fin_E1 = new TFile(fin_E1_nm);
@@ -254,13 +255,12 @@ void pull_tuning() {
                       results[i].chi2_ndf) << std::endl;
   }
 
-  // Use the single Gaussian parameters for MC only
-  double bias_E12 = results[0].mean;     // hE12_MC single mean
-  double sigma_scale_E12 = results[0].sigma; // hE12_MC single sigma
-
-  double bias_E3 = results[2].mean;      // hE3_MC single mean
-  double sigma_scale_E3 = results[2].sigma; // hE3_MC single sigma
-
+  // Use Data parameters (not MC)
+  double bias_E12 = results[1].mean;        // hE12_DATA mean
+  double sigma_scale_E12 = results[1].sigma; // hE12_DATA sigma
+  double bias_E3 = results[3].mean;         // hE3_DATA mean
+  double sigma_scale_E3 = results[3].sigma; // hE3_DATA sigma
+ 
   std::ofstream myfile;
   TString myfile_nm = "../header/tuning_" + tuning_type + ".h";
   myfile.open(myfile_nm.Data());

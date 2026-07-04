@@ -54,13 +54,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("m3pi") # IM3pi_7C (raw); m3pi (scaled or tuned)
-VAR_SYMB=("M_{3#pi}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m3pi") # IM3pi_7C (raw); m3pi (scaled or tuned)
+#VAR_SYMB=("M_{3#pi}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(760) #300 600 760 (analysis)
-XMAX=(800) #1020 1050 800 (analysis)
-BINS=(100)
+#XMIN=(760) #300 600 760 (analysis)
+#XMAX=(800) #1020 1050 800 (analysis)
+#BINS=(100)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -117,13 +117,13 @@ BINS=(100)
 #BINS=(150) #150, 550 
 
 ##################################################################
-#VAR_NM=("IM_pi0_7C") 
-#VAR_SYMB=("M_{#gamma#gamma}")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("IM_pi0_7C") 
+VAR_SYMB=("M_{#gamma#gamma}")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(100)
-#XMAX=(180)
-#BINS=(180)
+XMIN=(100)
+XMAX=(180)
+BINS=(180)
 
 ##################################################################
 #VAR_NM="ppIM"
