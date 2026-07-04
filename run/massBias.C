@@ -2,7 +2,7 @@
 #include "../header_method/method.h"
 #include "../header_plot/plot.h"
 //#include "../header/path.h"   // for outputHist, tuning_type
-const TString tuning_type = "raw";
+const TString tuning_type = "tuning";
 
 const TString tree_file_nm = "../output_kloe_" + tuning_type + "_m3pi/hist_m3pi.root";
 const TString out_dir = "../massBias_" + tuning_type;
@@ -240,7 +240,7 @@ int massBias() {
   pt->SetTextAlign(12);
   pt->SetTextSize(0.03);
   pt->SetTextFont(42);
-  pt->AddText(Form("Mass bias = %.2f #pm %.2f [MeV/c^{2}]", mass_bias, mass_bias_err));
+  pt->AddText(Form("Mass bias = %.2f #pm %.2f [MeV/c^{2}]", -1 * mass_bias, mass_bias_err));
   pt->Draw();
 
   TLegend *leg = new TLegend(0.15, 0.6, 0.6, 0.9);
