@@ -1,7 +1,8 @@
 // massBias.C – full code with background subtraction
 #include "../header_method/method.h"
 #include "../header_plot/plot.h"
-#include "../header/path.h"   // for outputHist, tuning_type
+//#include "../header/path.h"   // for outputHist, tuning_type
+const TString tuning_type = "raw";
 
 const TString tree_file_nm = "../output_kloe_" + tuning_type + "_m3pi/hist_m3pi.root";
 const TString out_dir = "../massBias_" + tuning_type;
@@ -86,6 +87,11 @@ int massBias() {
   int massColor[nb_mass] = {kRed, kRed};
   FitResult massResults[nb_mass];
 
+  std::cout << "MC signal entries: " << hist_signal->GetEntries() << std::endl;
+  std::cout << "MC signal mean: " << hist_signal->GetMean() << std::endl;
+  std::cout << "Data entries: " << hist_data_sub->GetEntries() << std::endl;
+  std::cout << "Data mean: " << hist_data_sub->GetMean() << std::endl;
+  
   for (int i = 0; i < nb_mass; i++) {
     TH1D *h_mass = hMassList[i];
     if (!h_mass) {
@@ -118,7 +124,7 @@ int massBias() {
     // Breit-Wigner fit
     TF1 *bw = new TF1(Form("bw_%s", massNameList[i].Data()), breitwigner, fit_min, fit_max, 3);
     bw->SetParameters(mass_peak * 4.0, mass_peak_pos, 4.0);
-    bw->SetParLimits(1, 780, 786);
+    bw->SetParLimits(1, 760., 800.);
     bw->SetParLimits(2, 0.5, 10.0);
     bw->SetLineColor(massColor[i]);
     bw->SetLineWidth(2);
@@ -178,7 +184,7 @@ int massBias() {
   std::cout << "========================================" << std::endl;
   for (int i = 0; i < nb_mass; i++) {
     if (hMassList[i]) {
-      std::cout << Form("%-10s: mean = %6.3f #pm %6.3f, gamma/2 = %6.3f #pm %6.3f, χ²/ndf = %.3f",
+      std::cout << Form("%-10s: mean = %6.3f +/-%6.3f, gamma/2 = %6.3f +/-%6.3f, χ²/ndf = %.3f",
                         massResults[i].name.Data(),
                         massResults[i].mean, massResults[i].mean_err,
                         massResults[i].sigma, massResults[i].sigma_err,
@@ -187,9 +193,14 @@ int massBias() {
   }
   double mass_bias = -(massResults[0].mean - massResults[1].mean);
   double mass_bias_err = TMath::Sqrt(TMath::Power(massResults[0].mean_err, 2) + TMath::Power(massResults[1].mean_err, 2));
-  double mass_bias_Z = TMath::Abs(mass_bias) / mass_bias_err; // significance Z value
   
-  cout << "mass bias = " << mass_bias << "+/-" << mass_bias_err << endl;
+  double width_bias = -(massResults[0].sigma - massResults[1].sigma);
+  double width_bias_err = TMath::Sqrt(TMath::Power(massResults[0].sigma_err, 2) + TMath::Power(massResults[1].sigma_err, 2));
+
+  double mass_bias_Z = TMath::Abs(mass_bias) / mass_bias_err; // significance Z value
+
+  cout << "mass bias = " << mass_bias << "+/-" << mass_bias_err << "\n"
+       << "width bias = " << width_bias << "+/-" << width_bias_err << "\n";
 
   // ---- Write residual bias ----
   std::ofstream myfile;
@@ -198,6 +209,7 @@ int massBias() {
   myfile << "const double energy_shift = " << mass_bias / 2.0 << ";\n";
   myfile << "const double energy_shift_err = " << mass_bias_err / 2.0 << ";\n";
   myfile << "const double mass_bias_Z = " << mass_bias_Z << ";\n";
+    
   myfile.close();
 
   // ---- Optional: Data/MC comparison plot with background‑subtracted data ----

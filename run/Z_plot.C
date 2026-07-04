@@ -89,4 +89,24 @@ void Z_plot() {
             << " +/- " << fit_exp->GetParError(0) << std::endl;
   std::cout << "Decay rate (k)  = " << fit_exp->GetParameter(1) 
             << " +/- " << fit_exp->GetParError(1) << std::endl;
+
+  // Calculate width Bias
+  const double width_data = 7.097;
+  const double width_data_err = 0.310;
+
+  const double width_mc_raw = 6.372;
+  const double width_mc_raw_err = 0.064;
+  
+  const double width_mc_tuning = 6.466;
+  const double width_mc_tuning_err = 0.061;
+
+  double width_bias_raw = width_mc_raw - width_data;
+  double width_bias_raw_err = TMath::Sqrt(TMath::Power(width_mc_raw_err, 2) + TMath::Power(width_data_err, 2));
+
+  double width_bias_tuning = width_mc_tuning - width_data;
+  double width_bias_tuning_err = TMath::Sqrt(TMath::Power(width_mc_tuning_err, 2) + TMath::Power(width_data_err, 2));
+
+  cout << "width_bias_raw = " << width_bias_raw << "+/-" << width_bias_raw_err << endl;
+  cout << "width_bias_tuning = " << width_bias_tuning << "+/-" << width_bias_tuning_err << endl;
+  
 }
