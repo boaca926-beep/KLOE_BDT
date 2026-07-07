@@ -150,20 +150,18 @@ void omega_fit_bdt() {
   };
 
   // Same color codes and line styles as correct_and_plot.C
-
   TH1D *h_eeg       = makeScaledHist("TEEG", eeg_sfw * 2., 6, 7);
   TH1D *h_isr3pi    = makeScaledHist("TISR3PI_SIG_PEAK", isr3pi_sfw, 4, 2);
   TH1D *h_nonReson  = makeScaledHist("TISR3PI_SIG_NON_RESON", nonReson_sfw, 2, 3);
   TH1D *h_omegapi   = makeScaledHist("TOMEGAPI", omegapi_sfw, 7, 5);
   TH1D *h_ksl       = makeScaledHist("TKSL", ksl_sfw, 28, 4);
 
+  // Save unnormalized signal for later use
   TH1D *h_isr3pi_unnorm = (TH1D*)h_isr3pi->Clone("h_isr3pi_unnorm");
   h_isr3pi_unnorm->SetLineWidth(2);
   h_isr3pi_unnorm->SetLineStyle(1);
   h_isr3pi_unnorm->SetLineColor(kBlue);
   h_isr3pi_unnorm->SetDirectory(0);
-
-  //h_isr3pi_unnorm->Draw();
   
   // MC Rest
   TH1D *h_mcrest = new TH1D("h_mcrest", "", nbins, low, high);
@@ -249,31 +247,119 @@ void omega_fit_bdt() {
   }
 
   // ------------------------------------------------------------------
-  // 5. Normalize templates to unit area
+  // 5. Reload original MC for correction (before normalization)
   // ------------------------------------------------------------------
-  double sig_int = h_isr3pi->Integral();
-  double bkg_int = h_nonReson->Integral();
-  if (sig_int > 0) h_isr3pi->Scale(1.0 / sig_int);
-  if (bkg_int > 0) h_nonReson->Scale(1.0 / bkg_int);
-  
-  // Set global pointers for the fit function
-  gSigTemplate = h_isr3pi;
-  gBkgTemplate = h_nonReson;
+  TH1D *h_isr3pi_orig = makeScaledHist("TISR3PI_SIG_PEAK", isr3pi_sfw);
+  if (!h_isr3pi_orig) {
+    std::cerr << "ERROR: Cannot reload ISR3pi for correction" << std::endl;
+    return;
+  }
+  h_isr3pi_orig->SetDirectory(0);
 
   // ------------------------------------------------------------------
-  // 6. Template fit - MINIMAL CHANGE: expanded fit range
+  // 6. Compute correction weights using Data/MC ratio (OPTION 1)
   // ------------------------------------------------------------------
-  double peak_low = 700;   // MeV - was 740
-  double peak_high = 850;  // MeV - was 820
+  double peak_low = 700;   // MeV
+  double peak_high = 850;  // MeV
   
+  TH1D *h_weight = (TH1D*) h_data_isr->Clone("h_weight");
+  h_weight->SetDirectory(0);
+  h_weight->Reset();
+
+  double orig_integral = h_isr3pi_orig->Integral();
+  std::cout << "\n=== Computing Correction Weights ===" << std::endl;
+  std::cout << "Original MC integral: " << orig_integral << std::endl;
+
+  int n_bins = h_weight->GetNbinsX();
+  int n_used = 0;
+
+  for (int bin = 1; bin <= n_bins; ++bin) {
+    double x = h_weight->GetBinCenter(bin);
+    double data_val = h_data_isr->GetBinContent(bin);
+    double mc_val = h_isr3pi_orig->GetBinContent(bin);
+    
+    if (x >= peak_low && x <= peak_high && mc_val > 0 && data_val > 0) {
+      double ratio = data_val / mc_val;
+      if (ratio > 2.5) ratio = 2.5;
+      if (ratio < 0.4) ratio = 0.4;
+      h_weight->SetBinContent(bin, ratio);
+      n_used++;
+    } else {
+      h_weight->SetBinContent(bin, 1.0);
+    }
+  }
+
+  std::cout << "Used " << n_used << " bins for weight calculation" << std::endl;
+
+  // Smooth weights
+  TH1D *h_weight_smooth = (TH1D*) h_weight->Clone("h_weight_smooth");
+  h_weight_smooth->SetDirectory(0);
+  for (int bin = 2; bin <= n_bins - 1; ++bin) {
+    double w_avg = (h_weight->GetBinContent(bin-1) +
+                    h_weight->GetBinContent(bin) +
+                    h_weight->GetBinContent(bin+1)) / 3.0;
+    h_weight_smooth->SetBinContent(bin, w_avg);
+  }
+  h_weight_smooth->SetBinContent(1, h_weight->GetBinContent(1));
+  h_weight_smooth->SetBinContent(n_bins, h_weight->GetBinContent(n_bins));
+
+  h_weight_smooth->Draw();
+  
+  // ------------------------------------------------------------------
+  // 7. Apply correction to ISR3pi MC (preserve yield)
+  // ------------------------------------------------------------------
+  TH1D *h_isr3pi_corrected = (TH1D*) h_isr3pi_orig->Clone("h_isr3pi_corrected");
+  h_isr3pi_corrected->SetDirectory(0);
+
+  for (int bin = 1; bin <= n_bins; ++bin) {
+    double w = h_weight_smooth->GetBinContent(bin);
+    double old = h_isr3pi_corrected->GetBinContent(bin);
+    h_isr3pi_corrected->SetBinContent(bin, old * w);
+    double err = h_isr3pi_corrected->GetBinError(bin);
+    h_isr3pi_corrected->SetBinError(bin, err * w);
+  }
+
+  double new_integral = h_isr3pi_corrected->Integral();
+  if (new_integral > 0 && orig_integral > 0) {
+    double renorm = orig_integral / new_integral;
+    h_isr3pi_corrected->Scale(renorm);
+    std::cout << "Renormalisation factor: " << renorm << std::endl;
+    std::cout << "Original integral: " << orig_integral << std::endl;
+    std::cout << "Corrected integral: " << h_isr3pi_corrected->Integral() << std::endl;
+  }
+
+  h_isr3pi_corrected->SetLineColor(kGreen);
+  h_isr3pi_corrected->SetLineWidth(2);
+  h_isr3pi_corrected->SetLineStyle(1);
+
+  // ------------------------------------------------------------------
+  // 8. Normalize templates to unit area for the fit
+  // ------------------------------------------------------------------
+  // Use corrected signal and original non-resonant
+  TH1D *h_signal_template = (TH1D*) h_isr3pi_corrected->Clone("h_signal_template");
+  h_signal_template->SetDirectory(0);
+  
+  TH1D *h_bkg_template = (TH1D*) h_nonReson->Clone("h_bkg_template");
+  h_bkg_template->SetDirectory(0);
+  
+  double sig_int = h_signal_template->Integral();
+  double bkg_int = h_bkg_template->Integral();
+  if (sig_int > 0) h_signal_template->Scale(1.0 / sig_int);
+  if (bkg_int > 0) h_bkg_template->Scale(1.0 / bkg_int);
+  
+  // Set global pointers for the fit function
+  gSigTemplate = h_signal_template;
+  gBkgTemplate = h_bkg_template;
+
+  // ------------------------------------------------------------------
+  // 9. Template fit
+  // ------------------------------------------------------------------
   TF1 *total_func = new TF1("total_func", template_sum, low, high, 2);
   total_func->SetParameters(1000, 1000);
   total_func->SetParNames("alpha", "beta");
   
-  // Single fit with quality assessment
   TFitResultPtr r = h_data_isr->Fit(total_func, "RQS", "", peak_low, peak_high);
   
-  // Check if fit converged
   if (!r->IsValid()) {
     std::cerr << "WARNING: Fit did not converge!" << std::endl;
   }
@@ -288,10 +374,30 @@ void omega_fit_bdt() {
   std::cout << "Fit quality: χ² = " << chi2 << ", ndf = " << ndf << ", #chi^{2}/ndf = " << chi2_ndf << std::endl;
 
   // ------------------------------------------------------------------
-  // 7. Create signal & background histograms (scaled)
+  // 9b. Calculate purity from fit results
   // ------------------------------------------------------------------
-  TH1D *h_signal = (TH1D*) h_isr3pi->Clone("h_signal");
-  TH1D *h_background = (TH1D*) h_nonReson->Clone("h_background");
+  int lowBin  = gSigTemplate->FindBin(peak_low);
+  int highBin = gSigTemplate->FindBin(peak_high);
+  
+  double sig_frac_peak = gSigTemplate->Integral(lowBin, highBin);
+  double bkg_frac_peak = gBkgTemplate->Integral(lowBin, highBin);
+  
+  double fitted_signal_yield = alpha * sig_frac_peak;
+  double fitted_background_yield = beta * bkg_frac_peak;
+  double fitted_signal_sum = fitted_signal_yield + fitted_background_yield;
+  
+  double updated_purity = fitted_signal_yield / (fitted_signal_yield + fitted_background_yield);
+  
+  std::cout << "Fitted signal = " << fitted_signal_sum << "\n"
+            << "\tpeak = " << fitted_signal_yield << "\n"
+            << "\tdistorted = " << fitted_background_yield << "\n"
+            << "Updated purity (from fit, in peak region): " << updated_purity * 100. << "%" << std::endl;
+
+  // ------------------------------------------------------------------
+  // 10. Create signal & background histograms (scaled)
+  // ------------------------------------------------------------------
+  TH1D *h_signal = (TH1D*) h_signal_template->Clone("h_signal");
+  TH1D *h_background = (TH1D*) h_bkg_template->Clone("h_background");
   h_signal->SetDirectory(0); 
   h_background->SetDirectory(0);
   h_signal->Scale(alpha);
@@ -303,87 +409,7 @@ void omega_fit_bdt() {
   h_background->SetLineWidth(2);
   
   // ------------------------------------------------------------------
-  // 8. Compute correction weights (using h_signal as desired shape)
-  // ------------------------------------------------------------------
-  TH1D *h_weight = (TH1D*) h_data_isr->Clone("h_weight");
-  h_weight->SetDirectory(0);
-  h_weight->Reset();
-  for (int bin = 1; bin <= h_weight->GetNbinsX(); ++bin) {
-    double x = h_weight->GetBinCenter(bin);
-    double mc_val = h_isr3pi->GetBinContent(bin);
-    double desired = h_signal->GetBinContent(bin);
-    if (x >= peak_low && x <= peak_high && mc_val > 0 && desired > 0) {
-      double ratio = desired / mc_val;
-      if (ratio > 2.5) ratio = 2.5;
-      if (ratio < 0.4) ratio = 0.4;
-      h_weight->SetBinContent(bin, ratio);
-    } else {
-      h_weight->SetBinContent(bin, 1.0);
-    }
-  }
-  // Smooth weights
-  TH1D *h_weight_smooth = (TH1D*) h_weight->Clone("h_weight_smooth");
-  h_weight_smooth->SetDirectory(0);
-  for (int bin = 2; bin <= h_weight_smooth->GetNbinsX()-1; ++bin) {
-    double w_avg = (h_weight->GetBinContent(bin-1) +
-		    h_weight->GetBinContent(bin) +
-		    h_weight->GetBinContent(bin+1)) / 3.0;
-    h_weight_smooth->SetBinContent(bin, w_avg);
-  }
-
-  // After the fit (Section 6 or 7), add this:
-  int lowBin  = h_isr3pi->FindBin(peak_low);
-  int highBin = h_isr3pi->FindBin(peak_high);
-  
-  // Optional: If you want to include the full bin width, you can use lowBin and highBin-1, 
-  // but FindBin(peak_high) usually gives the bin where peak_high falls. 
-  // For the range [700, 850], this works correctly.
-  
-  double sig_frac_peak = h_isr3pi->Integral(lowBin, highBin);
-  double bkg_frac_peak = h_nonReson->Integral(lowBin, highBin);
-  
-  double fitted_signal_yield = alpha * sig_frac_peak;
-  double fitted_background_yield = beta * bkg_frac_peak;
-  double fitted_signal_sum = fitted_signal_yield + fitted_background_yield;  
-  double updated_purity = fitted_signal_yield / (fitted_signal_yield + fitted_background_yield);
-  
-  std::cout << "Fitted signal = " << fitted_signal_sum << "\n"
-	    << "\tpeak = " << fitted_signal_yield << "\n"
-	    << "\tdistorted = " << fitted_background_yield << "\n" 
-    	    << "Updated purity (from fit, in peak region): " << updated_purity * 100. << "%" << std::endl;
- 
-  // ------------------------------------------------------------------
-  // 9. Apply correction to ISR3pi MC (use original scaled MC)
-  // ------------------------------------------------------------------
-  // Reload original ISR3pi with proper normalization for correction
-  TH1D *h_isr3pi_orig = makeScaledHist("TISR3PI_SIG_PEAK", isr3pi_sfw);
-  if (!h_isr3pi_orig) {
-    std::cerr << "ERROR: Cannot reload ISR3pi for correction" << std::endl;
-    return;
-  }
-  
-  TH1D *h_isr3pi_corrected = (TH1D*) h_isr3pi_orig->Clone("h_isr3pi_corrected");
-  h_isr3pi_corrected->SetDirectory(0);
-  for (int bin = 1; bin <= h_isr3pi_corrected->GetNbinsX(); ++bin) {
-    double w = h_weight_smooth->GetBinContent(bin);
-    double old = h_isr3pi_corrected->GetBinContent(bin);
-    h_isr3pi_corrected->SetBinContent(bin, old * w);
-    double err = h_isr3pi_corrected->GetBinError(bin);
-    h_isr3pi_corrected->SetBinError(bin, err * w);
-  }
-  // Renormalise
-  double orig_int = h_isr3pi_orig->Integral(peak_low, peak_high);
-  double new_int = h_isr3pi_corrected->Integral(peak_low, peak_high);
-  if (new_int > 0 && orig_int > 0) {
-    double renorm = orig_int / new_int;
-    h_isr3pi_corrected->Scale(renorm);
-    std::cout << "Renormalisation factor: " << renorm << std::endl;
-  }
-  h_isr3pi_corrected->SetLineColor(kGreen);
-  h_isr3pi_corrected->SetLineWidth(2);
-
-  // ------------------------------------------------------------------
-  // 10. Build total MC sum for plotting
+  // 11. Build total MC sum for plotting
   // ------------------------------------------------------------------
   std::vector<TH1D*> comps;
   comps.push_back(h_eeg);
@@ -402,9 +428,8 @@ void omega_fit_bdt() {
   h_mc_total->SetLineWidth(2);
 
   // ------------------------------------------------------------------
-  // * BW fit to determine 3pi mass peak position, mass bias [MeV/c^{2}]
+  // 12. Breit-Wigner fits for mass bias
   // ------------------------------------------------------------------
-    
   const int nb_mass = 2;
   TH1D *hMassList[nb_mass] = {h_isr3pi_unnorm, h_data};
   TString massNameList[nb_mass] = {"MC", "Data"};
@@ -412,7 +437,6 @@ void omega_fit_bdt() {
   FitResult massResults[nb_mass];
   TF1 *bw_fits[nb_mass];
 
-  // Create canvas for mass fits
   for (int i = 0; i < nb_mass; i++) {
     TH1D *h_mass = hMassList[i];
     if (!h_mass) {
@@ -423,19 +447,16 @@ void omega_fit_bdt() {
     TCanvas *c_mass = new TCanvas("c_mass_" + massNameList[i], "3#pi Mass Distributions (Breit-Wigner fits)", 700, 700);
     c_mass->Divide(nb_mass, 1);
 
-    // Clone to avoid modifying original
     TH1D *h_mass_copy = (TH1D*)h_mass->Clone(Form("h_mass_%s", massNameList[i].Data()));
     h_mass_copy->SetDirectory(0);
-    //h_mass_copy->SetLineColor(massColor[i]);
 
     double mass_mean = h_mass_copy->GetMean();
     double mass_rms = h_mass_copy->GetRMS();
     double mass_peak = h_mass_copy->GetBinContent(h_mass_copy->GetMaximumBin());
     double mass_peak_pos = h_mass_copy->GetBinCenter(h_mass_copy->GetMaximumBin());
 
-    // Fit range: ±1.5σ around mean (like pulls) but constrained
-    double fit_min_mass = mass_mean - 1. * mass_rms;
-    double fit_max_mass = mass_mean + 1. * mass_rms;
+    double fit_min_mass = mass_mean - 1.0 * mass_rms;
+    double fit_max_mass = mass_mean + 1.0 * mass_rms;
     if (fit_min_mass < 760) fit_min_mass = 760;
     if (fit_max_mass > 810) fit_max_mass = 810;
 
@@ -445,7 +466,6 @@ void omega_fit_bdt() {
     std::cout << "Mean estimate: " << mass_mean << ", RMS: " << mass_rms << std::endl;
     std::cout << "Fit range: [" << fit_min_mass << ", " << fit_max_mass << "] MeV/c^{2}" << std::endl;
 
-    // Breit-Wigner fit
     TF1 *bw = new TF1(Form("bw_%s", massNameList[i].Data()), breitwigner, fit_min_mass, fit_max_mass, 3);
     bw->SetParameters(mass_peak * 4.0, mass_peak_pos, 4.0);
     bw->SetParLimits(1, 780, 786);
@@ -464,7 +484,6 @@ void omega_fit_bdt() {
     std::cout << "Breit-Wigner gamma/2 = " << mass_gamma_half << " +/- " << mass_gamma_err << " MeV" << std::endl;
     std::cout << "χ²/ndf = " << chi2ndf_mass << std::endl;
 
-    // Store results
     massResults[i].name = massNameList[i];
     massResults[i].mean = mass_mean_fit;
     massResults[i].mean_err = mass_mean_err;
@@ -474,7 +493,6 @@ void omega_fit_bdt() {
     massResults[i].entries = h_mass_copy->GetEntries();
     bw_fits[i] = bw;
 
-    // Draw in pad
     c_mass->cd(i+1);
     gPad->SetBottomMargin(0.15);
     gPad->SetLeftMargin(0.15);
@@ -496,11 +514,9 @@ void omega_fit_bdt() {
 
     if (massNameList[i] == "MC") {
       h_mass_copy->Draw("hist");
-    }
-    else {
+    } else {
       h_mass_copy->Draw("E");
     }
-
     bw->Draw("same");
 
     TLegend *leg_mass = new TLegend(0.2, 0.7, 0.65, 0.9);
@@ -538,7 +554,7 @@ void omega_fit_bdt() {
   myfile.close();
   
   // ------------------------------------------------------------------
-  // 11. Pull distribution (full range)
+  // 13. Pull distribution (full range)
   // ------------------------------------------------------------------
   TH1D *h_pull = new TH1D("h_pull", "", nbins, low, high);
   for (int bin = 1; bin <= nbins; ++bin) {
@@ -553,7 +569,7 @@ void omega_fit_bdt() {
   h_pull->SetLineWidth(0);
 
   // ------------------------------------------------------------------
-  // 12. Main plotting (like correct_and_plot.C)
+  // 14. Main plotting
   // ------------------------------------------------------------------
   TCanvas *c = new TCanvas("c", "3π mass projection (combined)", 1200, 700);
   c->SetBottomMargin(0.12);
@@ -571,10 +587,6 @@ void omega_fit_bdt() {
   h_data->GetYaxis()->SetRangeUser(0, max_val * 1.2);
   double bin_width = h_data->GetBinWidth(1);
 
-  h_signal->SetLineColor(kBlue);
-  h_signal->SetLineStyle(1);
-  h_signal->SetLineWidth(2);
-  
   TH1D *h_signal_data = (TH1D*) h_data->Clone("h_signal_data");
   
   h_data->SetMarkerStyle(20);
@@ -585,7 +597,6 @@ void omega_fit_bdt() {
     if (!h) continue;
     TString h_nm = h->GetName(); 
     if (h_nm != "h_TEEG") {
-      //cout << h->GetName() << endl;
       h->Draw("hist same");
     }
   }
@@ -600,9 +611,6 @@ void omega_fit_bdt() {
   h_data->GetYaxis()->SetLabelSize(0.04);
   h_data->GetYaxis()->SetNdivisions(505);
 
-  TString line0 = Form("%s = %.2f %s %s = %.1f %s", "mass bias", TMath::Abs(mass_bias), "[MeV/c^{2}]", "Purity", updated_purity * 100., "%");
-  TString line1 = Form("%s = %.1f %s ", "Purity", updated_purity * 100., "%");
-
   TPaveText *pt0 = new TPaveText(0.7, 0.62, 0.85, 0.85, "NDC");
   pt0->SetFillColor(0);
   pt0->SetBorderSize(0);
@@ -613,9 +621,7 @@ void omega_fit_bdt() {
   pt0->AddText(Form("Mass bias = %.2f [MeV/c^{2}]", TMath::Abs(mass_bias)));
   pt0->AddText(Form("Purity = %.1f%%", updated_purity * 100.));
   pt0->Draw();
- 
- 
-  // Legend - same order as correct_and_plot.C
+
   TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
@@ -624,7 +630,6 @@ void omega_fit_bdt() {
   leg->AddEntry(h_mc_total, "Total MC", "l");
   leg->AddEntry(h_signal, "#omega peak (signal)", "l");
   leg->AddEntry(h_background, "Distorted signal", "l");
-  //leg->AddEntry(h_eeg, "e^{+}e^{-}#gamma", "l");
   leg->AddEntry(h_omegapi, "#omega#pi^{0}", "l");
   leg->AddEntry(h_ksl, "K_{S}K_{L}", "l");
   leg->AddEntry(h_mcrest, "Others", "l");
@@ -660,21 +665,16 @@ void omega_fit_bdt() {
 
   c->Update();
   c->Modified();
-  
   c->SaveAs(output_path + "omega_combined_fit.pdf");
 
   // ------------------------------------------------------------------
-  // 13. Background-subtracted ω signal (ADAPTED: like linear version)
+  // 15. Background-subtracted ω signal
   // ------------------------------------------------------------------
-  // Start from raw data and subtract ALL backgrounds explicitly
-  //TH1D *h_signal_data = (TH1D*) h_data->Clone("h_signal_data");
   h_signal_data->Add(h_eeg, -1.0);
   h_signal_data->Add(h_omegapi, -1.0);
   h_signal_data->Add(h_ksl, -1.0);
   h_signal_data->Add(h_mcrest, -1.0);
-  h_signal_data->Add(h_background, -1.0);  // non-resonant ISR
   
-  // Set negative bins to zero
   for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin) {
     if (h_signal_data->GetBinContent(bin) < 0) {
       h_signal_data->SetBinContent(bin, 0);
@@ -682,7 +682,6 @@ void omega_fit_bdt() {
   }
   
   TCanvas *c2 = new TCanvas("c2", "Background-subtracted ω signal", 1200, 700);
-  
   c2->cd();
   gPad->SetBottomMargin(0.15);
   gPad->SetLeftMargin(0.15);
@@ -691,16 +690,12 @@ void omega_fit_bdt() {
   h_signal_data->SetMarkerSize(0.6);
   h_signal_data->SetLineColor(1);
   
-  
-  // Apply ALL axis settings BEFORE drawing
-  // X-axis settings - FIXED
   h_signal_data->GetXaxis()->SetNdivisions(505);
   h_signal_data->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
   h_signal_data->GetXaxis()->CenterTitle();
   h_signal_data->GetXaxis()->SetTitleSize(0.05);
-  h_signal_data->GetXaxis()->SetTitleOffset(0.8);   // SMALLER = closer to axis
+  h_signal_data->GetXaxis()->SetTitleOffset(0.8);
   h_signal_data->GetXaxis()->SetLabelSize(0.04);
-  //h_signal_data->GetXaxis()->SetRangeUser(700, 900);
  
   h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
   h_signal_data->GetYaxis()->CenterTitle();
@@ -709,22 +704,25 @@ void omega_fit_bdt() {
   h_signal_data->GetYaxis()->SetLabelSize(0.04);
   h_signal_data->GetYaxis()->SetNdivisions(505);
   
-  // Draw with full options
   h_signal_data->Draw("E1");
   
-  // Overlay fitted signal for comparison
+  // Add all MC signal components after re-weighting
+  TH1D *h_signal_final = (TH1D*) h_signal->Clone("h_signal_final");
+  h_signal_final->Add(h_background, 1.0);
+  h_signal_final->SetLineColor(kRed);
+    
   h_signal->Draw("hist same");
-
-  TPaveText *pt = new TPaveText(0.7, 0.75, 0.85, 0.8, "NDC");
+  h_background->Draw("hist same");
+  h_signal_final->Draw("hist same");
+  
+  TPaveText *pt = new TPaveText(0.7, 0.7, 0.85, 0.8, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
   pt->SetTextSize(0.04);
   pt->SetTextFont(42);
-  pt->AddText(line1);
-  
-  //pt->AddText(line2);
-  //pt->AddText(line3);
+  pt->AddText(Form("Purity = %.1f%%", updated_purity * 100.));
+  pt->AddText(Form("#chi^{2}/ndf = %.2f", chi2_ndf));
   pt->Draw();
 
   TLegend *leg2 = new TLegend(0.2, 0.7, 0.5, 0.9);
@@ -733,44 +731,54 @@ void omega_fit_bdt() {
   leg2->SetTextSize(0.04);
   leg2->AddEntry(h_signal_data, "Data - all backgrounds", "lep");
   leg2->AddEntry(h_signal, "Fitted #omega peak (signal)", "l");
+  leg2->AddEntry(h_background, "Distorted signal", "l");
+  leg2->AddEntry(h_signal_final, "Signal", "l");
   leg2->Draw();
   
-  // Force canvas to update
   c2->Update();
   c2->Modified();
-  
   c2->SaveAs(output_path + "omega_background_subtracted.pdf");
   
   // ------------------------------------------------------------------
-  // 14. Correction weights canvas
+  // 16. Correction weights canvas
   // ------------------------------------------------------------------
+  TAxis* xAxis = h_weight_smooth->GetXaxis();
+  double xMin = xAxis->GetXmin();
+  double xMax = xAxis->GetXmax();
+ 
+  TLine *line_weight = new TLine(xMin, 1, xMax, 1.);
+  line_weight->SetLineColor(kGray + 2);
+  line_weight->SetLineStyle(2);
+  line_weight->SetLineWidth(2);
+  
   TCanvas *c_weight = new TCanvas("c_weight", "Correction weights", 800, 600);
   h_weight_smooth->SetTitle("Correction weight for ISR3pi");
-  h_weight_smooth->GetXaxis()->SetTitle("M_{3π} [MeV/c^{2}]");
+  h_weight_smooth->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
   h_weight_smooth->GetYaxis()->SetTitle("Weight");
   h_weight_smooth->SetLineColor(kBlue);
   h_weight_smooth->SetLineWidth(2);
   h_weight_smooth->Draw();
+  line_weight->Draw("same");
   c_weight->SaveAs(output_path + "omega_correction_weights.pdf");
 
   // ------------------------------------------------------------------
-  // 15. Save results
+  // 17. Save results
   // ------------------------------------------------------------------
   TFile *fout = new TFile(output_path + "omega_fit_results.root", "RECREATE");
   h_data_isr->Write();
-  h_isr3pi->Write();
+  h_isr3pi_corrected->Write("h_isr3pi_corrected");
+  h_isr3pi_orig->Write("h_isr3pi_original");
   h_nonReson->Write();
   h_signal->Write();
   h_background->Write();
   h_weight_smooth->Write();
-  h_isr3pi_corrected->Write();
   h_mc_total->Write();
   h_pull->Write();
   total_func->Write();
   fout->Close();
 
   // ------------------------------------------------------------------
-  // 16. Clean up
+  // 18. Clean up
   // ------------------------------------------------------------------
   gSigTemplate = nullptr;
   gBkgTemplate = nullptr;
@@ -793,7 +801,6 @@ void omega_fit_bdt() {
     delete ftree;
   }
 
-  
   if (fout) {
     fout->Close();
     delete fout;

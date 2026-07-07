@@ -1,7 +1,7 @@
 #!/bin/bash
 
 compr=../header_bdt/compr.h
-sample_type=chain
+sample_type=norm
 data_type=bdt
 main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
@@ -54,7 +54,7 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("IM3pi_7C") #"m3pi_bdt", "IM3pi_7C"
+VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
 VAR_SYMB=("M_{3#pi}")
 UNIT=("[MeV\/c^{2}]")
 

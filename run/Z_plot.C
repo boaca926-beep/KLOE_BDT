@@ -11,34 +11,36 @@ void Z_plot() {
   gStyle->SetErrorX(0.8);
   TH1::SetDefaultSumw2();
 
-  TString tuning_type = "scaled";   // FIXED: TSTring -> TString
+  TString tuning_type = "tuning"; //tuning; scaled
 
   int nb_points = 0;
-  double iter_max = 5.0;            // FIXED: double *iter_max -> double iter_max
+  double iter_max = 0.;
   double *bias = nullptr;
   double *bias_err = nullptr;
   double *Z = nullptr;
   double *iter = nullptr;
   
   // Define arrays outside if blocks (static to persist)
-  static double bias_tuning[]     = {6.136, 3.88664};
-  static double bias_err_tuning[] = {0.045, 0.0448303};
-  static double Z_tuning[]        = {0., 0.};
-  static double iter_tuning[]     = {0., 1.};
+  static double bias_tuning[]     = {6.136, 3.88664, 2.47196, 1.57451, 1.01165, 0.646111, 0.408729, 0.267182};
+  static double bias_err_tuning[] = {0.045, 0.0448303, 0.0447612, 0.0447183, 0.0447282, 0.044718, 0.0447058, 0.044711};
+  static double Z_tuning[]        = {0., 0., 0., 0., 0., 0., 0., 0.};
+  static double iter_tuning[]     = {0., 1., 2., 3., 4., 5., 6., 7.};
   
   static double bias_scaled[]     = {-0.580, -0.321, -0.169, -0.0898698, -0.0488806};
   static double bias_err_scaled[] = {0.045, 0.045, 0.045, 0.044744, 0.0447478};
   static double Z_scaled[]        = {0., 0., 0., 0., 0.};
   static double iter_scaled[]     = {0., 1., 2., 3., 4.};
   
-  if (tuning_type == "tuning") {  // energy pull tuning + energy scaling
-    nb_points = 2;
+  if (tuning_type == "tuning") {
+    iter_max=12.0;
+    nb_points = 8;
     bias = bias_tuning;
     bias_err = bias_err_tuning;
     Z = Z_tuning;
     iter = iter_tuning;
   }
-  else if (tuning_type == "scaled") {  // test of energy scaling
+  else if (tuning_type == "scaled") {
+    iter_max=5.0;
     nb_points = 5;
     bias = bias_scaled;
     bias_err = bias_err_scaled;
@@ -46,6 +48,7 @@ void Z_plot() {
     iter = iter_scaled;
   }
   
+  // Compute Z values
   for (int i = 0; i < nb_points; i++) {
     Z[i] = TMath::Abs(bias[i]) / bias_err[i];
     std::cout << "Iteration " << iter[i] 
@@ -53,8 +56,16 @@ void Z_plot() {
               << ", Z = " << Z[i] << std::endl;
   }
 
+  // Calculate zmax AFTER Z values are computed
+  double zmax = Z[0];
+  for (int i = 1; i < nb_points; i++) {
+    if (Z[i] > zmax) zmax = Z[i];
+  }
+
   TCanvas *c1 = new TCanvas("c1", "Z-value convergence", 900, 600);
+  c1->SetLogy();             // <-- Now log scale works
   gPad->SetRightMargin(0.12);
+  gPad->SetLeftMargin(0.12);
   
   TGraph *gf_Z = new TGraph(nb_points, iter, Z);
   TGraph *gf_plot = (TGraph*)gf_Z->Clone("gf_plot");
@@ -78,17 +89,17 @@ void Z_plot() {
   
   // ---------- X-axis ----------
   gf_plot->GetXaxis()->SetLimits(0., iter_max);
-  gf_plot->GetXaxis()->SetNdivisions(3);
+  gf_plot->GetXaxis()->SetNdivisions(15);
   gf_plot->GetXaxis()->CenterTitle(true);
   gf_plot->GetXaxis()->SetLabelSize(0.045);
   gf_plot->GetXaxis()->SetTitleSize(0.05);
   
-  // ---------- Y-axis ----------
+  // ---------- Y-axis (log scale) ----------
   gf_plot->GetYaxis()->CenterTitle(true);
   gf_plot->GetYaxis()->SetLabelSize(0.045);
   gf_plot->GetYaxis()->SetTitleSize(0.05);
   gf_plot->GetYaxis()->SetNdivisions(505);
-  gf_plot->GetYaxis()->SetRangeUser(0., 20.);
+  gf_plot->GetYaxis()->SetRangeUser(0.1, zmax * 1.2);   // min > 0 for log scale
   
   // ---------- Threshold Line ----------
   TLine *lineZ2 = new TLine(0., 2, iter_max, 2.);
@@ -102,12 +113,12 @@ void Z_plot() {
   lineZ2->Draw("SAME");
 
   // ---------- Legend ----------
-  TLegend *leg = new TLegend(0.15, 0.72, 0.45, 0.88);
+  TLegend *leg = new TLegend(0.15, 0.6, 0.5, 0.88);
   leg->SetHeader("Convergence", "C");
   leg->SetTextSize(0.04);
   leg->AddEntry(gf_plot, "Z-value (data)", "PL");
   leg->AddEntry(fit_exp, "Exp. fit", "L");
-  leg->AddEntry(lineZ2, "Stop criterion", "L");
+  leg->AddEntry(lineZ2, "Stop criterion (Z_{0} = 2)", "L");
   leg->Draw();
 
   // Create directory if needed
