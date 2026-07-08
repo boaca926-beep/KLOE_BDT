@@ -1,5 +1,5 @@
-const TString rootFile = "../path_norm/sig_path";
-const TString sampleFile = "../../input_kloe_tuning_TDATA_norm/input/sig";
+const TString rootFile = "../path_norm/ksl_path";
+const TString sampleFile = "../../input_kloe_tuning_TDATA_norm/input/ksl";
 const TString outputCut = "../../input_kloe_tuning_TDATA_norm/cut/";
 const TString sig_path = "../../input_kloe_tuning_TDATA_norm/input/";
 const TString outputGen = "../../input_kloe_tuning_TDATA_norm/gen/";
@@ -7,7 +7,7 @@ const TString outputHist = "../../input_kloe_tuning_TDATA_norm/hist/";
 const TString outputSfw2D = "../../input_kloe_tuning_TDATA_norm/sfw2d/";
 const TString outputSfw1D = "../../input_kloe_tuning_TDATA_norm/sfw1d/";
 const TString outputOmega = "../../input_kloe_tuning_TDATA_norm/omega_fit/";
-const TString data_type = "sig";
+const TString data_type = "ksl";
 const TString exp_type = "TDATA";
 const TString tuning_type = "tuning";
 double gsf = 1;

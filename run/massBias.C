@@ -2,8 +2,7 @@
 #include "../header_method/method.h"
 #include "../header_plot/plot.h"
 //#include "../header/path.h"   // for outputHist, tuning_type
-const TString tuning_type = "tuning";
-
+const TString tuning_type = "scaled"; //raw, scaled, tuning
 const TString tree_file_nm = "../output_kloe_" + tuning_type + "_m3pi/hist_m3pi.root";
 const TString out_dir = "../massBias_" + tuning_type;
 
@@ -213,7 +212,7 @@ int massBias() {
   myfile.close();
 
   // ---- Optional: Data/MC comparison plot with background‑subtracted data ----
-  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Background Subtracted)", 1400, 900);
+  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Background Subtracted)", 900, 900);
   c1->SetBottomMargin(0.15);
   c1->SetLeftMargin(0.15);
 
@@ -234,16 +233,16 @@ int massBias() {
   hist_data_sub->Draw("E1");
   hist_signal->Draw("HIST SAME");
 
-  TPaveText *pt = new TPaveText(0.6, 0.85, 0.85, 0.87, "NDC");
+  TPaveText *pt = new TPaveText(0.3, 0.85, 0.85, 0.87, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
   pt->SetTextSize(0.03);
   pt->SetTextFont(42);
-  pt->AddText(Form("Mass bias = %.2f #pm %.2f [MeV/c^{2}]", -1 * mass_bias, mass_bias_err));
+  pt->AddText(Form("Mass bias = %.3f #pm %.3f [MeV/c^{2}]", -1 * mass_bias, mass_bias_err));
   pt->Draw();
 
-  TLegend *leg = new TLegend(0.15, 0.6, 0.6, 0.9);
+  TLegend *leg = new TLegend(0.15, 0.7, 0.6, 0.8);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);

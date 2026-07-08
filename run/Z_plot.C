@@ -21,10 +21,10 @@ void Z_plot() {
   double *iter = nullptr;
   
   // Define arrays outside if blocks (static to persist)
-  static double bias_tuning[]     = {6.136, 3.88664, 2.47196, 1.57451, 1.01165, 0.646111, 0.408729, 0.267182};
-  static double bias_err_tuning[] = {0.045, 0.0448303, 0.0447612, 0.0447183, 0.0447282, 0.044718, 0.0447058, 0.044711};
-  static double Z_tuning[]        = {0., 0., 0., 0., 0., 0., 0., 0.};
-  static double iter_tuning[]     = {0., 1., 2., 3., 4., 5., 6., 7.};
+  static double bias_tuning[]     = {6.136, 3.88664, 2.47196, 1.57451, 1.01165, 0.646111, 0.408729, 0.267182, 0.16936, 0.1062};
+  static double bias_err_tuning[] = {0.045, 0.0448303, 0.0447612, 0.0447183, 0.0447282, 0.044718, 0.0447058, 0.044711, 0.0447076, 0.0447043};
+  static double Z_tuning[]        = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
+  static double iter_tuning[]     = {0., 1., 2., 3., 4., 5., 6., 7., 8., 9.};
   
   static double bias_scaled[]     = {-0.580, -0.321, -0.169, -0.0898698, -0.0488806};
   static double bias_err_scaled[] = {0.045, 0.045, 0.045, 0.044744, 0.0447478};
@@ -33,7 +33,7 @@ void Z_plot() {
   
   if (tuning_type == "tuning") {
     iter_max=12.0;
-    nb_points = 8;
+    nb_points = 10;
     bias = bias_tuning;
     bias_err = bias_err_tuning;
     Z = Z_tuning;
@@ -62,10 +62,10 @@ void Z_plot() {
     if (Z[i] > zmax) zmax = Z[i];
   }
 
-  TCanvas *c1 = new TCanvas("c1", "Z-value convergence", 900, 600);
+  TCanvas *c1 = new TCanvas("c1", "Z-value convergence", 700, 700);
   c1->SetLogy();             // <-- Now log scale works
-  gPad->SetRightMargin(0.12);
-  gPad->SetLeftMargin(0.12);
+  //gPad->SetRightMargin(0.15);
+  gPad->SetLeftMargin(0.15);
   
   TGraph *gf_Z = new TGraph(nb_points, iter, Z);
   TGraph *gf_plot = (TGraph*)gf_Z->Clone("gf_plot");
@@ -113,8 +113,11 @@ void Z_plot() {
   lineZ2->Draw("SAME");
 
   // ---------- Legend ----------
-  TLegend *leg = new TLegend(0.15, 0.6, 0.5, 0.88);
-  leg->SetHeader("Convergence", "C");
+  TLegend *leg = new TLegend(0.5, 0.6, 0.8, 0.88);
+  //leg->SetHeader("Convergence", "C");
+  leg->SetTextFont(132);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
   leg->AddEntry(gf_plot, "Z-value (data)", "PL");
   leg->AddEntry(fit_exp, "Exp. fit", "L");

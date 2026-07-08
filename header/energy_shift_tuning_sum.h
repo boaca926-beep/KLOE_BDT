@@ -22,8 +22,14 @@ const double energy_shift7_err = 0.0223529;
 const double energy_shift8 = 0.133591;
 const double energy_shift8_err = 0.0223555;
 
-const double energy_shift_total = energy_shift1 + energy_shift2 + energy_shift3 + energy_shift4 + energy_shift5 + energy_shift6 + energy_shift7 + energy_shift8;
-const double energy_shift_total_err = TMath::Sqrt(TMath::Power(energy_shift1_err, 2) + TMath::Power(energy_shift2_err, 2) + TMath::Power(energy_shift3_err, 2) + TMath::Power(energy_shift4_err, 2) + TMath::Power(energy_shift5_err, 2) + TMath::Power(energy_shift6_err, 2) + TMath::Power(energy_shift7_err, 2) + TMath::Power(energy_shift8_err, 2));
+const double energy_shift9 = 0.08468;
+const double energy_shift9_err = 0.0223538;
+
+const double energy_shift10 = 0.0530999;
+const double energy_shift10_err = 0.0223522;
+
+const double energy_shift_total = energy_shift1 + energy_shift2 + energy_shift3 + energy_shift4 + energy_shift5 + energy_shift6 + energy_shift7 + energy_shift8 + energy_shift9 + energy_shift10;
+const double energy_shift_total_err = TMath::Sqrt(TMath::Power(energy_shift1_err, 2) + TMath::Power(energy_shift2_err, 2) + TMath::Power(energy_shift3_err, 2) + TMath::Power(energy_shift4_err, 2) + TMath::Power(energy_shift5_err, 2) + TMath::Power(energy_shift6_err, 2) + TMath::Power(energy_shift7_err, 2) + TMath::Power(energy_shift8_err, 2) + TMath::Power(energy_shift9_err, 2) + TMath::Power(energy_shift10_err, 2));
 
 
 double alpha_delta = energy_shift_total / 353.36;   // Sum of all iterations
