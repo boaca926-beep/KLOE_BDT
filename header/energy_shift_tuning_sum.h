@@ -1,3 +1,5 @@
+//iteration 0: getting intial energy shift, set MASS_SCALE_PI0 = 1 to determine mass bias from pull tuning contribution alone
+
 const double energy_shift1 = 3.0679; // iteration 1; massbias_tuning.h
 const double energy_shift1_err = 0.0224552;
 
@@ -34,7 +36,7 @@ const double energy_shift_total_err = TMath::Sqrt(TMath::Power(energy_shift1_err
 
 double alpha_delta = energy_shift_total / 353.36;   // Sum of all iterations
 const double MASS_SCALE_PI0 = 1 + alpha_delta;
-//const double MASS_SCALE_PI0 = 1.; // Set to determine mass bias from pull tuning
+//const double MASS_SCALE_PI0 = 1.; 
 
 // from tuning_raw.h, data pulls
 const double bias_E12 = -0.0794267;

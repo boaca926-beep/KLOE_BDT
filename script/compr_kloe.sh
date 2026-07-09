@@ -2,7 +2,7 @@
 
 compr=../header/compr.h
 sample_size=norm
-tuning_type=raw #tuning, scaled, raw
+tuning_type=tuning #tuning, scaled, raw
 main_folder="/home/bo/Desktop/input_kloe_${tuning_type}_TDATA_${sample_size}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";

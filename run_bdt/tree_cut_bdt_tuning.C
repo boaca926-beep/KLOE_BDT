@@ -483,17 +483,13 @@ int tree_cut_bdt_tuning() {
 	// ============================================================
         // APPLY MC-ONLY RESOLUTION CORRECTIONS
         // ============================================================
-        // Correction factors from pull tuning (tuning.txt)
-        // MC:   bias_E12 = -0.127, sigma_scale_E12 = 1.022
-        //       bias_E3  = -0.186, sigma_scale_E3  = 1.050
-        // Data: No correction (Data is reference)
-	// E12 and E3 resolutions: plot_resol.sh
-	// E1 resolution = 2.85
         // ============================================================
 
 	const double bias_MeV_E12 = bias_E12 * resol_E12;  
 	const double bias_MeV_E3 = bias_E3 * resol_E3;
-	
+
+	// ---- Apply pull tuning to pi0 photon energies (only for signal events) ----
+    
         if (data_type == "sig") {
 	  /* full corrections
 	  // Step 1: Apply mass scale to raw values

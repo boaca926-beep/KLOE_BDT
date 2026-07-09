@@ -1,9 +1,9 @@
-const TString tree_file_nm = "/home/bo/Desktop/input_kloe_raw_TDATA_norm/cut/tree_pre.root";
-const TString outputSfw2D = "/home/bo/Desktop/input_kloe_raw_TDATA_norm/sfw2d/";
+const TString tree_file_nm = "/home/bo/Desktop/input_kloe_tuning_TDATA_norm/cut/tree_pre.root";
+const TString outputSfw2D = "/home/bo/Desktop/input_kloe_tuning_TDATA_norm/sfw2d/";
 const TString var_nm = "m3pi";
 const TString unit = "[MeV/c^{2}]";
 const TString var_symb = "M_{3#pi}";
-const TString out_dir = "../output_kloe_raw_m3pi";
+const TString out_dir = "../output_kloe_tuning_m3pi";
 
 const int binsize = 100;
 const double var_min = 760;

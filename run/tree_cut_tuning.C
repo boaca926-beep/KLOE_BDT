@@ -254,6 +254,13 @@ int tree_cut_tuning() {
     recon_indx = ALLCHAIN_CUT->GetLeaf("Br_recon_indx")->GetValue(0);
 
     // ---- Apply pull tuning to pi0 photon energies (only for signal events) ----
+    //double sigma_E1_fit = SIGMA_FIT_LIST[5];   // from the tree
+    //double sigma_E2_fit = SIGMA_FIT_LIST[10];
+
+    // Then the bias in MeV is per-event:
+    //double bias_MeV_E1 = bias_E12 * sigma_E1_fit;
+    //double bias_MeV_E2 = bias_E12 * sigma_E2_fit;
+ 
     if (data_type == "sig") {
       // Photon 1
       double e1_pull = (pho_E1 - bias_E12) / sigma_scale_E12;

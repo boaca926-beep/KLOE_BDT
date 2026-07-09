@@ -53,7 +53,8 @@ void MyClass::Main()
   double trkmass_true = 0., trkmass = 0.;
   double ppIM_true = 0., ppIM = 0., ppIM_beta = 0.;
   double IMisrpho_miss = 0.;
-  double IM3pi_pi12 = 0., IM3pi_pi13 = 0., IM3pi_pi23 = 0.; 
+  double IM3pi_pi12 = 0., IM3pi_pi13 = 0., IM3pi_pi23 = 0.;
+  double SIGMA_FIT_LIST[100];
   double MASSLIST[100];
   double ANGLELIST[100];
   double PULLIST[100];
@@ -236,7 +237,8 @@ void MyClass::Main()
 
   ALLCHAIN_CUT.Branch("Br_ANGLELIST", &ANGLELIST, "Br_ANGLELIST[100]/D");
   //ANGLELIST[0]: pi0 gamma12
-  
+
+  ALLCHAIN_CUT.Branch("Br_sigma_fit", &SIGMA_FIT_LIST, "Br_sigma_fit[15]/D");
   ALLCHAIN_CUT.Branch("Br_RESOLIST", &RESOLIST, "Br_RESOLIST[100]/D");
   //RESOLIST[0]: pi0 mass 7C kin. fit
   //RESOLIST[1]: 3pi mass 7C kin. fit
@@ -1162,7 +1164,13 @@ void MyClass::Main()
 	 << "3pi mass = " << MASSLIST[3] << "\n"
 	 << "trk mass = " << MASSLIST[4] << "\n";
     */
-    
+
+    // sigma_fit list
+    for (int i = 0; i < 15; i++) {
+      SIGMA_FIT_LIST[i] = TMath::Sqrt(sigma2vectorkinfit_min_7C(i));
+    }
+    ALLCHAIN_CUT.Fill();
+ 
     // resolutions
     RESOLIST[0] = TLVector_pi0gg12_kinfit7C.M() - massneupion; // Mpi
     RESOLIST[1] = IM_3pi; // M3pi
