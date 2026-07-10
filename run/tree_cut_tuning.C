@@ -16,7 +16,7 @@ int tree_cut_tuning() {
 
   TFile *f_input = new TFile(sampleFile + ".root");
   TTree *ALLCHAIN_CUT = (TTree*)f_input->Get("ALLCHAIN_CUT");
-  
+      
   // ------------------------------------------------------------------
   // Variables (unchanged)
   // ------------------------------------------------------------------
@@ -54,7 +54,10 @@ int tree_cut_tuning() {
   double Eprompt_max = 0.;
 
   int pho_indx[3], EPI0NTMC[4];
-    
+
+  double SIGMA_FIT_LIST[100];
+  ALLCHAIN_CUT->SetBranchAddress("Br_sigma_fit", SIGMA_FIT_LIST);
+  
   TFile *f_output = new TFile(outputCut + "tree_pre.root", "update");
 
   // ------------------------------------------------------------------
@@ -254,16 +257,20 @@ int tree_cut_tuning() {
     recon_indx = ALLCHAIN_CUT->GetLeaf("Br_recon_indx")->GetValue(0);
 
     // ---- Apply pull tuning to pi0 photon energies (only for signal events) ----
-    //double sigma_E1_fit = SIGMA_FIT_LIST[5];   // from the tree
-    //double sigma_E2_fit = SIGMA_FIT_LIST[10];
+    double sigma_E1_fit = SIGMA_FIT_LIST[5];   // from the tree
+    double sigma_E2_fit = SIGMA_FIT_LIST[10];
+    double sigma_E3_fit = SIGMA_FIT_LIST[0];
 
+    //cout << sigma_E1_fit << ", " << sigma_E2_fit << endl;
+    
     // Then the bias in MeV is per-event:
-    //double bias_MeV_E1 = bias_E12 * sigma_E1_fit;
-    //double bias_MeV_E2 = bias_E12 * sigma_E2_fit;
+    double bias_MeV_E1 = bias_E12 * sigma_E1_fit;
+    double bias_MeV_E2 = bias_E12 * sigma_E2_fit;
+    double bias_MeV_E3 = bias_E3 * sigma_E3_fit;
  
     if (data_type == "sig") {
       // Photon 1
-      double e1_pull = (pho_E1 - bias_E12) / sigma_scale_E12;
+      double e1_pull = (pho_E1 - bias_MeV_E1) / sigma_scale_E12;
       double p1_pull = e1_pull;
       double scale1 = (pho_E1 > 0) ? p1_pull / pho_E1 : 1.0;
       pho_px1 *= scale1;
@@ -272,7 +279,7 @@ int tree_cut_tuning() {
       pho_E1 = e1_pull;
       
       // Photon 2
-      double e2_pull = (pho_E2 - bias_E12) / sigma_scale_E12;
+      double e2_pull = (pho_E2 - bias_MeV_E2) / sigma_scale_E12;
       double p2_pull = e2_pull;
       double scale2 = (pho_E2 > 0) ? p2_pull / pho_E2 : 1.0;
       pho_px2 *= scale2;
@@ -281,7 +288,7 @@ int tree_cut_tuning() {
       pho_E2 = e2_pull;
 
       // ISR photon
-      double e3_pull = (pho_E3 - bias_E3) / sigma_scale_E3;
+      double e3_pull = (pho_E3 - bias_MeV_E3) / sigma_scale_E3;
       double p3_pull = e3_pull;
       double scale3 = (pho_E3 > 0) ? p3_pull / pho_E3 : 1.0;
       pho_px3 *= scale3;

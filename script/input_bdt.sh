@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-sample_size=norm # norm; small; mini; chain
+sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 
 exp_type=TDATA # DATA
@@ -72,8 +72,8 @@ sm_header=../header_bdt/sm_para.h
 sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples 
-DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
-#DATA_TYPE=("sig")
+#DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
+DATA_TYPE=("sig")
 
 ## Folders
 input_path=${result_path}/input/

@@ -97,7 +97,7 @@ void test_bdt() {
 
     // Configuration
     const char* model_filename = "/home/bo/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root";
-    const char* data_filename = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre_bdt.root";
+    const char* data_filename = "/home/bo/Desktop/input_bdt_TDATA_chain/cut/tree_pre.root";
     const char* tree_name = "TISR3PI_SIG";   // or "TETAGAM"
     //const char* tree_name = "TETAGAM";
     //const char* tree_name = "TDATA";
@@ -230,9 +230,14 @@ void test_bdt() {
     TFile* outfile = new TFile("../plots_test/test_bdt.root", "RECREATE");
  
     // Branch addresses (unchanged)
+    double E1_orig, px1_orig, py1_orig, pz1_orig;
+    double E2_orig, px2_orig, py2_orig, pz2_orig;
+    double E3_orig, px3_orig, py3_orig, pz3_orig;
+
     double E1, px1, py1, pz1;
     double E2, px2, py2, pz2;
     double E3, px3, py3, pz3;
+
     double ppl_E, ppl_px, ppl_py, ppl_pz;
     double pmi_E, pmi_px, pmi_py, pmi_pz;
     double lagvalue_min_7C, deltaE, betapi0, angle_pi0gam12, ppIM;
@@ -255,19 +260,37 @@ void test_bdt() {
     tree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
     tree->SetBranchAddress("Br_total_recon_quality", &total_recon_quality); 
    
-    
+
+    tree->SetBranchAddress("Br_E1_orig", &E1_orig);
+    tree->SetBranchAddress("Br_px1_orig", &px1_orig);
+    tree->SetBranchAddress("Br_py1_orig", &py1_orig);
+    tree->SetBranchAddress("Br_pz1_orig", &pz1_orig);
+
+    tree->SetBranchAddress("Br_E2_orig", &E2_orig);
+    tree->SetBranchAddress("Br_px2_orig", &px2_orig);
+    tree->SetBranchAddress("Br_py2_orig", &py2_orig);
+    tree->SetBranchAddress("Br_pz2_orig", &pz2_orig);
+
+    tree->SetBranchAddress("Br_E3_orig", &E3_orig);
+    tree->SetBranchAddress("Br_px3_orig", &px3_orig);
+    tree->SetBranchAddress("Br_py3_orig", &py3_orig);
+    tree->SetBranchAddress("Br_pz3_orig", &pz3_orig);
+
     tree->SetBranchAddress("Br_E1", &E1);
     tree->SetBranchAddress("Br_px1", &px1);
     tree->SetBranchAddress("Br_py1", &py1);
     tree->SetBranchAddress("Br_pz1", &pz1);
+
     tree->SetBranchAddress("Br_E2", &E2);
     tree->SetBranchAddress("Br_px2", &px2);
     tree->SetBranchAddress("Br_py2", &py2);
     tree->SetBranchAddress("Br_pz2", &pz2);
+
     tree->SetBranchAddress("Br_E3", &E3);
     tree->SetBranchAddress("Br_px3", &px3);
     tree->SetBranchAddress("Br_py3", &py3);
     tree->SetBranchAddress("Br_pz3", &pz3);
+
     tree->SetBranchAddress("Br_ppl_E", &ppl_E);
     tree->SetBranchAddress("Br_ppl_px", &ppl_px);
     tree->SetBranchAddress("Br_ppl_py", &ppl_py);
@@ -283,7 +306,7 @@ void test_bdt() {
     tree->SetBranchAddress("Br_angle_pi0gam12", &angle_pi0gam12);
     tree->SetBranchAddress("Br_angle_pi0gam12_bdt", &angle);
     tree->SetBranchAddress("Br_ppIM", &ppIM);
-    tree->SetBranchAddress("Br_bdt_score", &bdt_score);
+    tree->SetBranchAddress("Br_bdt_score_max", &bdt_score);
     tree->SetBranchAddress("Br_true_m3pi", &true_m3pi);
     tree->SetBranchAddress("Br_pull_E3", &pull_E3);
  
@@ -316,41 +339,70 @@ void test_bdt() {
     for (Long64_t i = 0; i < nentries; ++i) {
         tree->GetEntry(i);
 
-        EventData event;
-        event.photons[0][0] = E1; event.photons[0][1] = px1; event.photons[0][2] = py1; event.photons[0][3] = pz1;
-        event.photons[1][0] = E2; event.photons[1][1] = px2; event.photons[1][2] = py2; event.photons[1][3] = pz2;
-        event.photons[2][0] = E3; event.photons[2][1] = px3; event.photons[2][2] = py3; event.photons[2][3] = pz3;
-        event.tracks[0][0] = ppl_E; event.tracks[0][1] = ppl_px; event.tracks[0][2] = ppl_py; event.tracks[0][3] = ppl_pz;
-        event.tracks[1][0] = pmi_E; event.tracks[1][1] = pmi_px; event.tracks[1][2] = pmi_py; event.tracks[1][3] = pmi_pz;
-        event.lagvalue_min_7C = lagvalue_min_7C;
-        event.deltaE = deltaE;
-        event.betapi0 = betapi0;
-        event.angle_pi0gam12 = angle_pi0gam12;
-        event.ppIM = ppIM;
+        EventData event_orig, event_bdt;
 
-	double m2pi = compute_dipion_mass(event.tracks);
+	// Original
+	event_orig.photons[0][0] = E1_orig; event_orig.photons[0][1] = px1_orig; event_orig.photons[0][2] = py1_orig; event_orig.photons[0][3] = pz1_orig;
+	event_orig.photons[1][0] = E2_orig; event_orig.photons[1][1] = px2_orig; event_orig.photons[1][2] = py2_orig; event_orig.photons[1][3] = pz2_orig;
+	event_orig.photons[2][0] = E3_orig; event_orig.photons[2][1] = px3_orig; event_orig.photons[2][2] = py3_orig; event_orig.photons[2][3] = pz3_orig;
+	event_orig.tracks[0][0] = ppl_E; event_orig.tracks[0][1] = ppl_px; event_orig.tracks[0][2] = ppl_py; event_orig.tracks[0][3] = ppl_pz;
+	event_orig.tracks[1][0] = pmi_E; event_orig.tracks[1][1] = pmi_px; event_orig.tracks[1][2] = pmi_py; event_orig.tracks[1][3] = pmi_pz;
+	event_orig.lagvalue_min_7C = lagvalue_min_7C;
+	event_orig.deltaE = deltaE;
+	event_orig.betapi0 = betapi0;
+	event_orig.angle_pi0gam12 = angle_pi0gam12;
+	event_orig.ppIM = ppIM;
+ 
+	// BDT
+        event_bdt.photons[0][0] = E1; event_bdt.photons[0][1] = px1; event_bdt.photons[0][2] = py1; event_bdt.photons[0][3] = pz1;
+	event_bdt.photons[1][0] = E2; event_bdt.photons[1][1] = px2; event_bdt.photons[1][2] = py2; event_bdt.photons[1][3] = pz2;
+	event_bdt.photons[2][0] = E3; event_bdt.photons[2][1] = px3; event_bdt.photons[2][2] = py3; event_bdt.photons[2][3] = pz3;
+	event_bdt.tracks[0][0] = ppl_E; event_bdt.tracks[0][1] = ppl_px; event_bdt.tracks[0][2] = ppl_py; event_bdt.tracks[0][3] = ppl_pz;
+	event_bdt.tracks[1][0] = pmi_E; event_bdt.tracks[1][1] = pmi_px; event_bdt.tracks[1][2] = pmi_py; event_bdt.tracks[1][3] = pmi_pz;
+	event_bdt.lagvalue_min_7C = lagvalue_min_7C;
+	event_bdt.deltaE = deltaE;
+	event_bdt.betapi0 = betapi0_bdt;  // use BDT beta if available
+	event_bdt.angle_pi0gam12 = angle; // BDT opening angle
+	event_bdt.ppIM = ppIM;
+ 
+	double m2pi = compute_dipion_mass(event_bdt.tracks);
         hM2pi->Fill(m2pi);
 	hChi2->Fill(lagvalue_min_7C);
 	
 	// Fixed pair
-        double m_gg_fixed = compute_invariant_mass(0, 1, event.photons);
-        double m3pi_fixed = compute_3pi_mass(0, 1, event.photons, event.tracks);
-        hE1_fixed->Fill(event.photons[0][0]);
-        hE2_fixed->Fill(event.photons[1][0]);
-        hE3_fixed->Fill(event.photons[2][0]);
-        hMgg_fixed->Fill(m_gg_fixed);
-        hM3pi_fixed->Fill(m3pi_fixed);
-        hAngle_fixed->Fill(angle_pi0gam12);
+	double m_gg_fixed = compute_invariant_mass(0, 1, event_orig.photons);
+	double m3pi_fixed = compute_3pi_mass(0, 1, event_orig.photons, event_orig.tracks);
+	hE1_fixed->Fill(event_orig.photons[0][0]);
+	hE2_fixed->Fill(event_orig.photons[1][0]);
+	hE3_fixed->Fill(event_orig.photons[2][0]);
+	hMgg_fixed->Fill(m_gg_fixed);
+	hM3pi_fixed->Fill(m3pi_fixed);
+	hAngle_fixed->Fill(angle_pi0gam12);  // original angle (from input)
+ 
+	//cout << event_bdt.photons[0][0] << endl;
 	
         // BDT selection
-        BDTResult result = find_best_pion_pair(event, bdt);
-        if (!result.is_valid) continue;
-
-        double e1 = event.photons[result.pi0_indices[0]][0];
-        double e2 = event.photons[result.pi0_indices[1]][0];
-        double e3 = event.photons[result.prompt_index][0];
-        double m_gg = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
-        double m3pi = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
+        BDTResult result = find_best_pion_pair(event_bdt, bdt);
+	if (!result.is_valid) {
+	  std::cout << "WARNING: BDT result invalid at event " << i << std::endl;
+	  continue;
+	}
+	
+	// Print which photons were selected for first few events
+	static int debug_count = 0;
+	if (debug_count < 10) {
+	  std::cout << "Event " << i << ": BDT selected pair (" 
+		    << result.pi0_indices[0] << "," << result.pi0_indices[1] 
+		    << "), prompt photon " << result.prompt_index 
+		    << ", score = " << result.score << std::endl;
+	  debug_count++;
+	}
+	
+        double e1 = event_bdt.photons[result.pi0_indices[0]][0];
+        double e2 = event_bdt.photons[result.pi0_indices[1]][0];
+        double e3 = event_bdt.photons[result.prompt_index][0];
+        double m_gg = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event_bdt.photons);
+        double m3pi = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event_bdt.photons, event_bdt.tracks);
 	
         hE1_bdt->Fill(e1);
         hE2_bdt->Fill(e2);
@@ -379,6 +431,7 @@ void test_bdt() {
 	    //cout << m2pi << ", " << angle << endl;
 	    //cout << betapi0_bdt << endl;
 	    //cout << true_m3pi << endl;
+	    //cout << "bdt_score: " << bdt_score << endl;
 	    
 	    if (recon_indx_bdt == 2 && bkg_indx == 1) {
 	    //if (recon_indx_bdt == 2 && bkg_indx == 1) {
@@ -524,12 +577,19 @@ void test_bdt() {
 	  h_bdt->GetYaxis()->SetRangeUser(0, max * 1.2);
         }
         h_fixed->Draw("HIST");
-        h_bdt->Draw("HIST SAME");
-        if (logy) gPad->SetLogy();
-        TLegend* leg = new TLegend(0.7, 0.7, 0.9, 0.9);
-        leg->AddEntry(h_fixed, "#chi^{2}-selected pair", "f");
-        leg->AddEntry(h_bdt, "BDT-selected pair", "f");
-        leg->Draw();
+        //h_bdt->Draw("HIST SAME");
+	if (iPad == 1) {
+	  if (logy) gPad->SetLogy();
+	  TLegend* leg = new TLegend(0.5, 0.8, 0.9, 0.9);
+	  leg->SetTextFont(132);
+	  leg->SetFillStyle(0);
+	  leg->SetBorderSize(0);
+	  leg->SetTextSize(0.04);
+	  leg->SetNColumns(1);
+	  leg->AddEntry(h_fixed, "#chi^{2}-selected pair", "f");
+	  //leg->AddEntry(h_bdt, "BDT-selected pair", "f");
+	  leg->Draw();
+	}
       };
       drawPad(1, h1_fixed, h1_bdt, xTitle1);
       drawPad(2, h2_fixed, h2_bdt, xTitle2);
@@ -652,7 +712,7 @@ void test_bdt() {
     // Photon energies: linear y-axis
     drawTripleOverlay("photon_energies", "Photon Energies",
                       hE1_fixed, hE1_bdt, hE2_fixed, hE2_bdt, hE3_fixed, hE3_bdt,
-                      "E_{1} [MeV]", "E_{2} [MeV]", "E_{3} [MeV]", "Entries", true);
+                      "First paired photon (E_{1}) [MeV]", "Second paired photon (E_{2}) [MeV]", "Upaired photon (E_{3}) [MeV]", "Entries", false);
 
     // Kinematic variables: logarithmic y-axis
     drawTripleOverlay("kine_vars", "Kinematic Variables",

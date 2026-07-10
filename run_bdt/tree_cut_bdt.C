@@ -24,23 +24,27 @@ constexpr double ENERGY_THRESHOLD = 5.0;   // MeV
 // Structures and helper prototypes
 // ----------------------------------------------------------------------
 struct EventData {
-    double photons[3][4];
-    double tracks[2][4];
-    double lagvalue_min_7C;
-    double deltaE;
-    double betapi0;
-    double angle_pi0gam12;
-    double ppIM;
-    int bkg_indx;
-    int recon_indx;
+  double photons[3][4];
+  double tracks[2][4];
+  double lagvalue_min_7C;
+  double deltaE;
+  double betapi0;
+  double angle_pi0gam12;
+  double ppIM;
+  int bkg_indx;
+  int recon_indx;
 };
 
 struct BDTResult {
-    double score;
-    int best_pair_index;
-    int pi0_indices[2];
-    int prompt_index;
-    bool is_valid;
+  double max_score;    // Best pair (original behavior)
+  double mean_scores;  // Average of 3 pairs
+  double scores[3];    // Store all three indiviual scores
+ 
+  double score;
+  int best_pair_index;
+  int pi0_indices[2];
+  int prompt_index;
+  bool is_valid;
 };
 
 // Helper function prototypes
@@ -87,6 +91,11 @@ int tree_cut_bdt() {
     double pull_E3 = 0., pull_x3 = 0., pull_y3 = 0., pull_z3 = 0., pull_t3 = 0.;
     double ppl_E = 0., ppl_px = 0., ppl_py = 0., ppl_pz = 0.;
     double pmi_E = 0., pmi_px = 0., pmi_py = 0., pmi_pz = 0.;
+
+    double pho_E1_orig = 0., pho_px1_orig = 0., pho_py1_orig = 0., pho_pz1_orig = 0.;
+    double pho_E2_orig = 0., pho_px2_orig = 0., pho_py2_orig = 0., pho_pz2_orig = 0.;
+    double pho_E3_orig = 0., pho_px3_orig = 0., pho_py3_orig = 0., pho_pz3_orig = 0.;
+    
     double pho_E1 = 0., pho_px1 = 0., pho_py1 = 0., pho_pz1 = 0.;
     double pho_E2 = 0., pho_px2 = 0., pho_py2 = 0., pho_pz2 = 0.;
     double pho_E3 = 0., pho_px3 = 0., pho_py3 = 0., pho_pz3 = 0.;
@@ -103,7 +112,8 @@ int tree_cut_bdt() {
     int pho_indx[3], EPI0NTMC[4];
     
     // BDT‑specific variables (reco)
-    double bdt_score = 0.;
+    double bdt_score_max = 0.;
+    double bdt_score_mean = 0.;
     double e1_bdt = 0., e2_bdt = 0., e3_bdt = 0.;
     double e1_bdt_true = 0., e2_bdt_true = 0., e3_bdt_true = 0.;
     double m_gg_bdt = 0., m3pi_bdt = 0., m_gg_true = 0.;
@@ -163,16 +173,35 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_pmi_px_true", &pmi_px_true, "Br_pmi_px_true/D");
         tree_tmp->Branch("Br_pmi_py_true", &pmi_py_true, "Br_pmi_py_true/D");
         tree_tmp->Branch("Br_pmi_pz_true", &pmi_pz_true, "Br_pmi_pz_true/D");
-        tree_tmp->Branch("Br_E1", &pho_E1, "Br_pho_E1/D");
+
+	tree_tmp->Branch("Br_E1", &pho_E1, "Br_pho_E1/D");
         tree_tmp->Branch("Br_px1", &pho_px1, "Br_pho_px1/D");
         tree_tmp->Branch("Br_py1", &pho_py1, "Br_pho_py1/D");
-        tree_tmp->Branch("Br_pz1", &pho_pz1, "Br_pho_pz1/D");
+
+	tree_tmp->Branch("Br_pz1", &pho_pz1, "Br_pho_pz1/D");
         tree_tmp->Branch("Br_E2", &pho_E2, "Br_pho_E2/D");
         tree_tmp->Branch("Br_px2", &pho_px2, "Br_pho_px2/D");
-        tree_tmp->Branch("Br_py2", &pho_py2, "Br_pho_py2/D");
+
+	tree_tmp->Branch("Br_py2", &pho_py2, "Br_pho_py2/D");
         tree_tmp->Branch("Br_pz2", &pho_pz2, "Br_pho_pz2/D");
         tree_tmp->Branch("Br_E3", &pho_E3, "Br_pho_E3/D");
-        tree_tmp->Branch("Br_E1_true", &pho_E1_true, "Br_pho_E1_true/D");
+
+	tree_tmp->Branch("Br_E1_orig", &pho_E1_orig, "Br_E1_orig/D");
+	tree_tmp->Branch("Br_px1_orig", &pho_px1_orig, "Br_px1_orig/D");
+	tree_tmp->Branch("Br_py1_orig", &pho_py1_orig, "Br_py1_orig/D");
+	tree_tmp->Branch("Br_pz1_orig", &pho_pz1_orig, "Br_pz1_orig/D");
+	
+	tree_tmp->Branch("Br_E2_orig", &pho_E2_orig, "Br_E2_orig/D");
+	tree_tmp->Branch("Br_px2_orig", &pho_px2_orig, "Br_px2_orig/D");
+	tree_tmp->Branch("Br_py2_orig", &pho_py2_orig, "Br_py2_orig/D");
+	tree_tmp->Branch("Br_pz2_orig", &pho_pz2_orig, "Br_pz2_orig/D");
+	
+	tree_tmp->Branch("Br_E3_orig", &pho_E3_orig, "Br_E3_orig/D");
+	tree_tmp->Branch("Br_px3_orig", &pho_px3_orig, "Br_px3_orig/D");
+	tree_tmp->Branch("Br_py3_orig", &pho_py3_orig, "Br_py3_orig/D");
+	tree_tmp->Branch("Br_pz3_orig", &pho_pz3_orig, "Br_pz3_orig/D");
+ 
+	tree_tmp->Branch("Br_E1_true", &pho_E1_true, "Br_pho_E1_true/D");
         tree_tmp->Branch("Br_px1_true", &pho_px1_true, "Br_pho_px1_true/D");
         tree_tmp->Branch("Br_py1_true", &pho_py1_true, "Br_pho_py1_true/D");
         tree_tmp->Branch("Br_pz1_true", &pho_pz1_true, "Br_pho_pz1_true/D");
@@ -221,7 +250,8 @@ int tree_cut_bdt() {
         tree_tmp->Branch("Br_deltaE", &deltaE, "Br_deltaE/D");
         tree_tmp->Branch("Br_m3pi", &m3pi, "Br_m3pi/D");
         // BDT branches
-        tree_tmp->Branch("Br_bdt_score", &bdt_score, "Br_bdt_score/D");
+	tree_tmp->Branch("Br_bdt_score_mean", &bdt_score_mean, "Br_bdt_score_mean/D");
+        tree_tmp->Branch("Br_bdt_score_max", &bdt_score_max, "Br_bdt_score_max/D");
         tree_tmp->Branch("Br_e1_bdt", &e1_bdt, "Br_e1_bdt/D");
         tree_tmp->Branch("Br_e1_bdt_true", &e1_bdt_true, "Br_e1_bdt_true/D");
         tree_tmp->Branch("Br_e2_bdt", &e2_bdt, "Br_e2_bdt/D");
@@ -460,7 +490,8 @@ int tree_cut_bdt() {
         
         TLorentzVector pi0_bdt = pi0gam1_bdt + pi0gam2_bdt;
         betapi0_bdt = (pi0_bdt.Vect()).Mag() / pi0_bdt.E();
-        bdt_score = result.score;
+        bdt_score_max = result.max_score;
+	bdt_score_mean = result.mean_scores;
 
         // Generator‑level true
         TLorentzVector piplus_gen, piminus_gen, pi0_gen;
@@ -548,7 +579,7 @@ int tree_cut_bdt() {
         if (angle_pi0gam12_bdt > angle_cut) continue;
         if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
         if (Eprompt_max > Eprompt_max_cut) continue;
-        if (bdt_score <= bdt_cut) continue;
+        //if (bdt_score_max <= bdt_cut) continue;
         if (beta_3pi < 0.23 || beta_3pi > 0.28) continue;
 
         // ============================================================
@@ -564,6 +595,23 @@ int tree_cut_bdt() {
         int i1 = result.pi0_indices[1];
         int i2 = result.prompt_index;
 
+	// Save original value before overwriting
+	pho_E1_orig = pho_E1;
+	pho_px1_orig = pho_px1;
+	pho_py1_orig = pho_py1;
+	pho_pz1_orig = pho_pz1;
+
+	pho_E2_orig = pho_E2;
+	pho_px2_orig = pho_px2;
+	pho_py2_orig = pho_py2;
+	pho_pz2_orig = pho_pz2;
+
+	pho_E3_orig = pho_E3;
+	pho_px3_orig = pho_px3;
+	pho_py3_orig = pho_py3;
+	pho_pz3_orig = pho_pz3;
+ 
+	// Overwriting by BDT values
         pho_E1 = tmp_E[i0];  pho_px1 = tmp_px[i0];  pho_py1 = tmp_py[i0];  pho_pz1 = tmp_pz[i0];
         pho_E2 = tmp_E[i1];  pho_px2 = tmp_px[i1];  pho_py2 = tmp_py[i1];  pho_pz2 = tmp_pz[i1];
         pho_E3 = tmp_E[i2];  pho_px3 = tmp_px[i2];  pho_py3 = tmp_py[i2];  pho_pz3 = tmp_pz[i2];
@@ -752,8 +800,19 @@ std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx,
 BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& bdt) {
     BDTResult result;
     result.is_valid = false;
+
+    // Initialize all scores
+    result.scores[0] = 0.0;
+    result.scores[1] = 0.0;
+    result.scores[2] = 0.0;
+    result.max_score = 0.0;
+    result.mean_scores = 0.0;
+    result.score = 0.0;
+    
     int pair_indices[3][2] = {{0,1}, {2,0}, {1,2}};
     double scores[3] = {0.0, 0.0, 0.0};
+
+    // Compute BDT scores for all three pairs
     for (int p = 0; p < 3; ++p) {
         int i_idx = pair_indices[p][0];
         int j_idx = pair_indices[p][1];
@@ -768,12 +827,27 @@ BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& 
         auto bdt_result = bdt.Compute(input_tensor);
         scores[p] = bdt_result(0,0);
     }
+
+    // Store all individual scores
+    result.scores[0] = scores[0];
+    result.scores[1] = scores[1];
+    result.scores[2] = scores[2];
+    
+    //  Calculate max score (best pair)
     int best_pair = 0;
     for (int p = 1; p < 3; ++p) if (scores[p] > scores[best_pair]) best_pair = p;
-    result.score = scores[best_pair];
+
+    result.max_score = scores[best_pair];                          // Max strategy
+    result.score = result.max_score; //scores[best_pair]; 
+    
+    result.mean_scores = (scores[0] + scores[1] + scores[2]) / 3.0; // Mean strategy
+
+    // Store best pair information
     result.best_pair_index = best_pair;
     result.pi0_indices[0] = pair_indices[best_pair][0];
     result.pi0_indices[1] = pair_indices[best_pair][1];
+
+    // Find the unpaired (ISR) photon
     result.prompt_index = -1;
     for (int k = 0; k < 3; ++k) {
         if (k != result.pi0_indices[0] && k != result.pi0_indices[1]) {

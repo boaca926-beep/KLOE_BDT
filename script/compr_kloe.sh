@@ -1,7 +1,7 @@
 #!/bin/bash
 
 compr=../header/compr.h
-sample_size=norm
+sample_size=chain
 tuning_type=tuning #tuning, scaled, raw
 main_folder="/home/bo/Desktop/input_kloe_${tuning_type}_TDATA_${sample_size}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";

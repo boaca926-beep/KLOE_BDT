@@ -81,7 +81,7 @@ int massBias() {
   // ------------------------------------------------------------------
     
   const int nb_mass = 2;
-  TH1D *hMassList[nb_mass] = {hist_signal, hist_data_sub};
+  TH1D *hMassList[nb_mass] = {hist_signal, hist_data};
   TString massNameList[nb_mass] = {"MC", "Data"};
   int massColor[nb_mass] = {kRed, kRed};
   FitResult massResults[nb_mass];

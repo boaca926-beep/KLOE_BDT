@@ -1166,8 +1166,11 @@ void MyClass::Main()
     */
 
     // sigma_fit list
+    // Reorder the covariance matrix using the same permutation
+    TVectorD sigma_fit_ordered = Fillpermutvector(Row, sigma2vectorkinfit_min_7C, isrgam_indx, pi0gam1_indx, pi0gam2_indx);
+ 
     for (int i = 0; i < 15; i++) {
-      SIGMA_FIT_LIST[i] = TMath::Sqrt(sigma2vectorkinfit_min_7C(i));
+      SIGMA_FIT_LIST[i] = TMath::Sqrt(sigma_fit_ordered(i));
     }
     ALLCHAIN_CUT.Fill();
  

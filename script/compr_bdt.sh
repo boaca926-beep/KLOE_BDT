@@ -1,7 +1,7 @@
 #!/bin/bash
 
 compr=../header_bdt/compr.h
-sample_type=norm
+sample_type=chain
 data_type=bdt
 main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";

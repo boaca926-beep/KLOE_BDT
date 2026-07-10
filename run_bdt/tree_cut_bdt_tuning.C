@@ -1,9 +1,9 @@
-#include "../header/cut_para.h"
+#include "../header_bdt/cut_para.h"
+#include "../header/energy_shift_tuning_sum.h" 
 
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
 #include "../header_bdt/method.h"
-#include "../header_bdt/tuning.h"   // ← ADD THIS
 #include "../header_bdt/resol.h"   // ← ADD THIS
 #include <TStopwatch.h>
 #include <TMVA/RBDT.hxx>
@@ -39,11 +39,15 @@ struct EventData {
 };
 
 struct BDTResult {
-    double score;
-    int best_pair_index;
-    int pi0_indices[2];
-    int prompt_index;
-    bool is_valid;
+  double max_score;   // Best pair (original behavior)
+  double mean_scores; // Average of 3 pairs
+  double scores[3];    // Store all three indiviual scores
+ 
+  double score;
+  int best_pair_index;
+  int pi0_indices[2];
+  int prompt_index;
+  bool is_valid;
 };
 
 // Helper function prototypes
@@ -104,6 +108,14 @@ int tree_cut_bdt_tuning() {
     double Eprompt_max = 0.;
 
     int pho_indx[3], EPI0NTMC[4];
+
+    double ENERGYLIST[4];
+    double MASSLIST[12];
+    double ANGLELIST[1];    
+
+    //ALLCHAIN_CUT->SetBranchAddress("Br_ENERGYLIST", ENERGYLIST);
+    //ALLCHAIN_CUT->SetBranchAddress("Br_MASSLIST", MASSLIST);
+    //ALLCHAIN_CUT->SetBranchAddress("Br_ANGLELIST", ANGLELIST);
     
     // BDT‑specific variables (reco)
     double bdt_score = 0.;
@@ -335,7 +347,7 @@ int tree_cut_bdt_tuning() {
 
     for (Long64_t irow = 0; irow < nentries; irow++) {
         ALLCHAIN_CUT->GetEntry(irow);
-        if (irow % 100000 == 0) cout << "Event " << irow << endl;
+        if (irow % 100000 == 0) cout << "Event " << irow << "/ " << nentries << endl;
 
         // These are still read via GetLeaf (non‑true variables, unchanged)
         pho_indx[0] = ALLCHAIN_CUT->GetLeaf("Br_pho_indx")->GetValue(0);
@@ -399,20 +411,41 @@ int tree_cut_bdt_tuning() {
         phid = ALLCHAIN_CUT->GetLeaf("Br_phid")->GetValue(0);
         sig_type = ALLCHAIN_CUT->GetLeaf("Br_sig_type")->GetValue(0);
         lagvalue_min_7C = ALLCHAIN_CUT->GetLeaf("Br_lagvalue_min_7C")->GetValue(0);
-        deltaE = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(2);
         angle_pi0gam12 = ALLCHAIN_CUT->GetLeaf("Br_ANGLELIST")->GetValue(0);
-        betapi0 = ALLCHAIN_CUT->GetLeaf("Br_betapi0")->GetValue(0);
-        ppIM = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(5);
-        m02 = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(10);
-        mplus2 = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(11);
-
+        //betapi0 = ALLCHAIN_CUT->GetLeaf("Br_betapi0")->GetValue(0);
+        
         IM3pi_7C = ALLCHAIN_CUT->GetLeaf("Br_IM3pi_7C")->GetValue(0);
         IM_pi0_7C = ALLCHAIN_CUT->GetLeaf("Br_IM_pi0_7C")->GetValue(0);
         IM3pi_true = ALLCHAIN_CUT->GetLeaf("Br_IM3pi_true")->GetValue(0);
-        Eisr = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(0);
-        Epi0_pho1 = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(1);
-        Epi0_pho2 = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(3);
 
+	ppIM = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(5);
+        m02 = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(10);
+        mplus2 = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(11);
+	
+	/*
+	ppIM = MASSLIST[5];
+	m02 = MASSLIST[10];
+	mplus2 = MASSLIST[11];
+	*/
+	
+	Eisr = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(0);
+        Epi0_pho1 = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(1);
+	deltaE = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(2);
+        Epi0_pho2 = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(3);
+	
+	/*
+	Eisr = ENERGYLIST[0];
+	Epi0_pho1 = ENERGYLIST[1];
+	deltaE = ENERGYLIST[2];
+	Epi0_pho2 = ENERGYLIST[3];
+	*/
+	
+	angle_pi0gam12 = ANGLELIST[0];
+	
+	//cout << Eisr << ", " << Epi0_pho1 << ", "<< deltaE << ", " << Epi0_pho2 << endl;
+	//cout << ppIM << ", " << m02 << ", " << mplus2 << endl;
+	//cout << angle_pi0gam12 << endl;
+	
         // Build Lorentz vectors
         pi0gam1.SetPxPyPzE(pho_px1, pho_py1, pho_pz1, pho_E1);
         pi0gam2.SetPxPyPzE(pho_px2, pho_py2, pho_pz2, pho_E2);
@@ -425,6 +458,18 @@ int tree_cut_bdt_tuning() {
 	angle_trk_neutral = trksum.Angle(neutralsum.Vect())*TMath::RadToDeg();
         m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
+	// Photons are sorted by energies
+	TLorentzVector photon[3] = {pi0gam1, pi0gam2, isrgam};
+
+	// Sort by energy (descending)
+	std::sort(photon, photon+3, [](const TLorentzVector& a, const TLorentzVector& b) {
+	  return a.E() > b.E();
+	});
+	
+	double M12 = (photon[0] + photon[1]).M();
+	double M13 = (photon[0] + photon[2]).M();
+	double M23 = (photon[1] + photon[2]).M();
+	
         evnt_tot++;
         Eprompt_max = 0.;
         if (Eisr > Eprompt_max) Eprompt_max = Eisr;
@@ -488,26 +533,21 @@ int tree_cut_bdt_tuning() {
 	const double bias_MeV_E12 = bias_E12 * resol_E12;  
 	const double bias_MeV_E3 = bias_E3 * resol_E3;
 
-	// ---- Apply pull tuning to pi0 photon energies (only for signal events) ----
-    
-        if (data_type == "sig") {
-	  /* full corrections
-	  // Step 1: Apply mass scale to raw values
+	// ---- Apply corrections to BDT-selected photon energies (only for signal events) ----
+	if (data_type == "sig") {
+	  // Step 1: Apply mass scale to π⁰ photon energies
 	  double e1_scaled = e1_raw * MASS_SCALE_PI0;
-	  double px1_scaled = px1_raw * MASS_SCALE_PI0;
-	  // ... similarly for others
-	  */
+	  double e2_scaled = e2_raw * MASS_SCALE_PI0;
+	  // ISR photon does NOT get mass scaling
+	  double e3_scaled = e3_raw;
 	  
 	  // Step 2: Apply pull tuning on the scaled values
 	  e1_bdt = (e1_scaled - bias_MeV_E12) / sigma_scale_E12;
-	  px1_bdt = px1_scaled / sigma_scale_E12;
+	  e2_bdt = (e2_scaled - bias_MeV_E12) / sigma_scale_E12;
+	  e3_bdt = (e3_scaled - bias_MeV_E3) / sigma_scale_E3;
 	  
-	  // MC events: Apply corrections
-	  e1_bdt = (e1_raw - bias_MeV_E12) / sigma_scale_E12;
-	  e2_bdt = (e2_raw - bias_MeV_E12) / sigma_scale_E12;
-	  e3_bdt = (e3_raw - bias_MeV_E3) / sigma_scale_E3;
-          
-	  // Also correct momenta (scale them too)
+	  // Correct momenta using the SAME scaling
+	  // Note: px1_bdt, etc. are already set from event.photons
 	  px1_bdt = px1_bdt / sigma_scale_E12;
 	  py1_bdt = py1_bdt / sigma_scale_E12;
 	  pz1_bdt = pz1_bdt / sigma_scale_E12;
@@ -534,12 +574,12 @@ int tree_cut_bdt_tuning() {
 	  event.photons[result.prompt_index][2] = py3_bdt;
 	  event.photons[result.prompt_index][3] = pz3_bdt;
 	  
-        } else {
+	} else {
 	  // Data (exp) and other samples: No correction
 	  e1_bdt = e1_raw;
 	  e2_bdt = e2_raw;
 	  e3_bdt = e3_raw;
-        }
+	}
 	
         m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
         m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
@@ -814,28 +854,64 @@ std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx,
 BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& bdt) {
     BDTResult result;
     result.is_valid = false;
+
+    // Initialize all scores
+    result.scores[0] = 0.0;
+    result.scores[1] = 0.0;
+    result.scores[2] = 0.0;
+    result.max_score = 0.0;
+    result.mean_scores = 0.0;
+    result.score = 0.0;
+    
     int pair_indices[3][2] = {{0,1}, {2,0}, {1,2}};
     double scores[3] = {0.0, 0.0, 0.0};
+
+    // Compute BDT scores for all three pairs
     for (int p = 0; p < 3; ++p) {
         int i_idx = pair_indices[p][0];
         int j_idx = pair_indices[p][1];
         int unpaired_idx = -1;
+	
         for (int k = 0; k < 3; ++k) {
             if (k != i_idx && k != j_idx) { unpaired_idx = k; break; }
         }
+	
         if (unpaired_idx == -1) continue;
-        std::vector<float> features = extract_features(i_idx, j_idx, unpaired_idx,
+	
+	std::vector<float> features = extract_features(i_idx, j_idx, unpaired_idx,
                                                        event.photons, ENERGY_THRESHOLD);
         TMVA::Experimental::RTensor<float> input_tensor(features.data(), {1, features.size()});
         auto bdt_result = bdt.Compute(input_tensor);
         scores[p] = bdt_result(0,0);
     }
+
+    // Store all individual scores
+    result.scores[0] = scores[0];
+    result.scores[1] = scores[1];
+    result.scores[2] = scores[2];
+    
+    //  Calculate max score (best pair)
     int best_pair = 0;
-    for (int p = 1; p < 3; ++p) if (scores[p] > scores[best_pair]) best_pair = p;
-    result.score = scores[best_pair];
+    double max_score = scores[0];
+    
+    for (int p = 1; p < 3; ++p) {
+      if (scores[p] > max_score) {
+	max_score = scores[p];
+	best_pair = p;
+      }
+    }
+    
+    result.max_score = scores[best_pair];                          // Max strategy
+    result.score = result.max_score; //scores[best_pair]; 
+    
+    result.mean_scores = (scores[0] + scores[1] + scores[2]) / 3.0; // Mean strategy
+    
+    // Store best pair information
     result.best_pair_index = best_pair;
     result.pi0_indices[0] = pair_indices[best_pair][0];
     result.pi0_indices[1] = pair_indices[best_pair][1];
+
+    // Find the unpaired (ISR) photon
     result.prompt_index = -1;
     for (int k = 0; k < 3; ++k) {
         if (k != result.pi0_indices[0] && k != result.pi0_indices[1]) {
