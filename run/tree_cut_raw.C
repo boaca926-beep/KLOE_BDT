@@ -288,13 +288,13 @@ int tree_cut_raw(){
 
     // Selection cuts
 
-    /*
     // Cuts used to create BDT training samples
-    if (lagvalue_min_7C > chi2_cut) continue;
+    // Suppress irreduciable backgrounds
+    //if (lagvalue_min_7C > chi2_cut) continue;
     if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
     if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
-    */
     
+    /*
     // Cuts used in the analysis
     if (lagvalue_min_7C > chi2_cut) continue;
     if (angle_pi0gam12 > angle_cut) continue;
@@ -303,6 +303,7 @@ int tree_cut_raw(){
     
     if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
     if (beta_3pi < beta_3pi_min || beta_3pi > beta_3pi_max) continue; // suppress missing MC a1+pi
+    */
     
     // Fill only the tree(s) corresponding to the current sample type
     if (data_type == "exp") {

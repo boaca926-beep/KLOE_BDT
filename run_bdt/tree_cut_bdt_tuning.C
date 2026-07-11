@@ -27,15 +27,15 @@ constexpr double ENERGY_THRESHOLD = 5.0;   // MeV
 // Structures and helper prototypes
 // ----------------------------------------------------------------------
 struct EventData {
-    double photons[3][4];
-    double tracks[2][4];
-    double lagvalue_min_7C;
-    double deltaE;
-    double betapi0;
-    double angle_pi0gam12;
-    double ppIM;
-    int bkg_indx;
-    int recon_indx;
+  double photons[3][4];
+  double tracks[2][4];
+  double lagvalue_min_7C;
+  double deltaE;
+  double betapi0;
+  double angle_pi0gam12;
+  double ppIM;
+  int bkg_indx;
+  int recon_indx;
 };
 
 struct BDTResult {
@@ -338,9 +338,6 @@ int tree_cut_bdt_tuning() {
     ALLCHAIN_CUT->SetBranchAddress("true_pz_pi0", &true_pz_pi0);
     ALLCHAIN_CUT->SetBranchAddress("true_E_pi0", &true_E_pi0);
 
-    
-    
-    
     // ---------- Event loop ----------
     Long64_t nentries = ALLCHAIN_CUT->GetEntries();
     cout << "Processing " << nentries << " events" << endl;
@@ -471,11 +468,7 @@ int tree_cut_bdt_tuning() {
 	double M23 = (photon[1] + photon[2]).M();
 	
         evnt_tot++;
-        Eprompt_max = 0.;
-        if (Eisr > Eprompt_max) Eprompt_max = Eisr;
-        if (Epi0_pho1 > Eprompt_max) Eprompt_max = Epi0_pho1;
-        if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
-
+        
         // ---------- BDT evaluation ----------
         EventData event;
         event.photons[0][0] = pho_E1; event.photons[0][1] = pho_px1; event.photons[0][2] = pho_py1; event.photons[0][3] = pho_pz1;
@@ -530,11 +523,11 @@ int tree_cut_bdt_tuning() {
         // ============================================================
         // ============================================================
 
-	const double bias_MeV_E12 = bias_E12 * resol_E12;  
-	const double bias_MeV_E3 = bias_E3 * resol_E3;
-
 	// ---- Apply corrections to BDT-selected photon energies (only for signal events) ----
 	if (data_type == "sig") {
+	  const double bias_MeV_E12 = bias_E12 * resol_E12;  
+	  const double bias_MeV_E3 = bias_E3 * resol_E3;
+	
 	  // Step 1: Apply mass scale to π⁰ photon energies
 	  double e1_scaled = e1_raw * MASS_SCALE_PI0;
 	  double e2_scaled = e2_raw * MASS_SCALE_PI0;
@@ -678,16 +671,20 @@ int tree_cut_bdt_tuning() {
 	bool isr_correct = (pho_indx[result.prompt_index] == EPI0NTMC[2] || pho_indx[result.prompt_index] == EPI0NTMC[3]);
 	isr_recon_quality = isr_correct ? 1 : 0;
 	total_recon_quality = recon_indx_bdt + isr_recon_quality;
-	
+
+	// After tuning and rebuilding BDT photons
+	Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
 	
         // Selection cuts
         if (lagvalue_min_7C > chi2_cut) continue; //43 -> 20 MeV, further suppress kaons background
-        if (deltaE < -440. || deltaE > deltaE_cut) continue; // suppress rhopi->3pi
-        if (angle_pi0gam12_bdt > angle_cut) continue; // suppress e+e- -> e+e-gamma
-        if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-	if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
+	if (angle_pi0gam12_bdt > angle_cut) continue; // suppress e+e- -> e+e-gamma
+	if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue; // reject fake pi0s
+	if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
+	if (beta_3pi < beta_3pi_min || beta_3pi > beta_3pi_max) continue; // suppress missing MC a1+pi0
 	if (bdt_score <= bdt_cut) continue; // suppress ksl and omegpi background
-	if (beta_3pi < 0.23 || beta_3pi > 0.28) continue; // suppress missing MC a1+pi0
+        if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
+	
+	
 	
         //else if (m3pi_bdt > 840.) continue;
 	//if (m3pi_bdt < 760. || m3pi_bdt > 820. || bdt_score <= bdt_cut) continue; // clear sample of omega gamma
@@ -730,7 +727,7 @@ int tree_cut_bdt_tuning() {
     }
     
     // Write output file
-    TFile *f_output = new TFile(outputCut + "tree_pre_bdt.root", "update");
+    TFile *f_output = new TFile(outputCut + "tree_pre.root", "update");
     f_output->cd();
 
         if (data_type == "exp") {

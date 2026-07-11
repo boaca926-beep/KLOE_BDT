@@ -121,6 +121,12 @@ void MyClass::Main()
   TrSample.Branch("Br_bpx", &bpx, "Br_bpx/F");
   TrSample.Branch("Br_Esum", &Esum, "Br_Esum/D");
 
+  // Raw photon 4-momenta (before kinematic fit)
+  double pho_E1_raw = 0., pho_px1_raw = 0., pho_py1_raw = 0., pho_pz1_raw = 0.;
+  double pho_E2_raw = 0., pho_px2_raw = 0., pho_py2_raw = 0., pho_pz2_raw = 0.;
+  double pho_E3_raw = 0., pho_px3_raw = 0., pho_py3_raw = 0., pho_pz3_raw = 0.;
+  int isrgam_indx = 0, pi0gam1_indx = 0, pi0gam2_indx = 0;
+  
   double pho_E1 = 0., pho_px1 = 0., pho_py1 = 0., pho_pz1 = 0.;
   double pho_E2 = 0., pho_px2 = 0., pho_py2 = 0., pho_pz2 = 0.;
   double pho_E3 = 0., pho_px3 = 0., pho_py3 = 0., pho_pz3 = 0.;
@@ -301,6 +307,29 @@ void MyClass::Main()
   ALLCHAIN_CUT.Branch("Br_pmi_px_true", &pmi_px_true, "Br_pmi_px_true/D");
   ALLCHAIN_CUT.Branch("Br_pmi_py_true", &pmi_py_true, "Br_pmi_py_true/D");
   ALLCHAIN_CUT.Branch("Br_pmi_pz_true", &pmi_pz_true, "Br_pmi_pz_true/D");
+
+  // ================================================================
+  // RAW PHOTON 4-MOMENTA (before kinematic fit)
+  // ================================================================
+  ALLCHAIN_CUT.Branch("Br_E1_raw", &pho_E1_raw, "Br_E1_raw/D");
+  ALLCHAIN_CUT.Branch("Br_px1_raw", &pho_px1_raw, "Br_px1_raw/D");
+  ALLCHAIN_CUT.Branch("Br_py1_raw", &pho_py1_raw, "Br_py1_raw/D");
+  ALLCHAIN_CUT.Branch("Br_pz1_raw", &pho_pz1_raw, "Br_pz1_raw/D");
+  
+  ALLCHAIN_CUT.Branch("Br_E2_raw", &pho_E2_raw, "Br_E2_raw/D");
+  ALLCHAIN_CUT.Branch("Br_px2_raw", &pho_px2_raw, "Br_px2_raw/D");
+  ALLCHAIN_CUT.Branch("Br_py2_raw", &pho_py2_raw, "Br_py2_raw/D");
+  ALLCHAIN_CUT.Branch("Br_pz2_raw", &pho_pz2_raw, "Br_pz2_raw/D");
+  
+  ALLCHAIN_CUT.Branch("Br_E3_raw", &pho_E3_raw, "Br_E3_raw/D");
+  ALLCHAIN_CUT.Branch("Br_px3_raw", &pho_px3_raw, "Br_px3_raw/D");
+  ALLCHAIN_CUT.Branch("Br_py3_raw", &pho_py3_raw, "Br_py3_raw/D");
+  ALLCHAIN_CUT.Branch("Br_pz3_raw", &pho_pz3_raw, "Br_pz3_raw/D");
+  
+  // Also save the assignment indices from the fit
+  ALLCHAIN_CUT.Branch("Br_isrgam_indx", &isrgam_indx, "Br_isrgam_indx/I");
+  ALLCHAIN_CUT.Branch("Br_pi0gam1_indx", &pi0gam1_indx, "Br_pi0gam1_indx/I");
+  ALLCHAIN_CUT.Branch("Br_pi0gam2_indx", &pi0gam2_indx, "Br_pi0gam2_indx/I");
   
   //
   TTree ALLCHAIN_TEST ("ALLCHAIN_TEST", "recreate"); ALLCHAIN_TEST.SetAutoSave(0);
@@ -737,6 +766,30 @@ void MyClass::Main()
     
     //ALLCHAIN_STR2.Fill();
 
+    // ================================================================
+    // FILL RAW PHOTON 4-MOMENTA (before kinematic fit)
+    // ================================================================
+    // Photon 1
+    pho_E1_raw = E_list[0];
+    double r1 = TMath::Sqrt(X_list[0]*X_list[0] + Y_list[0]*Y_list[0] + Z_list[0]*Z_list[0]);
+    pho_px1_raw = (r1 > 0) ? E_list[0] * X_list[0] / r1 : 0;
+    pho_py1_raw = (r1 > 0) ? E_list[0] * Y_list[0] / r1 : 0;
+    pho_pz1_raw = (r1 > 0) ? E_list[0] * Z_list[0] / r1 : 0;
+
+    // Photon 2
+    pho_E2_raw = E_list[1];
+    double r2 = TMath::Sqrt(X_list[1]*X_list[1] + Y_list[1]*Y_list[1] + Z_list[1]*Z_list[1]);
+    pho_px2_raw = (r2 > 0) ? E_list[1] * X_list[1] / r2 : 0;
+    pho_py2_raw = (r2 > 0) ? E_list[1] * Y_list[1] / r2 : 0;
+    pho_pz2_raw = (r2 > 0) ? E_list[1] * Z_list[1] / r2 : 0;
+
+    // Photon 3
+    pho_E3_raw = E_list[2];
+    double r3 = TMath::Sqrt(X_list[2]*X_list[2] + Y_list[2]*Y_list[2] + Z_list[2]*Z_list[2]);
+    pho_px3_raw = (r3 > 0) ? E_list[2] * X_list[2] / r3 : 0;
+    pho_py3_raw = (r3 > 0) ? E_list[2] * Y_list[2] / r3 : 0;
+    pho_pz3_raw = (r3 > 0) ? E_list[2] * Z_list[2] / r3 : 0;
+    
     /// 7C kinematical fit
     const int Row = 15, Col = 15, row = 7;
     const int nfloop_7C = 5;

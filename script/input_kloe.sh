@@ -1,9 +1,9 @@
 #!/bin/bash
 
-sample_size=norm # norm; small; mini; chain
+sample_size=chain # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
 exp_type=TDATA # DATA
-tuning_type=tuning #raw: no tuning; scaled: pi0 photon energy scale; tuning; energy scale + pull tuning
+tuning_type=raw #raw: no tuning; scaled: pi0 photon energy scale
 gsf=1 # DATA
 
 result_path=../../input_kloe_${tuning_type}_${exp_type}_${sample_size}
@@ -79,7 +79,7 @@ sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples 
 DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
-#DATA_TYPE=("sig" "eeg")
+#DATA_TYPE=("sig")
 
 ## Folders
 input_path=${result_path}/input/

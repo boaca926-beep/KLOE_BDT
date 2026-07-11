@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-sample_size=chain # norm; small; mini; chain
+sample_size=norm # norm; small; mini; chain
 sample_path=../path_${sample_size}/ 
-
 exp_type=TDATA # DATA
+tuning_type=raw #raw: no tuning; tuning: tuned + scale
 gsf=1 # DATA
 
-result_path=../../input_bdt_${exp_type}_${sample_size}
+result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}
 #result_path=/media/bo/Analysis_Disk/
 
 ## Initialize the normal conditions
@@ -27,8 +27,13 @@ sed -i 's/\(nb_sigma_T_clust =\)\(.*\)/\1 '$nb_sigma_T_clust';/' $class_header
 Eprompt_max_cut=300
 chi2_cut=20 #43 20
 angle_cut=138 #138 66
-deltaE_cut=-240 #-150
 beta_cut=1.98
+deltaE_min=-440 
+deltaE_max=-240 #-150
+
+beta_3pi_min=0.23
+beta_3pi_max=0.28
+
 bdt_cut=0.4
 c0=0.11
 c1=0.8
@@ -37,11 +42,14 @@ cut_value=0
 
 cut_header=../header_bdt/cut_para.h
 cat > $cut_header <<EOF
-const double Eprompt_max_cut = $Eprompt_max_cut;
 const double chi2_cut = $chi2_cut;
 const double angle_cut = $angle_cut;
-const double deltaE_cut = $deltaE_cut;
 const double beta_cut = $beta_cut;
+const double Eprompt_max_cut = $Eprompt_max_cut;
+const double deltaE_min = $deltaE_min;
+const double deltaE_max = $deltaE_max;
+const double beta_3pi_min = $beta_3pi_min;
+const double beta_3pi_max = $beta_3pi_max;
 const double bdt_cut = $bdt_cut;
 const double c0 = $c0;
 const double c1 = $c1;
@@ -72,8 +80,8 @@ sm_header=../header_bdt/sm_para.h
 sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples 
-#DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
-DATA_TYPE=("sig")
+DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
+#DATA_TYPE=("sig")
 
 ## Folders
 input_path=${result_path}/input/
@@ -116,6 +124,7 @@ echo -e 'const TString outputSfw1D = "";' >> $path_header
 echo -e 'const TString outputOmega = "";' >> $path_header
 echo -e 'const TString data_type = "";' >> $path_header
 echo -e 'const TString exp_type = "'$exp_type'";' >> $path_header
+echo -e 'const TString tuning_type = "'$tuning_type'";' >> $path_header
 echo -e "double gsf = $gsf;" >> $path_header
 
 sed -i 's|\(const TString sig_path =\)\(.*\)|\1 "'"${input_path}"'";|' "$path_header"
@@ -171,6 +180,7 @@ const TString outputSfw1D = "${sfw1d_path}";
 const TString outputOmega = "${omega_path}";
 const TString data_type = "${data_type}";
 const TString exp_type = "${exp_type}";
+const TString tuning_type = "${tuning_type}";
 double gsf = ${gsf};
 EOF
 
@@ -194,13 +204,8 @@ EOF
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script
     echo "void tree_cut_script() {" >> $tree_cut_script
-    echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt.C");' >> $tree_cut_script
-    echo 'gROOT->ProcessLine("tree_cut_bdt()");' >> $tree_cut_script
-
-    # Test if p0 photon energy scaling factor works properly
-    #echo 'gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt_scaled.C");' >> $tree_cut_script
-    #echo 'gROOT->ProcessLine("tree_cut_bdt_scaled()");' >> $tree_cut_script
-
+    echo "gROOT->ProcessLine(\".L ../run_bdt/tree_cut_bdt_${tuning_type}.C\");" >> $tree_cut_script
+    echo "gROOT->ProcessLine(\"tree_cut_bdt_${tuning_type}()\");" >> $tree_cut_script
     echo '}' >> $tree_cut_script
     root -l -n -q -b $tree_cut_script >> ${log_cut} 2>&1 || { echo "ROOT failed at tree_cut_script for $data_type"; exit 1; }
 done

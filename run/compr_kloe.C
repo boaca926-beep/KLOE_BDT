@@ -270,6 +270,7 @@ int compr_kloe() {
   leg->AddEntry(hist_mcsum, "MC sum", "l");
   leg->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma (signal)", "l");
   leg->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
+  leg->AddEntry(hist_etagam_sc, "#eta#gamma", "l");
   leg->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
   leg->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
   leg->AddEntry(hist_mcrest_sc, "MC Rest", "l");

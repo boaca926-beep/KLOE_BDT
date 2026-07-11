@@ -1,8 +1,11 @@
-const double Eprompt_max_cut = 300;
 const double chi2_cut = 20;
 const double angle_cut = 138;
-const double deltaE_cut = -240;
 const double beta_cut = 1.98;
+const double Eprompt_max_cut = 300;
+const double deltaE_min = -440;
+const double deltaE_max = -240;
+const double beta_3pi_min = 0.23;
+const double beta_3pi_max = 0.28;
 const double bdt_cut = 0.4;
 const double c0 = 0.11;
 const double c1 = 0.8;

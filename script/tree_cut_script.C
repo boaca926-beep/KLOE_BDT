@@ -1,5 +1,5 @@
 #include <iostream>
 void tree_cut_script() {
-gROOT->ProcessLine(".L ../run/tree_cut_tuning.C");
-gROOT->ProcessLine("tree_cut_tuning()");
+gROOT->ProcessLine(".L ../run_bdt/tree_cut_bdt_raw.C");
+gROOT->ProcessLine("tree_cut_bdt_raw()");
 }

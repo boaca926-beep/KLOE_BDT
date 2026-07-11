@@ -57,7 +57,7 @@ std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx,
 BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& bdt);
 
 // ----------------------------------------------------------------------
-int tree_cut_bdt() {
+int tree_cut_bdt_raw() {
     TStopwatch timer;
     timer.Start();
 
@@ -575,13 +575,12 @@ int tree_cut_bdt() {
 
         // ---------- Selection cuts ----------
         if (lagvalue_min_7C > chi2_cut) continue;
-        if (deltaE < -440. || deltaE > deltaE_cut) continue;
-        if (angle_pi0gam12_bdt > angle_cut) continue;
-        if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-        if (Eprompt_max > Eprompt_max_cut) continue;
-        //if (bdt_score_max <= bdt_cut) continue;
-        if (beta_3pi < 0.23 || beta_3pi > 0.28) continue;
-
+	if (angle_pi0gam12_bdt > angle_cut) continue;
+	if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
+	if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
+	if (beta_3pi < beta_3pi_min || beta_3pi > beta_3pi_max) continue; // suppress missing MC a1+pi
+    	if (bdt_score_max <= bdt_cut) continue; // further suppress KSL and omegapi background
+        
         // ============================================================
         //  FIX: REORDER PHOTONS ACCORDING TO BDT CHOICE (after cuts)
         // ============================================================
@@ -644,6 +643,11 @@ int tree_cut_bdt() {
         e_asym = std::abs(pho_E1 - pho_E2) / (pho_E1 + pho_E2 + 1e-10);
         // ============================================================
 
+	// Recalculate Eprompt_max from BDT-selected photons
+	Eprompt_max = std::max({pho_E1, pho_E2, pho_E3});
+ 
+	if (Eprompt_max > Eprompt_max_cut) continue;
+	
         // ---------- Fill output trees ----------
         if (data_type == "exp") {
             TTList[0]->Fill();

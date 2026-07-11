@@ -1,12 +1,9 @@
-// massBias.C – full code with background subtraction
+// massBias_bdt.C – full code with background subtraction
 #include "../header_method/method.h"
 #include "../header_plot/plot.h"
-//#include "../header/path.h"   // for outputHist, tuning_type
-const TString tuning_type = "tuning"; //raw, scaled, tuning
-const TString tree_file_nm = "../output_kloe_" + tuning_type + "_m3pi/hist_m3pi.root";
-//const TString tree_file_nm = "../output_m3pi_bdt/hist_m3pi_bdt.root";
+const TString tree_file_nm = "../output_m3pi_bdt/hist_m3pi_bdt.root";
 
-const TString out_dir = "../massBias_" + tuning_type;
+const TString out_dir = "../massBias_bdt";
 
 const TString var_nm = "IM3pi_7C";
 const TString unit = "[MeV/c^{2}]";
@@ -24,7 +21,7 @@ Double_t breitwigner(Double_t *x, Double_t *par) {
     return par[0] / ((x[0] - par[1]) * (x[0] - par[1]) + par[2] * par[2]);
 }
 
-int massBias() {
+int massBias_bdt() {
 
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
@@ -45,21 +42,21 @@ int massBias() {
   checkFile(tree_file); // optional, shows contents
 
   // ---- Retrieve raw data and signal histograms ----
-  TH1D *hist_data = (TH1D*)tree_file->Get("hist_data");
-  TH1D *hist_signal = (TH1D*)tree_file->Get("hist_isr3pi_sc");
   TH1D *hist_eeg = (TH1D*)tree_file->Get("hist_eeg_sc");
+  TH1D *hist_signal = (TH1D*)tree_file->Get("hist_isr3pi_sc");
   TH1D *hist_omegapi = (TH1D*)tree_file->Get("hist_omegapi_sc");
-  TH1D *hist_etagam = (TH1D*)tree_file->Get("hist_etagam_sc");
+  TH1D *hist_nonreson = (TH1D*)tree_file->Get("hist_nonreson_sc");
   TH1D *hist_ksl = (TH1D*)tree_file->Get("hist_ksl_sc");
   TH1D *hist_mcrest = (TH1D*)tree_file->Get("hist_mcrest_sc");
- 
+  TH1D *hist_data = (TH1D*)tree_file->Get("hist_data");
+
   if (!hist_data) {
     cerr << "ERROR: Data histogram not found!" << endl;
     tree_file->Close();
     return 1;
   }
-  if (!hist_signal || !hist_eeg || !hist_omegapi || !hist_etagam || !hist_ksl || !hist_mcrest) {
-    cerr << "ERROR: Signal histogram not found!" << endl;
+  if (!hist_signal || !hist_eeg || !hist_omegapi || !hist_nonreson || !hist_ksl || !hist_mcrest) {
+    cerr << "ERROR: MC histogram not found!" << endl;
     tree_file->Close();
     return 1;
   }
@@ -70,7 +67,7 @@ int massBias() {
   // Add backgrounds with optional scaling (set to 1.0 for now)
   if (hist_eeg) hist_bkg_sum->Add(hist_eeg, 1.0);
   if (hist_omegapi) hist_bkg_sum->Add(hist_omegapi, 1.0);
-  if (hist_etagam) hist_bkg_sum->Add(hist_etagam, 1.0);
+  if (hist_nonreson) hist_bkg_sum->Add(hist_nonreson, 1.0);
   if (hist_ksl) hist_bkg_sum->Add(hist_ksl, 1.0);
   if (hist_mcrest) hist_bkg_sum->Add(hist_mcrest, 1.0);
 
@@ -81,7 +78,7 @@ int massBias() {
   // ------------------------------------------------------------------
   // * BW fit to determine 3pi mass peak position, mass bias [MeV/c^{2}]
   // ------------------------------------------------------------------
-    
+
   const int nb_mass = 2;
   TH1D *hMassList[nb_mass] = {hist_signal, hist_data};
   TString massNameList[nb_mass] = {"MC", "Data"};
@@ -92,7 +89,7 @@ int massBias() {
   std::cout << "MC signal mean: " << hist_signal->GetMean() << std::endl;
   std::cout << "Data entries: " << hist_data_sub->GetEntries() << std::endl;
   std::cout << "Data mean: " << hist_data_sub->GetMean() << std::endl;
-  
+
   for (int i = 0; i < nb_mass; i++) {
     TH1D *h_mass = hMassList[i];
     if (!h_mass) {
@@ -177,6 +174,7 @@ int massBias() {
     c_mass->Update();
     c_mass->SaveAs(out_dir + "/mass_fit_" + massNameList[i] + ".pdf");
     delete c_mass;
+    
   }
 
   // ---- Summary ----
@@ -205,7 +203,7 @@ int massBias() {
 
   // ---- Write residual bias ----
   std::ofstream myfile;
-  TString myfile_nm = "../header/massbias_" + tuning_type + ".h";
+  TString myfile_nm = "../header_bdt/massbias_bdt.h";
   myfile.open(myfile_nm.Data());
   myfile << "const double energy_shift = " << mass_bias / 2.0 << ";\n";
   myfile << "const double energy_shift_err = " << mass_bias_err / 2.0 << ";\n";
