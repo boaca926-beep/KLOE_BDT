@@ -117,72 +117,71 @@ if __name__ == '__main__':
             #print(kine_all_df.columns)  
 
 
-            ## * Plot gamma 4-momentum 
+            ## 1. Plot gamma 4-momentum 
             df_set = [all_df, pos_df, neg_df]
             drop_columns = ['event', 'Br_betapi0', 'Br_ppIM', 'Br_angle_pi0gam12', 'Br_deltaE', 'Br_m3pi', 
                             'Br_lagvalue_min_7C', 'Br_recon_indx', 'Br_bkg_indx', 'is_signal', 'true_pi0_pair', 'Br_isr_recon_quality', 'Br_total_recon_quality']
             
             fig_compr_hist = plot_compr_hist(df_set, drop_columns,
-                                             4, 100, 
-                                             rf"$\gamma$ 4-momentum ({br_title})") # Photon 4-momentum comparison plot
+                                             4, 200, 
+                                             rf"Photon 4-momentum") # Photon 4-momentum comparison plot
             fig_compr_hist.savefig(f'{plot_dir}/Photon_4-momentum_compr_{br_nm}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_compr_hist)
             #print(all_df.columns.tolist())
             print(all_df.columns.tolist())
 
-            ## * Plot pi0 features
+            ## 2. Plot pi0 features
             #drop_columns = ['event', 'pair_id', 'is_pi0']
             drop_columns = ['event', 'pair_id', 'is_pi0', 'isr_recon_quality', 'total_recon_quality', 'isr_correct', 'pair_index']
             pi0_df_set = [pi0_all_df, pi0_pos_df, pi0_neg_df]
             #print(pi0_all_df.columns.tolist())
 
-            fig_compr_hist = plot_compr_hist(pi0_df_set, drop_columns,
-                                             5, 100, 
-                                             rf"$\pi^{0}$ Candidates ({br_title})") # Pi0 comparison plot
-            fig_compr_hist.savefig(f'{plot_dir}/Pi0_compr_{br_nm}.png', dpi=300, bbox_inches='tight')
+            #fig_compr_hist = plot_compr_hist(pi0_df_set, drop_columns,
+            #                                 5, 100, 
+            #                                 rf"$\pi^{0}$ Candidates ({br_title})") # Pi0 comparison plot
+            #fig_compr_hist.savefig(f'{plot_dir}/Pi0_compr_{br_nm}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_compr_hist)  
 
-            ## * Plot kine. var of selection cuts: chi2, gg-opening-angle, deltaE, ppIM, betapi0
+            ## 3. Plot kine. var of selection cuts: chi2, gg-opening-angle, deltaE, ppIM, betapi0
             drop_columns = ['is_signal']
             kine_df_set = [kine_all_df, kine_pos_df, kine_neg_df]
-            fig_compr_hist = plot_compr_hist(kine_df_set, drop_columns,
-                                             3, 100, 
-                                             rf"Selection Cuts ({br_title})") # Kine. var. comparison plot
-            fig_compr_hist.savefig(f'{plot_dir}/Kine_compr_{br_nm}.png', dpi=300, bbox_inches='tight')
+            #fig_compr_hist = plot_compr_hist(kine_df_set, drop_columns,
+            #                                 3, 100, 
+            #                                 rf"Selection Cuts ({br_title})") # Kine. var. comparison plot
+            #fig_compr_hist.savefig(f'{plot_dir}/Kine_compr_{br_nm}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_compr_hist)
             #print(kine_all_df.head(5)) 
 
             
             if category == 'signal' or category == 'combined': # Only plots for signal channels
                 print(f"!!!!!!!!!!!!!!!!!!!!!!!!!! {br_nm}, {category}")
-                ## * Plot true pi0 mass
+                ## 4. Plot true pi0 mass
                 fig_var = plot_var(pi0_mass, 'm_gg', br_title)
-                fig_var.savefig(f'{plot_dir}/pos_pi0_mass_{br_nm}.png', dpi=300, bbox_inches='tight')
-                plt.close(fig_var)
+                #fig_var.savefig(f'{plot_dir}/pos_pi0_mass_{br_nm}.png', dpi=300, bbox_inches='tight')
+                #plt.close(fig_var)
 
-                ## * Plot kine. var of selection cuts correlations
+                ## 5. Plot kine. var of selection cuts correlations
                 drop_columns = ['']
-                fig_feature_pairs = plot_feature_pairs(kine_all_df, drop_columns,
-                                                       rf"Selection Cuts Correlations (Signal=Blue, Background=Red) ({br_title})", 
-                                                       "is_signal")
-                fig_feature_pairs.savefig(f'{plot_dir}/SC_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
-                plt.close(fig_feature_pairs.fig)  
+                #fig_feature_pairs = plot_feature_pairs(kine_all_df, drop_columns,
+                #                                       rf"Selection Cuts Correlations (Signal=Blue, Background=Red) ({br_title})", 
+                #                                       "is_signal")
+                #fig_feature_pairs.savefig(f'{plot_dir}/SC_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
+                #plt.close(fig_feature_pairs.fig)  
 
-                ## * Plot pi0 feature-feature correlations
+                ## 6. Plot pi0 feature-feature correlations
                 print(pi0_all_df.head(5))
                 drop_columns = ['event', 'cos_theta', 'pair_id', 'isr_recon_quality', 'total_recon_quality', 'isr_correct', 'pair_index']
-                fig_feature_pairs = plot_feature_pairs(pi0_all_df, drop_columns,
-                                                       rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red) ({br_title})", 
-                                                       "is_pi0")
-                fig_feature_pairs.savefig(f'{plot_dir}/FF_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
-                plt.close(fig_feature_pairs.fig)
+                #fig_feature_pairs = plot_feature_pairs(pi0_all_df, drop_columns,
+                #                                       rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red) ({br_title})", 
+                #                                       "is_pi0")
+                #fig_feature_pairs.savefig(f'{plot_dir}/FF_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
+                #plt.close(fig_feature_pairs.fig)
 
-                ## * Plot pi0 feature-target correlations
+                ## 7. Plot pi0 feature-target correlations
                 features = ['m_gg', 'opening_angle', 'cos_theta', 'E_asym', 'e_min_x_angle', 
                             'E1', 'E2', 'E3', 'asym_x_angle', 'E_diff', 'is_pi0']
                 target_corr = pi0_all_df[features].corr()['is_pi0'].drop('is_pi0') #.sort_values(ascending=False)
                 #sorted_by_abs = target_corr.abs().sort_values(ascending=False)
-                fig_feature_target = plot_feature_target(target_corr, rf'Feature Importance: Correlation with true $\pi^{0}$ ({br_title})')
-                fig_feature_target.savefig(f'{plot_dir}/feature_target_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
-                plt.close(fig_feature_target)
-    
+                #fig_feature_target = plot_feature_target(target_corr, rf'Feature Importance: Correlation with true $\pi^{0}$ ({br_title})')
+                #fig_feature_target.savefig(f'{plot_dir}/feature_target_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
+                #plt.close(fig_feature_target)

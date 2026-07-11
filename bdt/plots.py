@@ -43,6 +43,47 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
             print(f"Odd column length or none integer column length ({col_len}). Not plot is created!")
             return
 
+    # ========== Define display names and units ==========
+    display_names = {
+        #'Br_m_gg': r'M_{\gamma\gamma}',
+        #'Br_m3pi': r'M_{3\pi}',
+        #'Br_ppIM': r'M_{\pi^+\pi^-}',
+        'Br_E1': r'$E_{1}$',
+        'Br_E2': r'$E_{2}$',
+        'Br_E3': r'$E_{3}$',
+        #'Br_deltaE': r'\Delta E',
+        'Br_px1': r'$p_{x_{1}}$',
+        'Br_py1': r'$p_{y_{1}}$',
+        'Br_pz1': r'$p_{z_{1}}$',
+        'Br_px2': r'$p_{x_{2}}$',
+        'Br_py2': r'$p_{y_{2}}$',
+        'Br_pz2': r'$p_{z_{2}}$',
+        'Br_px3': r'$p_{x_{3}}$',
+        'Br_py3': r'$p_{y_{3}}$',
+        'Br_pz3': r'$p_{z_{3}}$',
+        #'Br_angle_pi0gam12': r'\theta_{\pi^0\gamma}',
+    }
+
+    unit_map = {
+        'Br_E1': r'[MeV]',
+        'Br_E2': r'[MeV]',
+        'Br_E3': r'[MeV]',
+        #'Br_deltaE': r'[MeV]',
+        #'Br_m_gg': r'[MeV/$c^2$]',
+        #'Br_m3pi': r'[MeV/$c^2$]',
+        #'Br_ppIM': r'[MeV/$c^2$]',
+        'Br_px1': r'[MeV/$c$]',
+        'Br_py1': r'[MeV/$c$]',
+        'Br_pz1': r'[MeV/$c$]',
+        'Br_px2': r'[MeV/$c$]',
+        'Br_py2': r'[MeV/$c$]',
+        'Br_pz2': r'[MeV/$c$]',
+        'Br_px3': r'[MeV/$c$]',
+        'Br_py3': r'[MeV/$c$]',
+        'Br_pz3': r'[MeV/$c$]',
+        #'Br_angle_pi0gam12': r'[$^\circ$]',
+    }
+
     # ========== FIX: Calculate rows dynamically ==========
     plot_col = rows
     plot_row = (col_len + plot_col - 1) // plot_col  # Ceiling division
@@ -64,46 +105,45 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
         positive_bad_df = bad_df[label]
         positive_all_df = all_df[label]
 
-        if label in ['Br_E1', 'Br_E2', 'Br_E3', 'Br_deltaE']:
-            unit = fr'[$\mathrm{{MeV}}$]'
-        elif label in ['Br_m_gg', 'Br_m3pi', 'Br_ppIM']:
-            unit = fr'[$\mathrm{{MeV}}/\mathrm{{c}}^{2}$]'
-        elif label in ['Br_px1', 'Br_py1', 'Br_pz1', 'Br_px2', 'Br_py2', 'Br_pz2', 'Br_px3', 'Br_py3', 'Br_pz3']:
-            unit = fr'[$\mathrm{{MeV}}/\mathrm{{c}}$]'
-        elif label in ['Br_angle_pi0gam12']:
-            unit = fr'[$\circ$]'
-        else:
-            unit = ""
+        unit = unit_map.get(label, "")
+        display_name = display_names.get(label, label.replace('Br_', ''))
 
         n1, bin_edges1, patches1 = axes[i].hist([positive_good_df, positive_bad_df], 
                      color=['green', 'blue'], 
                      bins=bins, 
-                     label=[f'Positive', f'Negative'], 
+                     label=[f'Signal', f'Background'], 
                      density=False, 
                      edgecolor=['green', 'blue'],
                      linewidth=1, 
-                     alpha=0.5,
+                     alpha=0.3,
                      histtype='stepfilled'
                      )
-
-        n2, bin_edges2, patches2 = axes[i].hist(positive_all_df, 
-                     color=['red'], 
-                     bins=bin_edges1, 
-                     label='All', 
-                     density=False, 
-                     edgecolor='red',
-                     linewidth=1, 
-                     alpha=0.5,
-                     histtype='step'
-                     )
         
-        bin_width = bin_edges2[1] - bin_edges2[0]
- 
-        axes[i].set_xlabel(label + ' ' + unit)
+        #n2, bin_edges2, patches2 = axes[i].hist(positive_all_df, 
+        #             color=['red'], 
+        #             bins=bin_edges1, 
+        #             label='All', 
+        #             density=False, 
+        #             edgecolor='red',
+        #             linewidth=1, 
+        #             alpha=0.5,
+        #             histtype='step'
+        #             )
+        
+        #bin_width = bin_edges2[1] - bin_edges2[0]
+
+        if unit:
+            xlabel = display_name + ' ' + unit
+        else:
+            xlabel = display_name
+        axes[i].set_xlabel(xlabel)
         axes[i].set_ylabel(fr'Events', fontsize=14)
-        axes[i].grid(True, alpha=0.3)
-        axes[i].legend(loc='best', fontsize=14) 
+        #axes[i].grid(True, alpha=0.3)
     
+        # Legend only on first subplot
+        if i == 0:
+            axes[i].legend(loc='upper right', fontsize=12)
+        
     # ========== FIX: Hide unused subplots ==========
     for i in range(col_len, len(axes)):
         axes[i].set_visible(False)
