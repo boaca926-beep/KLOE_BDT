@@ -67,11 +67,11 @@ def create_dataset(df, category): # For photon 4-momentum
     br_nm = ['Br_E1', 'Br_px1', 'Br_py1', 'Br_pz1', 
              'Br_E2', 'Br_px2', 'Br_py2', 'Br_pz2', 
              'Br_E3', 'Br_px3', 'Br_py3', 'Br_pz3',
-             'Br_m3pi', 'Br_lagvalue_min_7C', 'Br_deltaE',
+             'Br_m3pi', 'Br_lagvalue_min_7C', 'Br_deltaE', 'Br_Eprompt_max',
              'Br_angle_pi0gam12', 'Br_ppIM', 'Br_betapi0',
              'Br_recon_indx', 'Br_bkg_indx',
-             'Br_pho_indx', 'Br_EPI0NTMC_save',      # ADD THESE
-             'Br_isr_recon_quality', 'Br_total_recon_quality']  # ADD THESE
+             'Br_pho_indx', 'Br_EPI0NTMC_save',     
+             'Br_isr_recon_quality', 'Br_total_recon_quality']  
     
     # Check which columns actually exist
     available_cols = [col for col in br_nm if col in df.columns]
@@ -311,7 +311,7 @@ if __name__ == '__main__':
             required_br = ['Br_E1', 'Br_px1', 'Br_py1', 'Br_pz1', 
                'Br_E2', 'Br_px2', 'Br_py2', 'Br_pz2', 
                'Br_E3', 'Br_px3', 'Br_py3', 'Br_pz3',
-               'Br_m3pi', 'Br_lagvalue_min_7C', 'Br_deltaE',
+               'Br_m3pi', 'Br_lagvalue_min_7C', 'Br_deltaE', 'Br_Eprompt_max',
                'Br_angle_pi0gam12', 'Br_ppIM', 'Br_betapi0',
                'Br_recon_indx', 'Br_bkg_indx',
                'Br_pho_indx', 'Br_EPI0NTMC_save',

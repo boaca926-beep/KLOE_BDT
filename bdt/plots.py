@@ -8,50 +8,49 @@ from sklearn.metrics import confusion_matrix, classification_report
 # =================================================================
 # Plot (all, positive, negative) comparison
 # =================================================================
-def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
-                   
+def plot_compr_hist(df_set, drop_columns, rows=3, bins=50, plot_title="", 
+                    subplot_size=4, units=None):
+    """
+    Plot histograms comparing Signal vs Background for all features.
+    
+    Args:
+        df_set: list of [all_df, signal_df, background_df]
+        drop_columns: columns to exclude from plotting
+        rows: number of columns per row (default: 3)
+        bins: number of histogram bins
+        plot_title: title for the figure
+        subplot_size: size in inches for each subplot (width = height)
+        units: optional dict for custom units
+    """
     all_df = df_set[0].drop(drop_columns, axis=1)
     good_df = df_set[1].drop(drop_columns, axis=1)
     bad_df = df_set[2].drop(drop_columns, axis=1)
 
-    ##  S/B ratio
+    ## S/B ratio
     S = len(good_df)
     B = len(bad_df)
     S_purity = S / (S + B)
-    print(f"Total events: {len(all_df)}, postive events: {len(good_df)}, negative events: {len(bad_df)}")
+    print(f"Total events: {len(all_df)}, signal: {len(good_df)}, background: {len(bad_df)}")
     print(f"S/sqrt(S+B): {S / np.sqrt(S + B):.2f}")
     print(f"S_purity: {S_purity:.2f}")
 
-    ## Check col_len
-    col_len = len(all_df.columns) # length of columns of df
-
-    if (col_len < 0):
-        # negative
-        print(f"Negative col_len ({col_len})")
-        return
-    elif (col_len == 0):
-        # zero col_len
-        print(f"Zero col_len ({col_len})")
-    else:
-        # postive
-        if (col_len % 2 == 0):
-            # even case
-            print(f"good events col_len ({col_len})")
-        else:
-            # odd or not integer
-            print(all_df.columns)
-            print(f"Odd column length or none integer column length ({col_len}). Not plot is created!")
-            return
+    col_len = len(all_df.columns)
 
     # ========== Define display names and units ==========
     display_names = {
-        #'Br_m_gg': r'M_{\gamma\gamma}',
-        #'Br_m3pi': r'M_{3\pi}',
-        #'Br_ppIM': r'M_{\pi^+\pi^-}',
-        'Br_E1': r'$E_{1}$',
-        'Br_E2': r'$E_{2}$',
-        'Br_E3': r'$E_{3}$',
-        #'Br_deltaE': r'\Delta E',
+        'm_gg': r'$m_{\gamma\gamma}$',
+        'opening_angle': r'$\angle_{\gamma\gamma}$',
+        'cos_theta': r'$\cos\theta_{\gamma\gamma}$',
+        'E_asym': r'$A_{E}$',
+        'e_min_x_angle': r'$\min(E_{\gamma_{1}},E_{\gamma_{2}})\times\theta_{\gamma\gamma}$',
+        'E1': r'$E_{\gamma_{1}}$',
+        'E2': r'$E_{\gamma_{2}}$',
+        'E3': r'$E_{\gamma_{3}}$',
+        'E_diff': r'$\left|E_{\gamma_{1}}-E_{\gamma_{2}}\right|$',
+        'asym_x_angle': r'$A_{E}\times\theta_{\gamma\gamma}$',
+        'Br_E1': r'$E_{\gamma_{1}}$',
+        'Br_E2': r'$E_{\gamma_{2}}$',
+        'Br_E3': r'$E_{\gamma_{3}}$',
         'Br_px1': r'$p_{x_{1}}$',
         'Br_py1': r'$p_{y_{1}}$',
         'Br_pz1': r'$p_{z_{1}}$',
@@ -61,17 +60,29 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
         'Br_px3': r'$p_{x_{3}}$',
         'Br_py3': r'$p_{y_{3}}$',
         'Br_pz3': r'$p_{z_{3}}$',
-        #'Br_angle_pi0gam12': r'\theta_{\pi^0\gamma}',
+        'Br_Eprompt_max': r'$E^{max}_{\gamma}$',
+        'Br_m3pi': r'$M_{3\pi}$',
+        'Br_ppIM': r'$M_{\pi^+\pi^-}$',
+        'Br_deltaE': r'$\Delta E$',
+        'Br_angle_pi0gam12': r'$\theta_{\pi^0\gamma}$',
+        'Br_betapi0': r'$\beta_{\pi^0}$',
+        'Br_lagvalue_min_7C': r'$\chi^{2}_{7C}$',
     }
 
     unit_map = {
+        'm_gg': r'[MeV/$c^2$]',
+        'opening_angle': r'[rad]',
+        'cos_theta': r'',
+        'E_asym': r'',
+        'e_min_x_angle': r'[MeV]',
+        'asym_x_angle': r'[MeV]',
+        'E1': r'[MeV]',
+        'E2': r'[MeV]',
+        'E3': r'[MeV]',
+        'E_diff': r'[MeV]',
         'Br_E1': r'[MeV]',
         'Br_E2': r'[MeV]',
         'Br_E3': r'[MeV]',
-        #'Br_deltaE': r'[MeV]',
-        #'Br_m_gg': r'[MeV/$c^2$]',
-        #'Br_m3pi': r'[MeV/$c^2$]',
-        #'Br_ppIM': r'[MeV/$c^2$]',
         'Br_px1': r'[MeV/$c$]',
         'Br_py1': r'[MeV/$c$]',
         'Br_pz1': r'[MeV/$c$]',
@@ -81,74 +92,88 @@ def plot_compr_hist(df_set, drop_columns, rows, bins, plot_title):
         'Br_px3': r'[MeV/$c$]',
         'Br_py3': r'[MeV/$c$]',
         'Br_pz3': r'[MeV/$c$]',
-        #'Br_angle_pi0gam12': r'[$^\circ$]',
+        'Br_Eprompt_max': r'[MeV]',
+        'Br_m3pi': r'[MeV/$c^2$]',
+        'Br_ppIM': r'[MeV/$c^2$]',
+        'Br_deltaE': r'[MeV]',
+        'Br_angle_pi0gam12': r'[$^\circ$]',
+        'Br_betapi0': r'',
+        'Br_lagvalue_min_7C': r'',
     }
-
-    # ========== FIX: Calculate rows dynamically ==========
-    plot_col = rows
-    plot_row = (col_len + plot_col - 1) // plot_col  # Ceiling division
-    # ====================================================
     
-    fig, axes = plt.subplots(plot_row, plot_col, figsize=(16, 10))
+    if units:
+        unit_map.update(units)
+
+    # ========== Calculate grid dimensions ==========
+    plot_col = rows
+    plot_row = (col_len + plot_col - 1) // plot_col
+    
+    # ========== FIX: Dynamic figure size for square subplots ==========
+    fig_width = subplot_size * plot_col
+    fig_height = subplot_size * plot_row
+    fig, axes = plt.subplots(plot_row, plot_col, figsize=(fig_width, fig_height))
+    # ================================================================
+    
     fig.suptitle(plot_title, fontsize=16, y=1.02)
 
-    # Flatten axes array for easy iteration
     axes = axes.flatten()
     columns = all_df.columns
     
-    # ========== FIX: Iterate only up to col_len ==========
     for i in range(col_len):
         label = columns[i]
-    # =====================================================
         
-        positive_good_df = good_df[label]
-        positive_bad_df = bad_df[label]
-        positive_all_df = all_df[label]
+        signal_vals = good_df[label].dropna()
+        bkg_vals = bad_df[label].dropna()
+        all_vals = all_df[label].dropna()
 
         unit = unit_map.get(label, "")
         display_name = display_names.get(label, label.replace('Br_', ''))
 
-        n1, bin_edges1, patches1 = axes[i].hist([positive_good_df, positive_bad_df], 
+        axes[i].hist([signal_vals, bkg_vals], 
                      color=['green', 'blue'], 
                      bins=bins, 
-                     label=[f'Signal', f'Background'], 
+                     label=['Signal', 'Background'], 
                      density=False, 
                      edgecolor=['green', 'blue'],
                      linewidth=1, 
-                     alpha=0.3,
+                     alpha=0.4,
                      histtype='stepfilled'
-                     )
+        )
         
-        #n2, bin_edges2, patches2 = axes[i].hist(positive_all_df, 
-        #             color=['red'], 
-        #             bins=bin_edges1, 
+        #axes[i].hist(all_vals, 
+        #             color='red', 
+        #             bins=bins, 
         #             label='All', 
         #             density=False, 
         #             edgecolor='red',
-        #             linewidth=1, 
-        #             alpha=0.5,
+        #             linewidth=1.5, 
+        #             alpha=0.0,
         #             histtype='step'
-        #             )
-        
-        #bin_width = bin_edges2[1] - bin_edges2[0]
+        #)
+
+        # Add statistics
+        n_signal = len(signal_vals)
+        n_bkg = len(bkg_vals)
+        #axes[i].text(0.02, 0.95, f'S={n_signal}\nB={n_bkg}', 
+        #            transform=axes[i].transAxes, fontsize=8,
+        #            verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.7))
 
         if unit:
             xlabel = display_name + ' ' + unit
         else:
             xlabel = display_name
-        axes[i].set_xlabel(xlabel)
-        axes[i].set_ylabel(fr'Events', fontsize=14)
-        #axes[i].grid(True, alpha=0.3)
-    
-        # Legend only on first subplot
-        if i == 0:
-            axes[i].legend(loc='upper right', fontsize=12)
+        axes[i].set_xlabel(xlabel, fontsize=12)
+        axes[i].set_ylabel('Events', fontsize=12)
         
-    # ========== FIX: Hide unused subplots ==========
+        if i == 0:
+            axes[i].legend(loc='upper left', fontsize=10)
+        
+        axes[i].grid(True, alpha=0.2)
+
+    # Hide unused subplots
     for i in range(col_len, len(axes)):
         axes[i].set_visible(False)
-    # ================================================
-    
+
     plt.tight_layout()
     return fig
 
