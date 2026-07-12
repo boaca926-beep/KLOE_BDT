@@ -6,7 +6,7 @@ exp_type=TDATA # DATA
 tuning_type=raw #raw: no tuning; scaled: pi0 photon energy scale
 gsf=1 # DATA
 
-result_path=../../input_kloe_${tuning_type}_${exp_type}_${sample_size}
+result_path=../../kloe_${tuning_type}_${exp_type}_${sample_size}
 #result_path=/media/bo/Analysis_Disk/
 
 ## Initialize the normial conditions

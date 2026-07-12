@@ -24,6 +24,7 @@ int tree_cut_raw(){
   double m02 = 0., mplus2 = 0.;
   double m3pi = 0.;
   double ppIM = 0.;
+  double Emax_clust = 0.;
   double IM3pi_7C = 0., IM3pi_true = 0.;
   double IM_pi0_7C = 0.;
   double Eisr = 0., Epi0_pho1 = 0., Epi0_pho2 = 0.;
@@ -144,6 +145,7 @@ int tree_cut_raw(){
     tree_tmp -> Branch("Br_mplus2", &mplus2, "Br_mplus2/D");
     tree_tmp -> Branch("Br_m02", &m02, "Br_m02/D");
     tree_tmp -> Branch("Br_ppIM", &ppIM, "Br_ppIM/D");
+    tree_tmp -> Branch("Br_Emax_clust", &Emax_clust, "Br_Emax_clust/D");
     tree_tmp -> Branch("Br_Eisr", &Eisr, "Br_Eisr/D");
     tree_tmp -> Branch("Br_Epi0_pho1", &Epi0_pho1, "Br_Epi0_pho1/D");
     tree_tmp -> Branch("Br_Epi0_pho2", &Epi0_pho2, "Br_Epi0_pho2/D");
@@ -254,6 +256,8 @@ int tree_cut_raw(){
     phid = ALLCHAIN_CUT -> GetLeaf("Br_phid") -> GetValue(0);
     sig_type = ALLCHAIN_CUT -> GetLeaf("Br_sig_type") -> GetValue(0);
     lagvalue_min_7C = ALLCHAIN_CUT -> GetLeaf("Br_lagvalue_min_7C") -> GetValue(0);
+    Emax_clust = ALLCHAIN_CUT -> GetLeaf("Br_Emax_clust") -> GetValue(0);
+    
     deltaE = ALLCHAIN_CUT -> GetLeaf("Br_ENERGYLIST") -> GetValue(2); 
     angle_pi0gam12 = ALLCHAIN_CUT -> GetLeaf("Br_ANGLELIST") -> GetValue(0);
     betapi0 = ALLCHAIN_CUT -> GetLeaf("Br_betapi0") -> GetValue(0);
@@ -279,6 +283,8 @@ int tree_cut_raw(){
  
     m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
+    //cout << "Emax_clust = " << Emax_clust << endl;
+    
     evnt_tot ++;
 
     Eprompt_max = 0.;
@@ -290,9 +296,9 @@ int tree_cut_raw(){
 
     // Cuts used to create BDT training samples
     // Suppress irreduciable backgrounds
-    //if (lagvalue_min_7C > chi2_cut) continue;
-    if (Eprompt_max > Eprompt_max_cut) continue; // remove etagam background
-    if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
+    if (lagvalue_min_7C > 43) continue;
+    if (Eprompt_max > 250.) continue; // remove etagam background, Emax_clust
+    if (deltaE > deltaE_max) continue; // suppress rhopi->3pi
     
     /*
     // Cuts used in the analysis

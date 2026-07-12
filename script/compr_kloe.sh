@@ -2,7 +2,7 @@
 
 compr=../header/compr.h
 sample_size=chain
-tuning_type=tuning #tuning, scaled, raw
+tuning_type=raw #scaled, raw
 main_folder="/home/bo/Desktop/input_kloe_${tuning_type}_TDATA_${sample_size}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
@@ -36,13 +36,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=150
 
 ##################################################################
-#VAR_NM="lagvalue_min_7C"
-#VAR_SYMB="#chi^{2}_{7C}"
-#UNIT=""
+VAR_NM="lagvalue_min_7C"
+VAR_SYMB="#chi^{2}_{7C}"
+UNIT=""
 
-#XMIN=0
-#XMAX=20
-#BINS=100
+XMIN=0
+XMAX=100
+BINS=200
 
 ##################################################################
 #VAR_NM=("pvalue")
@@ -54,13 +54,13 @@ echo -e "\nPlotting histo comparison ..."
 #BINS=(200)
 
 ##################################################################
-VAR_NM=("m3pi") # IM3pi_7C (raw); m3pi (scaled or tuned)
-VAR_SYMB=("M_{3#pi}")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m3pi") # IM3pi_7C (raw); m3pi (scaled or tuned)
+#VAR_SYMB=("M_{3#pi}")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(760) #300 600 760 (analysis)
-XMAX=(800) #1020 1050 800 (analysis)
-BINS=(100)
+#XMIN=(760) #300 600 760 (analysis)
+#XMAX=(800) #1020 1050 800 (analysis)
+#BINS=(100)
 
 ##################################################################
 #VAR_NM=("Eisr")

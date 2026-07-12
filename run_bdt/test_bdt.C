@@ -229,11 +229,6 @@ void test_bdt() {
     // Create output ROOT file
     TFile* outfile = new TFile("../plots_test/test_bdt.root", "RECREATE");
  
-    // Branch addresses (unchanged)
-    double E1_orig, px1_orig, py1_orig, pz1_orig;
-    double E2_orig, px2_orig, py2_orig, pz2_orig;
-    double E3_orig, px3_orig, py3_orig, pz3_orig;
-
     double E1, px1, py1, pz1;
     double E2, px2, py2, pz2;
     double E3, px3, py3, pz3;
@@ -260,21 +255,6 @@ void test_bdt() {
     tree->SetBranchAddress("Br_bkg_indx", &bkg_indx);
     tree->SetBranchAddress("Br_total_recon_quality", &total_recon_quality); 
    
-
-    tree->SetBranchAddress("Br_E1_orig", &E1_orig);
-    tree->SetBranchAddress("Br_px1_orig", &px1_orig);
-    tree->SetBranchAddress("Br_py1_orig", &py1_orig);
-    tree->SetBranchAddress("Br_pz1_orig", &pz1_orig);
-
-    tree->SetBranchAddress("Br_E2_orig", &E2_orig);
-    tree->SetBranchAddress("Br_px2_orig", &px2_orig);
-    tree->SetBranchAddress("Br_py2_orig", &py2_orig);
-    tree->SetBranchAddress("Br_pz2_orig", &pz2_orig);
-
-    tree->SetBranchAddress("Br_E3_orig", &E3_orig);
-    tree->SetBranchAddress("Br_px3_orig", &px3_orig);
-    tree->SetBranchAddress("Br_py3_orig", &py3_orig);
-    tree->SetBranchAddress("Br_pz3_orig", &pz3_orig);
 
     tree->SetBranchAddress("Br_E1", &E1);
     tree->SetBranchAddress("Br_px1", &px1);
@@ -306,7 +286,7 @@ void test_bdt() {
     tree->SetBranchAddress("Br_angle_pi0gam12", &angle_pi0gam12);
     tree->SetBranchAddress("Br_angle_pi0gam12_bdt", &angle);
     tree->SetBranchAddress("Br_ppIM", &ppIM);
-    tree->SetBranchAddress("Br_bdt_score_max", &bdt_score);
+    tree->SetBranchAddress("Br_bdt_score", &bdt_score);
     tree->SetBranchAddress("Br_true_m3pi", &true_m3pi);
     tree->SetBranchAddress("Br_pull_E3", &pull_E3);
  
@@ -339,20 +319,9 @@ void test_bdt() {
     for (Long64_t i = 0; i < nentries; ++i) {
         tree->GetEntry(i);
 
-        EventData event_orig, event_bdt;
+        EventData event_bdt;
 
-	// Original
-	event_orig.photons[0][0] = E1_orig; event_orig.photons[0][1] = px1_orig; event_orig.photons[0][2] = py1_orig; event_orig.photons[0][3] = pz1_orig;
-	event_orig.photons[1][0] = E2_orig; event_orig.photons[1][1] = px2_orig; event_orig.photons[1][2] = py2_orig; event_orig.photons[1][3] = pz2_orig;
-	event_orig.photons[2][0] = E3_orig; event_orig.photons[2][1] = px3_orig; event_orig.photons[2][2] = py3_orig; event_orig.photons[2][3] = pz3_orig;
-	event_orig.tracks[0][0] = ppl_E; event_orig.tracks[0][1] = ppl_px; event_orig.tracks[0][2] = ppl_py; event_orig.tracks[0][3] = ppl_pz;
-	event_orig.tracks[1][0] = pmi_E; event_orig.tracks[1][1] = pmi_px; event_orig.tracks[1][2] = pmi_py; event_orig.tracks[1][3] = pmi_pz;
-	event_orig.lagvalue_min_7C = lagvalue_min_7C;
-	event_orig.deltaE = deltaE;
-	event_orig.betapi0 = betapi0;
-	event_orig.angle_pi0gam12 = angle_pi0gam12;
-	event_orig.ppIM = ppIM;
- 
+	
 	// BDT
         event_bdt.photons[0][0] = E1; event_bdt.photons[0][1] = px1; event_bdt.photons[0][2] = py1; event_bdt.photons[0][3] = pz1;
 	event_bdt.photons[1][0] = E2; event_bdt.photons[1][1] = px2; event_bdt.photons[1][2] = py2; event_bdt.photons[1][3] = pz2;
@@ -370,11 +339,11 @@ void test_bdt() {
 	hChi2->Fill(lagvalue_min_7C);
 	
 	// Fixed pair
-	double m_gg_fixed = compute_invariant_mass(0, 1, event_orig.photons);
-	double m3pi_fixed = compute_3pi_mass(0, 1, event_orig.photons, event_orig.tracks);
-	hE1_fixed->Fill(event_orig.photons[0][0]);
-	hE2_fixed->Fill(event_orig.photons[1][0]);
-	hE3_fixed->Fill(event_orig.photons[2][0]);
+	double m_gg_fixed = compute_invariant_mass(0, 1, event_bdt.photons);
+	double m3pi_fixed = compute_3pi_mass(0, 1, event_bdt.photons, event_bdt.tracks);
+	hE1_fixed->Fill(event_bdt.photons[0][0]);
+	hE2_fixed->Fill(event_bdt.photons[1][0]);
+	hE3_fixed->Fill(event_bdt.photons[2][0]);
 	hMgg_fixed->Fill(m_gg_fixed);
 	hM3pi_fixed->Fill(m3pi_fixed);
 	hAngle_fixed->Fill(angle_pi0gam12);  // original angle (from input)
@@ -712,7 +681,7 @@ void test_bdt() {
     // Photon energies: linear y-axis
     drawTripleOverlay("photon_energies", "Photon Energies",
                       hE1_fixed, hE1_bdt, hE2_fixed, hE2_bdt, hE3_fixed, hE3_bdt,
-                      "First paired photon (E_{1}) [MeV]", "Second paired photon (E_{2}) [MeV]", "Upaired photon (E_{3}) [MeV]", "Entries", false);
+                      "First paired photon (E_{#gamma_{1}}) [MeV]", "Second paired photon (E_{#gamma_{2}}) [MeV]", "Upaired photon (E_{#gamma_{3}}) [MeV]", "Entries", false);
 
     // Kinematic variables: logarithmic y-axis
     drawTripleOverlay("kine_vars", "Kinematic Variables",

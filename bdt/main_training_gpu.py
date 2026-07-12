@@ -23,6 +23,7 @@ from config import (
     patched_get_basescore
 )
 
+#python main_training_gpu.py > training_log.txt 2>&1
 
 def check_memory_usage(threshold_gb=50):
     """Check if we have enough memory before loading"""

@@ -190,7 +190,7 @@ int compr_bdt() {
   hist_nonreson_sc->SetLineStyle(3);
   
   // Create output directory
-  TString out_dir = "../output_" + TString(var_nm);
+  TString out_dir = "../output_bdt_" + TString(var_nm);
   gSystem->mkdir(out_dir, kTRUE);
 
   // Save histograms (including scaled ones)
