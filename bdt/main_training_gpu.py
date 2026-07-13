@@ -23,7 +23,7 @@ from config import (
     patched_get_basescore
 )
 
-#python main_training_gpu.py > training_log.txt 2>&1
+#uv run main_training_gpu.py 2>&1 | tee training_log.txt
 
 def check_memory_usage(threshold_gb=50):
     """Check if we have enough memory before loading"""
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         'early_stopping_rounds': 50,        # Early stopping
         'eval_metric': ['auc', 'error'],    # Evaluation metric
         'verbosity': 1,                     # Show progress
-        'max_depth': optimized_params.get('max_depth', 10),
+        'max_depth': optimized_params.get('max_depth', 15),
         'learning_rate': optimized_params.get('learning_rate', 0.1),
         'subsample': optimized_params.get('subsample', 0.8),
         'colsample_bytree': optimized_params.get('colsample_bytree', 0.8),

@@ -154,8 +154,8 @@ int tree_cut_bdt_tuning() {
     TH1D *h_pull_py1 = new TH1D("h_pull_py1", "Pull py1;p_{y}^{meas} - p_{y}^{true} (MeV);Entries", 100, -10, 10);
     TH1D *h_pull_pz1 = new TH1D("h_pull_pz1", "Pull pz1;p_{z}^{meas} - p_{z}^{true} (MeV);Entries", 100, -10, 10);
 
-    TH1D *h_m_gg_before = new TH1D("h_m_gg_before", "π^{0} Mass Before Correction;M_{γγ} (MeV);Entries", 100, 120, 150);
-    TH1D *h_m_gg_after = new TH1D("h_m_gg_after", "π^{0} Mass After Correction;M_{γγ} (MeV);Entries", 100, 120, 150);
+    TH1D *h_m_gg_before = new TH1D("h_m_gg_before", "pi0 Mass Before Correction;M_{#gamma#gamma} (MeV);Entries", 100, 120, 150);
+    TH1D *h_m_gg_after = new TH1D("h_m_gg_after", "pi0 Mass After Correction;M_{#gamma#gamma} (MeV);Entries", 100, 120, 150);
 
     TH2D *h_pull_E1_vs_E = new TH2D("h_pull_E1_vs_E", "Pull E1 vs Energy;E_{meas} (MeV);Pull E1 (MeV)", 50, 0, 500, 50, -10, 10);
     TH2D *h_pull_E1_vs_angle = new TH2D("h_pull_E1_vs_angle", "Pull E1 vs Opening Angle;Opening Angle (deg);Pull E1 (MeV)", 50, 0, 180, 50, -10, 10);
@@ -829,7 +829,8 @@ int tree_cut_bdt_tuning() {
     // ============================================================
     // SAVE VALIDATION HISTOGRAMS
     // ============================================================
-    
+
+    /*
     h_pull_E1->Write();
     h_pull_E2->Write();
     h_pull_E3->Write();
@@ -840,7 +841,8 @@ int tree_cut_bdt_tuning() {
     h_m_gg_after->Write();
     h_pull_E1_vs_E->Write();
     h_pull_E1_vs_angle->Write();
-
+    */
+    
     cout << "\n✓ Validation histograms saved to output file" << endl;
 
     // ============================================================

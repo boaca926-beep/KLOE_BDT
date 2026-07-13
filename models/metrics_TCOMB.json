@@ -36,7 +36,7 @@
     "asym_x_angle",
     "E_diff"
   ],
-  "training_time_minutes": 0.23127577304840088,
-  "peak_memory_percent": 93.1,
+  "training_time_minutes": 0.5082016388575236,
+  "peak_memory_percent": 89.4,
   "gpu_enabled": false
 }

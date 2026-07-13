@@ -10,7 +10,7 @@ project_root = Path(__file__).parent.parent.absolute()
 sys.path.append(str(project_root))
 
 # Import from local modules (not bdt. prefix since we're in bdt directory)
-from plots import plot_compr_hist, plot_var, plot_feature_pairs, plot_feature_target
+from plots import plot_compr_hist, plot_var, plot_feature_pairs, plot_feature_pairs_old, plot_feature_target
 from config import DATA_DIR, PLOTS_INSPECT_DIR
 
 # Inspect features and correlations
@@ -156,26 +156,29 @@ if __name__ == '__main__':
             if category == 'signal' or category == 'combined': # Only plots for signal channels
                 print(f"!!!!!!!!!!!!!!!!!!!!!!!!!! {br_nm}, {category}")
                 ## 4. Plot true pi0 mass
-                #fig_var = plot_var(pi0_mass, 'm_gg', br_title)
-                #fig_var.savefig(f'{plot_dir}/pos_pi0_mass_{br_nm}.png', dpi=300, bbox_inches='tight')
-                #plt.close(fig_var)
+                fig_var = plot_var(pi0_mass, 'm_gg', br_title)
+                fig_var.savefig(f'{plot_dir}/Pos_pi0_mass_{br_nm}.png', dpi=300, bbox_inches='tight')
+                plt.close(fig_var)
 
                 ## 5. Plot kine. var of selection cuts correlations
-                drop_columns = ['']
+                drop_columns = []
                 #fig_feature_pairs = plot_feature_pairs(kine_all_df, drop_columns,
                 #                                       rf"Selection Cuts Correlations (Signal=Blue, Background=Red) ({br_title})", 
                 #                                       "is_signal")
                 #fig_feature_pairs.savefig(f'{plot_dir}/SC_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
-                #plt.close(fig_feature_pairs.fig)  
+                #plt.close(fig_feature_pairs.figure)  
 
                 ## 6. Plot pi0 feature-feature correlations
                 print(pi0_all_df.head(5))
-                drop_columns = ['event', 'cos_theta', 'pair_id', 'isr_recon_quality', 'total_recon_quality', 'isr_correct', 'pair_index']
-                #fig_feature_pairs = plot_feature_pairs(pi0_all_df, drop_columns,
-                #                                       rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red) ({br_title})", 
-                #                                       "is_pi0")
-                #fig_feature_pairs.savefig(f'{plot_dir}/FF_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
-                #plt.close(fig_feature_pairs.fig)
+                pi0_all_df['pi0_label'] = pi0_all_df['is_pi0'].map({0: 'Background', 1: 'Signal'})
+                drop_columns = ['event', 'opening_angle', 'pair_id', 'isr_recon_quality', 'total_recon_quality', 'isr_correct', 'pair_index',
+                                'E_asym', 'E1', 'E2', 'asym_x_angle', 'E_diff']
+                fig_feature_pairs = plot_feature_pairs(pi0_all_df, 
+                                                           drop_columns,
+                                                           rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red) ({br_title})", 
+                                                           "pi0_label")
+                fig_feature_pairs.savefig(f'{plot_dir}/FF_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
+                plt.close(fig_feature_pairs.figure)
 
                 ## 7. Plot pi0 feature-target correlations
                 features = ['m_gg', 'opening_angle', 'cos_theta', 'E_asym', 'e_min_x_angle', 

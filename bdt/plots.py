@@ -212,17 +212,127 @@ def plot_var(array, var_nm, phys_ch):
 # =================================================================
 # Plot feature-feature
 # =================================================================
-def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp):
+def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp, sample_frac=1.0, random_state=42):
+    print('Plotting feature pairs')
+
+    df = df.sort_values(by=hue_tmp, ascending=True)
+
+    if sample_frac < 1.0:
+        df = df.sample(frac=sample_frac, random_state=random_state)
+        print(f"Sampled {len(df)} rows for plotting")
+
+    # Exclude both drop_columns AND hue_tmp from features
+    feature_columns = [col for col in df.columns if col not in drop_columns and col != hue_tmp]
+    
+    if not feature_columns:
+        print("⚠️ Warning: No feature columns to plot!")
+        return None
+    
+    print("df columns: ", df.columns.tolist())
+    print(f"Feature columns: {feature_columns}")
+    print(f"Hue column: {hue_tmp}")
+
+    # ========== Define display names and units ==========
+    display_names = {
+        'is_pi0': r'True $\pi^{0}$',
+        'Br_betapi0': r'$\beta_{\pi^0}$',
+        'Br_ppIM': r'$M_{\pi^+\pi^-}$',
+        'Br_angle_pi0gam12': r'$\theta_{\pi^0\gamma}$',
+        'Br_deltaE': r'$\Delta E$',
+        'Br_Eprompt_max': r'$E^{max}_{\gamma}$',
+        'Br_m3pi': r'$M_{3\pi}$',
+        'Br_lagvalue_min_7C': r'$\chi^{2}_{7C}$',
+        'm_gg': r'$m_{\gamma\gamma}$',
+        'opening_angle': r'$\angle_{\gamma\gamma}$',
+        'cos_theta': r'$\cos\theta_{\gamma\gamma}$',
+        'E_asym': r'$A_{E}$',
+        'e_min_x_angle': r'$\min(E_{\gamma_{1}},E_{\gamma_{2}})\times\theta_{\gamma\gamma}$',
+        'E1': r'$E_{\gamma_{1}}$',
+        'E2': r'$E_{\gamma_{2}}$',
+        'E3': r'$E_{\gamma_{3}}$',
+        'E_diff': r'$\left|E_{\gamma_{1}}-E_{\gamma_{2}}\right|$'
+    }
+
+    unit_map = {
+        'is_pi0': r'',
+        'Br_betapi0': r'',
+        'Br_ppIM': r'[MeV/$c^2$]',
+        'Br_angle_pi0gam12': r'[$^\circ$]',
+        'Br_deltaE': r'[MeV]',
+        'Br_Eprompt_max': r'[MeV]',
+        'Br_m3pi': r'[MeV/$c^2$]',
+        'Br_lagvalue_min_7C': r'',
+        'm_gg': r'[MeV/$c^2$]',
+        'opening_angle': r'[rad]',
+        'cos_theta': r'',
+        'E_asym': r'',
+        'e_min_x_angle': r'[MeV]',
+        'asym_x_angle': r'[MeV]',
+        'E1': r'[MeV]',
+        'E2': r'[MeV]',
+        'E3': r'[MeV]',
+        'E_diff': r'[MeV]'
+    }
+
+    def get_label(col):
+        """Get formatted label with display name and unit"""
+        display_name = display_names.get(col, col)
+        unit = unit_map.get(col, '')
+        return f'{display_name} {unit}'.strip() if unit else display_name
+
+    # Determine the palette based on the actual values in hue column
+    unique_vals = df[hue_tmp].unique()
+    print(f"Unique values in '{hue_tmp}': {unique_vals}")
+    
+    # Create appropriate palette
+    if set(unique_vals) == {0, 1} or set(unique_vals) == {0.0, 1.0}:
+        palette = {1: 'blue', 0: 'red'}
+    elif set(unique_vals) == {True, False}:
+        palette = {True: 'blue', False: 'red'}
+    else:
+        # For other values, create a generic palette
+        palette = {val: 'blue' if i == 0 else 'red' for i, val in enumerate(sorted(unique_vals))}
+
+    # Create the pairplot - pass the full DataFrame and specify vars
+    g = sns.pairplot(df,  # Pass the full DataFrame
+                     vars=feature_columns,  # Specify which columns to plot
+                     hue=hue_tmp,  # Color grouping
+                     palette=palette,  # Colors
+                     diag_kind='hist',  # Diagonal plot type
+                     plot_kws={'alpha': 0.5, 's': 10},  # Scatter plot options
+                     diag_kws={'alpha': 0.7, 'edgecolor': 'black'}  # Histogram options
+    )
+    
+    # Apply custom labels with units to the outer axes
+    for i, col in enumerate(feature_columns):
+        label = get_label(col)
+        print(label)
+        
+        g.axes[i, 0].set_ylabel(label)  # Left column
+        g.axes[-1, i].set_xlabel(label)  # Bottom row
+
+    g.figure.suptitle(plot_title, y=1.02, fontsize=14)
+    plt.tight_layout()
+    
+    return g
+
+def plot_feature_pairs_old(df, drop_columns, plot_title, hue_tmp):
     print('Plotting feature pairs')
 
     feature_columns = [col for col in df.columns if col not in drop_columns]
+
+    print("df columns: ", df.columns.tolist())
+    print(f"Feature columns: {feature_columns}")
+    print(f"Hue column: {hue_tmp}")
     
-    g = sns.pairplot(df[feature_columns], # Data
-                     hue = hue_tmp, # Color grouping, points by the values in the 'is_pi0' column
-                     palette={1: 'blue', 0: 'red'}, # 3. colors     
-                     diag_kind='hist', # Diagonal plot type
-                     plot_kws={'alpha': 0.5, 's': 10}, # Scatter plot options
-                     diag_kws={'alpha': 0.7, 'edgecolor': 'black'} # Histogram options  
+    df = df.sort_values(by=hue_tmp, ascending=True)
+
+    g = sns.pairplot(df[feature_columns],                          # Data
+                     hue = hue_tmp,                                # Color grouping, points by the values in the 'is_pi0' column
+                     palette={1: 'blue', 0: 'red'},                # colors     
+                     diag_kind='hist',                             # Diagonal plot type
+                     plot_kws={'alpha': 0.5, 's': 10},             # Scatter plot options
+                     diag_kws={'alpha': 0.5, 'edgecolor': 'black'} # Histogram options  
     )
     g.figure.suptitle(plot_title, y=1.02, fontsize=14)
     plt.tight_layout()
