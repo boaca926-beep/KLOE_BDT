@@ -212,9 +212,23 @@ def plot_var(array, var_nm, phys_ch):
 # =================================================================
 # Plot feature-feature
 # =================================================================
-def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp, sample_frac=1.0, random_state=42):
+def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp, 
+                       sample_frac=1.0, random_state=42, log_columns=None):
+    """
+    Create a pairplot with improved visibility and custom labels.
+    
+    Args:
+        df: DataFrame
+        drop_columns: columns to exclude from plotting
+        plot_title: figure title
+        hue_tmp: column name for color grouping
+        sample_frac: fraction of data to use (for large datasets)
+        random_state: random seed for sampling
+        log_columns: list of column names to apply log scale (off-diagonal)
+    """
     print('Plotting feature pairs')
 
+    # Sort so signal (1) is plotted on top of background (0)
     df = df.sort_values(by=hue_tmp, ascending=True)
 
     if sample_frac < 1.0:
@@ -234,7 +248,8 @@ def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp, sample_frac=1.0, r
 
     # ========== Define display names and units ==========
     display_names = {
-        'is_pi0': r'True $\pi^{0}$',
+        'pi0_label': r'True $\pi^{0}$',          # for custom label column
+        'is_pi0': r'True $\pi^{0}$',             # fallback
         'Br_betapi0': r'$\beta_{\pi^0}$',
         'Br_ppIM': r'$M_{\pi^+\pi^-}$',
         'Br_angle_pi0gam12': r'$\theta_{\pi^0\gamma}$',
@@ -254,7 +269,6 @@ def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp, sample_frac=1.0, r
     }
 
     unit_map = {
-        'is_pi0': r'',
         'Br_betapi0': r'',
         'Br_ppIM': r'[MeV/$c^2$]',
         'Br_angle_pi0gam12': r'[$^\circ$]',
@@ -293,23 +307,39 @@ def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp, sample_frac=1.0, r
         # For other values, create a generic palette
         palette = {val: 'blue' if i == 0 else 'red' for i, val in enumerate(sorted(unique_vals))}
 
-    # Create the pairplot - pass the full DataFrame and specify vars
-    g = sns.pairplot(df,  # Pass the full DataFrame
-                     vars=feature_columns,  # Specify which columns to plot
-                     hue=hue_tmp,  # Color grouping
-                     palette=palette,  # Colors
-                     diag_kind='hist',  # Diagonal plot type
-                     plot_kws={'alpha': 0.5, 's': 10},  # Scatter plot options
-                     diag_kws={'alpha': 0.7, 'edgecolor': 'black'}  # Histogram options
+    # Create the pairplot – pass the full DataFrame and specify vars
+    g = sns.pairplot(df,
+                     vars=feature_columns,
+                     hue=hue_tmp,
+                     palette=palette,
+                     diag_kind='hist',
+                     plot_kws={'alpha': 0.3, 's': 5, 'edgecolor': 'none'},  # reduced overlap
+                     diag_kws={'alpha': 0.7, 'edgecolor': 'black'}
     )
     
     # Apply custom labels with units to the outer axes
     for i, col in enumerate(feature_columns):
         label = get_label(col)
-        print(label)
-        
-        g.axes[i, 0].set_ylabel(label)  # Left column
-        g.axes[-1, i].set_xlabel(label)  # Bottom row
+        g.axes[i, 0].set_ylabel(label)   # left column
+        g.axes[-1, i].set_xlabel(label)  # bottom row
+
+    # Apply log scales to off-diagonal plots if requested
+    if log_columns is not None:
+        for i, col_x in enumerate(feature_columns):
+            for j, col_y in enumerate(feature_columns):
+                if i != j:
+                    ax = g.axes[i, j]
+                    if col_x in log_columns:
+                        ax.set_xscale('log')
+                    if col_y in log_columns:
+                        ax.set_yscale('log')
+
+    # --- Set legend title from display_names ---
+    legend_title = display_names.get(hue_tmp, hue_tmp)
+    if hasattr(g, 'legend'):
+        g.legend.set_title(legend_title)
+    elif hasattr(g, '_legend'):
+        g._legend.set_title(legend_title)
 
     g.figure.suptitle(plot_title, y=1.02, fontsize=14)
     plt.tight_layout()
@@ -376,6 +406,94 @@ def plot_feature_target(target_corr, plot_title):
 
     return fig
 
+def plot_feature_target_h(target_corr, plot_title):
+    
+    # ========== Define display names and units ==========
+    display_names = {
+        'pi0_label': r'True $\pi^{0}$',          # for custom label column
+        'is_pi0': r'True $\pi^{0}$',             # fallback
+        'Br_betapi0': r'$\beta_{\pi^0}$',
+        'Br_ppIM': r'$M_{\pi^+\pi^-}$',
+        'Br_angle_pi0gam12': r'$\theta_{\pi^0\gamma}$',
+        'Br_deltaE': r'$\Delta E$',
+        'Br_Eprompt_max': r'$E^{max}_{\gamma}$',
+        'Br_m3pi': r'$M_{3\pi}$',
+        'Br_lagvalue_min_7C': r'$\chi^{2}_{7C}$',
+        'm_gg': r'$m_{\gamma\gamma}$',
+        'opening_angle': r'$\angle_{\gamma\gamma}$',
+        'cos_theta': r'$\cos\theta_{\gamma\gamma}$',
+        'E_asym': r'$A_{E}$',
+        'e_min_x_angle': r'$\min(E_{\gamma_{1}},E_{\gamma_{2}})\times\theta_{\gamma\gamma}$',
+        'asym_x_angle': r'$A_{E}\times\theta_{\gamma\gamma}$',
+        'E1': r'$E_{\gamma_{1}}$',
+        'E2': r'$E_{\gamma_{2}}$',
+        'E3': r'$E_{\gamma_{3}}$',
+        'E_diff': r'$\left|E_{\gamma_{1}}-E_{\gamma_{2}}\right|$'
+    }
+
+    unit_map = {
+        'Br_betapi0': r'',
+        'Br_ppIM': r'[MeV/$c^2$]',
+        'Br_angle_pi0gam12': r'[$^\circ$]',
+        'Br_deltaE': r'[MeV]',
+        'Br_Eprompt_max': r'[MeV]',
+        'Br_m3pi': r'[MeV/$c^2$]',
+        'Br_lagvalue_min_7C': r'',
+        'm_gg': r'[MeV/$c^2$]',
+        'opening_angle': r'[rad]',
+        'cos_theta': r'',
+        'E_asym': r'',
+        'e_min_x_angle': r'[MeV]',
+        'asym_x_angle': r'[MeV]',
+        'E1': r'[MeV]',
+        'E2': r'[MeV]',
+        'E3': r'[MeV]',
+        'E_diff': r'[MeV]'
+    }
+
+    def get_label(col):
+        """Get formatted label with display name and unit"""
+        display_name = display_names.get(col, col)
+        unit = unit_map.get(col, '')
+        return f'{display_name} {unit}'.strip() if unit else display_name
+    
+    print('Plotting feature correlations (horizontal)...')
+
+    # Convert to Series if dict
+    if isinstance(target_corr, dict):
+        target_corr = pd.Series(target_corr)
+    
+    # Use absolute values for bar lengths
+    corr_abs = np.abs(target_corr)
+    
+    fig, ax = plt.subplots(figsize=(10, max(6, len(corr_abs) * 0.4)))
+    
+    # Create horizontal bars
+    bars = ax.barh(range(len(corr_abs)), corr_abs.values, 
+                   color='red', alpha=0.7)
+    
+    # Set y-ticks with feature names
+    ax.set_yticks(range(len(corr_abs)))
+    #ax.set_yticklabels(target_corr.index, fontsize=12)
+    ax.set_yticklabels([get_label(col) for col in target_corr.index],
+                       rotation=45, ha='right', fontsize=12)
+    
+    # Axis labels and title
+    ax.set_xlabel(r'Absolute correlation with true $\pi^{0}$', fontsize=14)
+    ax.set_title(plot_title, fontsize=14)
+    ax.grid(True, alpha=0.3, axis='x')
+    ax.set_xlim(0, 1)
+    
+    # Add value labels at the end of each bar
+    for i, (idx, corr) in enumerate(corr_abs.items()):
+        ax.text(corr + 0.01, i, f'{corr:.2f}', 
+                va='center', ha='left', fontsize=10)
+    
+    # Invert y-axis to show highest correlation at top
+    ax.invert_yaxis()
+    
+    plt.tight_layout()
+    return fig
 
 # =================================================================
 # Plot variable vs. score 

@@ -10,7 +10,7 @@ project_root = Path(__file__).parent.parent.absolute()
 sys.path.append(str(project_root))
 
 # Import from local modules (not bdt. prefix since we're in bdt directory)
-from plots import plot_compr_hist, plot_var, plot_feature_pairs, plot_feature_pairs_old, plot_feature_target
+from plots import plot_compr_hist, plot_var, plot_feature_pairs, plot_feature_pairs_old, plot_feature_target, plot_feature_target_h
 from config import DATA_DIR, PLOTS_INSPECT_DIR
 
 # Inspect features and correlations
@@ -170,21 +170,27 @@ if __name__ == '__main__':
 
                 ## 6. Plot pi0 feature-feature correlations
                 print(pi0_all_df.head(5))
-                pi0_all_df['pi0_label'] = pi0_all_df['is_pi0'].map({0: 'Background', 1: 'Signal'})
-                drop_columns = ['event', 'opening_angle', 'pair_id', 'isr_recon_quality', 'total_recon_quality', 'isr_correct', 'pair_index',
-                                'E_asym', 'E1', 'E2', 'asym_x_angle', 'E_diff']
-                fig_feature_pairs = plot_feature_pairs(pi0_all_df, 
-                                                           drop_columns,
-                                                           rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red) ({br_title})", 
-                                                           "pi0_label")
-                fig_feature_pairs.savefig(f'{plot_dir}/FF_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
-                plt.close(fig_feature_pairs.figure)
+                drop_columns = ['event', 'opening_angle', 'pair_id', 'isr_recon_quality', 
+                'total_recon_quality', 'isr_correct', 'pair_index',
+                'E_asym', 'E1', 'E2', 'asym_x_angle', 'E_diff'
+                ]
+
+                #fig_feature_pairs = plot_feature_pairs(
+                #    pi0_all_df,
+                #    drop_columns,
+                #    rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red)", 
+                #    "is_pi0",          # <-- use numeric column
+                #    sample_frac=0.3
+                #)
+                #fig_feature_pairs.savefig(f'{plot_dir}/FF_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
+                #plt.close(fig_feature_pairs.figure)
 
                 ## 7. Plot pi0 feature-target correlations
-                features = ['m_gg', 'opening_angle', 'cos_theta', 'E_asym', 'e_min_x_angle', 
-                            'E1', 'E2', 'E3', 'asym_x_angle', 'E_diff', 'is_pi0']
+                #features = ['m_gg', 'opening_angle', 'cos_theta', 'E_asym', 'e_min_x_angle', 
+                #            'E1', 'E2', 'E3', 'asym_x_angle', 'E_diff', 'is_pi0']
+                features = ['cos_theta', 'm_gg', 'e_min_x_angle', 'E3', 'E_asym', 'E_diff', 'E1', 'E2', 'asym_x_angle', 'is_pi0']
                 target_corr = pi0_all_df[features].corr()['is_pi0'].drop('is_pi0') #.sort_values(ascending=False)
                 #sorted_by_abs = target_corr.abs().sort_values(ascending=False)
-                #fig_feature_target = plot_feature_target(target_corr, rf'Feature Importance: Correlation with true $\pi^{0}$ ({br_title})')
-                #fig_feature_target.savefig(f'{plot_dir}/feature_target_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
+                fig_feature_target = plot_feature_target_h(target_corr, rf'Feature Importance: Correlation with true $\pi^{0}$')
+                fig_feature_target.savefig(f'{plot_dir}/feature_target_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
                 #plt.close(fig_feature_target)
