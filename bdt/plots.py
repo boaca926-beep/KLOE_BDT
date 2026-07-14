@@ -5,6 +5,8 @@ import seaborn as sns
 from sklearn.metrics import roc_auc_score, roc_curve, auc, accuracy_score
 from sklearn.metrics import confusion_matrix, classification_report
 
+#uv run main_validation.py 2>&1 | tee validation_log.txt
+
 # =================================================================
 # Plot (all, positive, negative) comparison
 # =================================================================
@@ -239,7 +241,7 @@ def plot_feature_pairs(df, drop_columns, plot_title, hue_tmp,
     feature_columns = [col for col in df.columns if col not in drop_columns and col != hue_tmp]
     
     if not feature_columns:
-        print("⚠️ Warning: No feature columns to plot!")
+        print("Warning: No feature columns to plot!")
         return None
     
     print("df columns: ", df.columns.tolist())
@@ -634,7 +636,7 @@ def plot_learning_curves(model, plot_title):
 
     # Print diagnostics
     final_gap = train_auc[-1] - val_auc[-1]
-    print(f"\n📊 Validation Diagnostics:")
+    print(f"\n Validation Diagnostics:")
     print(f"  Final Training AUC: {train_auc[-1]:.4f}; Accuracy: {train_acc[-1]:.4}")
     print(f"  Final Validation AUC: {val_auc[-1]:.4f}; Accuracy: {val_acc[-1]:.4}")
     print(f"  Gap: {final_gap:.4f}")
@@ -648,10 +650,98 @@ def plot_learning_curves(model, plot_title):
     
     return fig
 
+def plot_learning_curves_improved(model, phys_ch, final_val_auc=None, final_gap=None, plot_title=""):
+    """
+    Enhanced learning curves plot with:
+      - Zoomed y‑axis (0.94–1.0) to reveal tiny gaps.
+      - Separate subplot for Train‑Validation gap.
+      - Automatic annotation of early‑stop round (if any) and final performance.
+    """
+    # Extract data from the model
+    results = model.evals_result()
+    train_auc = np.array(results['validation_0']['auc'])
+    val_auc   = np.array(results['validation_1']['auc'])
+    rounds = np.arange(len(train_auc))
+
+    # Retrieve early‑stop setting
+    early_stop = model.get_params().get('early_stopping_rounds', None)
+    # If early_stop is set, mark the exact round where it would have stopped
+    # (usually the best iteration, but we'll just use the parameter value)
+    # For the annotation, we'll use the round number given in the log.
+    # If you have the best iteration from the model, use: model.best_iteration
+    best_iter = getattr(model, 'best_iteration', None)
+    if best_iter is None:
+        best_iter = early_stop  # fallback
+
+    # Compute gap
+    gap = train_auc - val_auc
+
+    #axes.set_ylim(0.8, 1) # Set y-axis range from 0 to 1
+    y_start = 0.995
+    x_start = 200
+
+    # Create figure with two subplots (2 rows, 1 column)
+    fig = plt.figure(figsize=(12, 9), constrained_layout=True)
+    gs = fig.add_gridspec(2, 1, height_ratios=[2.5, 1], hspace=0.15)
+    ax1 = fig.add_subplot(gs[0])  # main AUC
+    ax2 = fig.add_subplot(gs[1])  # gap
+
+    # ---------- MAIN AUC PLOT ----------
+    ax1.set_ylim(y_start, .999)  # zoom to show all variations
+    ax1.set_ylabel('AUC Score', fontsize=16, fontweight='bold')
+    ax1.set_title(plot_title or f'Learning Curve ({phys_ch})', fontsize=18, fontweight='bold', pad=15)
+
+    ax1.plot(rounds, train_auc, label='Training AUC', color='#1f77b4', linewidth=2.5, marker='o', markersize=4)
+    ax1.plot(rounds, val_auc,   label='Validation AUC', color='#ff7f0e', linewidth=2.5, marker='s', markersize=4)
+
+    # Annotate early‑stop (if given)
+    if early_stop is not None and early_stop < len(rounds):
+        ax1.axvline(x=early_stop, color='red', linestyle='--', alpha=0.6, linewidth=1.5)
+        ax1.text(early_stop, y_start, 'Early stop', color='red', ha='center', fontsize=10, fontweight='bold',
+                 bbox=dict(facecolor='white', edgecolor='red', boxstyle='round,pad=0.3'))
+
+    # Annotate final convergence point (last round)
+    x_shift = 30
+    last_round = rounds[-1]
+    final_val = val_auc[-1]
+    ax1.scatter([last_round], [final_val], color='green', s=120, zorder=5, marker='*', edgecolors='black')
+    ax1.text(last_round - x_shift, final_val - 0.0005, f'Final AUC = {final_val:.4f}', 
+             color='darkgreen', ha='center', fontsize=10, fontweight='bold')
+
+    ax1.grid(True, linestyle=':', alpha=0.7)
+    ax1.legend(loc='lower right', fontsize=11, framealpha=0.95)
+    ax1.set_xticklabels([])  # hide x‑ticks on top plot
+
+    # ---------- GAP SUBPLOT ----------
+    ax2.set_ylim(-0.0005, 0.002)  # tight around expected gap
+    ax2.set_ylabel('Train - Val Gap', fontsize=16, fontweight='bold')
+    ax2.set_xlabel('Boosting Round', fontsize=16, fontweight='bold')
+    ax2.axhline(y=0, color='black', linestyle='-', linewidth=0.8, alpha=0.5)
+
+    ax2.fill_between(rounds, 0, gap, color='skyblue', alpha=0.4, label='Gap area')
+    ax2.plot(rounds, gap, color='navy', linewidth=2, marker='d', markersize=4, label='Gap size')
+
+    # Annotate final gap (if provided, else compute)
+    final_gap_val = final_gap if final_gap is not None else gap[-1]
+    ax2.scatter([last_round], [gap[-1]], color='green', s=100, zorder=5, marker='*')
+    ax2.text(last_round - x_shift, gap[-1] + 0.0008, f'Gap = {gap[-1]:.4f}', 
+             color='darkgreen', ha='center', fontsize=10, fontweight='bold')
+
+    ax2.grid(True, linestyle=':', alpha=0.7)
+    ax2.legend(loc='upper left', fontsize=10)
+
+    # Adjust x‑limits to give padding
+    x_pad = max(2, int(0.03 * x_start))  # ~3% of 200 = 6
+
+    ax1.set_xlim(-x_pad, len(rounds) + x_pad)
+    ax2.set_xlim(-x_pad, len(rounds) + x_pad)
+
+    return fig
+
 # =================================================================
 # Plot confusion matrix
 # =================================================================
-def plot_nm(X_test, y_test, model, phys_ch):
+def plot_cm(X_test, y_test, model, plot_title=""):
     print("Plotting confusion matrix ...")
 
     y_pred = model.predict(X_test) # Prediction
@@ -665,9 +755,10 @@ def plot_nm(X_test, y_test, model, phys_ch):
     im = ax.imshow(cm, cmap='Blues', interpolation='nearest')
     plt.colorbar(im, ax=ax) # Add color bar
     
-    ax.set_title(rf'Confusion Matrix (test, {phys_ch})', fontsize=16)
+    #ax.set_title(rf'Confusion Matrix (test, {phys_ch})', fontsize=16)
     ax.set_xlabel('Predicted', fontsize=14)
     ax.set_ylabel('True', fontsize=14)
+    ax.set_title(plot_title, fontsize=14, fontweight='bold', pad=15)
 
     # For the counts plot (ax[0])
     ax.set_xticks([0, 1])
@@ -685,4 +776,180 @@ def plot_nm(X_test, y_test, model, phys_ch):
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred))
 
+    return fig
+
+def plot_cm_improved(X_test, y_test, model, phys_ch, plot_title=""):
+    """
+    Presentation-ready confusion matrix with:
+      - Raw counts + row-normalized percentages in each cell.
+      - Dynamic text color (white on dark cells, black on light cells).
+      - No colorbar (saves space).
+      - Larger, bold fonts.
+    """
+    print("Plotting confusion matrix (presentation layout)...")
+    
+    y_pred = model.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+    
+    # Row-normalized percentages (efficiency per true class)
+    cm_norm = cm.astype('float') / cm.sum(axis=1, keepdims=True)
+    
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Use the raw counts for the colormap intensity
+    im = ax.imshow(cm, cmap='Blues', interpolation='nearest')
+    
+    # --- No colorbar for 2x2 (comment out if you really want it) ---
+    # plt.colorbar(im, ax=ax)
+    
+    # Axis labels
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    ax.set_xticklabels(['Background', 'Signal'], fontsize=14)
+    ax.set_yticklabels(['Background', 'Signal'], fontsize=14)
+    ax.set_xlabel('Predicted', fontsize=16, fontweight='bold')
+    ax.set_ylabel('True', fontsize=16, fontweight='bold')
+    ax.set_title(plot_title or f'Confusion Matrix ({phys_ch})', fontsize=18, fontweight='bold', pad=20)
+    
+    # --- Add text with counts + percentages ---
+    for i in range(2):
+        for j in range(2):
+            count = cm[i, j]
+            pct = cm_norm[i, j] * 100
+            
+            # Choose text color based on cell intensity (dynamic contrast)
+            # If the count is > 50% of the row total, use white; else black.
+            row_total = cm[i, :].sum()
+            threshold = row_total * 0.5
+            text_color = 'white' if count > threshold else 'black'
+            
+            # Format the label: count on first line, percentage on second
+            label = f"{count:,}\n({pct:.1f}%)"
+            
+            ax.text(j, i, label, ha='center', va='center', 
+                    color=text_color, fontsize=14, fontweight='bold')
+    
+    # Optional: Add a grid line between cells for clarity
+    ax.grid(False)
+    # Draw lines to separate the 4 quadrants
+    ax.axhline(y=0.5, color='black', linewidth=1.5)
+    ax.axhline(y=1.5, color='black', linewidth=1.5)
+    ax.axvline(x=0.5, color='black', linewidth=1.5)
+    ax.axvline(x=1.5, color='black', linewidth=1.5)
+    
+    plt.tight_layout()
+    return fig
+
+# =================================================================
+# Plot mass signal breakdown
+# =================================================================
+def plot_mass_signal_breakdown(X_test, y_test, y_pred, phys_ch="", plot_title=""):
+    """
+    Plot m_gg distribution split into:
+        1. True Positives (Correct Signal)
+        2. False Negatives (Signal Misclassified)
+        3. True Negatives (Correct Background)
+        4. False Positives (Background Misclassified)
+        5. All physical background (True Negatives + False Positives)
+    
+    Args:
+        X_test: DataFrame of test features (must contain 'm_gg')
+        y_test: True labels (1 = signal, 0 = background)
+        y_pred: Predicted labels
+        phys_ch: Physics channel name (for title)
+        plot_title: Custom title (overrides default)
+    """
+    print("Plotting mass distribution: good signal vs lost signal vs background...")
+    
+    # --- Split the data ---
+    mask_tp = (y_test == 1) & (y_pred == 1)   # Good signal (True Positives)
+    mask_fn = (y_test == 1) & (y_pred == 0)   # Lost signal (False Negatives)
+    mask_bkg = (y_test == 0)                  # All physical background (True Negatives + False Positives)
+    
+    mass_tp  = X_test.loc[mask_tp, 'm_gg'].values
+    mass_fn  = X_test.loc[mask_fn, 'm_gg'].values
+    mass_bkg = X_test.loc[mask_bkg, 'm_gg'].values
+    
+    n_tp = len(mass_tp)
+    n_fn = len(mass_fn)
+    n_bkg = len(mass_bkg)
+    
+    # --- Create the plot ---
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # Histogram: Background (light gray, to show the full continuum)
+    ax.hist(mass_bkg, bins=200, alpha=0.7,
+            label=f'All Background (n={n_bkg:,})',
+            color='#d3d3d3', edgecolor='gray', linewidth=0.5, histtype='stepfilled')
+    
+    # Histogram: Wrongly classified signal (red, on top of background)
+    ax.hist(mass_fn, bins=200, alpha=0.7,
+            label=f'Signal Misclassified (FN) (n={n_fn:,})',
+            color='#d62728', edgecolor='darkred', linewidth=0.5, histtype='stepfilled')
+    
+    # Histogram: Correctly identified signal (green, on top of everything)
+    ax.hist(mass_tp, bins=200, alpha=0.8,
+            label=f'Correct Signal (TP) (n={n_tp:,})',
+            color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
+    
+    # Vertical line at π⁰ mass
+    ax.axvline(x=135, color='black', linestyle='--', linewidth=1.5, label=r'$\pi^0$ mass (135 MeV)')
+    
+    # Labels and styling
+    ax.set_xlabel(r'$m_{\gamma\gamma}$ [MeV/$c^2$]', fontsize=14)
+    ax.set_ylabel('Events', fontsize=14)
+    ax.set_title(plot_title or f'Mass Distribution Breakdown – {phys_ch}', fontsize=16, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=12)
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    return fig
+
+# =================================================================
+# Plot BDT score signal breakdown
+# =================================================================
+def plot_score_breakdown(y_test, y_pred, y_score, phys_ch="", plot_title=""):
+    """
+    Plot BDT score distribution with three categories:
+        1. Correct Signal (True Positives)
+        2. Signal Misclassified (False Negatives)
+        3. All Background (True Negatives + False Positives)
+    """
+    print("Plotting score breakdown: TP, FN, All Background...")
+    
+    # --- Split the data ---
+    mask_tp = (y_test == 1) & (y_pred == 1)
+    mask_fn = (y_test == 1) & (y_pred == 0)
+    mask_bkg = (y_test == 0)          # All background (TN + FP)
+    
+    score_tp = y_score[mask_tp]
+    score_fn = y_score[mask_fn]
+    score_bkg = y_score[mask_bkg]
+    
+    n_tp = len(score_tp)
+    n_fn = len(score_fn)
+    n_bkg = len(score_bkg)
+    
+    # --- Create the plot ---
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # Histogram order: Background first, then misclassified, then correct
+    ax.hist([score_bkg, score_fn, score_tp], bins=100, alpha=0.7,
+            label=[f'All Background (n={n_bkg:,})',
+                   f'Signal Misclassified (n={n_fn:,})',
+                   f'Correct Signal (n={n_tp:,})'],
+            color=['#1f77b4', '#ff7f0e', '#2ca02c'],  # Blue, Orange, Green
+            histtype='stepfilled', edgecolor='black', linewidth=0.5, stacked=False)
+    
+    # Vertical line at typical cut threshold
+    ax.axvline(x=0.5, color='black', linestyle='--', linewidth=1.5, label='Cut threshold (0.5)')
+    
+    ax.set_xlabel('BDT Score', fontsize=14)
+    ax.set_ylabel('Events', fontsize=14)
+    ax.set_title(plot_title or f'BDT Score Breakdown – {phys_ch}', fontsize=16, fontweight='bold')
+    ax.legend(loc='upper left', fontsize=11)
+    ax.grid(True, alpha=0.3)
+    ax.set_yscale('log')  # Log scale to see tails
+    
+    plt.tight_layout()
     return fig

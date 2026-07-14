@@ -5,7 +5,7 @@ import joblib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import xgboost as xgb
-from plots import plot_learning_curves, plot_roc, plot_nm, plot_var_score
+from plots import plot_learning_curves, plot_learning_curves_improved, plot_roc, plot_cm, plot_cm_improved, plot_var_score, plot_mass_signal_breakdown, plot_score_breakdown
 from metrics import eval_performance, event_performance
 from sklearn.metrics import roc_auc_score, roc_curve, auc
 
@@ -21,6 +21,8 @@ from config import (
     PLOT_VAL_DIR,
     MODEL_DIR
 )
+
+# uv run main_validation.py 2>&1 | tee validation_log.txt
 
 # ========== ADD THIS LINE - CHOOSE DATASET ==========
 USE_TEST_SET = False  # Set to False for validation, True for test set
@@ -117,30 +119,47 @@ if __name__ == '__main__':
     for f, imp in zip(features, importance):
         print(f"    {f}: {imp:.03f}")
 
-    ## Learning curves
-    fig_learning = plot_learning_curves(model, rf'Learning Curve (validation, {br_title})')
+    ## 1. Learning curves
+    fig_learning = plot_learning_curves_improved(model, rf'Validation')
+    #fig_learning = plot_learning_curves(model, rf'Learning Curve (validation)')
     fig_learning.savefig(f'{plot_dir}/learning_curves_{br_nm}.png', dpi=300, bbox_inches='tight')
     plt.close(fig_learning)
 
-    ## Plot confusion matrix
-    fig_cm = plot_nm(X_val, y_val, model, br_title)
+    ## 2. Plot confusion matrix
+    fig_cm = plot_cm_improved(X_val, y_val, model, rf'Validation')
+    #fig_cm = plot_cm(X_val, y_val, model, rf'Confusion Matrix (validation)')
     fig_cm.savefig(f'{plot_dir}/cm_{br_nm}.png', dpi=300, bbox_inches='tight')
     plt.close(fig_cm)
         
-    ## Accuracy metrics, event basis
-    #score_list, var_list, var_str = event_performance(all_df, model)
+    ## 3. Accuracy metrics, event basis
     score_list, var_list, var_str = event_performance(all_df, model)
-    fig_var = plot_var_score(var_list, score_list, var_str, rf'Variable Performance - {br_title}')
-    fig_var.savefig(f'{plot_dir}/var_score_{br_nm}.png', dpi=300, bbox_inches='tight')
-    plt.close(fig_var)
+    #fig_var = plot_var_score(var_list, score_list, var_str, rf'Variable Performance - {br_title}')
+    #fig_var.savefig(f'{plot_dir}/var_score_{br_nm}.png', dpi=300, bbox_inches='tight')
+    #plt.close(fig_var)
 
-    ## ROC plot
+    ## 4. Mass breakdown plot
+    y_pred = model.predict(X_val)
+    fig_mass = plot_mass_signal_breakdown(X_val, y_val, y_pred, 
+                                      phys_ch="TCOMB", 
+                                      plot_title="TCOMB: π⁰ Mass – Good Signal vs Lost Signal vs Background")
+    fig_mass.savefig(f'{plot_dir}/mass_breakdown_TCOMB.png', dpi=300, bbox_inches='tight')
+    plt.close(fig_mass)
+
+    # 5. Score breakdown
+    y_score = model.predict_proba(X_val)[:, 1]
+    fig_score = plot_score_breakdown(y_val, y_pred, y_score,
+                                    phys_ch=br_nm,
+                                    plot_title=f"{br_title}: BDT Score – Signal vs Background")
+    fig_score.savefig(f"{plot_dir}/score_breakdown_{br_nm}.png", dpi=300, bbox_inches='tight')
+    plt.close(fig_score)
+
+    ## 6. ROC plot
     #fig_roc = plot_roc(score_list, rf'ROC Curve - $\pi^{0}$ Classifier (validation, {br_title})')
     #fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
     #plt.close(fig_roc)
 
     y_score = model.predict_proba(X_val)[:, 1]
-    fig_roc = plot_roc(y_val, y_score, rf'ROC Curve - π⁰ Classifier (validation, {br_title})')
-    fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
-    plt.close(fig_roc)
+    #fig_roc = plot_roc(y_val, y_score, rf'ROC Curve - π⁰ Classifier (validation)')
+    #fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
+    #plt.close(fig_roc)
 
