@@ -1,7 +1,8 @@
 // massBias_bdt.C – full code with background subtraction
 #include "../header_method/method.h"
 #include "../header_plot/plot.h"
-const TString tree_file_nm = "../output_m3pi_bdt/hist_m3pi_bdt.root";
+
+const TString tree_file_nm = "../output_bdt_m3pi_bdt/hist_m3pi_bdt.root";
 
 const TString out_dir = "../massBias_bdt";
 

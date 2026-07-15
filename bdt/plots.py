@@ -865,14 +865,17 @@ def plot_mass_signal_breakdown(X_test, y_test, y_pred, phys_ch="", plot_title=""
     mask_tp = (y_test == 1) & (y_pred == 1)   # Good signal (True Positives)
     mask_fn = (y_test == 1) & (y_pred == 0)   # Lost signal (False Negatives)
     mask_bkg = (y_test == 0)                  # All physical background (True Negatives + False Positives)
-    
+    mask_sig = (y_test == 1)                  # All background (TP + FN)
+
     mass_tp  = X_test.loc[mask_tp, 'm_gg'].values
     mass_fn  = X_test.loc[mask_fn, 'm_gg'].values
     mass_bkg = X_test.loc[mask_bkg, 'm_gg'].values
+    mass_sig = X_test.loc[mask_sig, 'm_gg'].values
     
     n_tp = len(mass_tp)
     n_fn = len(mass_fn)
     n_bkg = len(mass_bkg)
+    n_sig = len(mass_sig)
     
     # --- Create the plot ---
     fig, ax = plt.subplots(figsize=(10, 8))
@@ -882,15 +885,20 @@ def plot_mass_signal_breakdown(X_test, y_test, y_pred, phys_ch="", plot_title=""
             label=f'All Background (n={n_bkg:,})',
             color='#d3d3d3', edgecolor='gray', linewidth=0.5, histtype='stepfilled')
     
+    # Histogram: Correctly identified signal (green, on top of everything)
+    ax.hist(mass_sig, bins=200, alpha=0.3,
+            label=f'Correct Signal (TP) (n={n_sig:,})',
+            color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
+
     # Histogram: Wrongly classified signal (red, on top of background)
-    ax.hist(mass_fn, bins=200, alpha=0.7,
-            label=f'Signal Misclassified (FN) (n={n_fn:,})',
-            color='#d62728', edgecolor='darkred', linewidth=0.5, histtype='stepfilled')
+    #ax.hist(mass_fn, bins=200, alpha=0.7,
+    #        label=f'Signal Misclassified (FN) (n={n_fn:,})',
+    #        color='#d62728', edgecolor='darkred', linewidth=0.5, histtype='stepfilled')
     
     # Histogram: Correctly identified signal (green, on top of everything)
-    ax.hist(mass_tp, bins=200, alpha=0.8,
-            label=f'Correct Signal (TP) (n={n_tp:,})',
-            color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
+    #ax.hist(mass_tp, bins=200, alpha=0.8,
+    #        label=f'Correct Signal (TP) (n={n_tp:,})',
+    #        color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
     
     # Vertical line at π⁰ mass
     ax.axvline(x=135, color='black', linestyle='--', linewidth=1.5, label=r'$\pi^0$ mass (135 MeV)')
@@ -921,25 +929,49 @@ def plot_score_breakdown(y_test, y_pred, y_score, phys_ch="", plot_title=""):
     mask_tp = (y_test == 1) & (y_pred == 1)
     mask_fn = (y_test == 1) & (y_pred == 0)
     mask_bkg = (y_test == 0)          # All background (TN + FP)
+    mask_sig = (y_test == 1)          # All signal (TP + FN)
     
     score_tp = y_score[mask_tp]
     score_fn = y_score[mask_fn]
     score_bkg = y_score[mask_bkg]
+    score_sig = y_score[mask_sig]
     
     n_tp = len(score_tp)
     n_fn = len(score_fn)
     n_bkg = len(score_bkg)
+    n_sig = len(score_sig)
     
     # --- Create the plot ---
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(8, 6))
     
     # Histogram order: Background first, then misclassified, then correct
-    ax.hist([score_bkg, score_fn, score_tp], bins=100, alpha=0.7,
-            label=[f'All Background (n={n_bkg:,})',
-                   f'Signal Misclassified (n={n_fn:,})',
-                   f'Correct Signal (n={n_tp:,})'],
-            color=['#1f77b4', '#ff7f0e', '#2ca02c'],  # Blue, Orange, Green
-            histtype='stepfilled', edgecolor='black', linewidth=0.5, stacked=False)
+    #ax.hist([score_bkg, score_fn, score_tp], bins=100, alpha=0.7,
+    #        label=[f'All Background (n={n_bkg:,})',
+    #               f'Signal Misclassified (n={n_fn:,})',
+    #               f'Correct Signal (n={n_tp:,})'],
+    #        color=['#1f77b4', '#ff7f0e', '#2ca02c'],  # Blue, Orange, Green
+    #        histtype='stepfilled', edgecolor='black', linewidth=0.5, stacked=False)
+    
+    # Histogram: Background
+    ax.hist(score_bkg, bins=200, alpha=0.7,
+            label=f'Background (n={n_bkg:,})',
+            color='#d3d3d3', edgecolor='gray', linewidth=0.5, histtype='stepfilled')
+    
+    # Histogram: Signal
+    ax.hist(score_sig, bins=200, alpha=0.3,
+            label=f'Signal (n={n_sig:,})',
+            color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
+    
+
+    # Histogram: Wrongly classified signal (red, on top of background)
+    #ax.hist(score_fn, bins=200, alpha=0.7,
+    #        label=f'Signal Misclassified (FN) (n={n_fn:,})',
+    #        color='#d62728', edgecolor='darkred', linewidth=0.5, histtype='stepfilled')
+    
+    # Histogram: Correctly identified signal (green, on top of everything)
+    #ax.hist(score_tp, bins=200, alpha=0.8,
+    #        label=f'Correct Signal (TP) (n={n_tp:,})',
+    #        color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
     
     # Vertical line at typical cut threshold
     ax.axvline(x=0.5, color='black', linestyle='--', linewidth=1.5, label='Cut threshold (0.5)')
@@ -947,9 +979,97 @@ def plot_score_breakdown(y_test, y_pred, y_score, phys_ch="", plot_title=""):
     ax.set_xlabel('BDT Score', fontsize=14)
     ax.set_ylabel('Events', fontsize=14)
     ax.set_title(plot_title or f'BDT Score Breakdown – {phys_ch}', fontsize=16, fontweight='bold')
-    ax.legend(loc='upper left', fontsize=11)
+    ax.legend(loc='upper right', fontsize=11)
     ax.grid(True, alpha=0.3)
     ax.set_yscale('log')  # Log scale to see tails
+    
+    plt.tight_layout()
+    return fig
+
+def plot_roc_improved(y_true, y_score, plot_title=""):
+    """
+    Enhanced ROC curve with:
+        - Larger fonts, thicker curve
+        - Shaded area under the curve
+        - Zoomed inset of the high-performance region
+        - Metrics box
+    """
+    print("Plotting improved ROC curve...")
+    
+    fpr, tpr, thresholds = roc_curve(y_true, y_score)
+    roc_auc = auc(fpr, tpr)
+    
+    # --- Main figure ---
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # Main ROC curve
+    ax.plot(fpr, tpr, color='#1f77b4', lw=3, label=f'ROC AUC')
+    
+    # Shaded area under the curve
+    ax.fill_between(fpr, tpr, alpha=0.15, color='#1f77b4')
+    
+    # Diagonal reference line
+    ax.plot([0, 1], [0, 1], 'k--', lw=1.5, label='Random classifier')
+    
+    # Axis labels and title
+    ax.set_xlabel('False Positive Rate', fontsize=16, fontweight='bold')
+    ax.set_ylabel('True Positive Rate', fontsize=16, fontweight='bold')
+    ax.set_title(plot_title or 'ROC Curve', fontsize=18, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=14, framealpha=0.9)
+    ax.grid(True, linestyle=':', alpha=0.6)
+    
+    # Set axis limits
+    ax.set_xlim(-0.01, 1.01)
+    ax.set_ylim(-0.01, 1.01)
+    
+    # --- Metrics box ---
+    # Compute background rejection at 90% signal efficiency
+    # Find threshold closest to TPR = 0.90
+    # tpr (True Positive Rate) is the Signal Efficiency: the fraction of true signals one keep at a given cut.
+    # tpr - 0.90 calculates how far each point on the ROC curve is from the target efficiency (90%).
+    # np.abs(...) takes the absolute value, so we don't care if it's above or below 90%, just how close it is.
+    # np.argmin(...) finds the index in the array where this distance is smallest.
+    # idx_eff90 is the position on the ROC curve where the signal efficiency is closest to exactly 90%.
+
+    idx_eff90 = np.argmin(np.abs(tpr - 0.90))
+    fpr_eff90 = fpr[idx_eff90]
+    bkg_rej_90 = 1 - fpr_eff90
+    # Also find the threshold that maximizes (TPR - FPR) -> Youden's index
+    youden_idx = np.argmax(tpr - fpr)
+    best_thresh = thresholds[youden_idx] # BDT
+    best_tpr = tpr[youden_idx]
+    best_fpr = fpr[youden_idx]
+    
+    textstr = (
+        f"AUC: {roc_auc:.4f}\n"
+        f"Bkg. rejection @ 90% S eff: {bkg_rej_90:.2%}\n"
+        f"Optimal threshold (max TPR−FPR): {best_thresh:.3f}\n"
+        f"    TPR = {best_tpr:.3f}, FPR = {best_fpr:.4f}"
+    )
+    props = dict(boxstyle='round', facecolor='white', alpha=0.8, edgecolor='gray')
+    ax.text(0.02, 0.02, textstr, transform=ax.transAxes, fontsize=12,
+            verticalalignment='bottom', horizontalalignment='left',
+            bbox=props)
+    
+    # --- Inset zoom (showing high-performance region) ---
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    axins = inset_axes(ax, width="40%", height="40%", loc='lower right',
+                       bbox_to_anchor=(0.05, 0.05, 0.9, 0.9),
+                       bbox_transform=ax.transAxes)
+    # Set the zoom limits (FPR up to 0.2, TPR from 0.8 to 1.0)
+    axins.set_xlim(-0.005, 0.2)
+    axins.set_ylim(0.78, 1.01)
+    axins.plot(fpr, tpr, color='#1f77b4', lw=2)
+    axins.plot([0, 0.2], [0.8, 1], 'k--', lw=1, alpha=0.5)
+    axins.grid(True, linestyle=':', alpha=0.4)
+    axins.set_xlabel('FPR', fontsize=10)
+    axins.set_ylabel('TPR', fontsize=10)
+    # Add a small rectangle to show the zoom area on main plot
+    from matplotlib.patches import Rectangle
+    rect = Rectangle((0, 0.8), 0.2, 0.2, linewidth=1, edgecolor='gray',
+                     facecolor='none', linestyle='--')
+    ax.add_patch(rect)
+    # Mark the zoomed region with a connecting line? Optional.
     
     plt.tight_layout()
     return fig

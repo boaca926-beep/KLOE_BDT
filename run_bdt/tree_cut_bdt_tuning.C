@@ -396,6 +396,9 @@ int tree_cut_bdt_tuning() {
     // - Br_ANGLELIST
     // ============================================================
 
+    cout << MASS_SCALE_PI0 << ", " << alpha_delta << endl;
+    cout << energy_shift_total << "+/-" << energy_shift_total_err << endl;
+	
     // ---------- Event loop ----------
     Long64_t nentries = ALLCHAIN_CUT->GetEntries();
     cout << "Processing " << nentries << " events" << endl;
@@ -706,7 +709,7 @@ int tree_cut_bdt_tuning() {
         // VALIDATION CHECKS AND HISTOGRAM FILLING
         // ============================================================
 
-	cout << total_recon_quality << endl;
+	//cout << total_recon_quality << endl;
 	
         // Only fill histograms for signal events with perfect reconstruction
         if (data_type == "sig" && total_recon_quality == 3) {
@@ -735,15 +738,7 @@ int tree_cut_bdt_tuning() {
             h_m_gg_after->Fill(m_gg_bdt);
         }
 
-        // Print summary for first few events
-        if (irow < 10 && data_type == "sig") {
-            cout << "Event " << irow << ": "
-                 << "e1_pull = " << e1_pull << " MeV, "
-                 << "e2_pull = " << e2_pull << " MeV, "
-                 << "e3_pull = " << e3_pull << " MeV, "
-                 << "m_gg = " << m_gg_bdt << " MeV, "
-                 << "MASS_SCALE = " << MASS_SCALE_PI0 << endl;
-        }
+        
         
         // Selection cuts
         if (lagvalue_min_7C > chi2_cut) continue;

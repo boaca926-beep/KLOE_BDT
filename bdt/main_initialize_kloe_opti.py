@@ -43,6 +43,8 @@ uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/KLOE_BDT/dataset_ro
 uv run main_initialize_kloe_opti.py --input /home/bo/Desktop/kloe_raw_TDATA_chain/cut/tree_pre.root --chunk-size 50000 --output-dir /home/bo/Desktop/KLOE_BDT/dataset_bdt
 """
 
+poor_signal_list = []  # will collect poor signal DataFrames across channels
+
 # ========== ADDED: Cut constants (matching C++ header_bdt/cut_para.h) ==========
 CHI2_CUT = 43.0
 ANGLE_CUT = 138.0          # degrees
@@ -88,11 +90,22 @@ def create_dataset(df, category): # For photon 4-momentum
         
         if category == 'signal':
             print(f"Creating all_df for signal ...")
-            # ---------- NEW: use Br_total_recon_quality for signal only ----------
-            # Apply quality cut only if the branch exists (only for signal MC)
-            if 'Br_total_recon_quality' in df.columns:
+
+            # ---------- use Br_total_recon_quality for signal only ----------
+            if 'Br_total_recon_quality' in df.columns: # Apply quality cut only if the branch exists (only for signal MC)
+                # Extract poor-quality signals and add to global list
+                poor_mask = df['Br_total_recon_quality'] != 3
+                if poor_mask.any():
+                    poor_df = df[poor_mask].copy()
+                    # Add a temporary event column (will be overwritten later with prefix)
+                    poor_df['event'] = range(len(poor_df))
+                    poor_signal_list.append(poor_df)
+                    print(f"  Collected {len(poor_df)} poor-quality signal events")
+
+                # Now apply quality cut for the main dataset
                 df = df[df['Br_total_recon_quality'] == 3].copy()   # or >= 2
                 print(f"  Signal events after quality cut: {len(df)}")
+
             # All remaining events are signal (no pos/neg split)
             all_df = df.copy()
             nb_all = [i for i in range(len(all_df))]
@@ -567,12 +580,21 @@ if __name__ == '__main__':
                 print(f"  Test pairs: {sum(len(pairs) for pairs in pair_test_list) if pair_test_list else 0}")
                 print(f"  X_test components: {len(X_test_list)}")
 
-        all_df_comb = df_comb
+        # --- Save poor signals if any ---
+        if poor_signal_list:
+            print(f"\nCombining {len(poor_signal_list)} poor-signal chunks...")
+            poor_signal_all = pd.concat(poor_signal_list, ignore_index=True)
+            joblib.dump(poor_signal_all, f'{data_dir}/poor_signal_TCOMB.pkl', compress=3)
+            print(f"Saved {len(poor_signal_all)} poor-quality signal events to poor_signal_TCOMB.pkl")
+        else:
+            print("No poor-quality signal events found.")
+
+        # --- Now handle the main combined dataset (always defined) ---
+        all_df_comb = df_comb   # df_comb is already defined earlier
         print("\nCreating pairs for combined dataset...")
         pi0_all_df_comb = prepare_3photon_pairs(all_df_comb)
 
         print(f"\n✅ Data ready for training:")
-    
         print("\nSaving combined files...")
         
         joblib.dump(all_df_comb, f'{data_dir}/all_df_TCOMB.pkl', compress=3)

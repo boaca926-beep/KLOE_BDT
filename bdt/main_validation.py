@@ -5,9 +5,10 @@ import joblib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import xgboost as xgb
-from plots import plot_learning_curves, plot_learning_curves_improved, plot_roc, plot_cm, plot_cm_improved, plot_var_score, plot_mass_signal_breakdown, plot_score_breakdown
+from plots import plot_learning_curves, plot_learning_curves_improved, plot_roc, plot_cm, plot_cm_improved, plot_var_score, plot_mass_signal_breakdown, plot_score_breakdown, plot_roc_improved
 from metrics import eval_performance, event_performance
 from sklearn.metrics import roc_auc_score, roc_curve, auc
+from training_config import prepare_3photon_pairs
 
 import matplotlib
 matplotlib.use('Agg')  # Changed from 'TkAgg' to 'Agg' for non-interactive
@@ -89,6 +90,16 @@ if __name__ == '__main__':
 
     input_data_dir = DATA_DIR
     phys_map = joblib.load(os.path.join(input_data_dir, f'phys_map.pkl'))
+
+    # Poor signal data set
+    poor_file = os.path.join(DATA_DIR, 'poor_signal_TCOMB.pkl')
+    if os.path.exists(poor_file):
+        poor_df = joblib.load(poor_file)
+        print("\n📊 Loading poor-quality signal events...")
+        poor_pairs = prepare_3photon_pairs(poor_df)
+    else:
+        print("⚠️  poor_signal_TCOMB.pkl not found. Skipping poor-signal evaluation.")
+        poor_pairs = None   
     
     #print(phys_map)
 
@@ -109,7 +120,10 @@ if __name__ == '__main__':
         shutil.rmtree(plot_dir)
     os.makedirs(plot_dir, exist_ok=True)
 
-    features = X_val.columns
+    #features = X_val.columns
+    # ---- Define features explicitly ----
+    features = ['m_gg', 'opening_angle', 'cos_theta', 'E_asym', 'e_min_x_angle', 
+                'E1', 'E2', 'E3', 'asym_x_angle', 'E_diff']
 
     ## Evaluate validation set
     eval_performance(model, X_val, y_val)
@@ -147,19 +161,22 @@ if __name__ == '__main__':
 
     # 5. Score breakdown
     y_score = model.predict_proba(X_val)[:, 1]
-    fig_score = plot_score_breakdown(y_val, y_pred, y_score,
-                                    phys_ch=br_nm,
-                                    plot_title=f"{br_title}: BDT Score – Signal vs Background")
-    fig_score.savefig(f"{plot_dir}/score_breakdown_{br_nm}.png", dpi=300, bbox_inches='tight')
-    plt.close(fig_score)
+
+    if poor_pairs is not None:
+        X_poor = poor_pairs[features]
+        y_score_poor = model.predict_proba(X_poor)[:, 1]
+    
+        fig_score = plot_score_breakdown(y_val, y_pred, y_score,
+                                         phys_ch=br_nm,
+                                         plot_title=f"BDT Score – Signal vs Background (Validation)")
+        fig_score.savefig(f"{plot_dir}/score_breakdown_{br_nm}.png", dpi=300, bbox_inches='tight')
+        plt.close(fig_score)
+    else:
+        print("Skipping score breakdown plot (no poor-quality signals).")
 
     ## 6. ROC plot
-    #fig_roc = plot_roc(score_list, rf'ROC Curve - $\pi^{0}$ Classifier (validation, {br_title})')
-    #fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
-    #plt.close(fig_roc)
-
     y_score = model.predict_proba(X_val)[:, 1]
-    #fig_roc = plot_roc(y_val, y_score, rf'ROC Curve - π⁰ Classifier (validation)')
-    #fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
-    #plt.close(fig_roc)
+    fig_roc = plot_roc_improved(y_val, y_score, rf'ROC Curve - π⁰ Classifier (validation)')
+    fig_roc.savefig(f'{plot_dir}/roc_curv_{br_nm}.png', dpi=300, bbox_inches='tight')
+    plt.close(fig_roc)
 

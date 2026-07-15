@@ -160,13 +160,13 @@ if __name__ == '__main__':
                 fig_var.savefig(f'{plot_dir}/Pos_pi0_mass_{br_nm}.png', dpi=300, bbox_inches='tight')
                 plt.close(fig_var)
 
-                ## 5. Plot kine. var of selection cuts correlations
-                drop_columns = []
-                #fig_feature_pairs = plot_feature_pairs(kine_all_df, drop_columns,
-                #                                       rf"Selection Cuts Correlations (Signal=Blue, Background=Red) ({br_title})", 
-                #                                       "is_signal")
-                #fig_feature_pairs.savefig(f'{plot_dir}/SC_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
-                #plt.close(fig_feature_pairs.figure)  
+                ## 5. Plot correlations between selection cuts
+                drop_columns = ['Br_betapi0', 'Br_ppIM', 'Br_angle_pi0gam12', 'Br_m3pi', 'is_signal']      
+                fig_feature_pairs = plot_feature_pairs(kine_all_df, drop_columns,
+                                                       rf"Selection Cuts Correlations (Signal=Blue, Background=Red)", 
+                                                       "is_signal")
+                fig_feature_pairs.savefig(f'{plot_dir}/SC_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
+                plt.close(fig_feature_pairs.figure)  
 
                 ## 6. Plot pi0 feature-feature correlations
                 print(pi0_all_df.head(5))
@@ -175,15 +175,15 @@ if __name__ == '__main__':
                 'E_asym', 'E1', 'E2', 'asym_x_angle', 'E_diff'
                 ]
 
-                #fig_feature_pairs = plot_feature_pairs(
-                #    pi0_all_df,
-                #    drop_columns,
-                #    rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red)", 
-                #    "is_pi0",          # <-- use numeric column
-                #    sample_frac=0.3
-                #)
-                #fig_feature_pairs.savefig(f'{plot_dir}/FF_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
-                #plt.close(fig_feature_pairs.figure)
+                fig_feature_pairs = plot_feature_pairs(
+                    pi0_all_df,
+                    drop_columns,
+                    rf"$\pi^{0}$ Candidates Feature-feature (Signal=Blue, Background=Red)", 
+                    "is_pi0",          # <-- use numeric column
+                    sample_frac=0.3
+                )
+                fig_feature_pairs.savefig(f'{plot_dir}/FF_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
+                plt.close(fig_feature_pairs.figure)
 
                 ## 7. Plot pi0 feature-target correlations
                 #features = ['m_gg', 'opening_angle', 'cos_theta', 'E_asym', 'e_min_x_angle', 
