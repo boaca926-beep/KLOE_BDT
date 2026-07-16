@@ -134,6 +134,7 @@ if __name__ == '__main__':
         print(f"    {f}: {imp:.03f}")
 
     ## 1. Learning curves
+    title='Learning Curve ({phys_ch})'
     fig_learning = plot_learning_curves_improved(model, rf'Validation')
     #fig_learning = plot_learning_curves(model, rf'Learning Curve (validation)')
     fig_learning.savefig(f'{plot_dir}/learning_curves_{br_nm}.png', dpi=300, bbox_inches='tight')
@@ -147,9 +148,9 @@ if __name__ == '__main__':
         
     ## 3. Accuracy metrics, event basis
     score_list, var_list, var_str = event_performance(all_df, model)
-    #fig_var = plot_var_score(var_list, score_list, var_str, rf'Variable Performance - {br_title}')
-    #fig_var.savefig(f'{plot_dir}/var_score_{br_nm}.png', dpi=300, bbox_inches='tight')
-    #plt.close(fig_var)
+    fig_var = plot_var_score(var_list, score_list, var_str, rf'Variable Performance - {br_title}')
+    fig_var.savefig(f'{plot_dir}/var_score_{br_nm}.png', dpi=300, bbox_inches='tight')
+    plt.close(fig_var)
 
     ## 4. Mass breakdown plot
     y_pred = model.predict(X_val)
@@ -166,9 +167,9 @@ if __name__ == '__main__':
         X_poor = poor_pairs[features]
         y_score_poor = model.predict_proba(X_poor)[:, 1]
     
+        title = f"BDT Score – Signal vs Background (Validation)"
         fig_score = plot_score_breakdown(y_val, y_pred, y_score,
-                                         phys_ch=br_nm,
-                                         plot_title=f"BDT Score – Signal vs Background (Validation)")
+                                         phys_ch=br_nm)
         fig_score.savefig(f"{plot_dir}/score_breakdown_{br_nm}.png", dpi=300, bbox_inches='tight')
         plt.close(fig_score)
     else:

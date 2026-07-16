@@ -6,18 +6,88 @@ import joblib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import matplotlib.pyplot as plt
-from plots import plot_var_score, plot_roc, plot_nm  # Fixed import
-from metrics import event_performance
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-
+from plots import plot_roc_improved, plot_event_cm_improved, plot_cm_improved, plot_f1_vs_threshold
+from sklearn.metrics import roc_curve, auc
 from config import DATA_DIR, PLOT_APP_DIR, MODEL_DIR
+
+# uv run main_application.py 2>&1 | tee application_log.txt
+
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+def aggregate_event_scores(all_df_test, y_pred_proba, y_test_pair, pairs_per_photon=3):
+    """
+    Convert pair-level probabilities to event-level continuous scores.
+    
+    Returns a DataFrame with columns:
+        event_id, true_signal, max_score, mean_score, min2_score
+    
+    - max_score: maximum pair probability in the event (for 'any' strategy)
+    - mean_score: average of all pair probabilities in the event (for 'mean' strategy)
+    - min2_score: second highest per‑photon maximum (for 'min2' strategy)
+    """
+    n_photons = len(all_df_test)
+    n_pairs = len(y_pred_proba)
+    
+    # Validate alignment
+    expected_pairs = n_photons * pairs_per_photon
+    assert n_pairs == expected_pairs, \
+        f"Mismatch: {n_photons} photons × {pairs_per_photon} ≠ {n_pairs} pairs"
+    
+    y_test_array = y_test_pair.values if hasattr(y_test_pair, 'values') else y_test_pair
+    
+    photon_records = []
+    for i in range(n_photons):
+        start = i * pairs_per_photon
+        end = start + pairs_per_photon
+        probs = y_pred_proba[start:end]
+        labels = y_test_array[start:end]
+        
+        photon_records.append({
+            'event_id': all_df_test.iloc[i]['event'],
+            'photon_max': probs.max(),          # max within this photon
+            'photon_mean': probs.mean(),        # mean within this photon
+            'has_true_pi0': labels.sum() > 0    # photon contains a true π⁰ pair
+        })
+    
+    photon_df = pd.DataFrame(photon_records)
+    
+    # Define helper to compute second largest value
+    def second_largest(arr):
+        sorted_arr = np.sort(arr)
+        if len(sorted_arr) >= 2:
+            return sorted_arr[-2]
+        else:
+            # Events with <2 photons cannot be signal under min2
+            return 0.0
+    
+    # Aggregate at event level
+    event_df = photon_df.groupby('event_id').agg({
+        'photon_max': 'max',                    # overall maximum -> any strategy
+        'photon_mean': 'mean',                  # overall mean -> mean strategy
+        'has_true_pi0': 'any'                   # event truth
+    }).rename(columns={
+        'photon_max': 'max_score',
+        'photon_mean': 'mean_score',
+        'has_true_pi0': 'true_signal'
+    }).reset_index()
+    
+    # Compute min2_score: second highest of per‑photon maxima
+    event_df['min2_score'] = photon_df.groupby('event_id')['photon_max'].agg(second_largest).values
+    
+    # Convert boolean truth to int
+    event_df['true_signal'] = event_df['true_signal'].astype(int)
+    
+    return event_df
 
 
 def event_wise_prediction_fast(all_df_test, y_pred_proba, y_test_pair, threshold=0.5):
     """
     Convert pair-wise predictions to event-wise decisions.
     Uses precomputed probabilities to avoid repeated model inference.
+    Returns event_df, best_strategy, best_f1.
     """
     # Get pair predictions from precomputed probabilities
     y_pred_pair = (y_pred_proba >= threshold).astype(int)
@@ -84,7 +154,7 @@ def event_wise_prediction_fast(all_df_test, y_pred_proba, y_test_pair, threshold
     
     # ============ EVENT-LEVEL AGGREGATION ============
     event_results = []
-    
+
     for event_id, group in photon_df.groupby('event_id'):
         n_photons_in_event = len(group)
         
@@ -139,6 +209,7 @@ def event_wise_prediction_fast(all_df_test, y_pred_proba, y_test_pair, threshold
     print(f"\nStrategy Performance (threshold={threshold}):")
     best_f1 = 0
     best_strategy = 'any'
+    f1_any = 0.0
     
     for strategy_name, col in strategies:
         tp = ((event_df['true_signal'] == 1) & (event_df[col] == 1)).sum()
@@ -152,7 +223,12 @@ def event_wise_prediction_fast(all_df_test, y_pred_proba, y_test_pair, threshold
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0
             f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
             
+            # fill f1_any
+            if (strategy_name == 'any'):
+                f1_any = f1
+
             print(f"\n  Strategy '{strategy_name}':")
+            print(f"    Accuracy '{accuracy:.4f}'")
             print(f"    TP: {tp:6d} | FP: {fp:6d} | TN: {tn:6d} | FN: {fn:6d}")
             print(f"    Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}")
             
@@ -161,60 +237,17 @@ def event_wise_prediction_fast(all_df_test, y_pred_proba, y_test_pair, threshold
                 best_strategy = strategy_name
     
     print(f"\n✓ Best strategy at threshold={threshold}: '{best_strategy}' (F1 = {best_f1:.4f})")
-    
+    #print(f"\n f1 'any' list {f1_any}")
+
     # Add the best strategy as default for this threshold
     event_df['pred_signal'] = event_df[f'pred_{best_strategy}']
     
-    return event_df, best_strategy, best_f1
+    return event_df, best_strategy, best_f1, f1_any
 
 
-def plot_event_confusion_matrix(event_results, data_type, plot_dir):
-    """Plot confusion matrix for event-wise classification"""
-    
-    cm = confusion_matrix(event_results['true_signal'], event_results['pred_signal'])
-    cm_percent = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis] * 100
-    
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    
-    # Plot counts
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[0],
-                xticklabels=['Background', 'Signal'],
-                yticklabels=['Background', 'Signal'])
-    axes[0].set_xlabel('Predicted')
-    axes[0].set_ylabel('True')
-    axes[0].set_title(f'Confusion Matrix (Counts) - {data_type}')
-    
-    # Plot percentages
-    sns.heatmap(cm_percent, annot=True, fmt='.1f', cmap='Blues', ax=axes[1],
-                xticklabels=['Background', 'Signal'],
-                yticklabels=['Background', 'Signal'])
-    axes[1].set_xlabel('Predicted')
-    axes[1].set_ylabel('True')
-    axes[1].set_title(f'Confusion Matrix (Percentages) - {data_type}')
-    
-    plt.tight_layout()
-    plt.savefig(f'{plot_dir}/event_cm_{data_type}.png', dpi=300, bbox_inches='tight')
-    plt.close(fig)
-    
-    # Calculate and print metrics
-    tn, fp, fn, tp = cm.ravel()
-    accuracy = (tp + tn) / (tp + tn + fp + fn)
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-    
-    print(f"\nEvent-wise Classification Metrics ({data_type}):")
-    print(f"  True Positives:  {tp:5d}")
-    print(f"  False Positives: {fp:5d}")
-    print(f"  True Negatives:  {tn:5d}")
-    print(f"  False Negatives: {fn:5d}")
-    print(f"  Accuracy:  {accuracy:.4f}")
-    print(f"  Precision: {precision:.4f}")
-    print(f"  Recall:    {recall:.4f}")
-    print(f"  F1 Score:  {f1:.4f}")
-    
-    return fig
-
+# =============================================================================
+# MAIN EXECUTION
+# =============================================================================
 
 if __name__ == '__main__':
     
@@ -255,56 +288,133 @@ if __name__ == '__main__':
             
             print(f"Loaded: {len(all_df_test)} photons, {len(X_test)} pairs")
             
+            # Validate alignment
+            assert len(all_df_test) * 3 == len(X_test), \
+                f"Mismatch: {len(all_df_test)} photons × 3 ≠ {len(X_test)} pairs"
+            
             # ========== OPTIMIZATION: Compute probabilities once ==========
             print("\nComputing pair-level probabilities (once)...")
             y_pred_proba = model.predict_proba(X_test)[:, 1]
             print(f"Done. Probabilities shape: {y_pred_proba.shape}")
             
-            # Analyze threshold impact using precomputed probabilities
-            thresholds = np.arange(0.05, 1.0, 0.05)
+            # =====================================================================
+            # EVENT-LEVEL ROC CURVES – using event aggregation
+            # =====================================================================
+            print("\n" + "="*60)
+            print("AGGREGATING TO EVENT-LEVEL SCORES FOR ROC")
+            print("="*60)
+            
+            event_scores = aggregate_event_scores(all_df_test, y_pred_proba, y_test)
+            print(f"✅ Aggregated {len(event_scores)} events.")
+            
+            # ---- Plot and save event-wise ROC curves ----
+            # 1. Max probability (any strategy)
+            fig_roc_max = plot_roc_improved(
+                event_scores['true_signal'], event_scores['max_score'],
+                plot_title=f'ROC Curve - π⁰ Classifier (max probability)',
+                threshold=0.35
+            )
+            fig_roc_max.savefig(f'{plot_dir}/event_roc_max_{data_type}.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_roc_max)
+            
+            # 2. Mean probability (mean strategy)
+            fig_roc_mean = plot_roc_improved(
+                event_scores['true_signal'], event_scores['mean_score'],
+                plot_title=f'Event-wise ROC (mean probability) – {data_type}'
+            )
+            fig_roc_mean.savefig(f'{plot_dir}/event_roc_mean_{data_type}.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_roc_mean)
+            
+            # 3. Second-highest photon-max (min2 strategy)
+            fig_roc_second = plot_roc_improved(
+                event_scores['true_signal'], event_scores['min2_score'],
+                plot_title=f'Event-wise ROC (2nd max photon probability) – {data_type}'
+            )
+            fig_roc_second.savefig(f'{plot_dir}/event_roc_min2_{data_type}.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_roc_second)
+            
+            # ---- Optional: overlay all three strategies ----
+            fig_overlay, ax = plt.subplots(figsize=(10, 8))
+            for scores, label, color in zip(
+                [event_scores['max_score'], event_scores['mean_score'], event_scores['min2_score']],
+                ['Max (any)', 'Mean', '2nd Max (min2)'],
+                ['#1f77b4', '#ff7f0e', '#2ca02c']
+            ):
+                fpr, tpr, _ = roc_curve(event_scores['true_signal'], scores)
+                auc_val = auc(fpr, tpr)
+                ax.plot(fpr, tpr, lw=2, color=color, label=f'{label} (AUC={auc_val:.3f})')
+            ax.plot([0, 1], [0, 1], 'k--', lw=1, label='Random')
+            ax.set_xlabel('False Positive Rate', fontsize=14)
+            ax.set_ylabel('True Positive Rate', fontsize=14)
+            ax.set_title(f'Event-wise ROC Comparison – {data_type}', fontsize=16)
+            ax.legend(loc='lower right', fontsize=12)
+            ax.grid(True, alpha=0.3)
+            fig_overlay.savefig(f'{plot_dir}/event_roc_comparison_{data_type}.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_overlay)
+            
+            print(f"✅ Event-wise ROC curves saved to: {plot_dir}")
+            
+            # =====================================================================
+            # THRESHOLD OPTIMISATION (discrete strategies)
+            # =====================================================================
+            thresholds = np.arange(0.05, 1, 0.05)
             best_f1 = 0.0
             best_thr = 0.5
             best_strat = 'any'
             best_event_df = None
+            
+            all_f1_any = []
+            thr_list = []
 
             for thr in thresholds:
-                event_df, strat, f1 = event_wise_prediction_fast(
+                event_df, strat, f1, f1_any = event_wise_prediction_fast(
                     all_df_test, y_pred_proba, y_test, threshold=thr
                 )
+                all_f1_any.append(f1_any)
+                thr_list.append(thr)
                 if f1 > best_f1:
                     best_f1 = f1
                     best_thr = thr
                     best_strat = strat
                     best_event_df = event_df
-
+            
             print(f"\n{'='*60}")
             print(f"OPTIMAL CONFIGURATION")
             print(f"{'='*60}")
             print(f"Threshold  : {best_thr:.2f}")
             print(f"Strategy   : '{best_strat}'")
             print(f"F1 score   : {best_f1:.4f}")
-
-            # Use best_event_df for plotting and saving
+            
+            # Use best_event_df for saving and confusion matrix
             event_results = best_event_df
-
-            # Plot event confusion matrix
-            plot_event_confusion_matrix(event_results, data_type, plot_dir)
             
             # Save results
             event_results.to_csv(f'{plot_dir}/event_results_{data_type}.csv', index=False)
             
-            # Plot pair-level metrics
-            fig_cm = plot_nm(X_test, y_test, model, br_title)
-            fig_cm.savefig(f'{plot_dir}/cm_{data_type}.png', dpi=300, bbox_inches='tight')
+            # ---- Plot event confusion matrix ----
+            fig_event_cm = plot_event_cm_improved(event_results, data_type)
+            fig_event_cm.savefig(f'{plot_dir}/event_cm_{data_type}.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_event_cm)
+            
+            # ---- (Optional) Pair-level confusion matrix ----
+            fig_cm = plot_cm_improved(X_test, y_test, model, br_title)
+            fig_cm.savefig(f'{plot_dir}/cm_pair_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_cm)
             
-            # Plot ROC and mass-score (using precomputed probabilities for consistency)
-            # Note: event_performance may still be needed for other plots; we keep it as is
-            score_list, var_list, var_str = event_performance(all_df, model)
-            fig_roc = plot_roc(y_test, y_pred_proba, rf'ROC Curve - $\pi^{0}$ Classifier (test, {br_title})')
-            fig_roc.savefig(f'{plot_dir}/roc_curv_{data_type}.png', dpi=300, bbox_inches='tight')
-            plt.close(fig_roc)
+            # ---- (Optional) Pair-level ROC ----
+            fig_pair_roc = plot_roc_improved(y_test, y_pred_proba, 
+                                             plot_title=f'Pair-level ROC – {data_type}')
+            fig_pair_roc.savefig(f'{plot_dir}/event_roc_pair_{data_type}.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_pair_roc)
             
+            # F1 plot 'any'
+            clean_f1 = [float(f"{x:.4f}") for x in all_f1_any]
+            print(f"all_f1_any = {all_f1_any}")
+
+            fig_f1_any = plot_f1_vs_threshold(clean_f1, thr_list)   # now works with default opt_threshold
+            fig_f1_any.savefig(f'{plot_dir}/f1_any.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_f1_any)
+
             print(f"\n✓ All results saved to {plot_dir}")
         
         else:

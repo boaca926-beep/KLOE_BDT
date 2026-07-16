@@ -689,7 +689,8 @@ def plot_learning_curves_improved(model, phys_ch, final_val_auc=None, final_gap=
     # ---------- MAIN AUC PLOT ----------
     ax1.set_ylim(y_start, .999)  # zoom to show all variations
     ax1.set_ylabel('AUC Score', fontsize=16, fontweight='bold')
-    ax1.set_title(plot_title or f'Learning Curve ({phys_ch})', fontsize=18, fontweight='bold', pad=15)
+    ax1.set_title(plot_title, fontsize=18, fontweight='bold', pad=15)
+    #ax1.set_title(plot_title or f'Learning Curve ({phys_ch})', fontsize=18, fontweight='bold', pad=15)
 
     ax1.plot(rounds, train_auc, label='Training AUC', color='#1f77b4', linewidth=2.5, marker='o', markersize=4)
     ax1.plot(rounds, val_auc,   label='Validation AUC', color='#ff7f0e', linewidth=2.5, marker='s', markersize=4)
@@ -840,6 +841,92 @@ def plot_cm_improved(X_test, y_test, model, phys_ch, plot_title=""):
     plt.tight_layout()
     return fig
 
+def plot_event_cm(event_results, data_type):
+    """Plot confusion matrix for event-wise classification"""
+    
+    cm = confusion_matrix(event_results['true_signal'], event_results['pred_signal'])
+    cm_percent = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis] * 100
+    
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    # Plot counts
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[0],
+                xticklabels=['Background', 'Signal'],
+                yticklabels=['Background', 'Signal'])
+    axes[0].set_xlabel('Predicted')
+    axes[0].set_ylabel('True')
+    axes[0].set_title(f'Confusion Matrix (Counts) - {data_type}')
+    
+    # Plot percentages
+    sns.heatmap(cm_percent, annot=True, fmt='.1f', cmap='Blues', ax=axes[1],
+                xticklabels=['Background', 'Signal'],
+                yticklabels=['Background', 'Signal'])
+    axes[1].set_xlabel('Predicted')
+    axes[1].set_ylabel('True')
+    axes[1].set_title(f'Confusion Matrix (Percentages) - {data_type}')
+    
+    # Calculate and print metrics
+    tn, fp, fn, tp = cm.ravel()
+    accuracy = (tp + tn) / (tp + tn + fp + fn)
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    
+    print(f"\nEvent-wise Classification Metrics ({data_type}):")
+    print(f"  True Positives:  {tp:5d}")
+    print(f"  False Positives: {fp:5d}")
+    print(f"  True Negatives:  {tn:5d}")
+    print(f"  False Negatives: {fn:5d}")
+    print(f"  Accuracy:  {accuracy:.4f}")
+    print(f"  Precision: {precision:.4f}")
+    print(f"  Recall:    {recall:.4f}")
+    print(f"  F1 Score:  {f1:.4f}")
+    
+    plt.tight_layout()
+    return fig
+
+def plot_event_cm_improved(event_results, data_type):
+    print("Plotting event confusion matrix (presentation layout)...")
+    y_true = event_results['true_signal']
+    y_pred = event_results['pred_signal']
+    cm = confusion_matrix(y_true, y_pred)
+    cm_norm = cm.astype('float') / cm.sum(axis=1, keepdims=True)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.set_facecolor('#e8e8e8')   # light grey background
+
+    im = ax.imshow(cm, cmap='Blues', interpolation='nearest',
+                   vmin=0, vmax=cm.max() * 1.0)   # no extra padding
+
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    ax.set_xticklabels(['Background', 'Signal'], fontsize=14)
+    ax.set_yticklabels(['Background', 'Signal'], fontsize=14)
+    ax.set_xlabel('Predicted', fontsize=16, fontweight='bold')
+    ax.set_ylabel('True', fontsize=16, fontweight='bold')
+    #ax.set_title(f'Confusion Matrix – {data_type} Set', fontsize=18, fontweight='bold', pad=20)
+
+    max_count = cm.max()
+    for i in range(2):
+        for j in range(2):
+            count = cm[i, j]
+            pct = cm_norm[i, j] * 100
+            # White only if the cell is > 20% of the maximum count
+            text_color = 'white' if count > 0.2 * max_count else 'black'
+            label = f"{count:,}\n({pct:.1f}%)"
+            ax.text(j, i, label, ha='center', va='center',
+                    color=text_color, fontsize=14, fontweight='bold')
+
+    # Grid lines
+    ax.axhline(y=0.5, color='black', linewidth=1.5)
+    ax.axhline(y=1.5, color='black', linewidth=1.5)
+    ax.axvline(x=0.5, color='black', linewidth=1.5)
+    ax.axvline(x=1.5, color='black', linewidth=1.5)
+    ax.grid(False)
+
+    plt.tight_layout()
+    return fig
+
 # =================================================================
 # Plot mass signal breakdown
 # =================================================================
@@ -916,7 +1003,7 @@ def plot_mass_signal_breakdown(X_test, y_test, y_pred, phys_ch="", plot_title=""
 # =================================================================
 # Plot BDT score signal breakdown
 # =================================================================
-def plot_score_breakdown(y_test, y_pred, y_score, phys_ch="", plot_title=""):
+def plot_score_breakdown(y_test, y_pred, y_score, phys_ch="", plot_title=None):
     """
     Plot BDT score distribution with three categories:
         1. Correct Signal (True Positives)
@@ -954,12 +1041,12 @@ def plot_score_breakdown(y_test, y_pred, y_score, phys_ch="", plot_title=""):
     
     # Histogram: Background
     ax.hist(score_bkg, bins=200, alpha=0.7,
-            label=f'Background (n={n_bkg:,})',
+            label=f'Background', # label=f'Background (n={n_bkg:,})'
             color='#d3d3d3', edgecolor='gray', linewidth=0.5, histtype='stepfilled')
     
     # Histogram: Signal
     ax.hist(score_sig, bins=200, alpha=0.3,
-            label=f'Signal (n={n_sig:,})',
+            label=f'Signal', # label=f'Signal (n={n_sig:,})'
             color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
     
 
@@ -974,11 +1061,12 @@ def plot_score_breakdown(y_test, y_pred, y_score, phys_ch="", plot_title=""):
     #        color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
     
     # Vertical line at typical cut threshold
-    ax.axvline(x=0.5, color='black', linestyle='--', linewidth=1.5, label='Cut threshold (0.5)')
+    #ax.axvline(x=0.5, color='black', linestyle='--', linewidth=1.5, label='Cut threshold (0.5)')
     
     ax.set_xlabel('BDT Score', fontsize=14)
     ax.set_ylabel('Events', fontsize=14)
-    ax.set_title(plot_title or f'BDT Score Breakdown – {phys_ch}', fontsize=16, fontweight='bold')
+    ax.set_title(plot_title, fontsize=16, fontweight='bold')
+    #ax.set_title(plot_title or f'BDT Score Breakdown – {phys_ch}', fontsize=16, fontweight='bold')
     ax.legend(loc='upper right', fontsize=11)
     ax.grid(True, alpha=0.3)
     ax.set_yscale('log')  # Log scale to see tails
@@ -986,13 +1074,14 @@ def plot_score_breakdown(y_test, y_pred, y_score, phys_ch="", plot_title=""):
     plt.tight_layout()
     return fig
 
-def plot_roc_improved(y_true, y_score, plot_title=""):
+def plot_roc_improved(y_true, y_score, plot_title="", threshold=None):
     """
     Enhanced ROC curve with:
         - Larger fonts, thicker curve
         - Shaded area under the curve
         - Zoomed inset of the high-performance region
         - Metrics box
+        - Optional operating point marker (if threshold is provided)
     """
     print("Plotting improved ROC curve...")
     
@@ -1000,7 +1089,7 @@ def plot_roc_improved(y_true, y_score, plot_title=""):
     roc_auc = auc(fpr, tpr)
     
     # --- Main figure ---
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(10, 8), constrained_layout=True)
     
     # Main ROC curve
     ax.plot(fpr, tpr, color='#1f77b4', lw=3, label=f'ROC AUC')
@@ -1012,8 +1101,8 @@ def plot_roc_improved(y_true, y_score, plot_title=""):
     ax.plot([0, 1], [0, 1], 'k--', lw=1.5, label='Random classifier')
     
     # Axis labels and title
-    ax.set_xlabel('False Positive Rate', fontsize=16, fontweight='bold')
-    ax.set_ylabel('True Positive Rate', fontsize=16, fontweight='bold')
+    ax.set_xlabel('False Positive Rate (FPR)', fontsize=16, fontweight='bold')
+    ax.set_ylabel('True Positive Rate (TPR)', fontsize=16, fontweight='bold')
     ax.set_title(plot_title or 'ROC Curve', fontsize=18, fontweight='bold')
     ax.legend(loc='upper right', fontsize=14, framealpha=0.9)
     ax.grid(True, linestyle=':', alpha=0.6)
@@ -1023,20 +1112,11 @@ def plot_roc_improved(y_true, y_score, plot_title=""):
     ax.set_ylim(-0.01, 1.01)
     
     # --- Metrics box ---
-    # Compute background rejection at 90% signal efficiency
-    # Find threshold closest to TPR = 0.90
-    # tpr (True Positive Rate) is the Signal Efficiency: the fraction of true signals one keep at a given cut.
-    # tpr - 0.90 calculates how far each point on the ROC curve is from the target efficiency (90%).
-    # np.abs(...) takes the absolute value, so we don't care if it's above or below 90%, just how close it is.
-    # np.argmin(...) finds the index in the array where this distance is smallest.
-    # idx_eff90 is the position on the ROC curve where the signal efficiency is closest to exactly 90%.
-
     idx_eff90 = np.argmin(np.abs(tpr - 0.90))
     fpr_eff90 = fpr[idx_eff90]
     bkg_rej_90 = 1 - fpr_eff90
-    # Also find the threshold that maximizes (TPR - FPR) -> Youden's index
     youden_idx = np.argmax(tpr - fpr)
-    best_thresh = thresholds[youden_idx] # BDT
+    best_thresh = thresholds[youden_idx]
     best_tpr = tpr[youden_idx]
     best_fpr = fpr[youden_idx]
     
@@ -1051,12 +1131,25 @@ def plot_roc_improved(y_true, y_score, plot_title=""):
             verticalalignment='bottom', horizontalalignment='left',
             bbox=props)
     
-    # --- Inset zoom (showing high-performance region) ---
+    # --- Operating point marking (if threshold is given) ---
+    if threshold is not None:
+        # Find the closest index to the given threshold
+        idx = np.argmin(np.abs(thresholds - threshold))
+        tpr_op = tpr[idx] #  coordinates of the operating point on the ROC curve
+        fpr_op = fpr[idx]
+        # Mark with a large red star
+        ax.scatter(fpr_op, tpr_op, color='red', s=200, zorder=10, marker='*', edgecolors='black')
+        # Annotate
+        ax.text(fpr_op + 0.03, tpr_op - 0.1, 
+                f'Cut = {threshold:.3f}\nTPR={tpr_op:.3f}\nFPR={fpr_op:.4f}',
+                fontsize=10, color='red',
+                bbox=dict(facecolor='white', edgecolor='red', boxstyle='round,pad=0.3'))
+    
+    # --- Inset zoom ---
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
     axins = inset_axes(ax, width="40%", height="40%", loc='lower right',
                        bbox_to_anchor=(0.05, 0.05, 0.9, 0.9),
                        bbox_transform=ax.transAxes)
-    # Set the zoom limits (FPR up to 0.2, TPR from 0.8 to 1.0)
     axins.set_xlim(-0.005, 0.2)
     axins.set_ylim(0.78, 1.01)
     axins.plot(fpr, tpr, color='#1f77b4', lw=2)
@@ -1064,12 +1157,53 @@ def plot_roc_improved(y_true, y_score, plot_title=""):
     axins.grid(True, linestyle=':', alpha=0.4)
     axins.set_xlabel('FPR', fontsize=10)
     axins.set_ylabel('TPR', fontsize=10)
-    # Add a small rectangle to show the zoom area on main plot
     from matplotlib.patches import Rectangle
     rect = Rectangle((0, 0.8), 0.2, 0.2, linewidth=1, edgecolor='gray',
                      facecolor='none', linestyle='--')
     ax.add_patch(rect)
-    # Mark the zoomed region with a connecting line? Optional.
     
-    plt.tight_layout()
+    # If threshold is given, also show the point in the inset
+    if threshold is not None:
+        axins.scatter(fpr_op, tpr_op, color='red', s=80, zorder=10, marker='*')
+    
+    #plt.tight_layout()
+    return fig
+
+def plot_f1_vs_threshold(f1_any, thresholds, opt_threshold=None):
+    """
+    Plot F1 score as a function of threshold for the 'any' strategy.
+    If opt_threshold is None, automatically find the max F1 point.
+    """
+    f1_any = np.array(f1_any)
+    thresholds = np.array(thresholds)
+
+    # Find optimal threshold
+    if opt_threshold is None:
+        opt_idx = np.argmax(f1_any)
+        opt_thr = thresholds[opt_idx]
+        opt_f1 = f1_any[opt_idx]
+    else:
+        opt_idx = np.argmin(np.abs(thresholds - opt_threshold))
+        opt_thr = thresholds[opt_idx]
+        opt_f1 = f1_any[opt_idx]
+
+    fig, ax = plt.subplots(figsize=(10, 7), constrained_layout=True)
+
+    ax.plot(thresholds, f1_any, 'o-', label='Strategy "any"', color='#1f77b4', linewidth=2.5, markersize=8)
+    ax.plot(opt_thr, opt_f1, 'r*', markersize=18, label=f'Optimal @ {opt_thr:.2f} (F1={opt_f1:.4f})')
+
+    ax.set_xlabel('Threshold', fontsize=16, fontweight='bold')
+    ax.set_ylabel('F1 Score', fontsize=16, fontweight='bold')
+    #ax.set_title('Event-Level F1 Score vs Threshold (any strategy)', fontsize=18, fontweight='bold')
+    ax.legend(loc='lower left', fontsize=12)
+    ax.grid(True, linestyle=':', alpha=0.6)
+    ax.set_xlim(0, 1.0)
+
+    # Shade the plateau region where F1 > 0.975
+    plateau_mask = f1_any > 0.975
+    if np.any(plateau_mask):
+        first_idx = np.argmax(plateau_mask)
+        last_idx = len(thresholds) - 1 - np.argmax(plateau_mask[::-1])
+        ax.axvspan(thresholds[first_idx], thresholds[last_idx], alpha=0.1, color='gray', label='Plateau')
+
     return fig
