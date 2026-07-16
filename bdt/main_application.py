@@ -6,7 +6,7 @@ import joblib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import matplotlib.pyplot as plt
-from plots import plot_roc_improved, plot_event_cm_improved, plot_cm_improved, plot_f1_vs_threshold
+from plots import plot_roc_improved, plot_event_cm_improved, plot_cm_improved, plot_f1_vs_threshold, plot_event_score_breakdown
 from sklearn.metrics import roc_curve, auc
 from config import DATA_DIR, PLOT_APP_DIR, MODEL_DIR
 
@@ -392,9 +392,18 @@ if __name__ == '__main__':
             event_results.to_csv(f'{plot_dir}/event_results_{data_type}.csv', index=False)
             
             # ---- Plot event confusion matrix ----
-            fig_event_cm = plot_event_cm_improved(event_results, data_type)
+            fig_event_cm, accuracy, precision, recall, f1 = plot_event_cm_improved(event_results, data_type)
             fig_event_cm.savefig(f'{plot_dir}/event_cm_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_event_cm)
+
+            # Print accuracy, precision, recall, f1 (event-wise)
+            print(f"\n{'='*60}")
+            print(f"Event-wise Metric")
+            print(f"{'='*60}")
+            print(f"Accuracy  : {accuracy:.4f}")
+            print(f"Precision : {precision:.4f}")
+            print(f"Recall    : {recall:.4f}")
+            print(f"F1 score  : {f1:.4f}")
             
             # ---- (Optional) Pair-level confusion matrix ----
             fig_cm = plot_cm_improved(X_test, y_test, model, br_title)
@@ -415,6 +424,19 @@ if __name__ == '__main__':
             fig_f1_any.savefig(f'{plot_dir}/f1_any.png', dpi=300, bbox_inches='tight')
             plt.close(fig_f1_any)
 
+            # ---- Event-wise score separation plot ----
+            # Choose which strategy score to plot (max, mean, or min2).
+            # You can either use the best strategy's score column, or the raw max_score used for ROC.
+            # Here we use 'max_score' because it corresponds to the 'any' strategy used for F1.
+            fig_event_score = plot_event_score_breakdown(
+                event_results, 
+                score_col='max_proba',      # or 'mean_score' / 'min2_score'
+                threshold=best_thr,         # optimal threshold found earlier
+                phys_ch=data_type
+            )
+            title = f'{plot_dir}/event_score_breakdown_{data_type}.png'
+            fig_event_score.savefig(dpi=300, bbox_inches='tight')
+            plt.close(fig_event_score)
             print(f"\n✓ All results saved to {plot_dir}")
         
         else:
