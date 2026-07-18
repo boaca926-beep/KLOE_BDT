@@ -1157,7 +1157,7 @@ def plot_event_score_breakdown(event_df, score_col='max_proba', threshold=None,
                  fontsize=16, fontweight='bold')
     #ax.set_title(plot_title or f'Event-wise Score Breakdown – {phys_ch}', 
     #             fontsize=16, fontweight='bold')
-    ax.legend(loc='upper right', fontsize=16)   # <-- increased legend size
+    ax.legend(loc='upper left', fontsize=16)   # <-- increased legend size
     ax.grid(True, alpha=0.3)
     ax.set_yscale('log')  # log scale to see tails
     
@@ -1191,15 +1191,19 @@ def plot_roc_improved(y_true, y_score, plot_title="", threshold=None):
     ax.plot([0, 1], [0, 1], 'k--', lw=1.5, label='Random classifier')
     
     # Axis labels and title
-    ax.set_xlabel('False Positive Rate (FPR)', fontsize=16, fontweight='bold')
-    ax.set_ylabel('True Positive Rate (TPR)', fontsize=16, fontweight='bold')
-    ax.set_title(plot_title or 'ROC Curve', fontsize=18, fontweight='bold')
+    ax.set_xlabel('False Positive Rate (FPR)', fontsize=18, fontweight='bold')
+    ax.set_ylabel('True Positive Rate (TPR)', fontsize=18, fontweight='bold')
+    #ax.set_title(plot_title or 'ROC Curve', fontsize=18, fontweight='bold')
+    ax.set_title(plot_title, fontsize=18, fontweight='bold')   
     ax.legend(loc='upper right', fontsize=14, framealpha=0.9)
     ax.grid(True, linestyle=':', alpha=0.6)
     
     # Set axis limits
     ax.set_xlim(-0.01, 1.01)
     ax.set_ylim(-0.01, 1.01)
+
+    # ---------- MAIN AUC PLOT ----------
+    ax.tick_params(axis='both', labelsize=18)   # or 16, 20, etc.
     
     # --- Metrics box ---
     idx_eff90 = np.argmin(np.abs(tpr - 0.90))

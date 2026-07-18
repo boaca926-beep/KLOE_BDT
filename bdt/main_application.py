@@ -309,13 +309,23 @@ if __name__ == '__main__':
             
             # ---- Plot and save event-wise ROC curves ----
             # 1. Max probability (any strategy)
+            title=f'ROC Curve - π⁰ Classifier (max probability)'
             fig_roc_max = plot_roc_improved(
                 event_scores['true_signal'], event_scores['max_score'],
-                plot_title=f'ROC Curve - π⁰ Classifier (max probability)',
+                plot_title='',
                 threshold=0.35
             )
-            fig_roc_max.savefig(f'{plot_dir}/event_roc_max_{data_type}.png', dpi=300, bbox_inches='tight')
-            plt.close(fig_roc_max)
+            #fig_roc_max.savefig(f'{plot_dir}/event_roc_max_{data_type}.png', dpi=300, bbox_inches='tight')
+            #plt.close(fig_roc_max)
+
+            try:
+                fig_roc_max.savefig(f'{plot_dir}/event_roc_max_{data_type}.png', dpi=300, bbox_inches='tight')
+                print("✅ Saved ROC max")
+            except Exception as e:
+                print(f"❌ Failed to save ROC max: {e}")
+                import traceback
+                traceback.print_exc()
+                raise
             
             # 2. Mean probability (mean strategy)
             fig_roc_mean = plot_roc_improved(
