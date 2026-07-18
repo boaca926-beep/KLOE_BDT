@@ -434,8 +434,8 @@ if __name__ == '__main__':
                 threshold=best_thr,         # optimal threshold found earlier
                 phys_ch=data_type
             )
-            title = f'{plot_dir}/event_score_breakdown_{data_type}.png'
-            fig_event_score.savefig(dpi=300, bbox_inches='tight')
+            title = f'Event-wise Score Breakdown'
+            fig_event_score.savefig(f'{plot_dir}/event_score_breakdown_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_event_score)
             print(f"\n✓ All results saved to {plot_dir}")
         
