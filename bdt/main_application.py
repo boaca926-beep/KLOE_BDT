@@ -17,68 +17,40 @@ from config import DATA_DIR, PLOT_APP_DIR, MODEL_DIR
 # HELPER FUNCTIONS
 # =============================================================================
 
-def aggregate_event_scores(all_df_test, y_pred_proba, y_test_pair, pairs_per_photon=3):
+def aggregate_event_scores(all_df_test, y_pred_proba, y_test_pair, pairs_per_event=3):
     """
     Convert pair-level probabilities to event-level continuous scores.
-    
-    Returns a DataFrame with columns:
-        event_id, true_signal, max_score, mean_score, min2_score
-    
-    - max_score: maximum pair probability in the event (for 'any' strategy)
-    - mean_score: average of all pair probabilities in the event (for 'mean' strategy)
-    - min2_score: second highest per‑photon maximum (for 'min2' strategy)
+    Assumes all_df_test has one row per event, and y_pred_proba has 3 probabilities per event.
     """
-    n_photons = len(all_df_test)
+    n_events = len(all_df_test)
     n_pairs = len(y_pred_proba)
     
-    # Validate alignment
-    expected_pairs = n_photons * pairs_per_photon
-    assert n_pairs == expected_pairs, \
-        f"Mismatch: {n_photons} photons × {pairs_per_photon} ≠ {n_pairs} pairs"
+    # Validate: 3 pairs per event
+    assert n_pairs == n_events * pairs_per_event, \
+        f"Mismatch: {n_events} events × {pairs_per_event} ≠ {n_pairs} pairs"
     
-    y_test_array = y_test_pair.values if hasattr(y_test_pair, 'values') else y_test_pair
+    # Reshape probabilities to (n_events, 3)
+    probs_matrix = y_pred_proba.reshape(n_events, pairs_per_event)
+    y_test_matrix = y_test_pair.values.reshape(n_events, pairs_per_event)
     
-    photon_records = []
-    for i in range(n_photons):
-        start = i * pairs_per_photon
-        end = start + pairs_per_photon
-        probs = y_pred_proba[start:end]
-        labels = y_test_array[start:end]
-        
-        photon_records.append({
-            'event_id': all_df_test.iloc[i]['event'],
-            'photon_max': probs.max(),          # max within this photon
-            'photon_mean': probs.mean(),        # mean within this photon
-            'has_true_pi0': labels.sum() > 0    # photon contains a true π⁰ pair
-        })
+    # Compute scores
+    max_score = probs_matrix.max(axis=1)
+    mean_score = probs_matrix.mean(axis=1)
     
-    photon_df = pd.DataFrame(photon_records)
+    # Second largest (for min2)
+    sorted_probs = np.sort(probs_matrix, axis=1)
+    min2_score = sorted_probs[:, 1]   # 2nd column (0-indexed) -> second largest
     
-    # Define helper to compute second largest value
-    def second_largest(arr):
-        sorted_arr = np.sort(arr)
-        if len(sorted_arr) >= 2:
-            return sorted_arr[-2]
-        else:
-            # Events with <2 photons cannot be signal under min2
-            return 0.0
+    # Event truth: any of the 3 pairs is signal
+    true_signal = (y_test_matrix.sum(axis=1) > 0).astype(int)
     
-    # Aggregate at event level
-    event_df = photon_df.groupby('event_id').agg({
-        'photon_max': 'max',                    # overall maximum -> any strategy
-        'photon_mean': 'mean',                  # overall mean -> mean strategy
-        'has_true_pi0': 'any'                   # event truth
-    }).rename(columns={
-        'photon_max': 'max_score',
-        'photon_mean': 'mean_score',
-        'has_true_pi0': 'true_signal'
-    }).reset_index()
-    
-    # Compute min2_score: second highest of per‑photon maxima
-    event_df['min2_score'] = photon_df.groupby('event_id')['photon_max'].agg(second_largest).values
-    
-    # Convert boolean truth to int
-    event_df['true_signal'] = event_df['true_signal'].astype(int)
+    event_df = pd.DataFrame({
+        'event_id': all_df_test['event'].values,
+        'true_signal': true_signal,
+        'max_score': max_score,
+        'mean_score': mean_score,
+        'min2_score': min2_score
+    })
     
     return event_df
 
@@ -86,100 +58,44 @@ def aggregate_event_scores(all_df_test, y_pred_proba, y_test_pair, pairs_per_pho
 def event_wise_prediction_fast(all_df_test, y_pred_proba, y_test_pair, threshold=0.5):
     """
     Convert pair-wise predictions to event-wise decisions.
-    Uses precomputed probabilities to avoid repeated model inference.
-    Returns event_df, best_strategy, best_f1.
+    all_df_test: one row per event.
+    y_pred_proba: 3 probabilities per event (concatenated).
+    y_test_pair: 3 labels per event (concatenated).
+    Returns: event_df, best_strategy, best_f1, f1_scores_dict
     """
-    # Get pair predictions from precomputed probabilities
-    y_pred_pair = (y_pred_proba >= threshold).astype(int)
-    
-    # ============ CRITICAL FIX: Verify data alignment ============
-    n_photons = len(all_df_test)
+    n_events = len(all_df_test)
     n_pairs = len(y_pred_proba)
-    n_pairs_per_photon = 3
+    pairs_per_event = 3
     
-    # Check if we have the expected number of pairs
-    expected_pairs = n_photons * n_pairs_per_photon
-    if n_pairs != expected_pairs:
-        print(f"⚠️ WARNING: Expected {expected_pairs} pairs, got {n_pairs}")
-        print(f"   Using available pairs only")
-        n_photons = min(n_photons, n_pairs // n_pairs_per_photon)
+    # Safety check
+    if n_pairs != n_events * pairs_per_event:
+        print(f"⚠️ WARNING: Expected {n_events * pairs_per_event} pairs, got {n_pairs}")
+        n_events = n_pairs // pairs_per_event
+        print(f"   Truncating to {n_events} events")
     
-    print(f"\nData validation:")
-    print(f"  Photons: {n_photons}")
-    print(f"  Pairs: {n_pairs}")
-    print(f"  Pairs per photon: {n_pairs_per_photon}")
+    # Reshape
+    probs = y_pred_proba[:n_events * pairs_per_event].reshape(n_events, pairs_per_event)
+    labels = y_test_pair.values[:n_events * pairs_per_event].reshape(n_events, pairs_per_event)
     
-    # ============ PHOTON-LEVEL AGGREGATION ============
-    photon_data = []
-    
-    for photon_idx in range(n_photons):
-        start_idx = photon_idx * n_pairs_per_photon
-        end_idx = start_idx + n_pairs_per_photon
-        
-        # Safety check
-        if end_idx > n_pairs:
-            print(f"  Truncating at photon {photon_idx}")
-            break
-        
-        # Get photon info
-        event_id = all_df_test.iloc[photon_idx]['event']
-        is_signal_photon = all_df_test.iloc[photon_idx].get('is_signal', 0)
-        
-        # Get predictions for this photon's 3 pairs
-        photon_probs = y_pred_proba[start_idx:end_idx]
-        photon_preds = y_pred_pair[start_idx:end_idx]
-        
-        # Check if this photon is part of a true π⁰ pair
-        has_true_pi0 = False
-        true_pair_count = 0
-        for pair_offset in range(n_pairs_per_photon):
-            pair_idx = start_idx + pair_offset
-            if pair_idx < len(y_test_pair) and y_test_pair.iloc[pair_idx] == 1:
-                has_true_pi0 = True
-                true_pair_count += 1
-        
-        photon_data.append({
-            'photon_idx': photon_idx,
-            'event_id': event_id,
-            'is_signal_photon': is_signal_photon,
-            'has_true_pi0': has_true_pi0,
-            'true_pair_count': true_pair_count,
-            'max_proba': photon_probs.max(),
-            'mean_proba': photon_probs.mean(),
-            'n_pred_pi0_pairs': photon_preds.sum(),
-            'has_pred_pi0_pair': int(photon_preds.sum() > 0),
-        })
-    
-    photon_df = pd.DataFrame(photon_data)
-    
-    # ============ EVENT-LEVEL AGGREGATION ============
     event_results = []
-
-    for event_id, group in photon_df.groupby('event_id'):
-        n_photons_in_event = len(group)
+    for i in range(n_events):
+        event_id = all_df_test.iloc[i]['event']
+        p = probs[i]
+        lbl = labels[i]
         
-        # TRUE LABEL: Based on pair-level truth
-        true_signal = int(group['has_true_pi0'].sum() > 0)
-        
-        # Track how many true π⁰ pairs in this event
-        total_true_pairs = group['true_pair_count'].sum()
-        
-        # PREDICTIONS:
-        pred_any = int(group['has_pred_pi0_pair'].sum() > 0)
-        pred_min2 = int(group['has_pred_pi0_pair'].sum() >= 2)
-        pred_max = int(group['max_proba'].max() >= threshold)
-        pred_mean = int(group['mean_proba'].mean() >= threshold)
+        true_signal = int(lbl.sum() > 0)
+        pred_any = int(p.max() >= threshold)
+        pred_min2 = int(np.sort(p)[1] >= threshold)   # second largest
+        pred_mean = int(p.mean() >= threshold)
+        # pred_max is the same as pred_any for this setup
+        pred_max = pred_any
         
         event_results.append({
             'event_id': event_id,
             'true_signal': true_signal,
-            'total_true_pairs': total_true_pairs,
-            'n_photons': n_photons_in_event,
-            'n_signal_photons': group['is_signal_photon'].sum(),
-            'n_photons_with_true_pi0': group['has_true_pi0'].sum(),
-            'n_photons_with_pred_pi0': group['has_pred_pi0_pair'].sum(),
-            'max_proba': group['max_proba'].max(),
-            'mean_proba': group['mean_proba'].mean(),
+            'max_proba': p.max(),
+            'mean_proba': p.mean(),
+            'min2_proba': np.sort(p)[1],
             'pred_any': pred_any,
             'pred_min2': pred_min2,
             'pred_max': pred_max,
@@ -188,61 +104,32 @@ def event_wise_prediction_fast(all_df_test, y_pred_proba, y_test_pair, threshold
     
     event_df = pd.DataFrame(event_results)
     
-    # ============ EVALUATION ============
-    print("\n" + "="*60)
-    print("EVENT-LEVEL ANALYSIS")
-    print("="*60)
+    # Evaluate strategies and pick best F1
+    strategies = [('any', 'pred_any'), ('min2', 'pred_min2'), 
+                  ('max', 'pred_max'), ('mean', 'pred_mean')]
     
-    print(f"\nTrue event distribution (based on π⁰ pairs):")
-    true_signal_count = event_df['true_signal'].sum()
-    print(f"  Signal events: {true_signal_count}")
-    print(f"  Background events: {len(event_df) - true_signal_count}")
-    
-    # Evaluate strategies
-    strategies = [
-        ('any', 'pred_any'),
-        ('min2', 'pred_min2'),
-        ('max', 'pred_max'),
-        ('mean', 'pred_mean')
-    ]
-    
-    print(f"\nStrategy Performance (threshold={threshold}):")
     best_f1 = 0
     best_strategy = 'any'
-    f1_any = 0.0
+    f1_scores = {}   # store per-strategy F1
     
-    for strategy_name, col in strategies:
+    for name, col in strategies:
         tp = ((event_df['true_signal'] == 1) & (event_df[col] == 1)).sum()
         fp = ((event_df['true_signal'] == 0) & (event_df[col] == 1)).sum()
-        tn = ((event_df['true_signal'] == 0) & (event_df[col] == 0)).sum()
         fn = ((event_df['true_signal'] == 1) & (event_df[col] == 0)).sum()
         
-        if (tp + fp + tn + fn) > 0:
-            accuracy = (tp + tn) / len(event_df)
-            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-            f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-            
-            # fill f1_any
-            if (strategy_name == 'any'):
-                f1_any = f1
-
-            print(f"\n  Strategy '{strategy_name}':")
-            print(f"    Accuracy '{accuracy:.4f}'")
-            print(f"    TP: {tp:6d} | FP: {fp:6d} | TN: {tn:6d} | FN: {fn:6d}")
-            print(f"    Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}")
-            
-            if f1 > best_f1:
-                best_f1 = f1
-                best_strategy = strategy_name
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+        
+        f1_scores[name] = f1
+        
+        if f1 > best_f1:
+            best_f1 = f1
+            best_strategy = name
     
-    print(f"\n✓ Best strategy at threshold={threshold}: '{best_strategy}' (F1 = {best_f1:.4f})")
-    #print(f"\n f1 'any' list {f1_any}")
-
-    # Add the best strategy as default for this threshold
     event_df['pred_signal'] = event_df[f'pred_{best_strategy}']
     
-    return event_df, best_strategy, best_f1, f1_any
+    return event_df, best_strategy, best_f1, f1_scores
 
 
 # =============================================================================
@@ -309,23 +196,12 @@ if __name__ == '__main__':
             
             # ---- Plot and save event-wise ROC curves ----
             # 1. Max probability (any strategy)
-            title=f'ROC Curve - π⁰ Classifier (max probability)'
             fig_roc_max = plot_roc_improved(
                 event_scores['true_signal'], event_scores['max_score'],
-                plot_title='',
-                threshold=0.35
+                plot_title=f'Event-wise ROC (max probability) – {data_type}'
             )
-            #fig_roc_max.savefig(f'{plot_dir}/event_roc_max_{data_type}.png', dpi=300, bbox_inches='tight')
-            #plt.close(fig_roc_max)
-
-            try:
-                fig_roc_max.savefig(f'{plot_dir}/event_roc_max_{data_type}.png', dpi=300, bbox_inches='tight')
-                print("✅ Saved ROC max")
-            except Exception as e:
-                print(f"❌ Failed to save ROC max: {e}")
-                import traceback
-                traceback.print_exc()
-                raise
+            fig_roc_max.savefig(f'{plot_dir}/event_roc_max_{data_type}.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_roc_max)
             
             # 2. Mean probability (mean strategy)
             fig_roc_mean = plot_roc_improved(
@@ -346,18 +222,24 @@ if __name__ == '__main__':
             # ---- Optional: overlay all three strategies ----
             fig_overlay, ax = plt.subplots(figsize=(10, 8))
             for scores, label, color in zip(
-                [event_scores['max_score'], event_scores['mean_score'], event_scores['min2_score']],
-                ['Max (any)', 'Mean', '2nd Max (min2)'],
-                ['#1f77b4', '#ff7f0e', '#2ca02c']
+                #[event_scores['max_score'], event_scores['mean_score'], event_scores['min2_score']],
+                #['Max (any)', 'Mean', '2nd Max (min2)'],
+                #['#1f77b4', '#ff7f0e', '#2ca02c']
+                [event_scores['max_score'], event_scores['mean_score']],
+                ['Max (any)', 'Mean'],
+                ['#1f77b4', '#ff7f0e']
             ):
                 fpr, tpr, _ = roc_curve(event_scores['true_signal'], scores)
                 auc_val = auc(fpr, tpr)
+                print(f"auc_val: {label}={auc_val:.3}")
                 ax.plot(fpr, tpr, lw=2, color=color, label=f'{label} (AUC={auc_val:.3f})')
             ax.plot([0, 1], [0, 1], 'k--', lw=1, label='Random')
-            ax.set_xlabel('False Positive Rate', fontsize=14)
-            ax.set_ylabel('True Positive Rate', fontsize=14)
-            ax.set_title(f'Event-wise ROC Comparison – {data_type}', fontsize=16)
-            ax.legend(loc='lower right', fontsize=12)
+            ax.set_xlabel('False Positive Rate', fontsize=20)
+            ax.set_ylabel('True Positive Rate', fontsize=20)
+            ax.tick_params(axis='both', labelsize=18)
+            title=f'Event-wise ROC Comparison – {data_type}'
+            ax.set_title('', fontsize=16)
+            ax.legend(loc='lower right', fontsize=20)
             ax.grid(True, alpha=0.3)
             fig_overlay.savefig(f'{plot_dir}/event_roc_comparison_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_overlay)
@@ -374,13 +256,17 @@ if __name__ == '__main__':
             best_event_df = None
             
             all_f1_any = []
+            all_f1_mean = []
+            all_f1_min2 = []   # optional
             thr_list = []
 
             for thr in thresholds:
-                event_df, strat, f1, f1_any = event_wise_prediction_fast(
+                event_df, strat, f1, f1_scores = event_wise_prediction_fast(
                     all_df_test, y_pred_proba, y_test, threshold=thr
                 )
-                all_f1_any.append(f1_any)
+                all_f1_any.append(f1_scores['any'])
+                all_f1_mean.append(f1_scores['mean'])
+                all_f1_min2.append(f1_scores['min2'])   # optional
                 thr_list.append(thr)
                 if f1 > best_f1:
                     best_f1 = f1
@@ -427,24 +313,32 @@ if __name__ == '__main__':
             plt.close(fig_pair_roc)
             
             # F1 plot 'any'
-            clean_f1 = [float(f"{x:.4f}") for x in all_f1_any]
-            print(f"all_f1_any = {all_f1_any}")
-
-            fig_f1_any = plot_f1_vs_threshold(clean_f1, thr_list)   # now works with default opt_threshold
+            fig_f1_any = plot_f1_vs_threshold(
+                all_f1_any, 
+                thr_list, 
+                strategy_name='any'
+            )
             fig_f1_any.savefig(f'{plot_dir}/f1_any.png', dpi=300, bbox_inches='tight')
             plt.close(fig_f1_any)
+            print(f"✅ Saved F1 vs threshold for 'any' strategy")
+            
+            # F1 plot 'mean'
+            fig_f1_mean = plot_f1_vs_threshold(
+                all_f1_mean,  
+                thr_list, 
+                strategy_name='mean'
+            )
+            fig_f1_mean.savefig(f'{plot_dir}/f1_mean.png', dpi=300, bbox_inches='tight')
+            plt.close(fig_f1_mean)
+            print(f"✅ Saved F1 vs threshold for 'mean' strategy")
 
             # ---- Event-wise score separation plot ----
-            # Choose which strategy score to plot (max, mean, or min2).
-            # You can either use the best strategy's score column, or the raw max_score used for ROC.
-            # Here we use 'max_score' because it corresponds to the 'any' strategy used for F1.
             fig_event_score = plot_event_score_breakdown(
                 event_results, 
-                score_col='max_proba',      # or 'mean_score' / 'min2_score'
-                threshold=best_thr,         # optimal threshold found earlier
+                score_col='mean_proba', # or 'max_proba', 'mean_proba' / 'min2_proba'
+                threshold=best_thr,
                 phys_ch=data_type
             )
-            title = f'Event-wise Score Breakdown'
             fig_event_score.savefig(f'{plot_dir}/event_score_breakdown_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_event_score)
             print(f"\n✓ All results saved to {plot_dir}")

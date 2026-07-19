@@ -1137,29 +1137,35 @@ def plot_event_score_breakdown(event_df, score_col='max_proba', threshold=None,
     fig, ax = plt.subplots(figsize=(8, 6))
     
     # Histogram: Background
-    ax.hist(bkg_scores, bins=100, alpha=0.7,
-            label=f'Background events (n={len(bkg_scores):,})',
+    ax.hist(bkg_scores, bins=250, alpha=0.7,
+            #label=f'Background events (n={len(bkg_scores):,})',
+            label=f'Background events',
             color='#d3d3d3', edgecolor='gray', linewidth=0.5, histtype='stepfilled')
     
     # Histogram: Signal
-    ax.hist(sig_scores, bins=100, alpha=0.5,
-            label=f'Signal events (n={len(sig_scores):,})',
+    ax.hist(sig_scores, bins=250, alpha=0.5,
+            #label=f'Signal events (n={len(sig_scores):,})',
+            label=f'Signal events',
             color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
     
     # Optional threshold line
-    #if threshold is not None:
-    #    ax.axvline(x=threshold, color='red', linestyle='--', linewidth=2,
-    #               label=f'Threshold = {threshold:.2f}')
+    if threshold is not None:
+        ax.axvline(x=threshold, color='red', linestyle='--', linewidth=2,
+                   label=f'Threshold = {threshold:.2f}')
     
+    ax.set_xlim(-0.01, .8)
+    #ax.set_ylim(-0.01, 1.01)
+    ax.set_yscale('log')  # log scale to see tails
+
     ax.set_xlabel('BDT Score', fontsize=16, fontweight='bold')
     ax.set_ylabel('Events', fontsize=16, fontweight='bold')
     ax.set_title(plot_title , 
                  fontsize=16, fontweight='bold')
     #ax.set_title(plot_title or f'Event-wise Score Breakdown – {phys_ch}', 
     #             fontsize=16, fontweight='bold')
-    ax.legend(loc='upper left', fontsize=16)   # <-- increased legend size
+    ax.legend(loc='upper right', fontsize=16)   # <-- increased legend size
     ax.grid(True, alpha=0.3)
-    ax.set_yscale('log')  # log scale to see tails
+    
     
     plt.tight_layout()
     return fig
@@ -1263,41 +1269,85 @@ def plot_roc_improved(y_true, y_score, plot_title="", threshold=None):
     #plt.tight_layout()
     return fig
 
-def plot_f1_vs_threshold(f1_any, thresholds, opt_threshold=None):
+def plot_f1_vs_threshold(f1_scores, thresholds, opt_threshold=None, strategy_name='any', fpr_scores=None, fpr_target=0.01):
     """
-    Plot F1 score as a function of threshold for the 'any' strategy.
-    If opt_threshold is None, automatically find the max F1 point.
+    Plot F1 score vs threshold for a given strategy.
+    Optionally overlay FPR on a secondary y-axis if fpr_scores is provided.
+    
+    Args:
+        f1_scores: list of F1 scores for each threshold
+        thresholds: list of threshold values
+        opt_threshold: if None, auto-find max F1; else use given threshold
+        strategy_name: string, e.g., 'any', 'mean', 'min2' (used for labels)
+        fpr_scores: optional list of FPR values for the same thresholds
+        fpr_target: target FPR (default 0.01 = 1%)
     """
-    f1_any = np.array(f1_any)
+    f1_scores = np.array(f1_scores)
     thresholds = np.array(thresholds)
 
-    # Find optimal threshold
+    # Find optimal F1 point
     if opt_threshold is None:
-        opt_idx = np.argmax(f1_any)
+        opt_idx = np.argmax(f1_scores)
         opt_thr = thresholds[opt_idx]
-        opt_f1 = f1_any[opt_idx]
+        opt_f1 = f1_scores[opt_idx]
     else:
         opt_idx = np.argmin(np.abs(thresholds - opt_threshold))
         opt_thr = thresholds[opt_idx]
-        opt_f1 = f1_any[opt_idx]
+        opt_f1 = f1_scores[opt_idx]
 
     fig, ax = plt.subplots(figsize=(10, 7), constrained_layout=True)
 
-    ax.plot(thresholds, f1_any, 'o-', label='Strategy "any"', color='#1f77b4', linewidth=2.5, markersize=8)
-    ax.plot(opt_thr, opt_f1, 'r*', markersize=18, label=f'Optimal @ {opt_thr:.2f} (F1={opt_f1:.4f})')
-
+    # ---- Primary axis: F1 ----
+    ax.plot(thresholds, f1_scores, 'o-', label=f'F1 ({strategy_name})',
+            color='#1f77b4', linewidth=2.5, markersize=8)
+    ax.plot(opt_thr, opt_f1, 'r*', markersize=18,
+            label=f'Max F1 @ {opt_thr:.2f} (F1={opt_f1:.4f})')
     ax.set_xlabel('Threshold', fontsize=16, fontweight='bold')
-    ax.set_ylabel('F1 Score', fontsize=16, fontweight='bold')
-    #ax.set_title('Event-Level F1 Score vs Threshold (any strategy)', fontsize=18, fontweight='bold')
-    ax.legend(loc='lower left', fontsize=12)
+    ax.set_ylabel('F1 Score', fontsize=16, fontweight='bold', color='#1f77b4')
+    ax.tick_params(axis='y', labelcolor='#1f77b4')
     ax.grid(True, linestyle=':', alpha=0.6)
     ax.set_xlim(0, 1.0)
 
-    # Shade the plateau region where F1 > 0.975
-    plateau_mask = f1_any > 0.975
+    # ---- Secondary axis: FPR (if provided) ----
+    if fpr_scores is not None:
+        ax2 = ax.twinx()
+        fpr_scores = np.array(fpr_scores)
+        ax2.plot(thresholds, fpr_scores * 100, 's-', label=f'FPR ({strategy_name})',
+                 color='#d62728', linewidth=2, markersize=8)
+        ax2.axhline(y=fpr_target*100, color='green', linestyle='--', linewidth=2,
+                    label=f'Target FPR = {fpr_target*100:.0f}%')
+        ax2.set_ylabel('False Positive Rate (%)', fontsize=16, fontweight='bold', color='#d62728')
+        ax2.tick_params(axis='y', labelcolor='#d62728')
+
+        # Find first threshold where FPR drops below target
+        below_target = fpr_scores < fpr_target
+        if np.any(below_target):
+            idx_cross = np.argmax(below_target)   # first index where FPR < target
+            thr_cross = thresholds[idx_cross]
+            fpr_cross = fpr_scores[idx_cross] * 100
+            ax2.plot(thr_cross, fpr_cross, 'g*', markersize=18,
+                     label=f'FPR < 1% @ {thr_cross:.2f} (FPR={fpr_cross:.2f}%)')
+            # Vertical line
+            ax.axvline(x=thr_cross, color='green', linestyle='--', alpha=0.6, linewidth=1.5)
+            ax.text(thr_cross + 0.02, 0.05, f'FPR target', rotation=90, color='green',
+                    fontsize=10, ha='center', va='bottom')
+
+        # Combine legends from both axes
+        lines1, labels1 = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax.legend(lines1 + lines2, labels1 + labels2, loc='lower left', fontsize=12)
+
+    else:
+        ax.legend(loc='lower left', fontsize=12)
+
+    # Shade plateau region where F1 > 0.975
+    plateau_mask = f1_scores > 0.975
     if np.any(plateau_mask):
         first_idx = np.argmax(plateau_mask)
         last_idx = len(thresholds) - 1 - np.argmax(plateau_mask[::-1])
-        ax.axvspan(thresholds[first_idx], thresholds[last_idx], alpha=0.1, color='gray', label='Plateau')
+        ax.axvspan(thresholds[first_idx], thresholds[last_idx], alpha=0.1,
+                   color='gray', label='F1 plateau (F1 > 0.975)')
 
+    title = f'Event-Level Performance vs Threshold ({strategy_name} strategy)'
+    plt.title(title, fontsize=18, fontweight='bold')
     return fig

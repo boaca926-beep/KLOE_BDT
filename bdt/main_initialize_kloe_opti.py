@@ -383,7 +383,7 @@ if __name__ == '__main__':
                 all_df_train, all_df_val, all_df_test, X_train, y_train, X_val, y_val, X_test, y_test, pair_train, pair_val, pair_test = data_splitting(all_df)
 
                 # ========== CRITICAL FIX: Add channel prefix to splits ==========
-                # This ensures event IDs are unique across channels BEFORE deduplication
+                # This ensures event IDs are unique across channels
                 all_df_train['event'] = f"{data_nm}_" + all_df_train['event'].astype(str)
                 all_df_val['event'] = f"{data_nm}_" + all_df_val['event'].astype(str)
                 all_df_test['event'] = f"{data_nm}_" + all_df_test['event'].astype(str)
@@ -450,33 +450,23 @@ if __name__ == '__main__':
     if df_list:
         print(f"\nCombining {len(df_list)} channels ...")
         
-        # Note: The full dataset (df_list) already has prefixes added inside the loop
-        # We do NOT add prefixes again here, as they were added in the loop above.
-        # The loop above handles prefixes for both full and split DataFrames.
-
+        # The full dataset (df_list) already has prefixes added inside the loop.
         df_comb = pd.concat(df_list, ignore_index=True)
         print(f"Raw combined shape: {df_comb.shape}")
 
-        # ========== FIXED: Removed redundant shuffle ==========
-        # df_comb = df_comb.sample(frac=1, random_state=42).reset_index(drop=True)
-        # =====================================================
+        # No shuffle – preserves event order.
         print(f"Combined shape (preserving event order): {df_comb.shape}")
 
         if df_train_list:
             print(f"\nCombining training splits from {len(df_train_list)} channels...")
-            # ========== DEBUG: Show components ==========
+            # Debug: show components
             print("🔍 Debug: Training components before concat:")
             for i, df in enumerate(df_train_list):
                 print(f"  df_train_list[{i}]: {len(df)} events, unique: {df['event'].nunique()}")
-            # ============================================
+            
+            # Simply concatenate – no deduplication needed because event IDs are unique across channels.
             all_df_train_comb = pd.concat(df_train_list, ignore_index=True)
-            print(f"Raw concat: {len(all_df_train_comb)} events")
-            # ========== FIX: Deduplicate by event ID ==========
-            all_df_train_comb = all_df_train_comb.drop_duplicates(subset=['event'], keep='first')
-            print(f"After dedup: {len(all_df_train_comb)} events")
-            # ===================================================
-            # Removed redundant shuffle
-            print(f"Combined training events (final): {len(all_df_train_comb)}")
+            print(f"Combined training events: {len(all_df_train_comb)}")
 
             if pair_train_list:
                 pair_train_comb = pd.concat(pair_train_list, ignore_index=True)
@@ -502,19 +492,12 @@ if __name__ == '__main__':
             
         if df_val_list:
             print(f"\nCombining validation splits from {len(df_val_list)} channels...")
-            # ========== DEBUG: Show components ==========
             print("🔍 Debug: Validation components before concat:")
             for i, df in enumerate(df_val_list):
                 print(f"  df_val_list[{i}]: {len(df)} events, unique: {df['event'].nunique()}")
-            # ============================================
+            
             all_df_val_comb = pd.concat(df_val_list, ignore_index=True)
-            print(f"Raw concat: {len(all_df_val_comb)} events")
-            # ========== FIX: Deduplicate by event ID ==========
-            all_df_val_comb = all_df_val_comb.drop_duplicates(subset=['event'], keep='first')
-            print(f"After dedup: {len(all_df_val_comb)} events")
-            # ===================================================
-            # Removed redundant shuffle
-            print(f"Combined validation events (final): {len(all_df_val_comb)}")
+            print(f"Combined validation events: {len(all_df_val_comb)}")
 
             if pair_val_list:
                 pair_val_comb = pd.concat(pair_val_list, ignore_index=True)
@@ -542,19 +525,12 @@ if __name__ == '__main__':
         
         if df_test_list:
             print(f"\nCombining test splits from {len(df_test_list)} channels...")
-            # ========== DEBUG: Show components ==========
             print("🔍 Debug: Test components before concat:")
             for i, df in enumerate(df_test_list):
                 print(f"  df_test_list[{i}]: {len(df)} events, unique: {df['event'].nunique()}")
-            # ============================================
+            
             all_df_test_comb = pd.concat(df_test_list, ignore_index=True)
-            print(f"Raw concat: {len(all_df_test_comb)} events")
-            # ========== FIX: Deduplicate by event ID ==========
-            all_df_test_comb = all_df_test_comb.drop_duplicates(subset=['event'], keep='first')
-            print(f"After dedup: {len(all_df_test_comb)} events")
-            # ===================================================
-            # Removed redundant shuffle
-            print(f"Combined test events (final): {len(all_df_test_comb)}")
+            print(f"Combined test events: {len(all_df_test_comb)}")
 
             if pair_test_list:
                 pair_test_comb = pd.concat(pair_test_list, ignore_index=True)
