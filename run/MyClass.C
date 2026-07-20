@@ -126,13 +126,20 @@ void MyClass::Main()
   double pho_E2_raw = 0., pho_px2_raw = 0., pho_py2_raw = 0., pho_pz2_raw = 0.;
   double pho_E3_raw = 0., pho_px3_raw = 0., pho_py3_raw = 0., pho_pz3_raw = 0.;
   int isrgam_indx = 0, pi0gam1_indx = 0, pi0gam2_indx = 0;
-  
+
+  // kinematic fitted
   double pho_E1 = 0., pho_px1 = 0., pho_py1 = 0., pho_pz1 = 0.;
   double pho_E2 = 0., pho_px2 = 0., pho_py2 = 0., pho_pz2 = 0.;
   double pho_E3 = 0., pho_px3 = 0., pho_py3 = 0., pho_pz3 = 0.;
   double ppl_E = 0., ppl_px = 0., ppl_py = 0., ppl_pz = 0.;
   double pmi_E = 0., pmi_px = 0., pmi_py = 0., pmi_pz = 0.;
 
+  // without kinematic fit
+  double pho_E1_nofit = 0., pho_px1_nofit = 0., pho_py1_nofit = 0., pho_pz1_nofit = 0.;
+  double pho_E2_nofit = 0., pho_px2_nofit = 0., pho_py2_nofit = 0., pho_pz2_nofit = 0.;
+  double pho_E3_nofit = 0., pho_px3_nofit = 0., pho_py3_nofit = 0., pho_pz3_nofit = 0.;
+ 
+  // MC true
   double pho_E1_true = 0., pho_px1_true = 0., pho_py1_true = 0., pho_pz1_true = 0.;
   double pho_E2_true = 0., pho_px2_true = 0., pho_py2_true = 0., pho_pz2_true = 0.;
   double pho_E3_true = 0., pho_px3_true = 0., pho_py3_true = 0., pho_pz3_true = 0.;
@@ -325,7 +332,23 @@ void MyClass::Main()
   ALLCHAIN_CUT.Branch("Br_px3_raw", &pho_px3_raw, "Br_px3_raw/D");
   ALLCHAIN_CUT.Branch("Br_py3_raw", &pho_py3_raw, "Br_py3_raw/D");
   ALLCHAIN_CUT.Branch("Br_pz3_raw", &pho_pz3_raw, "Br_pz3_raw/D");
+
+  // Unfitted (raw) 4-vectors in fit order
+  ALLCHAIN_CUT.Branch("Br_E1_nofit", &pho_E1_nofit, "Br_E1_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_px1_nofit", &pho_px1_nofit, "Br_px1_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_py1_nofit", &pho_py1_nofit, "Br_py1_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_pz1_nofit", &pho_pz1_nofit, "Br_pz1_nofit/D");
   
+  ALLCHAIN_CUT.Branch("Br_E2_nofit", &pho_E2_nofit, "Br_E2_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_px2_nofit", &pho_px2_nofit, "Br_px2_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_py2_nofit", &pho_py2_nofit, "Br_py2_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_pz2_nofit", &pho_pz2_nofit, "Br_pz2_nofit/D");
+  
+  ALLCHAIN_CUT.Branch("Br_E3_nofit", &pho_E3_nofit, "Br_E3_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_px3_nofit", &pho_px3_nofit, "Br_px3_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_py3_nofit", &pho_py3_nofit, "Br_py3_nofit/D");
+  ALLCHAIN_CUT.Branch("Br_pz3_nofit", &pho_pz3_nofit, "Br_pz3_nofit/D");
+ 
   // Also save the assignment indices from the fit
   ALLCHAIN_CUT.Branch("Br_isrgam_indx", &isrgam_indx, "Br_isrgam_indx/I");
   ALLCHAIN_CUT.Branch("Br_pi0gam1_indx", &pi0gam1_indx, "Br_pi0gam1_indx/I");
@@ -984,6 +1007,22 @@ void MyClass::Main()
     TLorentzVector TLVector_pi0pho2 = Getphoton4vector(inputvect_ordered(10), inputvect_ordered(11), inputvect_ordered(12), inputvect_ordered(13));
     TLorentzVector TLvector_isrpho_miss = Beam - (TLVector_pi0pho1 + TLVector_pi0pho2 + TLVector_ppl + TLVector_pmi);
 
+    // Save unfitted 4-vectors in fit order
+    pho_E1_nofit = TLVector_pi0pho1.E();
+    pho_px1_nofit = TLVector_pi0pho1.X();
+    pho_py1_nofit = TLVector_pi0pho1.Y();
+    pho_pz1_nofit = TLVector_pi0pho1.Z();
+
+    pho_E2_nofit = TLVector_pi0pho2.E();
+    pho_px2_nofit = TLVector_pi0pho2.X();
+    pho_py2_nofit = TLVector_pi0pho2.Y();
+    pho_pz2_nofit = TLVector_pi0pho2.Z();
+    
+    pho_E3_nofit = TLVector_isrpho.E();
+    pho_px3_nofit = TLVector_isrpho.X();
+    pho_py3_nofit = TLVector_isrpho.Y();
+    pho_pz3_nofit = TLVector_isrpho.Z();
+ 
     IMisrpho_miss = TLvector_isrpho_miss.M2();
     
     //cout << (TLVector_pi0pho1 + TLVector_pi0pho2).M() << endl;

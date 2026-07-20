@@ -173,44 +173,6 @@ void plot_resol() {
   h_diff->GetYaxis()->SetLabelSize(0.05);
   h_diff->GetYaxis()->SetTitleOffset(1.3);
   h_diff->GetYaxis()->SetRangeUser(0., 1.6 * ymax);
-  
-  // ============================================================
-  // Set x-axis range for each variable
-  // ============================================================
-  /*
-  double x_min, x_max;
-
-  if (TString(var_type) == "Br_m3pi_bdt") {
-    x_min = -20.0;
-    x_max = 20.0;
-  }
-  else if (TString(var_type) == "Br_m_gg_bdt") {
-    x_min = -20.0;
-    x_max = 20.0;
-  }
-  else if (TString(var_type) == "Br_e1_bdt" || TString(var_type) == "Br_e2_bdt" || TString(var_type) == "Br_e3_bdt") {
-    x_min = -20.0;
-    x_max = 20.0;
-  }
-  else if (TString(var_type) == "Br_betapi0_bdt") {
-    x_min = -0.02;
-    x_max = 0.02;
-  }
-  else if (TString(var_type) == "Br_angle_pi0gam12_bdt") {
-    x_min = -5.0;
-    x_max = 5.0;
-  }
-  else {
-    x_min = fit_min * range_factor;
-    x_max = fit_max * range_factor;
-  }
-  
-  if (x_min < XMIN) x_min = XMIN;
-  if (x_max > XMAX) x_max = XMAX;
-  
-  h_diff->GetXaxis()->SetRangeUser(x_min, x_max);
-  */
-  
   // ============================================================
 
   h_diff->GetYaxis()->SetNdivisions(505);

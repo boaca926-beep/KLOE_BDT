@@ -1,6 +1,6 @@
 #include "../header_bdt/cut_para.h"
-#include "../header/energy_shift_tuning_sum.h" 
-
+#include "../header_bdt/energy_shift_tuning_sum.h" 
+#include "../header_bdt/tuning.h" 
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
 #include "../header_bdt/method.h"
@@ -18,7 +18,6 @@ using namespace TMVA::Experimental;
 // ----------------------------------------------------------------------
 // Configuration
 // ----------------------------------------------------------------------
-//#define BDT_MODEL_PATH "/home/kloe/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root"
 #define BDT_MODEL_PATH "/home/bo/Desktop/KLOE_BDT/models/bdt_pi0_TCOMB.root"
 
 constexpr double ENERGY_THRESHOLD = 5.0;   // MeV
@@ -41,8 +40,7 @@ struct EventData {
 struct BDTResult {
   double max_score;   // Best pair (original behavior)
   double mean_scores; // Average of 3 pairs
-  double scores[3];    // Store all three indiviual scores
- 
+  double scores[3];    // Store all three individual scores
   double score;
   int best_pair_index;
   int pi0_indices[2];
@@ -100,6 +98,12 @@ int tree_cut_bdt_tuning() {
     double pho_E1 = 0., pho_px1 = 0., pho_py1 = 0., pho_pz1 = 0.;
     double pho_E2 = 0., pho_px2 = 0., pho_py2 = 0., pho_pz2 = 0.;
     double pho_E3 = 0., pho_px3 = 0., pho_py3 = 0., pho_pz3 = 0.;
+
+    // Unfitted 4‑vectors in fit order (read from input)
+    double pho_E1_nofit = 0., pho_px1_nofit = 0., pho_py1_nofit = 0., pho_pz1_nofit = 0.;
+    double pho_E2_nofit = 0., pho_px2_nofit = 0., pho_py2_nofit = 0., pho_pz2_nofit = 0.;
+    double pho_E3_nofit = 0., pho_px3_nofit = 0., pho_py3_nofit = 0., pho_pz3_nofit = 0.;
+ 
     double ppl_E_true = 0., ppl_px_true = 0., ppl_py_true = 0., ppl_pz_true = 0.;
     double pmi_E_true = 0., pmi_px_true = 0., pmi_py_true = 0., pmi_pz_true = 0.;
     double pho_E1_true = 0., pho_px1_true = 0., pho_py1_true = 0., pho_pz1_true = 0.;
@@ -120,7 +124,21 @@ int tree_cut_bdt_tuning() {
     // BDT‑specific variables (reco)
     double bdt_score = 0.;
     double e1_bdt = 0., e2_bdt = 0., e3_bdt = 0.;
-    double e3_bdt_true = 0.;
+    double px1_bdt = 0., py1_bdt = 0., pz1_bdt = 0.;
+    double px2_bdt = 0., py2_bdt = 0., pz2_bdt = 0.;
+    double px3_bdt = 0., py3_bdt = 0., pz3_bdt = 0.;
+
+    // BDT‑selected unfitted values (saved to output)
+    double e1_nofit_bdt = 0., e2_nofit_bdt = 0., e3_nofit_bdt = 0.;
+    double px1_nofit_bdt = 0., py1_nofit_bdt = 0., pz1_nofit_bdt = 0.;
+    double px2_nofit_bdt = 0., py2_nofit_bdt = 0., pz2_nofit_bdt = 0.;
+    double px3_nofit_bdt = 0., py3_nofit_bdt = 0., pz3_nofit_bdt = 0.;
+    
+    // NEW: BDT-selected energy sigmas from SIGMA_FIT_LIST
+    double sigma_e1_bdt = 0., sigma_e2_bdt = 0., sigma_e3_bdt = 0.;
+
+    double e1_fit = 0., e2_fit = 0., e3_fit = 0.;
+    double e1_bdt_true = 0., e2_bdt_true = 0., e3_bdt_true = 0.;
     double m_gg_bdt = 0., m3pi_bdt = 0., m_gg_true = 0.;
     double m2pi_true = 0., m3pi_true = 0.;
     double angle_pi0gam12_bdt = 0., betapi0_bdt = 0.;
@@ -134,6 +152,7 @@ int tree_cut_bdt_tuning() {
     double beta_3pi;
     
     // Pull variables
+    double e1_pull_bdt = 0., e2_pull_bdt = 0., e3_pull_bdt = 0.;
     double e1_pull = 0., e2_pull = 0., e3_pull = 0.;
     double px1_pull = 0., py1_pull = 0., pz1_pull = 0.;
     double px2_pull = 0., py2_pull = 0., pz2_pull = 0.;
@@ -145,21 +164,9 @@ int tree_cut_bdt_tuning() {
     int isr_recon_quality = 0;
     int total_recon_quality = 0;
 
-    // ---------- Histograms for validation ----------
-    TH1D *h_pull_E1 = new TH1D("h_pull_E1", "Pull E1;E_{meas} - E_{true} (MeV);Entries", 100, -10, 10);
-    TH1D *h_pull_E2 = new TH1D("h_pull_E2", "Pull E2;E_{meas} - E_{true} (MeV);Entries", 100, -10, 10);
-    TH1D *h_pull_E3 = new TH1D("h_pull_E3", "Pull E3;E_{meas} - E_{true} (MeV);Entries", 100, -10, 10);
+    // ---- Mapping indices from fit order to original cluster order ----
+    int isrgam_indx = 0, pi0gam1_indx = 0, pi0gam2_indx = 0;
 
-    TH1D *h_pull_px1 = new TH1D("h_pull_px1", "Pull px1;p_{x}^{meas} - p_{x}^{true} (MeV);Entries", 100, -10, 10);
-    TH1D *h_pull_py1 = new TH1D("h_pull_py1", "Pull py1;p_{y}^{meas} - p_{y}^{true} (MeV);Entries", 100, -10, 10);
-    TH1D *h_pull_pz1 = new TH1D("h_pull_pz1", "Pull pz1;p_{z}^{meas} - p_{z}^{true} (MeV);Entries", 100, -10, 10);
-
-    TH1D *h_m_gg_before = new TH1D("h_m_gg_before", "pi0 Mass Before Correction;M_{#gamma#gamma} (MeV);Entries", 100, 120, 150);
-    TH1D *h_m_gg_after = new TH1D("h_m_gg_after", "pi0 Mass After Correction;M_{#gamma#gamma} (MeV);Entries", 100, 120, 150);
-
-    TH2D *h_pull_E1_vs_E = new TH2D("h_pull_E1_vs_E", "Pull E1 vs Energy;E_{meas} (MeV);Pull E1 (MeV)", 50, 0, 500, 50, -10, 10);
-    TH2D *h_pull_E1_vs_angle = new TH2D("h_pull_E1_vs_angle", "Pull E1 vs Opening Angle;Opening Angle (deg);Pull E1 (MeV)", 50, 0, 180, 50, -10, 10);
- 
     // ---------- Output trees ----------
     const int list_size = 13;
     const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI", "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG", "TISR3PI_SIG_PEAK", "TISR3PI_SIG_NON_RESON"};
@@ -193,6 +200,7 @@ int tree_cut_bdt_tuning() {
         tree_tmp->Branch("Br_pmi_px_true", &pmi_px_true, "Br_pmi_px_true/D");
         tree_tmp->Branch("Br_pmi_py_true", &pmi_py_true, "Br_pmi_py_true/D");
         tree_tmp->Branch("Br_pmi_pz_true", &pmi_pz_true, "Br_pmi_pz_true/D");
+
         tree_tmp->Branch("Br_E1", &pho_E1, "Br_pho_E1/D");
         tree_tmp->Branch("Br_px1", &pho_px1, "Br_pho_px1/D");
         tree_tmp->Branch("Br_py1", &pho_py1, "Br_pho_py1/D");
@@ -232,6 +240,9 @@ int tree_cut_bdt_tuning() {
         tree_tmp->Branch("Br_pull_y3", &pull_y3, "Br_pull_y3/D");
         tree_tmp->Branch("Br_pull_z3", &pull_z3, "Br_pull_z3/D");
         tree_tmp->Branch("Br_pull_t3", &pull_t3, "Br_pull_t3/D");
+	tree_tmp->Branch("Br_e1_pull_bdt", &e1_pull_bdt, "Br_e1_pull_bdt/D");
+	tree_tmp->Branch("Br_e2_pull_bdt", &e2_pull_bdt, "Br_e2_pull_bdt/D");
+	tree_tmp->Branch("Br_e3_pull_bdt", &e3_pull_bdt, "Br_e3_pull_bdt/D");
         tree_tmp->Branch("Br_sig_type", &sig_type, "Br_sig_type/I");
         tree_tmp->Branch("Br_bkg_indx", &bkg_indx, "Br_bkg_indx/I");
         tree_tmp->Branch("Br_recon_indx", &recon_indx, "Br_recon_indx/I");
@@ -253,9 +264,48 @@ int tree_cut_bdt_tuning() {
         
         // BDT branches
         tree_tmp->Branch("Br_bdt_score", &bdt_score, "Br_bdt_score/D");
-        tree_tmp->Branch("Br_e1_bdt", &e1_bdt, "Br_e1_bdt/D");
+        tree_tmp->Branch("Br_e1_bdt", &e1_bdt, "Br_e1_bdt/D"); // kinematic fitted + corrected
         tree_tmp->Branch("Br_e2_bdt", &e2_bdt, "Br_e2_bdt/D");
         tree_tmp->Branch("Br_e3_bdt", &e3_bdt, "Br_e3_bdt/D");
+        tree_tmp->Branch("Br_px1_bdt", &px1_bdt, "Br_px1_bdt/D");
+        tree_tmp->Branch("Br_py1_bdt", &py1_bdt, "Br_py1_bdt/D");
+        tree_tmp->Branch("Br_pz1_bdt", &pz1_bdt, "Br_pz1_bdt/D");
+        tree_tmp->Branch("Br_px2_bdt", &px2_bdt, "Br_px2_bdt/D");
+        tree_tmp->Branch("Br_py2_bdt", &py2_bdt, "Br_py2_bdt/D");
+        tree_tmp->Branch("Br_pz2_bdt", &pz2_bdt, "Br_pz2_bdt/D");
+        tree_tmp->Branch("Br_px3_bdt", &px3_bdt, "Br_px3_bdt/D");
+        tree_tmp->Branch("Br_py3_bdt", &py3_bdt, "Br_py3_bdt/D");
+        tree_tmp->Branch("Br_pz3_bdt", &pz3_bdt, "Br_pz3_bdt/D");
+
+	// nofitted values
+	tree_tmp->Branch("Br_e1_nofit_bdt", &e1_nofit_bdt, "Br_e1_nofit_bdt/D");
+	tree_tmp->Branch("Br_e2_nofit_bdt", &e2_nofit_bdt, "Br_e2_nofit_bdt/D");
+	tree_tmp->Branch("Br_e3_nofit_bdt", &e3_nofit_bdt, "Br_e3_nofit_bdt/D");
+	
+	tree_tmp->Branch("Br_px1_nofit_bdt", &px1_nofit_bdt, "Br_px1_nofit_bdt/D");
+	tree_tmp->Branch("Br_py1_nofit_bdt", &py1_nofit_bdt, "Br_py1_nofit_bdt/D");
+	tree_tmp->Branch("Br_pz1_nofit_bdt", &pz1_nofit_bdt, "Br_pz1_nofit_bdt/D");
+	
+	tree_tmp->Branch("Br_px2_nofit_bdt", &px2_nofit_bdt, "Br_px2_nofit_bdt/D");
+	tree_tmp->Branch("Br_py2_nofit_bdt", &py2_nofit_bdt, "Br_py2_nofit_bdt/D");
+	tree_tmp->Branch("Br_pz2_nofit_bdt", &pz2_nofit_bdt, "Br_pz2_nofit_bdt/D");
+	
+	tree_tmp->Branch("Br_px3_nofit_bdt", &px3_nofit_bdt, "Br_px3_nofit_bdt/D");
+	tree_tmp->Branch("Br_py3_nofit_bdt", &py3_nofit_bdt, "Br_py3_nofit_bdt/D");
+	tree_tmp->Branch("Br_pz3_nofit_bdt", &pz3_nofit_bdt, "Br_pz3_nofit_bdt/D");
+ 
+        // NEW: BDT-selected sigma branches
+        tree_tmp->Branch("Br_sigma_e1_bdt", &sigma_e1_bdt, "Br_sigma_e1_bdt/D");
+        tree_tmp->Branch("Br_sigma_e2_bdt", &sigma_e2_bdt, "Br_sigma_e2_bdt/D");
+        tree_tmp->Branch("Br_sigma_e3_bdt", &sigma_e3_bdt, "Br_sigma_e3_bdt/D");
+
+        // kinematic fitted + BDT selected (uncorrected)
+        tree_tmp->Branch("Br_e1_fit", &e1_fit, "Br_e1_fit/D"); 
+        tree_tmp->Branch("Br_e2_fit", &e2_fit, "Br_e2_fit/D");
+        tree_tmp->Branch("Br_e3_fit", &e3_fit, "Br_e3_fit/D");
+        
+        tree_tmp->Branch("Br_e1_bdt_true", &e1_bdt_true, "Br_e1_bdt_true/D");
+        tree_tmp->Branch("Br_e2_bdt_true", &e2_bdt_true, "Br_e2_bdt_true/D");
         tree_tmp->Branch("Br_e3_bdt_true", &e3_bdt_true, "Br_e3_bdt_true/D");
         tree_tmp->Branch("Br_m_gg_bdt", &m_gg_bdt, "Br_m_gg_bdt/D");
         tree_tmp->Branch("Br_m_gg_true_bdt", &m_gg_true, "Br_m_gg_true_bdt/D");
@@ -309,7 +359,7 @@ int tree_cut_bdt_tuning() {
     TLorentzVector trksum, neutralsum, system_3pi;
 
     // ============================================================
-    // SET BRANCH ADDRESSES FOR SINGLE VARIABLES (These work!)
+    // SET BRANCH ADDRESSES
     // ============================================================
 
     // Reco tracks
@@ -322,7 +372,7 @@ int tree_cut_bdt_tuning() {
     ALLCHAIN_CUT->SetBranchAddress("Br_pmi_py", &pmi_py);
     ALLCHAIN_CUT->SetBranchAddress("Br_pmi_pz", &pmi_pz);
 
-    // Reco photons
+    
     ALLCHAIN_CUT->SetBranchAddress("Br_E1", &pho_E1);
     ALLCHAIN_CUT->SetBranchAddress("Br_px1", &pho_px1);
     ALLCHAIN_CUT->SetBranchAddress("Br_py1", &pho_py1);
@@ -335,6 +385,27 @@ int tree_cut_bdt_tuning() {
     ALLCHAIN_CUT->SetBranchAddress("Br_px3", &pho_px3);
     ALLCHAIN_CUT->SetBranchAddress("Br_py3", &pho_py3);
     ALLCHAIN_CUT->SetBranchAddress("Br_pz3", &pho_pz3);
+
+    // Unfitted (pre‑kinematic‑fit) 4‑vectors in fit order
+    ALLCHAIN_CUT->SetBranchAddress("Br_E1_nofit", &pho_E1_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_px1_nofit", &pho_px1_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_py1_nofit", &pho_py1_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_pz1_nofit", &pho_pz1_nofit);
+
+    ALLCHAIN_CUT->SetBranchAddress("Br_E2_nofit", &pho_E2_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_px2_nofit", &pho_px2_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_py2_nofit", &pho_py2_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_pz2_nofit", &pho_pz2_nofit);
+    
+    ALLCHAIN_CUT->SetBranchAddress("Br_E3_nofit", &pho_E3_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_px3_nofit", &pho_px3_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_py3_nofit", &pho_py3_nofit);
+    ALLCHAIN_CUT->SetBranchAddress("Br_pz3_nofit", &pho_pz3_nofit);
+ 
+    // Mapping indices from fit order to original cluster order
+    ALLCHAIN_CUT->SetBranchAddress("Br_isrgam_indx", &isrgam_indx);
+    ALLCHAIN_CUT->SetBranchAddress("Br_pi0gam1_indx", &pi0gam1_indx);
+    ALLCHAIN_CUT->SetBranchAddress("Br_pi0gam2_indx", &pi0gam2_indx);
 
     // Reconstructed true tracks
     ALLCHAIN_CUT->SetBranchAddress("Br_ppl_E_true", &ppl_E_true);
@@ -384,21 +455,14 @@ int tree_cut_bdt_tuning() {
     ALLCHAIN_CUT->SetBranchAddress("Br_IM3pi_7C", &IM3pi_7C);
     ALLCHAIN_CUT->SetBranchAddress("Br_IM_pi0_7C", &IM_pi0_7C);
     ALLCHAIN_CUT->SetBranchAddress("Br_IM3pi_true", &IM3pi_true);
-
+    
     // ============================================================
     // ARRAYS - Use GetLeaf (SetBranchAddress causes crash!)
-    // DO NOT use SetBranchAddress for:
-    // - Br_pho_indx
-    // - Br_EPI0NTMC_save
-    // - Br_PULLIST
-    // - Br_MASSLIST
-    // - Br_ENERGYLIST
-    // - Br_ANGLELIST
     // ============================================================
 
     cout << MASS_SCALE_PI0 << ", " << alpha_delta << endl;
     cout << energy_shift_total << "+/-" << energy_shift_total_err << endl;
-	
+    
     // ---------- Event loop ----------
     Long64_t nentries = ALLCHAIN_CUT->GetEntries();
     cout << "Processing " << nentries << " events" << endl;
@@ -447,6 +511,12 @@ int tree_cut_bdt_tuning() {
 
         angle_pi0gam12 = ALLCHAIN_CUT->GetLeaf("Br_ANGLELIST")->GetValue(0);
 
+        // NEW: Read SIGMA_FIT_LIST (15 values)
+        double SIGMA_FIT_LIST[15];
+        for (int idx = 0; idx < 15; ++idx) {
+            SIGMA_FIT_LIST[idx] = ALLCHAIN_CUT->GetLeaf("Br_sigma_fit")->GetValue(idx);
+        }
+
         // ============================================================
         // ppl_E, pho_E1, etc. are filled by SetBranchAddress + GetEntry!
         // Do NOT use GetLeaf for these!
@@ -464,6 +534,9 @@ int tree_cut_bdt_tuning() {
         angle_trk_neutral = trksum.Angle(neutralsum.Vect())*TMath::RadToDeg();
         m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
+        // Maximum prompt photon energy before pull tuning
+        Eprompt_max = std::max({Eisr, Epi0_pho1, Epi0_pho2});
+        
         // Photons are sorted by energies
         TLorentzVector photon[3] = {pi0gam1, pi0gam2, isrgam};
         std::sort(photon, photon+3, [](const TLorentzVector& a, const TLorentzVector& b) {
@@ -498,82 +571,80 @@ int tree_cut_bdt_tuning() {
             {pmi_E_true, pmi_px_true, pmi_py_true, pmi_pz_true}
         };
 
+	// Prepare event unfitted data structure
+        double unfit_photons[3][4] = {
+            {pho_E1_nofit, pho_px1_nofit, pho_py1_nofit, pho_pz1_nofit},
+            {pho_E2_nofit, pho_px2_nofit, pho_py2_nofit, pho_pz2_nofit},
+            {pho_E3_nofit, pho_px3_nofit, pho_py3_nofit, pho_pz3_nofit}
+        };
+        
+
         BDTResult result = find_best_pion_pair(event, bdt);
         if (!result.is_valid) continue;
 
-        // Save raw values BEFORE correction for comparison
-        double e1_raw_save = event.photons[result.pi0_indices[0]][0];
-        double e2_raw_save = event.photons[result.pi0_indices[1]][0];
-        double px1_raw_save = event.photons[result.pi0_indices[0]][1];
-        double py1_raw_save = event.photons[result.pi0_indices[0]][2];
-        double pz1_raw_save = event.photons[result.pi0_indices[0]][3];
-        double px2_raw_save = event.photons[result.pi0_indices[1]][1];
-        double py2_raw_save = event.photons[result.pi0_indices[1]][2];
-        double pz2_raw_save = event.photons[result.pi0_indices[1]][3];
+        // NEW: Save BDT-selected sigma values
+        sigma_e1_bdt = SIGMA_FIT_LIST[5 * result.pi0_indices[0]];
+        sigma_e2_bdt = SIGMA_FIT_LIST[5 * result.pi0_indices[1]];
+        sigma_e3_bdt = SIGMA_FIT_LIST[5 * result.prompt_index];
 
-        double px1_bdt = event.photons[result.pi0_indices[0]][1];
-        double py1_bdt = event.photons[result.pi0_indices[0]][2];
-        double pz1_bdt = event.photons[result.pi0_indices[0]][3];
-        double px2_bdt = event.photons[result.pi0_indices[1]][1];
-        double py2_bdt = event.photons[result.pi0_indices[1]][2];
-        double pz2_bdt = event.photons[result.pi0_indices[1]][3];
-        double px3_bdt = event.photons[result.prompt_index][1];
-        double py3_bdt = event.photons[result.prompt_index][2];
-        double pz3_bdt = event.photons[result.prompt_index][3];
+        // Save kinematic fitted values (uncorrected)
+        e1_fit = event.photons[result.pi0_indices[0]][0];
+        e2_fit = event.photons[result.pi0_indices[1]][0];
+        e3_fit = event.photons[result.prompt_index][0];
+        
+        double px1_fit = event.photons[result.pi0_indices[0]][1];
+        double py1_fit = event.photons[result.pi0_indices[0]][2];
+        double pz1_fit = event.photons[result.pi0_indices[0]][3];
+        
+        double px2_fit = event.photons[result.pi0_indices[1]][1];
+        double py2_fit = event.photons[result.pi0_indices[1]][2];
+        double pz2_fit = event.photons[result.pi0_indices[1]][3];
+        
+        double px3_fit = event.photons[result.prompt_index][1];
+        double py3_fit = event.photons[result.prompt_index][2];
+        double pz3_fit = event.photons[result.prompt_index][3];
 
-        // Get raw values
-        double e1_raw = event.photons[result.pi0_indices[0]][0];
-        double e2_raw = event.photons[result.pi0_indices[1]][0];
-        double e3_raw = event.photons[result.prompt_index][0];
-        
-        double px1_raw = event.photons[result.pi0_indices[0]][1];
-        double py1_raw = event.photons[result.pi0_indices[0]][2];
-        double pz1_raw = event.photons[result.pi0_indices[0]][3];
-        
-        double px2_raw = event.photons[result.pi0_indices[1]][1];
-        double py2_raw = event.photons[result.pi0_indices[1]][2];
-        double pz2_raw = event.photons[result.pi0_indices[1]][3];
-        
-        double px3_raw = event.photons[result.prompt_index][1];
-        double py3_raw = event.photons[result.prompt_index][2];
-        double pz3_raw = event.photons[result.prompt_index][3];
+        // ---- Assign unfitted BDT‑selected values ----
+	e1_nofit_bdt = unfit_photons[result.pi0_indices[0]][0];
+        e2_nofit_bdt = unfit_photons[result.pi0_indices[1]][0];
+        e3_nofit_bdt = unfit_photons[result.prompt_index][0];
+        px1_nofit_bdt = unfit_photons[result.pi0_indices[0]][1];
+        py1_nofit_bdt = unfit_photons[result.pi0_indices[0]][2];
+        pz1_nofit_bdt = unfit_photons[result.pi0_indices[0]][3];
+        px2_nofit_bdt = unfit_photons[result.pi0_indices[1]][1];
+        py2_nofit_bdt = unfit_photons[result.pi0_indices[1]][2];
+        pz2_nofit_bdt = unfit_photons[result.pi0_indices[1]][3];
+        px3_nofit_bdt = unfit_photons[result.prompt_index][1];
+        py3_nofit_bdt = unfit_photons[result.prompt_index][2];
+        pz3_nofit_bdt = unfit_photons[result.prompt_index][3];
 
-        // ---- Apply corrections ----
+	double pull_array[3] = {pull_E1, pull_E2, pull_E3};
+	e1_pull_bdt = pull_array[result.pi0_indices[0]];
+	e2_pull_bdt = pull_array[result.pi0_indices[1]];
+	e3_pull_bdt = pull_array[result.prompt_index];
+	
+	// ---- Apply corrections ----
         if (data_type == "sig") {
             const double bias_MeV_E12 = bias_E12 * resol_E12;  
-            const double bias_MeV_E3 = bias_E3 * resol_E3;
+            //const double bias_MeV_E3 = bias_E3 * resol_E3;
             
-            double e1_pull_corr = (e1_raw - bias_MeV_E12) / sigma_scale_E12;
-            double e2_pull_corr = (e2_raw - bias_MeV_E12) / sigma_scale_E12;
-            double e3_pull_corr = (e3_raw - bias_MeV_E3) / sigma_scale_E3;
+            cout << bias_MeV_E12 << ", " << (e1_fit - bias_MeV_E12) / sigma_scale_E12 << endl;
             
-            double px1_pull_corr = px1_raw / sigma_scale_E12;
-            double py1_pull_corr = py1_raw / sigma_scale_E12;
-            double pz1_pull_corr = pz1_raw / sigma_scale_E12;
+            e1_bdt = (e1_fit + bias_MeV_E12) * MASS_SCALE_PI0;   // NO sigma_scale!
+            e2_bdt = (e2_fit + bias_MeV_E12) * MASS_SCALE_PI0;
+            e3_bdt = e3_fit;                                     // ISR: keep untouched
             
-            double px2_pull_corr = px2_raw / sigma_scale_E12;
-            double py2_pull_corr = py2_raw / sigma_scale_E12;
-            double pz2_pull_corr = pz2_raw / sigma_scale_E12;
+            px1_bdt = px1_fit * MASS_SCALE_PI0;
+            py1_bdt = py1_fit * MASS_SCALE_PI0;
+            pz1_bdt = pz1_fit * MASS_SCALE_PI0;
             
-            double px3_pull_corr = px3_raw / sigma_scale_E3;
-            double py3_pull_corr = py3_raw / sigma_scale_E3;
-            double pz3_pull_corr = pz3_raw / sigma_scale_E3;
+            px2_bdt = px2_fit * MASS_SCALE_PI0;
+            py2_bdt = py2_fit * MASS_SCALE_PI0;
+            pz2_bdt = pz2_fit * MASS_SCALE_PI0;
             
-            e1_bdt = e1_pull_corr * MASS_SCALE_PI0;
-            e2_bdt = e2_pull_corr * MASS_SCALE_PI0;
-            e3_bdt = e3_pull_corr;
-            
-            px1_bdt = px1_pull_corr * MASS_SCALE_PI0;
-            py1_bdt = py1_pull_corr * MASS_SCALE_PI0;
-            pz1_bdt = pz1_pull_corr * MASS_SCALE_PI0;
-            
-            px2_bdt = px2_pull_corr * MASS_SCALE_PI0;
-            py2_bdt = py2_pull_corr * MASS_SCALE_PI0;
-            pz2_bdt = pz2_pull_corr * MASS_SCALE_PI0;
-            
-            px3_bdt = px3_pull_corr;
-            py3_bdt = py3_pull_corr;
-            pz3_bdt = pz3_pull_corr;
+            px3_bdt = px3_fit;
+            py3_bdt = py3_fit;
+            pz3_bdt = pz3_fit;
             
             event.photons[result.pi0_indices[0]][0] = e1_bdt;
             event.photons[result.pi0_indices[0]][1] = px1_bdt;
@@ -589,23 +660,22 @@ int tree_cut_bdt_tuning() {
             event.photons[result.prompt_index][1] = px3_bdt;
             event.photons[result.prompt_index][2] = py3_bdt;
             event.photons[result.prompt_index][3] = pz3_bdt;
-            
         } else {
-            e1_bdt = e1_raw;
-            e2_bdt = e2_raw;
-            e3_bdt = e3_raw;
+            e1_bdt = e1_fit;
+            e2_bdt = e2_fit;
+            e3_bdt = e3_fit;
             
-            px1_bdt = px1_raw;
-            py1_bdt = py1_raw;
-            pz1_bdt = pz1_raw;
+            px1_bdt = px1_fit;
+            py1_bdt = py1_fit;
+            pz1_bdt = pz1_fit;
             
-            px2_bdt = px2_raw;
-            py2_bdt = py2_raw;
-            pz2_bdt = pz2_raw;
+            px2_bdt = px2_fit;
+            py2_bdt = py2_fit;
+            pz2_bdt = pz2_fit;
             
-            px3_bdt = px3_raw;
-            py3_bdt = py3_raw;
-            pz3_bdt = pz3_raw;
+            px3_bdt = px3_fit;
+            py3_bdt = py3_fit;
+            pz3_bdt = pz3_fit;
         }
         
         m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
@@ -641,6 +711,8 @@ int tree_cut_bdt_tuning() {
         double py3_true = true_photons[result.prompt_index][2];
         double pz3_true = true_photons[result.prompt_index][3];
 
+        e1_bdt_true = e1_true;
+        e2_bdt_true = e2_true;
         e3_bdt_true = e3_true;
         
         m_gg_true = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], true_photons);
@@ -655,7 +727,7 @@ int tree_cut_bdt_tuning() {
         TLorentzVector pi0_bdt_true = pi0gam1_bdt_true + pi0gam2_bdt_true;
         betapi0_bdt_true = (pi0_bdt_true.Vect()).Mag() / pi0_bdt_true.E();
         
-        // Compute pulls
+        // Compute pulls (corrected - true)
         e1_pull = e1_bdt - e1_true;
         e2_pull = e2_bdt - e2_true;
         e3_pull = e3_bdt - e3_true;
@@ -703,43 +775,6 @@ int tree_cut_bdt_tuning() {
         isr_recon_quality = isr_correct ? 1 : 0;
         total_recon_quality = recon_indx_bdt + isr_recon_quality;
 
-        Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
-
-        // ============================================================
-        // VALIDATION CHECKS AND HISTOGRAM FILLING
-        // ============================================================
-
-	//cout << total_recon_quality << endl;
-	
-        // Only fill histograms for signal events with perfect reconstruction
-        if (data_type == "sig" && total_recon_quality == 3) {
-            
-            // 1. Pull distributions
-            h_pull_E1->Fill(e1_pull);
-            h_pull_E2->Fill(e2_pull);
-            h_pull_E3->Fill(e3_pull);
-            
-            h_pull_px1->Fill(px1_pull);
-            h_pull_py1->Fill(py1_pull);
-            h_pull_pz1->Fill(pz1_pull);
-            
-            // 2. Pull vs Energy (check for energy dependence)
-            h_pull_E1_vs_E->Fill(e1_bdt, e1_pull);
-            h_pull_E1_vs_angle->Fill(angle_pi0gam12_bdt, e1_pull);
-            
-            // 3. π⁰ mass before correction (using raw values)
-            double m_gg_before = compute_invariant_mass_from_values(
-                e1_raw_save, e2_raw_save, 
-                px1_raw_save, py1_raw_save, pz1_raw_save,
-                px2_raw_save, py2_raw_save, pz2_raw_save);
-            h_m_gg_before->Fill(m_gg_before);
-            
-            // 4. π⁰ mass after correction
-            h_m_gg_after->Fill(m_gg_bdt);
-        }
-
-        
-        
         // Selection cuts
         if (lagvalue_min_7C > chi2_cut) continue;
         if (angle_pi0gam12_bdt > angle_cut) continue;
@@ -749,7 +784,7 @@ int tree_cut_bdt_tuning() {
         if (bdt_score <= bdt_cut) continue;
         if (Eprompt_max > Eprompt_max_cut) continue;
         
-        // Fill
+        // Fill output trees
         if (data_type == "exp") {
             TTList[0]->Fill();
         } else if (data_type == "ufo") {
@@ -820,69 +855,6 @@ int tree_cut_bdt_tuning() {
              << TTList[6]->GetEntries() << ", "
              << TTList[7]->GetEntries() << " entries" << endl;
     }
-
-    // ============================================================
-    // SAVE VALIDATION HISTOGRAMS
-    // ============================================================
-
-    /*
-    h_pull_E1->Write();
-    h_pull_E2->Write();
-    h_pull_E3->Write();
-    h_pull_px1->Write();
-    h_pull_py1->Write();
-    h_pull_pz1->Write();
-    h_m_gg_before->Write();
-    h_m_gg_after->Write();
-    h_pull_E1_vs_E->Write();
-    h_pull_E1_vs_angle->Write();
-    */
-    
-    cout << "\n✓ Validation histograms saved to output file" << endl;
-
-    // ============================================================
-    // PRINT VALIDATION SUMMARY
-    // ============================================================
-    
-    cout << "\n========================================" << endl;
-    cout << "VALIDATION SUMMARY:" << endl;
-    cout << "========================================" << endl;
-
-    // Print pull statistics
-    cout << "Pull E1: Mean = " << h_pull_E1->GetMean() 
-         << " ± " << h_pull_E1->GetRMS() << " MeV" << endl;
-    cout << "Pull E2: Mean = " << h_pull_E2->GetMean() 
-         << " ± " << h_pull_E2->GetRMS() << " MeV" << endl;
-    cout << "Pull E3: Mean = " << h_pull_E3->GetMean() 
-         << " ± " << h_pull_E3->GetRMS() << " MeV" << endl;
-
-    // Print π⁰ mass statistics
-    double pdg_m_pi0 = 134.9766;
-    double before_mean = h_m_gg_before->GetMean();
-    double after_mean = h_m_gg_after->GetMean();
-    
-    cout << "\nπ⁰ mass before correction: Mean = " << before_mean 
-         << " ± " << h_m_gg_before->GetRMS() << " MeV" << endl;
-    cout << "π⁰ mass after correction:  Mean = " << after_mean 
-         << " ± " << h_m_gg_after->GetRMS() << " MeV" << endl;
-
-    // Check if MASS_SCALE needs tuning
-    double correction = pdg_m_pi0 / after_mean;
-
-    cout << "\nMASS_SCALE tuning:" << endl;
-    cout << "  Current MASS_SCALE_PI0 = " << MASS_SCALE_PI0 << endl;
-    cout << "  Current π⁰ mass = " << after_mean << " MeV" << endl;
-    cout << "  PDG π⁰ mass = " << pdg_m_pi0 << " MeV" << endl;
-    cout << "  Recommended new MASS_SCALE = " << MASS_SCALE_PI0 * correction << endl;
-
-    if (fabs(after_mean - pdg_m_pi0) > 0.5) {
-        cout << "  ⚠️  WARNING: π⁰ mass is off by " 
-             << fabs(after_mean - pdg_m_pi0) << " MeV!" << endl;
-        cout << "  → Update MASS_SCALE_PI0 to " << MASS_SCALE_PI0 * correction << endl;
-    } else {
-        cout << "  ✅ π⁰ mass is within 0.5 MeV of PDG value!" << endl;
-    }
-    cout << "========================================" << endl;
     
     f_output->Close();
     f_input->Close();
@@ -898,7 +870,7 @@ int tree_cut_bdt_tuning() {
 }
 
 // ----------------------------------------------------------------------
-// Helper function implementations
+// Helper function implementations (unchanged)
 // ----------------------------------------------------------------------
 double compute_invariant_mass(int i, int j, const double photons[3][4]) {
     double E_sum = photons[i][0] + photons[j][0];
@@ -980,7 +952,6 @@ std::vector<float> extract_features(int i_idx, int j_idx, int unpaired_idx,
 BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& bdt) {
     BDTResult result;
     result.is_valid = false;
-
     result.scores[0] = 0.0;
     result.scores[1] = 0.0;
     result.scores[2] = 0.0;

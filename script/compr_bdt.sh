@@ -3,11 +3,12 @@
 compr=../header_bdt/compr.h
 sample_type=norm
 data_type=bdt
-main_folder="/home/bo/Desktop/${data_type}_tuning_TDATA_${sample_type}"
+tuning_type=tuning #raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
+main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
 
-echo -e "\nPlotting histo comparison ..."
+echo -e "\nPlotting histo comparison ... from ${main_folder}"
 
 #VAR_NM=("IM3pi_7C" "angle_isr_7C" "angle_pi0gam12" "ppIM" "lagvalue_min_7C" "pvalue" "deltaE" "trkmass" "Eisr" "Emax_clust" "betapi0")
 #VAR_SYMB=("M_{3#pi}" "cos#theta_{#gamma_{3}}" "#angle(#gamma_{1},#gamma_{2})" "M_{2#pi}" "#chi^{2}_{7C}" "" "E_{miss}" "M_{trk}" "Eisr" "Emax^{max}_clust" "")
@@ -16,6 +17,24 @@ echo -e "\nPlotting histo comparison ..."
 #XMIN=(300 -1 0 250 0 0 -800 100 0.3)
 #XMAX=(1020 1 180 750 50 1 100 600 1)
 #BINS=(200 100 180 200 100 100 200 200 200)
+
+##################################################################
+#VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
+#VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
+#UNIT=("[MeV\/c^{2}]")
+
+#XMIN=(760) #300 600 760 (analysis)
+#XMAX=(800) #1020 1050 800 (analysis)
+#BINS=(100)
+
+##################################################################
+#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+#VAR_SYMB=("M_{#gamma#gamma}")
+#UNIT=("[MeV\/c^{2}]")
+
+#XMIN=(100)
+#XMAX=(180)
+#BINS=(180)
 
 ##################################################################
 #VAR_NM="Eprompt_max"
@@ -52,15 +71,6 @@ echo -e "\nPlotting histo comparison ..."
 #XMIN=(0)
 #XMAX=(1)
 #BINS=(200)
-
-##################################################################
-VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
-VAR_SYMB=("M_{3#pi}")
-UNIT=("[MeV\/c^{2}]")
-
-XMIN=(760) #300 600 760 (analysis)
-XMAX=(800) #1020 1050 800 (analysis)
-BINS=(100)
 
 ##################################################################
 #VAR_NM=("Eisr")
@@ -117,15 +127,6 @@ BINS=(100)
 #BINS=(150) #150, 550 
 
 ##################################################################
-#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-#VAR_SYMB=("M_{#gamma#gamma}")
-#UNIT=("[MeV\/c^{2}]")
-
-#XMIN=(100)
-#XMAX=(180)
-#BINS=(180)
-
-##################################################################
 #VAR_NM="ppIM"
 #VAR_SYMB="M_{trk}"
 #UNIT="[MeV\/c^{2}]"
@@ -144,14 +145,14 @@ BINS=(100)
 #BINS=150
 
 ##################################################################
-#name_tmp="E3"
-#VAR_NM="pull_"${name_tmp}
-#VAR_SYMB="Pull "${name_tmp}
+name_tmp="E3"
+VAR_NM="pull_"${name_tmp}
+VAR_SYMB="Pull "${name_tmp}
 
-#UNIT="[MeV]"
-#XMIN=-10
-#XMAX=10
-#BINS=200
+UNIT="[MeV]"
+XMIN=-10
+XMAX=10
+BINS=200
 
 ##################################################################
 #VAR_NM="e_asym"
@@ -171,7 +172,7 @@ BINS=(100)
 #XMAX=1
 #BINS=200
 
-output_folder="../output_bdt_"${VAR_NM[0]}
+output_folder="../output_bdt_${tuning_type}_"${VAR_NM[0]}
 
 #check output folder and update output files
 if [[ -d $output_folder ]]; then
@@ -202,7 +203,7 @@ for ((i=0;i<${#VAR_NM[@]};++i)); do
     sed -i "s|\(const double var_max =\).*|\1 ${XMAX[i]};|" $compr
 
     sed -i "s|\(const TString var_nm =\).*|\1 \"${VAR_NM[i]}\";|" $compr
-    sed -i "s|\(const TString unit =\).*|\1 \"${UNIT[i]}\";|" $compr
+    #sed -i "s|\(const TString unit =\).*|\1 \"${UNIT[i]}\";|" $compr
     sed -i "s|\(const TString var_symb =\).*|\1 \"${VAR_SYMB[i]}\";|" $compr
 
     compr_script=compr_script.C

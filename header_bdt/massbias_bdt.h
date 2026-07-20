@@ -1,3 +1,3 @@
-const double energy_shift = 1.97929;
-const double energy_shift_err = 0.0153787;
-const double mass_bias_Z = 128.703;
+const double energy_shift = 0.0102972;
+const double energy_shift_err = 0.0660088;
+const double mass_bias_Z = 0.155997;

@@ -77,13 +77,21 @@
 #==============================================================
 # Resolution of kinematic variables (KLOE Raw)
 #==============================================================
-VAR_TYPE=("Br_E1" 
-	  "Br_E2" 
-	  "Br_E3")
+#VAR_TYPE=("Br_E1" 
+#	  "Br_E2" 
+#	  "Br_E3")
 
-VAR_TYPE_TRUE=("Br_E1_true" 
-	       "Br_E2_true" 
-	       "Br_E3_true")
+#VAR_TYPE_TRUE=("Br_E1_true" 
+#	       "Br_E2_true" 
+#	       "Br_E3_true")
+
+VAR_TYPE=("Br_e1_bdt"
+	  "Br_e2_bdt"
+	  "Br_e3_bdt")
+
+VAR_TYPE_TRUE=("Br_e1_bdt_true"
+	       "Br_e2_bdt_true"
+	       "Br_e3_bdt_true")
 
 UNIT=("[MeV]" 
       "[MeV]" 
@@ -129,9 +137,11 @@ else
 fi
 
 header=../header_bdt/plot_resol.h
-sample_type=chain
-data_type="kloe"
-main_folder="/home/bo/Desktop/input_${data_type}_TDATA_${sample_type}"
+sample_type=norm
+data_type=bdt
+tuning_type=raw
+main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}"
+#main_folder=/home/bo/Desktop/bdt_raw_TDATA_norm
 treeFile="${main_folder}/cut/tree_pre.root";
 
 for ((i=0;i<${#VAR_TYPE[@]};++i)); do
