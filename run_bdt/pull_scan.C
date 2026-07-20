@@ -1,14 +1,20 @@
 // ============================================================================
 // pull_scan.C
 //
-// Fits residual distributions for π⁰ photons in energy bins with Gaussian + linear polynomial.
+// Fits residual distributions for π⁰ photons in energy bins.
 // Options for fit_type:
 //   "pull"     : (E_raw - E_fit)/sigma   (simplified pull for π⁰ photons)
 //   "rawdiff"  : E_nofit - E_fit  (absolute difference, MeV)
 //   "ratio"    : (E_nofit - E_fit)/E_fit
 //   "symdiff"  : (E_nofit - E_fit)/(E_nofit + E_fit)
+// Options for fit_model:
+//   "gausPoly"    : Gaussian + linear polynomial (default)
+//   "doubleGaus"  : Double Gaussian (core + tail)
+//   "crystalBall" : Crystal Ball (asymmetric tail)
+//   "gausCheb2"   : Gaussian + 2nd-order polynomial (Chebyshev-like)
 // Usage:
-//   .x pull_scan.C("TISR3PI_SIG_PEAK", "Signal", "pull", true)
+//   .x pull_scan.C("TISR3PI_SIG_PEAK", "Signal", "pull", true, "gausCheb2")
+// PDF output: side‑by‑side (16 histograms per page) in a 4x4 grid.
 // ============================================================================
 
 #include <TFile.h>
@@ -23,18 +29,19 @@
 #include <TList.h>
 #include <TKey.h>
 #include <TGraphErrors.h>
+#include <TPad.h>
 #include <iostream>
 #include <vector>
 
 using namespace std;
 
 // ----------------------------------------------------------------------------
-// Fit a single histogram with Gaussian + linear polynomial, fallback to single Gaussian
+// Fit a single histogram with the chosen model
 // ----------------------------------------------------------------------------
 bool fitHist(TH1D *h, double &mean, double &sigma,
              double &mean_err, double &sigma_err,
              double &core_amp, double &fit_min, double &fit_max,
-             double &chi2ndf) {
+             double &chi2ndf, const TString &model = "gausPoly") {
   if (!h || h->GetEntries() < 500) return false;
 
   double xmin = h->GetXaxis()->GetXmin();
@@ -43,14 +50,12 @@ bool fitHist(TH1D *h, double &mean, double &sigma,
   double peak = h->GetMaximum();
   double mean0 = h->GetMean();
 
-  // Fit range: ±3.0 sigma to include tails
-  const double fit_factor = 2.;
+  const double fit_factor = 1.5;
   fit_min = mean0 - fit_factor * rms;
   fit_max = mean0 + fit_factor * rms;
   if (fit_min < xmin) fit_min = xmin;
   if (fit_max > xmax) fit_max = xmax;
 
-  // Estimate core sigma from FWHM
   int bin_peak = h->GetMaximumBin();
   double half_max = peak / 2.0;
   int bin_left = bin_peak, bin_right = bin_peak;
@@ -60,54 +65,133 @@ bool fitHist(TH1D *h, double &mean, double &sigma,
   double sigma_guess_core = fwhm / 2.3548;
   if (sigma_guess_core <= 0 || sigma_guess_core > rms) sigma_guess_core = rms * 0.7;
 
-  // ------------------------------------------------
-  // Try Gaussian + linear polynomial
-  // ------------------------------------------------
-  TF1 *fit = new TF1("gausPoly", "gaus(0)+pol1(3)", fit_min, fit_max);
-  // Gaussian: [0]=amp, [1]=mean, [2]=sigma
-  // Polynomial: [3]=p0, [4]=p1
-  double amp_g = peak * 0.9;
-  fit->SetParameters(amp_g, mean0, sigma_guess_core,
-                     0.0, 0.0);   // initial polynomial coefficients
-  fit->SetParLimits(0, 0, peak * 3);
-  fit->SetParLimits(1, mean0 - 1.0, mean0 + 1.0);
-  fit->SetParLimits(2, 0.005, 5);      // sigma up to 5 (fraction)
-  // Polynomial coefficients – no strict limits (allow flexibility)
-  fit->SetParLimits(3, -peak, peak);
-  fit->SetParLimits(4, -peak, peak);
+  TF1 *fit = nullptr;
+  bool ok = false;
 
-  Int_t status = h->Fit(fit, "RQS");
-  double chi2 = fit->GetChisquare();
-  int ndf = fit->GetNDF();
-  chi2ndf = (ndf > 0) ? chi2 / ndf : 0;
+  // ------------------------------------------------
+  // Choose model
+  // ------------------------------------------------
+  if (model == "gausCheb2") {
+    // Gaussian + 2nd-order polynomial (equivalent to Chebyshev of order 2)
+    fit = new TF1("gausCheb2", "gaus(0)+pol2(3)", fit_min, fit_max);
+    // Parameters: [0]=amp, [1]=mean, [2]=sigma, [3]=p0, [4]=p1, [5]=p2
+    double amp_g = peak * 0.9;
+    fit->SetParameters(amp_g, mean0, sigma_guess_core, 0.0, 0.0, 0.0);
+    fit->SetParLimits(0, 0, peak * 3);
+    fit->SetParLimits(1, mean0 - 1.0, mean0 + 1.0);
+    fit->SetParLimits(2, 0.005, 5);
+    // Polynomial coefficients: allow modest values
+    fit->SetParLimits(3, -peak*0.5, peak*0.5);
+    fit->SetParLimits(4, -peak*0.1, peak*0.1);
+    fit->SetParLimits(5, -peak*0.01, peak*0.01);
 
-  // Extract Gaussian parameters
-  bool ok = (status == 0 && chi2ndf < 5.0);
-  if (ok) {
-    mean = fit->GetParameter(1);
-    sigma = fit->GetParameter(2);
-    mean_err = fit->GetParError(1);
-    sigma_err = fit->GetParError(2);
-    core_amp = fit->GetParameter(0);
-    if (sigma > 0.005 && sigma_err > 0) {
-      delete fit;
-      return true;
+    Int_t status = h->Fit(fit, "RQS");
+    double chi2 = fit->GetChisquare();
+    int ndf = fit->GetNDF();
+    chi2ndf = (ndf > 0) ? chi2 / ndf : 0;
+
+    if (status == 0 && chi2ndf < 5.0) {
+      mean = fit->GetParameter(1);
+      sigma = fit->GetParameter(2);
+      mean_err = fit->GetParError(1);
+      sigma_err = fit->GetParError(2);
+      core_amp = fit->GetParameter(0);
+      ok = (sigma > 0.005 && sigma_err > 0);
     }
+    delete fit;
+    if (ok) return true;
   }
-  delete fit;
+  else if (model == "crystalBall") {
+    fit = new TF1("crystalBall", "crystalball", fit_min, fit_max);
+    fit->SetParameters(peak, mean0, sigma_guess_core, 1.5, 2.0);
+    fit->SetParLimits(0, 0, peak * 3);
+    fit->SetParLimits(1, mean0 - 1.0, mean0 + 1.0);
+    fit->SetParLimits(2, 0.005, 5);
+    fit->SetParLimits(3, 0.1, 10);
+    fit->SetParLimits(4, 1.0, 10);
 
-  // ------------------------------------------------
-  // Fallback: single Gaussian (if polynomial fit fails)
-  // ------------------------------------------------
+    Int_t status = h->Fit(fit, "RQS");
+    double chi2 = fit->GetChisquare();
+    int ndf = fit->GetNDF();
+    chi2ndf = (ndf > 0) ? chi2 / ndf : 0;
+
+    if (status == 0 && chi2ndf < 5.0) {
+      mean = fit->GetParameter(1);
+      sigma = fit->GetParameter(2);
+      mean_err = fit->GetParError(1);
+      sigma_err = fit->GetParError(2);
+      core_amp = fit->GetParameter(0);
+      ok = (sigma > 0.005 && sigma_err > 0);
+    }
+    delete fit;
+    if (ok) return true;
+  }
+  else if (model == "doubleGaus") {
+    fit = new TF1("doubleGaus", "gaus(0)+gaus(3)", fit_min, fit_max);
+    double amp1 = peak * 0.8;
+    double amp2 = peak * 0.2;
+    fit->SetParameters(amp1, mean0, sigma_guess_core,
+                       amp2, mean0, sigma_guess_core * 1.5);
+    fit->SetParLimits(0, 0, peak * 3);
+    fit->SetParLimits(1, mean0 - 1.0, mean0 + 1.0);
+    fit->SetParLimits(2, 0.005, 5);
+    fit->SetParLimits(3, 0, peak);
+    fit->SetParLimits(4, mean0 - 2.0, mean0 + 2.0);
+    fit->SetParLimits(5, 0.005, 10);
+
+    Int_t status = h->Fit(fit, "RQS");
+    double chi2 = fit->GetChisquare();
+    int ndf = fit->GetNDF();
+    chi2ndf = (ndf > 0) ? chi2 / ndf : 0;
+
+    if (status == 0 && chi2ndf < 5.0) {
+      mean = fit->GetParameter(1);
+      sigma = fit->GetParameter(2);
+      mean_err = fit->GetParError(1);
+      sigma_err = fit->GetParError(2);
+      core_amp = fit->GetParameter(0);
+      ok = (sigma > 0.005 && sigma_err > 0);
+    }
+    delete fit;
+    if (ok) return true;
+  }
+  else { // "gausPoly" (default)
+    fit = new TF1("gausPoly", "gaus(0)+pol1(3)", fit_min, fit_max);
+    double amp_g = peak * 0.9;
+    fit->SetParameters(amp_g, mean0, sigma_guess_core, 0.0, 0.0);
+    fit->SetParLimits(0, 0, peak * 3);
+    fit->SetParLimits(1, mean0 - 1.0, mean0 + 1.0);
+    fit->SetParLimits(2, 0.005, 5);
+    fit->SetParLimits(3, -peak, peak);
+    fit->SetParLimits(4, -peak, peak);
+
+    Int_t status = h->Fit(fit, "RQS");
+    double chi2 = fit->GetChisquare();
+    int ndf = fit->GetNDF();
+    chi2ndf = (ndf > 0) ? chi2 / ndf : 0;
+
+    if (status == 0 && chi2ndf < 5.0) {
+      mean = fit->GetParameter(1);
+      sigma = fit->GetParameter(2);
+      mean_err = fit->GetParError(1);
+      sigma_err = fit->GetParError(2);
+      core_amp = fit->GetParameter(0);
+      ok = (sigma > 0.005 && sigma_err > 0);
+    }
+    delete fit;
+    if (ok) return true;
+  }
+
+  // Fallback: single Gaussian
   TF1 *sgaus = new TF1("singleGaus", "gaus", fit_min, fit_max);
   sgaus->SetParameters(peak, mean0, sigma_guess_core);
   sgaus->SetParLimits(0, 0, peak * 3);
   sgaus->SetParLimits(1, mean0 - 1.0, mean0 + 1.0);
   sgaus->SetParLimits(2, 0.005, 5);
 
-  status = h->Fit(sgaus, "RQS");
-  chi2 = sgaus->GetChisquare();
-  ndf = sgaus->GetNDF();
+  Int_t status = h->Fit(sgaus, "RQS");
+  double chi2 = sgaus->GetChisquare();
+  int ndf = sgaus->GetNDF();
   chi2ndf = (ndf > 0) ? chi2 / ndf : 0;
 
   if (status == 0 && chi2ndf < 5.0) {
@@ -123,86 +207,80 @@ bool fitHist(TH1D *h, double &mean, double &sigma,
 }
 
 // ----------------------------------------------------------------------------
-// Draw a single bin histogram with the core Gaussian fit
+// Draw a single bin histogram into a given TPad (for 4x4 grid)
 // ----------------------------------------------------------------------------
-void drawBinHist(TH1D *h, int bin, double mean, double sigma,
-                 double core_amp, double fit_min, double fit_max,
-		 double mass_min, double mass_max,
-                 double chi2ndf, const TString &fit_type,
-                 TCanvas *c, TPad *pad) {
-  if (!h || h->GetEntries() < 500) return;
+void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
+                      double core_amp, double fit_min, double fit_max,
+                      double mass_min, double mass_max,
+                      double chi2ndf, const TString &fit_type, const TString &sample_type,
+                      TPad *pad) {
+  if (!h || !pad) return;
 
   pad->cd();
-  gPad->SetBottomMargin(0.12);
-  gPad->SetLeftMargin(0.15);
+  gPad->SetBottomMargin(0.15);
+  gPad->SetLeftMargin(0.13);
+  gPad->SetRightMargin(0.02);
+  gPad->SetTopMargin(0.02);
 
-  h->SetLineWidth(2);
-  h->SetLineColor(4);
-  h->GetXaxis()->SetTitle(Form("Residual (%s)", fit_type.Data()));
+  h->SetLineWidth(1);
+  h->SetLineColor(kBlue);
+  
+  h->GetXaxis()->SetTitle(Form("E_{#gamma} %s", fit_type.Data()));
   h->GetYaxis()->SetTitle("Entries");
+  h->GetXaxis()->SetTitleSize(0.06);
+  h->GetYaxis()->SetTitleSize(0.06);
+  h->GetXaxis()->SetLabelSize(0.05);
+  h->GetYaxis()->SetLabelSize(0.05);
   h->GetXaxis()->CenterTitle();
   h->GetYaxis()->CenterTitle();
-  h->GetYaxis()->SetRangeUser(0.01, 1.6 * h->GetMaximum());
-  h->Draw("hist");
-
-  // Core Gaussian
+  h->GetYaxis()->SetRangeUser(0.01, 1.4 * h->GetMaximum());
+  //cout << sample_type << endl;
+  h->Draw("E0");
+  
   TF1 *core = new TF1("core", "gaus", fit_min, fit_max);
   core->SetParameters(core_amp, mean, sigma);
   core->SetLineColor(kRed);
-  core->SetLineWidth(2);
-  core->Draw("same");
+  core->SetLineWidth(1);
+  //core->Draw("same");
 
-  // Text box with results
-  TPaveText *pt = new TPaveText(0.6, 0.55, 0.85, 0.85, "NDC");
+  TPaveText *pt = new TPaveText(0.7, 0.7, 0.95, 0.95, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
-  pt->SetTextSize(0.045);
+  pt->SetTextSize(0.04);
   pt->AddText(Form("Mean = %.3f", mean));
   pt->AddText(Form("Sigma = %.3f", sigma));
   pt->AddText(Form("#chi^{2}/NDF = %.2f", chi2ndf));
   pt->AddText(Form("Entries = %d", (int)h->GetEntries()));
   pt->Draw();
 
-  // Bin label
-  //double lo = h->GetXaxis()->GetXmin();
-  //double hi = h->GetXaxis()->GetXmax();
-  TPaveText *ptBin = new TPaveText(0.2, 0.75, 0.45, 0.85, "NDC");
+  TPaveText *ptBin = new TPaveText(0.2, 0.85, 0.60, 0.9, "NDC");
   ptBin->SetFillColor(0);
   ptBin->SetBorderSize(0);
   ptBin->SetTextAlign(12);
   ptBin->SetTextSize(0.05);
-  ptBin->AddText(Form("Bin %d: %.0f-%.0f MeV", bin, mass_min, mass_max));
+  ptBin->AddText(Form("Bin %d: [%.0f-%.0f] MeV", bin, mass_min, mass_max));
   ptBin->Draw();
 
-  // Legend
-  TLegend *leg = new TLegend(0.6, 0.4, 0.9, 0.5);
+  TLegend *leg = new TLegend(0.7, 0.60, 0.95, 0.7);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
-  leg->AddEntry(h, "Data", "l");
+  leg->SetTextSize(0.04);
+  leg->AddEntry(h, sample_type, "lep");
   leg->AddEntry(core, "Core Gaussian", "l");
   leg->Draw();
 }
 
-// .x pull_scan.C("TISR3PI_SIG_PEAK", "Signal", "pull", true)
-//
 // ----------------------------------------------------------------------------
-// Main macro – only π⁰ photons (e1, e2)
+// Main macro
 // ----------------------------------------------------------------------------
-/*
-void pull_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
-               const TString sample_type = "Signal",
-               const TString fit_type = "pull",
-               bool draw_bins = true) {
-*/
-
 void pull_scan(const TString tree_type = "TDATA",
                const TString sample_type = "Data",
                const TString fit_type = "pull",
-               bool draw_bins = true) {
-
-
-  // Construct output filenames with tree_type
+               bool draw_bins = true,
+               const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain/cut/tree_pre.root",
+               const TString fit_model = "gausPoly")
+{
   TString pdf_name = Form("../pull_scan/bin_histograms_%s.pdf", tree_type.Data());
   TString root_name = Form("../pull_scan/pull_scan_%s.root", tree_type.Data());
   gSystem->Exec("mkdir -p ../pull_scan");
@@ -211,17 +289,8 @@ void pull_scan(const TString tree_type = "TDATA",
   cout << "  PULL SCAN (π⁰ photons only)" << endl;
   cout << "  Sample: " << sample_type << endl;
   cout << "  Tree:   " << tree_type << endl;
-  cout << "  Fitting: " << fit_type << endl;
-  if (fit_type == "pull")
-    cout << "    Pull" << endl;
-  else if (fit_type == "rawdiff")
-    cout << "    (E_nofit - E_fit) in MeV" << endl;
-  else if (fit_type == "ratio")
-    cout << "    (E_nofit - E_fit) / E_fit" << endl;
-  else if (fit_type == "symdiff")
-    cout << "    (E_nofit - E_fit) / (E_nofit + E_fit)" << endl;
-  else
-    cout << "    Unknown fit_type!" << endl;
+  cout << "  Fit type: " << fit_type << endl;
+  cout << "  Fit model: " << fit_model << endl;
   cout << "========================================\n" << endl;
 
   gROOT->GetListOfCanvases()->Delete();
@@ -232,12 +301,8 @@ void pull_scan(const TString tree_type = "TDATA",
   gStyle->SetErrorX(0.8);
   TH1::SetDefaultSumw2();
   TH1::AddDirectory(kFALSE);
-  //gSystem->Exec("mkdir -p ../pull_scan");
 
-  // ----------------------------------------------------------------------
   // Input file
-  // ----------------------------------------------------------------------
-  const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain/cut/tree_pre.root";
   TFile* tree_file = new TFile(input_file_nm);
   if (!tree_file || tree_file->IsZombie()) {
     cerr << "ERROR: Cannot open " << input_file_nm << endl;
@@ -252,26 +317,21 @@ void pull_scan(const TString tree_type = "TDATA",
   }
   cout << "✓ Loaded " << tree_type << " with " << INPUT_TREE->GetEntries() << " entries" << endl;
 
-  // ----------------------------------------------------------------------
   // Output file
-  // ----------------------------------------------------------------------
   TFile *fout = new TFile(root_name, "RECREATE");
   fout->cd();
 
-  // Merged TTree – store only two photons
+  // Merged TTree
   TTree *EPhoTree = new TTree("EPhoTree", "merged branches");
   double EPho_fit[2], EPho_nofit[2], EPho_value[2];
   EPhoTree->Branch("EPho_fit", EPho_fit, "EPho_fit[2]/D");
   EPhoTree->Branch("EPho_nofit", EPho_nofit, "EPho_nofit[2]/D");
   EPhoTree->Branch("EPho_value", EPho_value, "EPho_value[2]/D");
 
-  // Global histograms
-  TH1D *h_phoE      = new TH1D("h_phoE", "", 300, 0., 350.);
-  TH1D *h_pull      = new TH1D("h_pull", "", 200, -10, 10);
+  TH1D *h_phoE = new TH1D("h_phoE", "", 300, 0., 350.);
+  TH1D *h_pull = new TH1D("h_pull", "", 200, -10, 10);
 
-  // ----------------------------------------------------------------------
   // Binning
-  // ----------------------------------------------------------------------
   const double Emin = 0.0;
   const double Emax = 350.0;
   const double binwidth = 2 * 5.6;   // 28 MeV
@@ -292,7 +352,7 @@ void pull_scan(const TString tree_type = "TDATA",
     double hi = lo + binwidth;
     bin_center[b] = (lo + hi) / 2.0;
     TString name = Form("pull_bin_%d", b);
-    pull_hists[b] = new TH1D(name, "", 200, -5, 5);
+    pull_hists[b] = new TH1D(name, "", 100, -5, 5);
     pull_hists[b]->Sumw2();
     bin_mean[b] = 0; bin_sigma[b] = 0;
     bin_mean_err[b] = 0; bin_sigma_err[b] = 0;
@@ -302,9 +362,7 @@ void pull_scan(const TString tree_type = "TDATA",
     bin_entries[b] = 0;
   }
 
-  // ----------------------------------------------------------------------
-  // Branch addresses – only π⁰ photons (e1, e2)
-  // ----------------------------------------------------------------------
+  // Branch addresses
   double e1_fit=0, e2_fit=0;
   double sigma_e1=0, sigma_e2=0;
   double e1_nofit=0, e2_nofit=0;
@@ -313,34 +371,21 @@ void pull_scan(const TString tree_type = "TDATA",
   
   INPUT_TREE->SetBranchAddress("Br_e1_fit", &e1_fit);
   INPUT_TREE->SetBranchAddress("Br_e2_fit", &e2_fit);
-
   INPUT_TREE->SetBranchAddress("Br_sigma_e1_bdt", &sigma_e1);
   INPUT_TREE->SetBranchAddress("Br_sigma_e2_bdt", &sigma_e2);
-  
   INPUT_TREE->SetBranchAddress("Br_e1_nofit_bdt", &e1_nofit);
   INPUT_TREE->SetBranchAddress("Br_e2_nofit_bdt", &e2_nofit);
-
   INPUT_TREE->SetBranchAddress("Br_e1_pull_bdt", &e1_pull);
   INPUT_TREE->SetBranchAddress("Br_e2_pull_bdt", &e2_pull);
-
   INPUT_TREE->SetBranchAddress("Br_m_gg_bdt", &m_gg_bdt);
 
-  // ----------------------------------------------------------------------
   // Loop over events
-  // ----------------------------------------------------------------------
-  const double pi0_true = 134.977;
-  
   Long64_t nentries = INPUT_TREE->GetEntries();
   for (Long64_t irow = 0; irow < nentries; ++irow) {
     INPUT_TREE->GetEntry(irow);
-
-    if (m_gg_bdt > pi0_true + 5. || m_gg_bdt < pi0_true - 5.) continue;
-
-    double sigma[2] = {sigma_e1, sigma_e2};
     double fit[2]  = {e1_fit, e2_fit};
     double nofit[2] = {e1_nofit, e2_nofit};
     double pull[2] = {e1_pull, e2_pull};
-    
     
     for (int ip = 0; ip < 2; ++ip) {
       EPho_fit[ip]   = fit[ip];
@@ -360,15 +405,12 @@ void pull_scan(const TString tree_type = "TDATA",
     }
     EPhoTree->Fill();
 
-    // Fill histograms for both photons
     for (int ip = 0; ip < 2; ++ip) {
       double Ef = fit[ip];
       if (Ef <= 0) continue;
-
       double value = EPho_value[ip];
       h_pull->Fill(value);
       h_phoE->Fill(Ef);
-
       if (Ef < Emin || Ef >= Emax) continue;
       int b = (int)((Ef - Emin) / binwidth);
       if (b < 0 || b >= nbins) continue;
@@ -376,40 +418,32 @@ void pull_scan(const TString tree_type = "TDATA",
     }
   }
 
-  // ----------------------------------------------------------------------
-  // Fit each bin histogram
-  // ----------------------------------------------------------------------
-  cout << "\n=== Per‑bin Gaussian + Linear Polynomial fit results (" << fit_type << ") ===" << endl;
+  // Fit each bin
+  cout << "\n=== Per‑bin fit results (" << fit_model << ") ===" << endl;
   cout << "Bin  E0 (MeV) E1 (MeV)  Entries  Mean ± err  Sigma ± err  χ²/NDF" << endl;
-  vector<double> E0_LIST(nbins);
-  vector<double> E1_LIST(nbins);
+  vector<double> E0_LIST(nbins), E1_LIST(nbins);
  
   for (int b = 0; b < nbins; ++b) {
     bin_entries[b] = pull_hists[b]->GetEntries();
     bool ok = fitHist(pull_hists[b], bin_mean[b], bin_sigma[b],
                       bin_mean_err[b], bin_sigma_err[b],
                       bin_core_amp[b], bin_fit_min[b], bin_fit_max[b],
-                      bin_chi2ndf[b]);
+                      bin_chi2ndf[b], fit_model);
     if (ok) {
-      E0_LIST[b] = Emin+b*binwidth;
-      E1_LIST[b] = Emin+(b+1)*binwidth;
-      
+      E0_LIST[b] = Emin + b * binwidth;
+      E1_LIST[b] = Emin + (b+1) * binwidth;
       printf("%3d  %6.1f %6.1f  %6d  %7.3f±%-7.3f  %7.3f±%-7.3f  %7.3f\n",
-             b, Emin+b*binwidth, Emin+(b+1)*binwidth,
+             b, E0_LIST[b], E1_LIST[b],
              bin_entries[b], bin_mean[b], bin_mean_err[b],
              bin_sigma[b], bin_sigma_err[b], bin_chi2ndf[b]);
     }
   }
 
-  // ----------------------------------------------------------------------
   // Build TGraphs
-  // ----------------------------------------------------------------------
   TGraphErrors *g_bias = new TGraphErrors();
   TGraphErrors *g_sigma = new TGraphErrors();
   g_bias->SetName("g_bias_vs_E");
-  g_bias->SetTitle("Bias (mean residual) vs Energy");
   g_sigma->SetName("g_resolution_vs_E");
-  g_sigma->SetTitle("Resolution (sigma) vs Energy");
 
   int point = 0;
   for (int b = 0; b < nbins; ++b) {
@@ -423,28 +457,46 @@ void pull_scan(const TString tree_type = "TDATA",
   }
 
   // ----------------------------------------------------------------------
-  // Draw all bin histograms (if requested)
+  // Draw bin histograms SIDE‑BY‑SIDE (16 per page, 4x4 grid)
   // ----------------------------------------------------------------------
   if (draw_bins) {
-    cout << "\n=== Generating bin histogram PDF ===" << endl;
-    TCanvas *c_pdf = new TCanvas("c_pdf", "Bin Histograms", 900, 700);
+    cout << "\n=== Generating bin histogram PDF (4x4, 16 per page) ===" << endl;
+    TCanvas *c_pdf = new TCanvas("c_pdf", "Bin Histograms", 1600, 1200);
     c_pdf->Print(pdf_name + "[");
+
+    vector<int> bins_to_draw;
     for (int b = 0; b < nbins; ++b) {
-      if (bin_entries[b] < 500) continue;
-      //cout << "mass range " << b + 1 << ": "<< E0_LIST[b] << ", " << E1_LIST[b] << endl;
-      drawBinHist(pull_hists[b], b, bin_mean[b], bin_sigma[b],
-                  bin_core_amp[b], bin_fit_min[b], bin_fit_max[b],
-		  E0_LIST[b], E1_LIST[b],
-                  bin_chi2ndf[b], fit_type, c_pdf, c_pdf);
+      if (bin_entries[b] >= 500) bins_to_draw.push_back(b);
+    }
+
+    const int nCols = 4;
+    const int nRows = 4;
+    const int nPerPage = nCols * nRows;
+
+    for (size_t i = 0; i < bins_to_draw.size(); i += nPerPage) {
+      c_pdf->Clear();
+      c_pdf->Divide(nCols, nRows);
+
+      for (int j = 0; j < nPerPage && (i+j) < bins_to_draw.size(); ++j) {
+        int b = bins_to_draw[i+j];
+        TPad *pad = (TPad*)c_pdf->GetPad(j+1);
+        pad->cd();
+        drawBinHistInPad(pull_hists[b], b, bin_mean[b], bin_sigma[b],
+                         bin_core_amp[b], bin_fit_min[b], bin_fit_max[b],
+                         E0_LIST[b], E1_LIST[b],
+                         bin_chi2ndf[b], fit_type, sample_type, pad);
+      }
+      c_pdf->Update();
       c_pdf->Print(pdf_name);
     }
+
     c_pdf->Print(pdf_name + "]");
     delete c_pdf;
-    cout << "✅ Bin histograms saved to " << pdf_name << endl;
+    cout << "✅ Bin histograms saved to " << pdf_name << " (4x4 grid)" << endl;
   }
 
   // ----------------------------------------------------------------------
-  // Draw summary plots
+  // Summary plots (unchanged)
   // ----------------------------------------------------------------------
   TCanvas *c1 = new TCanvas("c1", "Photon energy spectrum", 900, 700);
   gPad->SetBottomMargin(0.12);
@@ -500,9 +552,7 @@ void pull_scan(const TString tree_type = "TDATA",
   g_bias->GetXaxis()->SetRangeUser(0, 350);
   g_bias->Draw("AP");
 
-  // ----------------------------------------------------------------------
   // Write output
-  // ----------------------------------------------------------------------
   fout->cd();
   EPhoTree->Write();
   h_phoE->Write();
@@ -514,5 +564,5 @@ void pull_scan(const TString tree_type = "TDATA",
 
   tree_file->Close();
 
-  cout << "\n✅ Output written to ../pull_scan/pull_scan.root" << endl;
+  cout << "\n✅ Output written to " << root_name << endl;
 }
