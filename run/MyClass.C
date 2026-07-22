@@ -54,7 +54,7 @@ void MyClass::Main()
   double ppIM_true = 0., ppIM = 0., ppIM_beta = 0.;
   double IMisrpho_miss = 0.;
   double IM3pi_pi12 = 0., IM3pi_pi13 = 0., IM3pi_pi23 = 0.;
-  double SIGMA_FIT_LIST[100];
+  double SIGMA_DENOM_LIST[100], SIGMA_FIT_LIST[100];
   double MASSLIST[100];
   double ANGLELIST[100];
   double PULLIST[100];
@@ -252,6 +252,7 @@ void MyClass::Main()
   //ANGLELIST[0]: pi0 gamma12
 
   ALLCHAIN_CUT.Branch("Br_sigma_fit", &SIGMA_FIT_LIST, "Br_sigma_fit[15]/D");
+  ALLCHAIN_CUT.Branch("Br_sigma_denom", &SIGMA_DENOM_LIST, "Br_sigma_denom[15]/D");
   ALLCHAIN_CUT.Branch("Br_RESOLIST", &RESOLIST, "Br_RESOLIST[100]/D");
   //RESOLIST[0]: pi0 mass 7C kin. fit
   //RESOLIST[1]: 3pi mass 7C kin. fit
@@ -819,6 +820,7 @@ void MyClass::Main()
 	  
     TVectorD inputvect_7C(Row), sigma2vect_7C(Row), etakinfit_min_7C(Row);
     TVectorD sigma2vectorkinfit_min_7C(Row), pullkinfit(Row);
+    TVectorD sigma2vectorRaw(Row);
 
     for (int nr1 = 0; nr1 < promptnb - 2; nr1 ++) {// select 3 photon loop
       for (int nr2 = nr1 + 1; nr2 < promptnb - 1; nr2 ++) {
@@ -883,6 +885,7 @@ void MyClass::Main()
 	  etakinfit_min_7C = etakinfitloop_temp; 
 	  pvalue=TMath::Prob(lagvalue_min_7C, 7);
 	  sigma2vectorkinfit_min_7C = sigma2vectorkinfitloop;
+	  sigma2vectorRaw = sigma2vector;
 	  pullkinfit = pullsvectorloop;
 	  
 	  
@@ -1260,8 +1263,12 @@ void MyClass::Main()
     // sigma_fit list
     // Reorder the covariance matrix using the same permutation
     TVectorD sigma_fit_ordered = Fillpermutvector(Row, sigma2vectorkinfit_min_7C, isrgam_indx, pi0gam1_indx, pi0gam2_indx);
+    TVectorD sigma_raw_ordered = Fillpermutvector(Row, sigma2vectorRaw, isrgam_indx, pi0gam1_indx, pi0gam2_indx);
  
     for (int i = 0; i < 15; i++) {
+      double diff = sigma_raw_ordered(i) - sigma_fit_ordered(i);
+      if (diff < 1e-12) diff = 1e-12;   // protect against negative or zero
+      SIGMA_DENOM_LIST[i] = TMath::Sqrt(diff);
       SIGMA_FIT_LIST[i] = TMath::Sqrt(sigma_fit_ordered(i));
     }
     ALLCHAIN_CUT.Fill();

@@ -1,6 +1,7 @@
 #include "../header_bdt/cut_para.h"
 #include "../header_bdt/energy_shift_tuning_sum.h" 
-#include "../header_bdt/tuning.h" 
+//#include "../header_bdt/tuning.h"
+#include "../header_bdt/bias_shift.h" 
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
 #include "../header_bdt/method.h"
@@ -133,10 +134,11 @@ int tree_cut_bdt_tuning() {
     double px1_nofit_bdt = 0., py1_nofit_bdt = 0., pz1_nofit_bdt = 0.;
     double px2_nofit_bdt = 0., py2_nofit_bdt = 0., pz2_nofit_bdt = 0.;
     double px3_nofit_bdt = 0., py3_nofit_bdt = 0., pz3_nofit_bdt = 0.;
-    
-    // NEW: BDT-selected energy sigmas from SIGMA_FIT_LIST
-    double sigma_e1_bdt = 0., sigma_e2_bdt = 0., sigma_e3_bdt = 0.;
+    double sigma_e1_nofit = 0., sigma_e2_nofit = 0., sigma_e3_nofit = 0.;   
 
+    // BDT-selected energy sigmas from SIGMA_FIT_LIST
+    double sigma_e1_bdt = 0., sigma_e2_bdt = 0., sigma_e3_bdt = 0.;
+    
     double e1_fit = 0., e2_fit = 0., e3_fit = 0.;
     double e1_bdt_true = 0., e2_bdt_true = 0., e3_bdt_true = 0.;
     double m_gg_bdt = 0., m3pi_bdt = 0., m_gg_true = 0.;
@@ -293,8 +295,13 @@ int tree_cut_bdt_tuning() {
 	tree_tmp->Branch("Br_px3_nofit_bdt", &px3_nofit_bdt, "Br_px3_nofit_bdt/D");
 	tree_tmp->Branch("Br_py3_nofit_bdt", &py3_nofit_bdt, "Br_py3_nofit_bdt/D");
 	tree_tmp->Branch("Br_pz3_nofit_bdt", &pz3_nofit_bdt, "Br_pz3_nofit_bdt/D");
- 
-        // NEW: BDT-selected sigma branches
+
+	// BDT-selected sigma raw branches
+        tree_tmp->Branch("Br_sigma_e1_nofit", &sigma_e1_nofit, "Br_sigma_e1_nofit/D");
+        tree_tmp->Branch("Br_sigma_e2_nofit", &sigma_e2_nofit, "Br_sigma_e2_nofit/D");
+        tree_tmp->Branch("Br_sigma_e3_nofit", &sigma_e3_nofit, "Br_sigma_e3_nofit/D");
+	
+        // BDT-selected sigma kinematic fitted branches
         tree_tmp->Branch("Br_sigma_e1_bdt", &sigma_e1_bdt, "Br_sigma_e1_bdt/D");
         tree_tmp->Branch("Br_sigma_e2_bdt", &sigma_e2_bdt, "Br_sigma_e2_bdt/D");
         tree_tmp->Branch("Br_sigma_e3_bdt", &sigma_e3_bdt, "Br_sigma_e3_bdt/D");
@@ -511,10 +518,13 @@ int tree_cut_bdt_tuning() {
 
         angle_pi0gam12 = ALLCHAIN_CUT->GetLeaf("Br_ANGLELIST")->GetValue(0);
 
-        // NEW: Read SIGMA_FIT_LIST (15 values)
+        // Read SIGMA_FIT_LIST and SIGMA_DENOM_LIST (15 values)
         double SIGMA_FIT_LIST[15];
+	double SIGMA_DENOM_LIST[15];
+	
         for (int idx = 0; idx < 15; ++idx) {
             SIGMA_FIT_LIST[idx] = ALLCHAIN_CUT->GetLeaf("Br_sigma_fit")->GetValue(idx);
+	    SIGMA_DENOM_LIST[idx] = ALLCHAIN_CUT->GetLeaf("Br_sigma_denom")->GetValue(idx);
         }
 
         // ============================================================
@@ -582,7 +592,14 @@ int tree_cut_bdt_tuning() {
         BDTResult result = find_best_pion_pair(event, bdt);
         if (!result.is_valid) continue;
 
-        // NEW: Save BDT-selected sigma values
+	// Save BDT-selected sigma nofit values
+        sigma_e1_nofit = SIGMA_DENOM_LIST[5 * result.pi0_indices[0]];
+        sigma_e2_nofit = SIGMA_DENOM_LIST[5 * result.pi0_indices[1]];
+        sigma_e3_nofit = SIGMA_DENOM_LIST[5 * result.prompt_index];
+
+	//cout << sigma_e1_nofit << endl;
+	
+        // Save BDT-selected sigma kinematic fitted values
         sigma_e1_bdt = SIGMA_FIT_LIST[5 * result.pi0_indices[0]];
         sigma_e2_bdt = SIGMA_FIT_LIST[5 * result.pi0_indices[1]];
         sigma_e3_bdt = SIGMA_FIT_LIST[5 * result.prompt_index];
@@ -622,60 +639,60 @@ int tree_cut_bdt_tuning() {
 	e1_pull_bdt = pull_array[result.pi0_indices[0]];
 	e2_pull_bdt = pull_array[result.pi0_indices[1]];
 	e3_pull_bdt = pull_array[result.prompt_index];
-	
+
+	//cout << bias_shift << endl;
+        double bias_MeV_E12 = bias_shift;
 	// ---- Apply corrections ----
         if (data_type == "sig") {
-            const double bias_MeV_E12 = bias_E12 * resol_E12;  
-            //const double bias_MeV_E3 = bias_E3 * resol_E3;
-            
-            cout << bias_MeV_E12 << ", " << (e1_fit - bias_MeV_E12) / sigma_scale_E12 << endl;
-            
-            e1_bdt = (e1_fit + bias_MeV_E12) * MASS_SCALE_PI0;   // NO sigma_scale!
-            e2_bdt = (e2_fit + bias_MeV_E12) * MASS_SCALE_PI0;
-            e3_bdt = e3_fit;                                     // ISR: keep untouched
-            
-            px1_bdt = px1_fit * MASS_SCALE_PI0;
-            py1_bdt = py1_fit * MASS_SCALE_PI0;
-            pz1_bdt = pz1_fit * MASS_SCALE_PI0;
-            
-            px2_bdt = px2_fit * MASS_SCALE_PI0;
-            py2_bdt = py2_fit * MASS_SCALE_PI0;
-            pz2_bdt = pz2_fit * MASS_SCALE_PI0;
-            
-            px3_bdt = px3_fit;
-            py3_bdt = py3_fit;
-            pz3_bdt = pz3_fit;
-            
-            event.photons[result.pi0_indices[0]][0] = e1_bdt;
-            event.photons[result.pi0_indices[0]][1] = px1_bdt;
-            event.photons[result.pi0_indices[0]][2] = py1_bdt;
-            event.photons[result.pi0_indices[0]][3] = pz1_bdt;
-            
-            event.photons[result.pi0_indices[1]][0] = e2_bdt;
-            event.photons[result.pi0_indices[1]][1] = px2_bdt;
-            event.photons[result.pi0_indices[1]][2] = py2_bdt;
-            event.photons[result.pi0_indices[1]][3] = pz2_bdt;
-            
-            event.photons[result.prompt_index][0] = e3_bdt;
-            event.photons[result.prompt_index][1] = px3_bdt;
-            event.photons[result.prompt_index][2] = py3_bdt;
-            event.photons[result.prompt_index][3] = pz3_bdt;
+	  //const double bias_MeV_E12 = bias_E12 * resol_E12;  
+	  //const double bias_MeV_E3 = bias_E3 * resol_E3;
+          
+	  e1_bdt = (e1_fit + bias_MeV_E12) * MASS_SCALE_PI0;   // NO sigma_scale!
+	  e2_bdt = (e2_fit + bias_MeV_E12) * MASS_SCALE_PI0;
+	  e3_bdt = e3_fit;                                     // ISR: keep untouched
+	  
+	  px1_bdt = px1_fit * MASS_SCALE_PI0;
+	  py1_bdt = py1_fit * MASS_SCALE_PI0;
+	  pz1_bdt = pz1_fit * MASS_SCALE_PI0;
+          
+	  px2_bdt = px2_fit * MASS_SCALE_PI0;
+	  py2_bdt = py2_fit * MASS_SCALE_PI0;
+	  pz2_bdt = pz2_fit * MASS_SCALE_PI0;
+          
+	  px3_bdt = px3_fit;
+	  py3_bdt = py3_fit;
+	  pz3_bdt = pz3_fit;
+          
+	  event.photons[result.pi0_indices[0]][0] = e1_bdt;
+	  event.photons[result.pi0_indices[0]][1] = px1_bdt;
+	  event.photons[result.pi0_indices[0]][2] = py1_bdt;
+	  event.photons[result.pi0_indices[0]][3] = pz1_bdt;
+          
+	  event.photons[result.pi0_indices[1]][0] = e2_bdt;
+	  event.photons[result.pi0_indices[1]][1] = px2_bdt;
+	  event.photons[result.pi0_indices[1]][2] = py2_bdt;
+	  event.photons[result.pi0_indices[1]][3] = pz2_bdt;
+          
+	  event.photons[result.prompt_index][0] = e3_bdt;
+	  event.photons[result.prompt_index][1] = px3_bdt;
+	  event.photons[result.prompt_index][2] = py3_bdt;
+	  event.photons[result.prompt_index][3] = pz3_bdt;
         } else {
-            e1_bdt = e1_fit;
-            e2_bdt = e2_fit;
-            e3_bdt = e3_fit;
-            
-            px1_bdt = px1_fit;
-            py1_bdt = py1_fit;
-            pz1_bdt = pz1_fit;
-            
-            px2_bdt = px2_fit;
-            py2_bdt = py2_fit;
-            pz2_bdt = pz2_fit;
-            
-            px3_bdt = px3_fit;
-            py3_bdt = py3_fit;
-            pz3_bdt = pz3_fit;
+	  e1_bdt = e1_fit;
+	  e2_bdt = e2_fit;
+	  e3_bdt = e3_fit;
+          
+	  px1_bdt = px1_fit;
+	  py1_bdt = py1_fit;
+	  pz1_bdt = pz1_fit;
+          
+	  px2_bdt = px2_fit;
+	  py2_bdt = py2_fit;
+	  pz2_bdt = pz2_fit;
+          
+	  px3_bdt = px3_fit;
+	  py3_bdt = py3_fit;
+	  pz3_bdt = pz3_fit;
         }
         
         m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);

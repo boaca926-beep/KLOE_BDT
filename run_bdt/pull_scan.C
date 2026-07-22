@@ -278,7 +278,7 @@ void pull_scan(const TString tree_type = "TDATA",
                const TString sample_type = "Data",
                const TString fit_type = "pull",
                bool draw_bins = true,
-               const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain/cut/tree_pre.root",
+               const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_norm/cut/tree_pre.root",
                const TString fit_model = "gausPoly")
 {
   TString pdf_name = Form("../pull_scan/bin_histograms_%s.pdf", tree_type.Data());
@@ -385,13 +385,20 @@ void pull_scan(const TString tree_type = "TDATA",
     INPUT_TREE->GetEntry(irow);
     double fit[2]  = {e1_fit, e2_fit};
     double nofit[2] = {e1_nofit, e2_nofit};
+    double sigma[2] = {sigma_e1, sigma_e2};
     double pull[2] = {e1_pull, e2_pull};
     
     for (int ip = 0; ip < 2; ++ip) {
       EPho_fit[ip]   = fit[ip];
       EPho_nofit[ip] = nofit[ip];
       if (fit_type == "pull") {
-        EPho_value[ip] = pull[ip];
+        //EPho_value[ip] = pull[ip];
+	EPho_value[ip] = (nofit[ip] - fit[ip]) / sigma[ip];
+	if (TMath::Abs(EPho_value[0] - e1_pull) > 1e-6) {
+	  cout << "Mismatch: computed = " << EPho_value[0]
+	       << ", stored = " << e1_pull << endl;
+	}
+	
       } else if (fit_type == "rawdiff") {
         EPho_value[ip] = nofit[ip] - fit[ip];
       } else if (fit_type == "ratio") {
@@ -466,7 +473,7 @@ void pull_scan(const TString tree_type = "TDATA",
 
     vector<int> bins_to_draw;
     for (int b = 0; b < nbins; ++b) {
-      if (bin_entries[b] >= 500) bins_to_draw.push_back(b);
+      if (bin_entries[b] >= 100) bins_to_draw.push_back(b);
     }
 
     const int nCols = 4;

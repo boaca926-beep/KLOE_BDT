@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sample_type=norm
+sample_type=chain
 data_type=bdt
 tuning_type=tuning   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
 input_file_nm="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}/cut/tree_pre.root"
@@ -35,6 +35,7 @@ for ((i=0; i<${#TREES[@]}; ++i)); do
     root -l -q -b "../run_bdt/pull_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"crystalBall\")"
 done
 
-root -l -q -b "../run_bdt/pull_compr.C()"
+root -l -q -b "../run_bdt/bias_compr.C()"
+root -l -q -b "../run_bdt/resol_compr.C()"
 
 echo "All scans completed."
