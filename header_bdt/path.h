@@ -1,5 +1,5 @@
-const TString rootFile = "../path_chain/ufo_path";
-const TString sampleFile = "../../bdt_tuning_TDATA_chain/input/ufo";
+const TString rootFile = "../path_chain/exp_path";
+const TString sampleFile = "../../bdt_tuning_TDATA_chain/input/exp";
 const TString outputCut = "../../bdt_tuning_TDATA_chain/cut/";
 const TString sig_path = "../../bdt_tuning_TDATA_chain/input/";
 const TString outputGen = "../../bdt_tuning_TDATA_chain/gen/";
@@ -7,6 +7,7 @@ const TString outputHist = "../../bdt_tuning_TDATA_chain/hist/";
 const TString outputSfw2D = "../../bdt_tuning_TDATA_chain/sfw2d/";
 const TString outputSfw1D = "../../bdt_tuning_TDATA_chain/sfw1d/";
 const TString outputOmega = "../../bdt_tuning_TDATA_chain/omega_fit/";
-const TString data_type = "";
+const TString data_type = "exp";
 const TString exp_type = "TDATA";
+const TString tuning_type = "tuning";
 double gsf = 1;
