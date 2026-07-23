@@ -49,7 +49,12 @@ for ((i=0; i<${#TREES_DATA[@]}; ++i)); do
 
 done
 
-root -l -q -b "../run_bdt/bias_compr.C()"
-root -l -q -b "../run_bdt/resol_compr.C()"
+# Before pull tuning
+root -l -q -b "../run_bdt/bias_compr.C(false)" 
+root -l -q -b "../run_bdt/resol_compr.C(false)"
+
+# After pull tuning
+root -l -q -b "../run_bdt/bias_compr.C(true)" 
+root -l -q -b "../run_bdt/resol_compr.C(true)"
 
 echo "All scans completed."

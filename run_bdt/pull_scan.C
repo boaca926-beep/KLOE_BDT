@@ -285,7 +285,7 @@ void pull_scan(const TString tree_type = "TDATA",
                const TString fit_model = "gausPoly",
 	       const TString pull_type = "new")
 {
-  TString pdf_name = Form("../pull_scan/bin_histograms_%s.pdf", tree_type.Data());
+  TString pdf_name = Form("../pull_scan/bin_histograms_%s_%s.pdf", tree_type.Data(), pull_type.Data());
 
   TString root_name = "";
   if (pull_type == "new") {

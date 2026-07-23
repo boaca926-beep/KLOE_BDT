@@ -30,7 +30,7 @@
 
 using namespace std;
 
-void resol_compr() {
+void resol_compr(const bool &corr = true) {
 
   cout << "\n========================================" << endl;
   cout << "  COMPARE RESOLUTION RATIO: DATA / SIGNAL" << endl;
@@ -46,7 +46,26 @@ void resol_compr() {
   // ----------------------------------------------------------------------
   // Input files
   // ----------------------------------------------------------------------
-  TFile *f_sig = TFile::Open("../pull_scan/pull_scan_TISR3PI_SIG_PEAK.root");
+  TString file_nm_sig = "";
+  TString out_folder = "../pull_scan/";
+  TString scan_nm = "";
+  TString tuning_status = "";
+  
+  if (corr) {
+    cout << "PULL TUNING IS APPLIED! \n" << endl;
+    file_nm_sig = "pull_scan_TISR3PI_SIG_PEAK_new.root";
+    scan_nm = "ratio_scan_compr_corr.pdf";
+    tuning_status = "After Scale Correction";
+  }
+  else {
+    cout << "NO PULL TUNING IS APPLIED! \n" << endl;
+    file_nm_sig = "pull_scan_TISR3PI_SIG_PEAK.root";
+    scan_nm = "ratio_scan_compr.pdf";
+    tuning_status = "Before Scale Correction";
+  }
+  
+  TFile *f_sig = TFile::Open(out_folder + file_nm_sig);
+
   if (!f_sig || f_sig->IsZombie()) {
     cerr << "ERROR: Cannot open signal file." << endl;
     return;
@@ -174,9 +193,9 @@ void resol_compr() {
   const double xMin = 0.0;
   const double xMax = 350.0;
 
-  TCanvas *c1 = new TCanvas("c1", "Resolution Ratio Comparison", 1400, 900);
-  c1->SetBottomMargin(0.12);
-  c1->SetLeftMargin(0.12);
+  TCanvas *c1 = new TCanvas("c1", "Resolution Ratio Comparison", 1000, 900);
+  c1->SetBottomMargin(0.15);
+  c1->SetLeftMargin(0.15);
 
   // Set axis styles for the signal graph (use it to define the pad)
   g_res_sig->GetXaxis()->SetTitleSize(0.06);
@@ -185,18 +204,18 @@ void resol_compr() {
   g_res_sig->GetXaxis()->SetNdivisions(505);
 
   g_res_sig->GetYaxis()->SetTitleSize(0.06);
-  g_res_sig->GetYaxis()->SetTitleOffset(0.8);
+  g_res_sig->GetYaxis()->SetTitleOffset(1.);
   g_res_sig->GetYaxis()->SetLabelSize(0.05);
   g_res_sig->GetYaxis()->SetNdivisions(505);
   // Adjust Y range to show both resolution and ratio (ratio might be around 1)
-  g_res_sig->GetHistogram()->GetYaxis()->SetRangeUser(0.8, 1.4); // adjust if needed
+  g_res_sig->GetHistogram()->GetYaxis()->SetRangeUser(0.5, 2); // adjust if needed
 
   g_res_sig->SetMarkerStyle(20);
   g_res_sig->SetMarkerSize(1.2);
   g_res_sig->SetMarkerColor(kBlue);
   g_res_sig->SetLineColor(kBlue);
   g_res_sig->GetXaxis()->SetTitle("E_{#gamma} (MeV)");
-  g_res_sig->GetYaxis()->SetTitle("Scale (<#sigma>)");
+  g_res_sig->GetYaxis()->SetTitle("Scale (<#sigma_{pull}>)");
   g_res_sig->GetYaxis()->CenterTitle();
   g_res_sig->Draw("AP");
 
@@ -227,40 +246,46 @@ void resol_compr() {
   line1->Draw();
 
   // Display fit results
-  TPaveText *pt = new TPaveText(0.15, 0.8, 0.7, 0.85, "NDC");
-  pt->SetFillColor(0);
-  pt->SetBorderSize(0);
-  pt->AddText(Form("<Ratio> = %.3f #pm %.3f    #chi^{2}/NDF = %.2f",
-                   linFit->GetParameter(0), linFit->GetParError(0),
-                   linFit->GetChisquare()/linFit->GetNDF()));
-  pt->Draw();
-
+  // ---- Single info box ----
   double ratio = linFit->GetParameter(0);
   double ratio_err = linFit->GetParError(0);
   double Z_value = (1 - ratio) / ratio_err;
   cout << "Z_value = " << Z_value << endl;
-
-  TPaveText *pt1 = new TPaveText(0.15, 0.7, 0.7, 0.75, "NDC");
-  pt1->SetFillColor(0);
-  pt1->SetBorderSize(0);
-  pt1->AddText(Form("Significance = %.2f#sigma", Z_value));
-  pt1->Draw();
-
+  
+  TPaveText *pt = new TPaveText(0.15, 0.65, 0.58, 0.9, "NDC");
+  pt->SetFillColor(0);
+  pt->SetBorderSize(1);
+  pt->SetTextAlign(12);
+  pt->SetTextSize(0.03);
+  pt->SetTextFont(42);
+  TText *txt = pt->AddText(tuning_status);
+  txt->SetTextColor(kBlue); // or any color
+  txt->SetTextFont(42); // bold
+  pt->AddText(Form("Ratio (Data/Signal) = %.3f #pm %.3f", ratio, ratio_err));
+  //pt->AddText(Form("Z = %.2f", Z_value));
+  pt->AddText(Form("Fit range: E_{#gamma} = [%.0f, %.0f] MeV", 15.0, 350.0));
+  pt->AddText(Form("#chi^{2}/NDF = %.2f", linFit->GetChisquare()/linFit->GetNDF()));
+  pt->Draw();
+  
+  // Fit line
   linFit->SetLineColor(kRed);
   linFit->SetLineWidth(2);
   linFit->Draw("same");
-
-  // Legend
-  TLegend *leg = new TLegend(0.7, 0.65, 0.9, 0.85);
+  
+  // Legend (moved slightly down to avoid info box)
+  TLegend *leg = new TLegend(0.6, 0.65, 0.9, 0.9);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
+  leg->SetTextSize(0.03);
   leg->AddEntry(g_res_sig, "Signal", "lp");
   leg->AddEntry(g_res_data, "Data", "lp");
   leg->AddEntry(g_res_ratio_common, "Ratio (Data/Signal)", "lp");
   leg->AddEntry(linFit, "Fit", "l");
   leg->Draw();
 
-  // --- Write the bias shift parameters to the bias tuning header ---
+  c1->Update();
+  
+  // --- Write the ratio parameters to the scale header ---
   std::ofstream myfile;
   TString myfile_nm = "../header_bdt/scale_ratio.h";
   myfile.open(myfile_nm.Data());
@@ -286,10 +311,11 @@ void resol_compr() {
   g_res_ratio_padded->Write("g_res_ratio_padded");
   fout->Close();
 
-  c1->Print("../pull_scan/resolution_ratio.pdf");
+  c1->Print(out_folder + scan_nm);
 
   f_sig->Close();
   f_data->Close();
 
-  cout << "\n✅ Output written to ../pull_scan/resolution_ratio.pdf and .root" << endl;
+  cout << "\n✅ Output written to " << out_folder + scan_nm << " and .root" << endl;
+
 }

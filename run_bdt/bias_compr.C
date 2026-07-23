@@ -30,7 +30,8 @@
 
 using namespace std;
 
-void bias_compr() {
+//void bias_compr(const bool &corr = false) {
+void bias_compr(const bool &corr = true) {
 
   cout << "\n========================================" << endl;
   cout << "  COMPARE BIAS: DATA vs SIGNAL" << endl;
@@ -46,7 +47,25 @@ void bias_compr() {
   // ----------------------------------------------------------------------
   // Input files
   // ----------------------------------------------------------------------
-  TFile *f_sig = TFile::Open("../pull_scan/pull_scan_TISR3PI_SIG_PEAK.root");
+  TString file_nm_sig = "";
+  TString out_folder = "../pull_scan/";
+  TString scan_nm = "";
+  TString tuning_status = "";
+  if (corr) {
+    cout << "PULL TUNING IS APPLIED! \n" << endl;
+    file_nm_sig = "pull_scan_TISR3PI_SIG_PEAK_new.root";
+    scan_nm = "bias_shift_scan_compr_corr.pdf";
+    tuning_status = "After Bias Correction";
+  }
+  else {
+    cout << "NO PULL TUNING IS APPLIED! \n" << endl;
+    file_nm_sig = "pull_scan_TISR3PI_SIG_PEAK.root";
+    scan_nm = "bias_shift_scan_compr.pdf";
+    tuning_status = "Before Bias Correction";
+  }
+  
+  TFile *f_sig = TFile::Open(out_folder + file_nm_sig);
+  
   if (!f_sig || f_sig->IsZombie()) {
     cerr << "ERROR: Cannot open signal file." << endl;
     return;
@@ -100,7 +119,7 @@ void bias_compr() {
         E_pad.push_back(x_sig);
         diff_pad.push_back(diff_val);
         err_pad.push_back(err);
-	cout << i + 1 << ": y_data = " << y_data << ", y_sig = " << y_sig << ": diff = " << diff_val << endl;
+	//cout << i + 1 << ": y_data = " << y_data << ", y_sig = " << y_sig << ": diff = " << diff_val << endl;
         found = true;
         break;
       }
@@ -120,15 +139,24 @@ void bias_compr() {
     cerr << "WARNING: No common energy points found between signal and data!" << endl;
   }
 
-  // Remove energy points outside [25, 270] MeV, better for fit
+  // Remove energy points outside [15, 350] MeV, better for fit
+  const double Emin = 15., Emax = 350.;
+  
   vector<double> E_common_clean, diff_common_clean, err_common_clean;
   for (size_t i = 0; i < E_common.size(); ++i) {
-    if (E_common[i] >= 15.0 && E_common[i] <= 350.0) {
+    if (E_common[i] >= Emin && E_common[i] <= Emax) {
       E_common_clean.push_back(E_common[i]);
       diff_common_clean.push_back(diff_common[i]);
       err_common_clean.push_back(err_common[i]);
     }
   }
+
+  double binwidth = E_common_clean[1] - E_common_clean[0];
+  int nbins = E_common.size();
+  
+  cout << "Fit range [" << Emin << ", " << Emax << "] MeV, number of bins: " << nbins << " bins width: " << binwidth << " MeV" << endl;
+
+  
 
   // Replace the original overlapping vectors with cleaned ones (for later use)
   // Note: g_bias_diff_common was already created from uncleaned, so keep it separate.
@@ -184,13 +212,13 @@ void bias_compr() {
   h_phoE_data->SetMarkerStyle(20);
   h_phoE_data->SetMarkerSize(.8);
   
-  TCanvas *c2 = new TCanvas("c2", "Photon energy spectrum", 900, 700);
+  TCanvas *c2 = new TCanvas("c2", "Energy #pi^{0} Decay Photons", 900, 700);
   gPad->SetBottomMargin(0.15);
   gPad->SetLeftMargin(0.15);
 
   h_phoE_sig->GetXaxis()->SetNdivisions(505);
   h_phoE_sig->GetYaxis()->SetNdivisions(505);
-  h_phoE_sig->GetXaxis()->SetTitle("Energy #pi^{0} Decay Photons,  E_{#gamma} [MeV]");
+  h_phoE_sig->GetXaxis()->SetTitle("E_{#gamma} [MeV]");
   h_phoE_sig->GetYaxis()->SetTitle("Entries");
   h_phoE_sig->GetXaxis()->CenterTitle();
   h_phoE_sig->GetYaxis()->CenterTitle();
@@ -206,7 +234,7 @@ void bias_compr() {
   // Auto-scale after drawing both
   double max_val = TMath::Max(h_phoE_sig->GetMaximum(), h_phoE_data->GetMaximum());
   h_phoE_sig->GetYaxis()->SetRangeUser(0, 1.6 * max_val);
-  
+
   TLegend *leg1 = new TLegend(0.6, 0.7, 0.9, 0.9);
   leg1->SetFillStyle(0);
   leg1->SetBorderSize(0);
@@ -217,11 +245,10 @@ void bias_compr() {
   // ----------------------------------------------------------------------
   // Draw Bias Comparsion
   // ----------------------------------------------------------------------
-  TCanvas *c1 = new TCanvas("c1", "Bias Comparison", 1400, 900);
-  c1->cd();
-  c1->SetBottomMargin(0.12);
-  c1->SetLeftMargin(0.12);
-
+  TCanvas *c1 = new TCanvas("c1", "Bias Comparison", 1000, 900);
+  //c1->cd();
+  c1->SetBottomMargin(0.15);
+  c1->SetLeftMargin(0.15);
   
   // ---- Top pad ----
   //TPad *pad1 = new TPad("pad1", "", 0.0, 0.4, 1.0, 1.0);
@@ -238,10 +265,10 @@ void bias_compr() {
   g_bias_sig->GetXaxis()->SetNdivisions(505);
   
   g_bias_sig->GetYaxis()->SetTitleSize(0.06);
-  g_bias_sig->GetYaxis()->SetTitleOffset(.8);
+  g_bias_sig->GetYaxis()->SetTitleOffset(1.);
   g_bias_sig->GetYaxis()->SetLabelSize(0.05);
   g_bias_sig->GetYaxis()->SetNdivisions(505);
-  g_bias_sig->GetHistogram()->GetYaxis()->SetRangeUser(-0.4, 0.5);
+  g_bias_sig->GetHistogram()->GetYaxis()->SetRangeUser(-0.5, 1.0);
 
   g_bias_sig->SetMarkerStyle(20);
   g_bias_sig->SetMarkerSize(1.2);
@@ -286,31 +313,35 @@ void bias_compr() {
   line0_top->Draw();
 
   // Display fit results
-  TPaveText *pt = new TPaveText(0.15, 0.8, 0.7, 0.85, "NDC");
-  pt->SetFillColor(0);
-  pt->SetBorderSize(0);
-  pt->AddText(Form("<Bias shift> = %.3f #pm %.3f    #chi^{2}/NDF = %.2f",
-                   linFit->GetParameter(0), linFit->GetParError(0),
-                   linFit->GetChisquare()/linFit->GetNDF()));
-  pt->Draw();
-
   double bias_shift = linFit->GetParameter(0);
   double bias_shift_err = linFit->GetParError(0);
-  
+
   double Z_value = (1 - bias_shift) / bias_shift_err;
   cout << "Z_value = " << Z_value << endl;
 
-  TPaveText *pt1 = new TPaveText(0.15, 0.7, 0.7, 0.75, "NDC");
-  pt1->SetFillColor(0);
-  pt1->SetBorderSize(0);
-  pt1->AddText(Form("Significance = %.2f#sigma", Z_value));
-  pt1->Draw();
-
+  // ---- Single info box ----
+  TPaveText *pt = new TPaveText(0.15, 0.65, 0.62, 0.9, "NDC");
+  pt->SetFillColor(0);
+  pt->SetBorderSize(1);
+  pt->SetTextAlign(12);
+  pt->SetTextSize(0.04);
+  pt->SetTextFont(42);
+  TText *txt = pt->AddText(tuning_status);
+  txt->SetTextColor(kBlue); // or any color
+  txt->SetTextFont(42); // bold
+  pt->AddText(Form("Bias shift = %.3f #pm %.3f", bias_shift, bias_shift_err));
+  //pt->AddText(Form("Z = %.2f", Z_value));
+  pt->AddText(Form("Fit range: E_{#gamma} = [%.0f, %.0f] MeV", Emin, Emax));
+  pt->AddText(Form("#chi^{2}/NDF = %.2f", linFit->GetChisquare()/linFit->GetNDF()));
+  pt->Draw();
+  
+ 
+  // Display fit line
   linFit->SetLineColor(kRed);
   linFit->SetLineWidth(2);
   linFit->Draw("same");
 
-  TLegend *leg_top = new TLegend(0.7, 0.65, 0.9, 0.85);
+  TLegend *leg_top = new TLegend(0.7, 0.65, 0.9, 0.9);
   leg_top->SetFillStyle(0);
   leg_top->SetBorderSize(0);
   leg_top->AddEntry(g_bias_sig, "Signal", "lp");
@@ -322,6 +353,7 @@ void bias_compr() {
   
   leg_top->Draw();
 
+  c1->Update();
   
   /*
   // ---- Bottom pad ----
@@ -453,11 +485,11 @@ void bias_compr() {
   g_bias_diff_padded->Write("g_bias_diff_padded");
   fout->Close();
 
-  c1->Print("../pull_scan/bias_comparison.pdf");
+  c1->Print(out_folder + scan_nm);
   c2->Print("../pull_scan/phoE.pdf");
 
   f_sig->Close();
   f_data->Close();
 
-  cout << "\n✅ Output written to ../pull_scan/bias_comparison.pdf and .root" << endl;
+  cout << "\n✅ Output written to " << out_folder + scan_nm << " and .root" << endl;
 }
