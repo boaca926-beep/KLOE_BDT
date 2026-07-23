@@ -224,16 +224,19 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
 
   h->SetLineWidth(1);
   h->SetLineColor(kBlue);
-  
+
+  h->GetXaxis()->SetNdivisions(505);
   h->GetXaxis()->SetTitle(Form("E_{#gamma} %s", fit_type.Data()));
-  h->GetYaxis()->SetTitle("Entries");
+  //h->GetYaxis()->SetTitle("Entries");
   h->GetXaxis()->SetTitleSize(0.06);
   h->GetYaxis()->SetTitleSize(0.06);
-  h->GetXaxis()->SetLabelSize(0.05);
-  h->GetYaxis()->SetLabelSize(0.05);
+  h->GetXaxis()->SetLabelSize(0.07);
+  h->GetYaxis()->SetLabelSize(0.07);
   h->GetXaxis()->CenterTitle();
   h->GetYaxis()->CenterTitle();
   h->GetYaxis()->SetRangeUser(0.01, 1.4 * h->GetMaximum());
+  h->GetYaxis()->SetNdivisions(505);
+  
   //cout << sample_type << endl;
   h->Draw("E0");
   
@@ -243,26 +246,26 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
   core->SetLineWidth(1);
   //core->Draw("same");
 
-  TPaveText *pt = new TPaveText(0.7, 0.7, 0.95, 0.95, "NDC");
+  TPaveText *pt = new TPaveText(0.65, 0.6, 0.95, 0.9, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
-  pt->SetTextSize(0.04);
-  pt->AddText(Form("Mean = %.3f", mean));
-  pt->AddText(Form("Sigma = %.3f", sigma));
+  pt->SetTextSize(0.05);
+  pt->AddText(Form("Bias = %.3f", mean));
+  pt->AddText(Form("#sigma = %.3f", sigma));
   pt->AddText(Form("#chi^{2}/NDF = %.2f", chi2ndf));
   pt->AddText(Form("Entries = %d", (int)h->GetEntries()));
   pt->Draw();
 
-  TPaveText *ptBin = new TPaveText(0.2, 0.85, 0.60, 0.9, "NDC");
+  TPaveText *ptBin = new TPaveText(0.15, 0.9, 0.60, 0.95, "NDC");
   ptBin->SetFillColor(0);
   ptBin->SetBorderSize(0);
   ptBin->SetTextAlign(12);
-  ptBin->SetTextSize(0.05);
+  ptBin->SetTextSize(0.07);
   ptBin->AddText(Form("Bin %d: [%.0f-%.0f] MeV", bin, mass_min, mass_max));
   ptBin->Draw();
 
-  TLegend *leg = new TLegend(0.7, 0.60, 0.95, 0.7);
+  TLegend *leg = new TLegend(0.15, 0.60, 0.5, 0.8);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
@@ -345,7 +348,7 @@ void pull_scan(const TString tree_type = "TDATA",
   const double Emax = 350.0;
   const double binwidth = 2 * 5.6;   // 28 MeV
   const int nbins = (int)((Emax - Emin) / binwidth);
-  cout << "Using " << nbins << " bins of width " << binwidth << " MeV" << endl;
+  cout << "Pull Histos in photon enery range [" << Emin << ", " << Emax << "] MeV, number of bins: " << nbins << " bins width: " << binwidth << " MeV" << endl;
 
   vector<TH1D*> pull_hists(nbins);
   vector<double> bin_center(nbins);
@@ -509,13 +512,13 @@ void pull_scan(const TString tree_type = "TDATA",
       if (bin_entries[b] >= 100) bins_to_draw.push_back(b);
     }
 
-    const int nCols = 4;
-    const int nRows = 4;
+    const int nCols = 6;
+    const int nRows = 5;
     const int nPerPage = nCols * nRows;
 
     for (size_t i = 0; i < bins_to_draw.size(); i += nPerPage) {
       c_pdf->Clear();
-      c_pdf->Divide(nCols, nRows);
+      c_pdf->Divide(nCols, nRows, 1e-5, 1e-5);
 
       for (int j = 0; j < nPerPage && (i+j) < bins_to_draw.size(); ++j) {
         int b = bins_to_draw[i+j];
@@ -538,24 +541,6 @@ void pull_scan(const TString tree_type = "TDATA",
   // ----------------------------------------------------------------------
   // Summary plots (unchanged)
   // ----------------------------------------------------------------------
-  TCanvas *c1 = new TCanvas("c1", "Photon energy spectrum", 900, 700);
-  gPad->SetBottomMargin(0.12);
-  gPad->SetLeftMargin(0.15);
-  h_phoE->SetLineWidth(2);
-  h_phoE->SetLineColor(4);
-  h_phoE->GetXaxis()->SetTitle("E_{fit} (MeV)");
-  h_phoE->GetYaxis()->SetTitle("Entries");
-  h_phoE->GetXaxis()->CenterTitle();
-  h_phoE->GetYaxis()->CenterTitle();
-  h_phoE->GetYaxis()->SetRangeUser(0.01, 1.6 * h_phoE->GetMaximum());
-  h_phoE->Draw("hist");
-
-  TLegend *leg1 = new TLegend(0.6, 0.7, 0.9, 0.9);
-  leg1->SetFillStyle(0);
-  leg1->SetBorderSize(0);
-  leg1->AddEntry(h_phoE, sample_type, "l");
-  leg1->Draw();
-
   TCanvas *c2 = new TCanvas("c2", "Distribution", 900, 700);
   gPad->SetBottomMargin(0.12);
   gPad->SetLeftMargin(0.15);

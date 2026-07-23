@@ -1,3 +1,4 @@
+
 // ============================================================================
 // pull_compr.C
 //
@@ -35,7 +36,7 @@ void bias_compr() {
   cout << "  COMPARE BIAS: DATA vs SIGNAL" << endl;
   cout << "========================================\n" << endl;
 
-  gROOT->GetListOfCanvases()->Delete();
+  //gROOT->GetListOfCanvases()->Delete();
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
@@ -173,21 +174,61 @@ void bias_compr() {
   const double xMin = 0.0;
   const double xMax = 350.0;
 
+  TH1D *h_phoE_sig = (TH1D*)f_sig->Get("h_phoE");
+  h_phoE_sig->SetLineWidth(2);
+  h_phoE_sig->SetLineColor(kBlue);
+  
+  TH1D *h_phoE_data = (TH1D*)f_data->Get("h_phoE");
+  h_phoE_data->SetLineWidth(2);
+  h_phoE_data->SetLineColor(kBlack);
+  h_phoE_data->SetMarkerStyle(20);
+  h_phoE_data->SetMarkerSize(.8);
+  
+  TCanvas *c2 = new TCanvas("c2", "Photon energy spectrum", 900, 700);
+  gPad->SetBottomMargin(0.15);
+  gPad->SetLeftMargin(0.15);
+
+  h_phoE_sig->GetXaxis()->SetNdivisions(505);
+  h_phoE_sig->GetYaxis()->SetNdivisions(505);
+  h_phoE_sig->GetXaxis()->SetTitle("Energy #pi^{0} Decay Photons,  E_{#gamma} [MeV]");
+  h_phoE_sig->GetYaxis()->SetTitle("Entries");
+  h_phoE_sig->GetXaxis()->CenterTitle();
+  h_phoE_sig->GetYaxis()->CenterTitle();
+  h_phoE_sig->GetXaxis()->SetTitleSize(0.06);
+  h_phoE_sig->GetXaxis()->SetTitleOffset(1.0);
+  h_phoE_sig->GetXaxis()->SetLabelSize(0.05);
+  h_phoE_sig->GetYaxis()->SetTitleSize(0.06);
+  h_phoE_sig->GetYaxis()->SetTitleOffset(1.2);
+  h_phoE_sig->GetYaxis()->SetLabelSize(0.05);
+  h_phoE_sig->Draw("hist");
+  h_phoE_data->Draw("E0 same");
+
+  // Auto-scale after drawing both
+  double max_val = TMath::Max(h_phoE_sig->GetMaximum(), h_phoE_data->GetMaximum());
+  h_phoE_sig->GetYaxis()->SetRangeUser(0, 1.6 * max_val);
+  
+  TLegend *leg1 = new TLegend(0.6, 0.7, 0.9, 0.9);
+  leg1->SetFillStyle(0);
+  leg1->SetBorderSize(0);
+  leg1->AddEntry(h_phoE_sig, "Signal", "l");
+  leg1->AddEntry(h_phoE_data, "Data", "lep");
+  leg1->Draw();
+  
   // ----------------------------------------------------------------------
-  // Draw plots: one canvas with two pads
+  // Draw Bias Comparsion
   // ----------------------------------------------------------------------
   TCanvas *c1 = new TCanvas("c1", "Bias Comparison", 1400, 900);
+  c1->cd();
   c1->SetBottomMargin(0.12);
   c1->SetLeftMargin(0.12);
 
-  /*
+  
   // ---- Top pad ----
-  TPad *pad1 = new TPad("pad1", "", 0.0, 0.4, 1.0, 1.0);
-  pad1->SetBottomMargin(0.01);
-  pad1->SetLeftMargin(0.12);   // extra space to accommodate varying label widths
-  pad1->Draw();
-  pad1->cd();
-  */
+  //TPad *pad1 = new TPad("pad1", "", 0.0, 0.4, 1.0, 1.0);
+  //pad1->SetBottomMargin(0.01);
+  //pad1->SetLeftMargin(0.12);   // extra space to accommodate varying label widths
+  //pad1->Draw();
+  //pad1->cd();
   
   // Set uniform axis styles
 
@@ -413,7 +454,7 @@ void bias_compr() {
   fout->Close();
 
   c1->Print("../pull_scan/bias_comparison.pdf");
-  //c2->Print("../pull_scan/bias_average.pdf");
+  c2->Print("../pull_scan/phoE.pdf");
 
   f_sig->Close();
   f_data->Close();
