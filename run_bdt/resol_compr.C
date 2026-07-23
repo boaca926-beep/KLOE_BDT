@@ -196,7 +196,7 @@ void resol_compr() {
   g_res_sig->SetMarkerColor(kBlue);
   g_res_sig->SetLineColor(kBlue);
   g_res_sig->GetXaxis()->SetTitle("E_{#gamma} (MeV)");
-  g_res_sig->GetYaxis()->SetTitle("#sigma (pull)");
+  g_res_sig->GetYaxis()->SetTitle("Scale (<#sigma>)");
   g_res_sig->GetYaxis()->CenterTitle();
   g_res_sig->Draw("AP");
 
@@ -235,9 +235,9 @@ void resol_compr() {
                    linFit->GetChisquare()/linFit->GetNDF()));
   pt->Draw();
 
-  double ratio_diff_avg = linFit->GetParameter(0);
-  double ratio_diff_err = linFit->GetParError(0);
-  double Z_value = (1 - ratio_diff_avg) / ratio_diff_err;
+  double ratio = linFit->GetParameter(0);
+  double ratio_err = linFit->GetParError(0);
+  double Z_value = (1 - ratio) / ratio_err;
   cout << "Z_value = " << Z_value << endl;
 
   TPaveText *pt1 = new TPaveText(0.15, 0.7, 0.7, 0.75, "NDC");
@@ -260,8 +260,19 @@ void resol_compr() {
   leg->AddEntry(linFit, "Fit", "l");
   leg->Draw();
 
+  // --- Write the bias shift parameters to the bias tuning header ---
+  std::ofstream myfile;
+  TString myfile_nm = "../header_bdt/scale_ratio.h";
+  myfile.open(myfile_nm.Data());
+  myfile << "// Pull ratio of scale extracted from BDT-selected signal MC and data\n";
+  myfile << "// Fitted with Gaussian + chebpoly (pull_scan.C)\n";
+  myfile << "const double scale_ratio = " << ratio << ";\n";
+  myfile << "const double scale_ratio_err = " << ratio_err << ";\n";
+  myfile.close();
+
+  
   cout << "SUMMARY" << "\n"
-       << "Average resolution ratio (Data/Signal) = " << ratio_diff_avg << " +/- " << ratio_diff_err << endl;
+       << "Average resolution ratio (Data/Signal) = " << ratio << " +/- " << ratio_err << endl;
 
   // ----------------------------------------------------------------------
   // Save outputs

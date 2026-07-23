@@ -279,10 +279,19 @@ void pull_scan(const TString tree_type = "TDATA",
                const TString fit_type = "pull",
                bool draw_bins = true,
                const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_norm/cut/tree_pre.root",
-               const TString fit_model = "gausPoly")
+               const TString fit_model = "gausPoly",
+	       const TString pull_type = "new")
 {
   TString pdf_name = Form("../pull_scan/bin_histograms_%s.pdf", tree_type.Data());
-  TString root_name = Form("../pull_scan/pull_scan_%s.root", tree_type.Data());
+
+  TString root_name = "";
+  if (pull_type == "new") {
+    root_name = Form("../pull_scan/pull_scan_%s_new.root", tree_type.Data());
+  }
+  else {
+    root_name = Form("../pull_scan/pull_scan_%s.root", tree_type.Data());
+  }
+  
   gSystem->Exec("mkdir -p ../pull_scan");
   
   cout << "\n========================================" << endl;
@@ -365,18 +374,26 @@ void pull_scan(const TString tree_type = "TDATA",
   // Branch addresses
   double e1_fit=0, e2_fit=0;
   double sigma_e1=0, sigma_e2=0;
+  double sigma_denom_e1=0., sigma_denom_e2=0.;
   double e1_nofit=0, e2_nofit=0;
   double e1_pull=0, e2_pull=0;
+  double e1_pull_new=0, e2_pull_new=0;
   double m_gg_bdt = 0.;
   
   INPUT_TREE->SetBranchAddress("Br_e1_fit", &e1_fit);
   INPUT_TREE->SetBranchAddress("Br_e2_fit", &e2_fit);
+
+  INPUT_TREE->SetBranchAddress("Br_sigma_denom_e1", &sigma_denom_e1);
+  INPUT_TREE->SetBranchAddress("Br_sigma_denom_e2", &sigma_denom_e2);
+  
   INPUT_TREE->SetBranchAddress("Br_sigma_e1_bdt", &sigma_e1);
   INPUT_TREE->SetBranchAddress("Br_sigma_e2_bdt", &sigma_e2);
   INPUT_TREE->SetBranchAddress("Br_e1_nofit_bdt", &e1_nofit);
   INPUT_TREE->SetBranchAddress("Br_e2_nofit_bdt", &e2_nofit);
   INPUT_TREE->SetBranchAddress("Br_e1_pull_bdt", &e1_pull);
   INPUT_TREE->SetBranchAddress("Br_e2_pull_bdt", &e2_pull);
+  INPUT_TREE->SetBranchAddress("Br_e1_pull_bdt_new", &e1_pull_new);
+  INPUT_TREE->SetBranchAddress("Br_e2_pull_bdt_new", &e2_pull_new);
   INPUT_TREE->SetBranchAddress("Br_m_gg_bdt", &m_gg_bdt);
 
   // Loop over events
@@ -385,19 +402,35 @@ void pull_scan(const TString tree_type = "TDATA",
     INPUT_TREE->GetEntry(irow);
     double fit[2]  = {e1_fit, e2_fit};
     double nofit[2] = {e1_nofit, e2_nofit};
-    double sigma[2] = {sigma_e1, sigma_e2};
+    double sigma[2] = {sigma_denom_e1, sigma_denom_e2};
     double pull[2] = {e1_pull, e2_pull};
+    double pull_new[2] = {e1_pull_new, e2_pull_new};
     
     for (int ip = 0; ip < 2; ++ip) {
       EPho_fit[ip]   = fit[ip];
       EPho_nofit[ip] = nofit[ip];
       if (fit_type == "pull") {
-        //EPho_value[ip] = pull[ip];
-	EPho_value[ip] = (nofit[ip] - fit[ip]) / sigma[ip];
-	if (TMath::Abs(EPho_value[0] - e1_pull) > 1e-6) {
-	  cout << "Mismatch: computed = " << EPho_value[0]
-	       << ", stored = " << e1_pull << endl;
+
+	if (pull_type == "new") {
+	  EPho_value[ip] = pull_new[ip];   // corrected pull (only valid for signal)
+	} else {
+	  EPho_value[ip] = pull[ip];       // original pull (valid for both)
 	}
+
+	//EPho_value[ip] = pull_new[ip]; // new pull
+	
+	//EPho_value[ip] = (nofit[ip] - fit[ip]) / sigma[ip];
+	/*
+	if (TMath::Abs(EPho_value[0] - e1_pull) > 1e-3) {
+	  cout << "Event " << irow 
+	       << ": nofit=" << nofit[0] 
+	       << ", fit=" << fit[0] 
+	       << ", sigma=" << sigma[0] 
+	       << ", computed=" << EPho_value[0] 
+	       << ", stored=" << e1_pull 
+	       << endl;
+	}
+	*/
 	
       } else if (fit_type == "rawdiff") {
         EPho_value[ip] = nofit[ip] - fit[ip];

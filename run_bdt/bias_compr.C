@@ -207,7 +207,7 @@ void bias_compr() {
   g_bias_sig->SetMarkerColor(kBlue);
   g_bias_sig->SetLineColor(kBlue);
   g_bias_sig->GetXaxis()->SetTitle("E_{#gamma} (MeV)");
-  g_bias_sig->GetYaxis()->SetTitle("<Bias> (pull)");
+  g_bias_sig->GetYaxis()->SetTitle("Bias (<Pull>)");
   g_bias_sig->GetYaxis()->CenterTitle();
   g_bias_sig->Draw("AP");
   // Set X range on the histogram

@@ -1,7 +1,8 @@
 #include "../header_bdt/cut_para.h"
 #include "../header_bdt/energy_shift_tuning_sum.h" 
 //#include "../header_bdt/tuning.h"
-#include "../header_bdt/bias_shift.h" 
+#include "../header_bdt/bias_shift.h"
+#include "../header_bdt/scale_ratio.h" 
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
 #include "../header_bdt/method.h"
@@ -134,7 +135,7 @@ int tree_cut_bdt_tuning() {
     double px1_nofit_bdt = 0., py1_nofit_bdt = 0., pz1_nofit_bdt = 0.;
     double px2_nofit_bdt = 0., py2_nofit_bdt = 0., pz2_nofit_bdt = 0.;
     double px3_nofit_bdt = 0., py3_nofit_bdt = 0., pz3_nofit_bdt = 0.;
-    double sigma_e1_nofit = 0., sigma_e2_nofit = 0., sigma_e3_nofit = 0.;   
+    double sigma_denom_e1 = 0., sigma_denom_e2 = 0., sigma_denom_e3 = 0.;   
 
     // BDT-selected energy sigmas from SIGMA_FIT_LIST
     double sigma_e1_bdt = 0., sigma_e2_bdt = 0., sigma_e3_bdt = 0.;
@@ -152,9 +153,13 @@ int tree_cut_bdt_tuning() {
     double angle_ppl_pmi, angle_trk_neutral;
     double e_asym;
     double beta_3pi;
+
+    // Correction
+    double delta_e1_bdt = 0., delta_e2_bdt = 0.;
     
     // Pull variables
     double e1_pull_bdt = 0., e2_pull_bdt = 0., e3_pull_bdt = 0.;
+    double e1_pull_bdt_new = 0., e2_pull_bdt_new = 0.;
     double e1_pull = 0., e2_pull = 0., e3_pull = 0.;
     double px1_pull = 0., py1_pull = 0., pz1_pull = 0.;
     double px2_pull = 0., py2_pull = 0., pz2_pull = 0.;
@@ -245,7 +250,9 @@ int tree_cut_bdt_tuning() {
 	tree_tmp->Branch("Br_e1_pull_bdt", &e1_pull_bdt, "Br_e1_pull_bdt/D");
 	tree_tmp->Branch("Br_e2_pull_bdt", &e2_pull_bdt, "Br_e2_pull_bdt/D");
 	tree_tmp->Branch("Br_e3_pull_bdt", &e3_pull_bdt, "Br_e3_pull_bdt/D");
-        tree_tmp->Branch("Br_sig_type", &sig_type, "Br_sig_type/I");
+	tree_tmp->Branch("Br_e1_pull_bdt_new", &e1_pull_bdt_new, "Br_e1_pull_bdt_new/D");
+	tree_tmp->Branch("Br_e2_pull_bdt_new", &e2_pull_bdt_new, "Br_e2_pull_bdt_new/D");
+	tree_tmp->Branch("Br_sig_type", &sig_type, "Br_sig_type/I");
         tree_tmp->Branch("Br_bkg_indx", &bkg_indx, "Br_bkg_indx/I");
         tree_tmp->Branch("Br_recon_indx", &recon_indx, "Br_recon_indx/I");
         tree_tmp->Branch("Br_IM3pi_7C", &IM3pi_7C, "Br_IM3pi_7C/D");
@@ -297,14 +304,17 @@ int tree_cut_bdt_tuning() {
 	tree_tmp->Branch("Br_pz3_nofit_bdt", &pz3_nofit_bdt, "Br_pz3_nofit_bdt/D");
 
 	// BDT-selected sigma raw branches
-        tree_tmp->Branch("Br_sigma_e1_nofit", &sigma_e1_nofit, "Br_sigma_e1_nofit/D");
-        tree_tmp->Branch("Br_sigma_e2_nofit", &sigma_e2_nofit, "Br_sigma_e2_nofit/D");
-        tree_tmp->Branch("Br_sigma_e3_nofit", &sigma_e3_nofit, "Br_sigma_e3_nofit/D");
+        tree_tmp->Branch("Br_sigma_denom_e1", &sigma_denom_e1, "Br_sigma_denom_e1/D");
+        tree_tmp->Branch("Br_sigma_denom_e2", &sigma_denom_e2, "Br_sigma_denom_e2/D");
+        tree_tmp->Branch("Br_sigma_denom_e3", &sigma_denom_e3, "Br_sigma_denom_e3/D");
 	
         // BDT-selected sigma kinematic fitted branches
         tree_tmp->Branch("Br_sigma_e1_bdt", &sigma_e1_bdt, "Br_sigma_e1_bdt/D");
         tree_tmp->Branch("Br_sigma_e2_bdt", &sigma_e2_bdt, "Br_sigma_e2_bdt/D");
         tree_tmp->Branch("Br_sigma_e3_bdt", &sigma_e3_bdt, "Br_sigma_e3_bdt/D");
+	// Corrections
+	tree_tmp->Branch("Br_delta_e1_bdt", &delta_e1_bdt, "Br_delta_e1_bdt/D");
+	tree_tmp->Branch("Br_delta_e2_bdt", &delta_e2_bdt, "Br_delta_e2_bdt/D");
 
         // kinematic fitted + BDT selected (uncorrected)
         tree_tmp->Branch("Br_e1_fit", &e1_fit, "Br_e1_fit/D"); 
@@ -592,19 +602,34 @@ int tree_cut_bdt_tuning() {
         BDTResult result = find_best_pion_pair(event, bdt);
         if (!result.is_valid) continue;
 
-	// Save BDT-selected sigma nofit values
-        sigma_e1_nofit = SIGMA_DENOM_LIST[5 * result.pi0_indices[0]];
-        sigma_e2_nofit = SIGMA_DENOM_LIST[5 * result.pi0_indices[1]];
-        sigma_e3_nofit = SIGMA_DENOM_LIST[5 * result.prompt_index];
-
-	//cout << sigma_e1_nofit << endl;
+	// Mapping from event index (0,1,2) to block index in sigma arrays:
+	// block 0 = ISR, block 1 = pi0 photon1, block 2 = pi0 photon2
+	int block_index[3] = {1, 2, 0};   // event[0]->block1, event[1]->block2, event[2]->block0
 	
-        // Save BDT-selected sigma kinematic fitted values
-        sigma_e1_bdt = SIGMA_FIT_LIST[5 * result.pi0_indices[0]];
-        sigma_e2_bdt = SIGMA_FIT_LIST[5 * result.pi0_indices[1]];
-        sigma_e3_bdt = SIGMA_FIT_LIST[5 * result.prompt_index];
+	// Mapping from event index to natural index for pulls
+	int natural_index[3] = {pi0gam1_indx, pi0gam2_indx, isrgam_indx};
 
-        // Save kinematic fitted values (uncorrected)
+	int idx0 = result.pi0_indices[0];
+	int idx1 = result.pi0_indices[1];
+	int idx_prompt = result.prompt_index;
+
+	// Sigma denominator (pull denominator)
+	sigma_denom_e1 = SIGMA_DENOM_LIST[5 * block_index[idx0]];
+	sigma_denom_e2 = SIGMA_DENOM_LIST[5 * block_index[idx1]];
+	sigma_denom_e3 = SIGMA_DENOM_LIST[5 * block_index[idx_prompt]];
+	
+	// Fitted sigma
+	sigma_e1_bdt = SIGMA_FIT_LIST[5 * block_index[idx0]];
+	sigma_e2_bdt = SIGMA_FIT_LIST[5 * block_index[idx1]];
+	sigma_e3_bdt = SIGMA_FIT_LIST[5 * block_index[idx_prompt]];
+	
+	// Pulls
+	double pull_array[3] = {pull_E1, pull_E2, pull_E3};  // natural order
+	e1_pull_bdt = pull_array[natural_index[idx0]];
+	e2_pull_bdt = pull_array[natural_index[idx1]];
+	e3_pull_bdt = pull_array[natural_index[idx_prompt]];
+ 
+	// Save kinematic fitted values (uncorrected)
         e1_fit = event.photons[result.pi0_indices[0]][0];
         e2_fit = event.photons[result.pi0_indices[1]][0];
         e3_fit = event.photons[result.prompt_index][0];
@@ -635,34 +660,74 @@ int tree_cut_bdt_tuning() {
         py3_nofit_bdt = unfit_photons[result.prompt_index][2];
         pz3_nofit_bdt = unfit_photons[result.prompt_index][3];
 
-	double pull_array[3] = {pull_E1, pull_E2, pull_E3};
-	e1_pull_bdt = pull_array[result.pi0_indices[0]];
-	e2_pull_bdt = pull_array[result.pi0_indices[1]];
-	e3_pull_bdt = pull_array[result.prompt_index];
+	
+	delta_e1_bdt = bias_shift * sigma_denom_e1;
+	delta_e2_bdt = bias_shift * sigma_denom_e2;
+	
+	//cout << "bias_shift = " << bias_shift << ", sigma_denom_e1 = " << sigma_denom_e1 << ", delta_e1_bdt = " << delta_e1_bdt << "\n";
 
-	//cout << bias_shift << endl;
-        double bias_MeV_E12 = bias_shift;
+	e1_pull_bdt_new = 0.;
+	e2_pull_bdt_new = 0.;
+
+	// Full transformation of the pull distribution to match data exactly
+	// Pull_corr = alpha * Pull + beta
+	// where alpha = scale_ratio; beta = bias_data - alpha * bias_sig
+	// Assume bias_sig close to zero, beta = bias_shift
+	// Solving for E_corr: E_corr = (1 - alpha)E_raw + alpha*E_fit - beta*sigma_denom
+ 
 	// ---- Apply corrections ----
         if (data_type == "sig") {
-	  //const double bias_MeV_E12 = bias_E12 * resol_E12;  
+	  //const double delta_e1_bdt = bias_E12 * resol_E12;  
 	  //const double bias_MeV_E3 = bias_E3 * resol_E3;
-          
-	  e1_bdt = (e1_fit + bias_MeV_E12) * MASS_SCALE_PI0;   // NO sigma_scale!
-	  e2_bdt = (e2_fit + bias_MeV_E12) * MASS_SCALE_PI0;
-	  e3_bdt = e3_fit;                                     // ISR: keep untouched
+
+	  double sigma_e1_bdt_corr = scale_ratio * sigma_e1_bdt;
+	  double sigma_e2_bdt_corr = scale_ratio * sigma_e2_bdt;
 	  
-	  px1_bdt = px1_fit * MASS_SCALE_PI0;
-	  py1_bdt = py1_fit * MASS_SCALE_PI0;
-	  pz1_bdt = pz1_fit * MASS_SCALE_PI0;
-          
-	  px2_bdt = px2_fit * MASS_SCALE_PI0;
-	  py2_bdt = py2_fit * MASS_SCALE_PI0;
-	  pz2_bdt = pz2_fit * MASS_SCALE_PI0;
-          
+	  // New pulls
+	  e1_pull_bdt_new = e1_pull_bdt * scale_ratio + bias_shift;
+	  e2_pull_bdt_new = e2_pull_bdt * scale_ratio + bias_shift;
+	  
+	  // Correct MC energies (with bias shift and mass scale)
+	  //e1_bdt = (e1_fit - delta_e1_bdt) * MASS_SCALE_PI0;
+	  //e2_bdt = (e2_fit - delta_e2_bdt) * MASS_SCALE_PI0;
+	  e1_bdt = (1 - scale_ratio) * e1_nofit_bdt + scale_ratio * e1_fit - delta_e1_bdt;
+	  e1_bdt *= MASS_SCALE_PI0;
+
+	  e2_bdt = (1 - scale_ratio) * e2_nofit_bdt + scale_ratio * e2_fit - delta_e2_bdt;
+	  e2_bdt *= MASS_SCALE_PI0;
+	  
+	  e3_bdt = e3_fit; // ISR unchanged
+	  
+	  // Correct momenta: preserve photon direction from fitted momentum, set magnitude = energy
+	  double p1_mag = sqrt(px1_fit*px1_fit + py1_fit*py1_fit + pz1_fit*pz1_fit);
+	  if (p1_mag > 0) {
+	    px1_bdt = e1_bdt * (px1_fit / p1_mag);
+	    py1_bdt = e1_bdt * (py1_fit / p1_mag);
+	    pz1_bdt = e1_bdt * (pz1_fit / p1_mag);
+	  } else {
+	    // fallback: just apply mass scale
+	    px1_bdt = px1_fit * MASS_SCALE_PI0;
+	    py1_bdt = py1_fit * MASS_SCALE_PI0;
+	    pz1_bdt = pz1_fit * MASS_SCALE_PI0;
+	  }
+	  
+	  // Same for photon 2
+	  double p2_mag = sqrt(px2_fit*px2_fit + py2_fit*py2_fit + pz2_fit*pz2_fit);
+	  if (p2_mag > 0) {
+	    px2_bdt = e2_bdt * (px2_fit / p2_mag);
+	    py2_bdt = e2_bdt * (py2_fit / p2_mag);
+	    pz2_bdt = e2_bdt * (pz2_fit / p2_mag);
+	  } else {
+	    px2_bdt = px2_fit * MASS_SCALE_PI0;
+	    py2_bdt = py2_fit * MASS_SCALE_PI0;
+	    pz2_bdt = pz2_fit * MASS_SCALE_PI0;
+	  }
+	  
+	  // ISR photon: no energy correction, so momentum unchanged
 	  px3_bdt = px3_fit;
 	  py3_bdt = py3_fit;
 	  pz3_bdt = pz3_fit;
-          
+	  
 	  event.photons[result.pi0_indices[0]][0] = e1_bdt;
 	  event.photons[result.pi0_indices[0]][1] = px1_bdt;
 	  event.photons[result.pi0_indices[0]][2] = py1_bdt;

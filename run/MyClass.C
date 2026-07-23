@@ -451,13 +451,13 @@ void MyClass::Main()
 	nb_pho_radiv ++;
 	pho_radiv1_TLvect = GetLorentzVector(MC_vect, 0.);
 	isrgam1_ntmc = i;
-	cout << "first ISR photon = " << isrgam1_ntmc << endl;
+	//cout << "first ISR photon = " << isrgam1_ntmc << endl;
       }
       else if (pidmc[i] == 1 && virmom[i] == 0 && mother[indv[i] - 1] == 50 && nb_pho_radiv == 1) {// second radiative photon
 	nb_pho_radiv ++;
 	pho_radiv2_TLvect = GetLorentzVector(MC_vect, 0.);
 	isrgam2_ntmc = i;
-	cout << "second ISR photon = " << isrgam2_ntmc << endl;
+	//cout << "second ISR photon = " << isrgam2_ntmc << endl;
       }
       
       // pions (isr phok5)
@@ -1270,8 +1270,11 @@ void MyClass::Main()
       if (diff < 1e-12) diff = 1e-12;   // protect against negative or zero
       SIGMA_DENOM_LIST[i] = TMath::Sqrt(diff);
       SIGMA_FIT_LIST[i] = TMath::Sqrt(sigma_fit_ordered(i));
+      //cout << "Position " << i << ": SIGMA_DENOM_LIST = " << SIGMA_DENOM_LIST[i] << endl;
     }
     ALLCHAIN_CUT.Fill();
+
+    
  
     // resolutions
     RESOLIST[0] = TLVector_pi0gg12_kinfit7C.M() - massneupion; // Mpi
@@ -2218,7 +2221,9 @@ TVectorD MyClass::Fillpullsvector(int size, TVectorD sigma2vector_old, TVectorD 
     Array[i]=((inputvector_old-inputvector_new)(i))/TMath::Sqrt((sigma2vector_old-sigma2vector_new)(i));
     //if (TMath::Abs(vector(i)) < 0.001) cout<<vector(i)<<endl;
     //vector(i)=(inputvector_old-inputvector_new)(i);
+    //cout << "Position " << i << ": inputvector_old - inputvector_new = " << (inputvector_old-inputvector_new)(i) << "; sigma_denom = " << TMath::Sqrt((sigma2vector_old-sigma2vector_new)(i)) << "\n";
   }
+  //cout << "\n" << endl;
   vector.Use(size,Array);
   return vector;
 }
