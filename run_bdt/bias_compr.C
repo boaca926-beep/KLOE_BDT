@@ -331,7 +331,7 @@ void bias_compr(const bool &corr = true) {
   txt->SetTextFont(42); // bold
   pt->AddText(Form("Bias shift = %.3f #pm %.3f", bias_shift, bias_shift_err));
   //pt->AddText(Form("Z = %.2f", Z_value));
-  pt->AddText(Form("Fit range: E_{#gamma} = [%.0f, %.0f] MeV", Emin, Emax));
+  pt->AddText(Form("Fit range [%.0f, %.0f] MeV", xMinClean, xMaxClean));
   pt->AddText(Form("#chi^{2}/NDF = %.2f", linFit->GetChisquare()/linFit->GetNDF()));
   pt->Draw();
   
@@ -461,18 +461,31 @@ void bias_compr(const bool &corr = true) {
 
   // --- Write the bias shift parameters to the bias tuning header ---
   std::ofstream myfile;
-  TString myfile_nm = "../header_bdt/bias_shift.h";
-  myfile.open(myfile_nm.Data());
-  myfile << "// Pull bais shift extracted from BDT-selected signal MC and data\n";
-  myfile << "// Fitted with Gaussian + chebpoly (pull_scan.C)\n";
-  myfile << "const double bias_shift = " << bias_shift << ";\n";
-  myfile << "const double bias_shift_err = " << bias_shift_err << ";\n";
-  myfile.close();
+  TString myfile_nm = "../pull_scan";
+  
+  if (corr) {// After pull correction
+    myfile_nm += "/bias_shift_corr.txt";
+    myfile.open(myfile_nm.Data());
+    myfile << "// Pull bais shift extracted from BDT-selected signal MC and data (Before pull correction)\n";
+    myfile << "// Fitted with Gaussian + chebpoly (pull_scan.C)\n";
+    myfile << "const double bias_shift = " << bias_shift << ";\n";
+    myfile << "const double bias_shift_err = " << bias_shift_err << ";\n";
+    
+  }
+  else {
+    myfile_nm += "/bias_shift.txt";
+    myfile.open(myfile_nm.Data());
+    myfile << "// Pull bais shift extracted from BDT-selected signal MC and data (Before pull correction)\n";
+    myfile << "// Fitted with Gaussian + chebpoly (pull_scan.C)\n";
+    myfile << "const double bias_shift = " << bias_shift << ";\n";
+    myfile << "const double bias_shift_err = " << bias_shift_err << ";\n";
+  }
 
+  myfile.close();
+ 
   cout << "SUMMARY" << "\n"
        << "Average bias shift (data - signal) = " << bias_shift << "+/-" << bias_shift_err << endl;
 
-  
   // ----------------------------------------------------------------------
   // Save outputs
   // ----------------------------------------------------------------------

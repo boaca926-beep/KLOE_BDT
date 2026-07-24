@@ -1,26 +1,139 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-sample_size=norm # norm; small; mini; chain
-sample_path=../path_${sample_size}/ 
-exp_type=TDATA # DATA
-tuning_type=tuning #raw: no tuning; tuning: tuned + scale
-gsf=1 # DATA
+# ============================================================
+# Configuration
+# ============================================================
+sample_size=chain          # norm; small; mini; chain
+sample_path=../path_${sample_size}/
+exp_type=TDATA             # DATA
+tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
+gsf=1                      # DATA
+pull_status=false          # main switch: false = no corrections, true = apply corrections
 
-result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}
+# ------------------- Correction flags -------------------
+# Set these to true/false to independently enable/disable each correction
+APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
+APPLY_MASS_SCALE=true      # apply mass scale (MASS_SCALE_PI0)
+# ---------------------------------------------------------
+
+## Initialize tuning corrections conditions
+# step1: set pull_status to false to get pull correction parameters, input for pull_scan (run only once!)
+# step2: set pull_status to true to apply pull corrections (always on for analysis)
+
+SOURCE_BIAS="../pull_scan/bias_shift.txt"
+SOURCE_SCALE="../pull_scan/scale_ratio.txt"   # adjust if your file is scale_ratio_corr.txt
+TARGET_FILE="../header_bdt/energy_shift_tuning_sum.h"
+
+# ============================================================
+# Update header based on pull_status and individual flags
+# ============================================================
+if [ "$pull_status" = true ]; then
+    echo "Pull corrections are applied!"
+
+    # ---------- PULL (BIAS + SCALE) ----------
+    if [ "$APPLY_PULL" = true ]; then
+        # ---- BIAS ----
+        if [[ -f "$SOURCE_BIAS" ]]; then
+            bias_shift=$(grep -oP '(?:const\s+double\s+)?bias_shift\s*=\s*\K[0-9.eE+-]+' "$SOURCE_BIAS" | head -1)
+            bias_shift_err=$(grep -oP '(?:const\s+double\s+)?bias_shift_err\s*=\s*\K[0-9.eE+-]+' "$SOURCE_BIAS" | head -1)
+        else
+            echo "Warning: $SOURCE_BIAS not found. Using defaults."
+            bias_shift=0.0
+            bias_shift_err=0.0
+        fi
+        if [[ -n "$bias_shift" && -n "$bias_shift_err" ]]; then
+            echo "Updating $TARGET_FILE with bias_shift=$bias_shift, bias_shift_err=$bias_shift_err"
+            sed -i "s/\(const double bias_shift\s*=\s*\)[0-9.eE+-]*;/\1$bias_shift;/" "$TARGET_FILE"
+            sed -i "s/\(const double bias_shift_err\s*=\s*\)[0-9.eE+-]*;/\1$bias_shift_err;/" "$TARGET_FILE"
+        else
+            echo "Error: Could not extract bias shift values from $SOURCE_BIAS"
+        fi
+
+        # ---- SCALE ----
+        if [[ -f "$SOURCE_SCALE" ]]; then
+            scale_ratio=$(grep -oP '(?:const\s+double\s+)?scale_ratio\s*=\s*\K[0-9.eE+-]+' "$SOURCE_SCALE" | head -1)
+            scale_ratio_err=$(grep -oP '(?:const\s+double\s+)?scale_ratio_err\s*=\s*\K[0-9.eE+-]+' "$SOURCE_SCALE" | head -1)
+        else
+            echo "Warning: $SOURCE_SCALE not found. Using defaults."
+            scale_ratio=1.0
+            scale_ratio_err=0.0
+        fi
+        if [[ -n "$scale_ratio" && -n "$scale_ratio_err" ]]; then
+            echo "Updating $TARGET_FILE with scale_ratio=$scale_ratio, scale_ratio_err=$scale_ratio_err"
+            sed -i "s/\(const double scale_ratio\s*=\s*\)[0-9.eE+-]*;/\1$scale_ratio;/" "$TARGET_FILE"
+            sed -i "s/\(const double scale_ratio_err\s*=\s*\)[0-9.eE+-]*;/\1$scale_ratio_err;/" "$TARGET_FILE"
+        else
+            echo "Error: Could not extract scale ratio values from $SOURCE_SCALE"
+        fi
+    else
+        echo "Pull correction disabled. Setting bias_shift=0, scale_ratio=1"
+        sed -i "s/\(const double bias_shift\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+        sed -i "s/\(const double bias_shift_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+        sed -i "s/\(const double scale_ratio\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
+        sed -i "s/\(const double scale_ratio_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    fi
+
+    # ---------- MASS SCALE ----------
+    if [ "$APPLY_MASS_SCALE" = true ]; then
+        if [[ -f "../pull_scan/massbias_bdt.txt" ]]; then
+            mpi0_data=$(grep -oP 'mpi0_data\s*=\s*\K[0-9.eE+-]+' "../pull_scan/massbias_bdt.txt" | head -1)
+            mpi0_data_err=$(grep -oP 'mpi0_data_err\s*=\s*\K[0-9.eE+-]+' "../pull_scan/massbias_bdt.txt" | head -1)
+            mpi0_mc=$(grep -oP 'mpi0_mc\s*=\s*\K[0-9.eE+-]+' "../pull_scan/massbias_bdt.txt" | head -1)
+            mpi0_mc_err=$(grep -oP 'mpi0_mc_err\s*=\s*\K[0-9.eE+-]+' "../pull_scan/massbias_bdt.txt" | head -1)
+            sed -i "s/\(const double mpi0_data\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_data;/" "$TARGET_FILE"
+            sed -i "s/\(const double mpi0_data_err\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_data_err;/" "$TARGET_FILE"
+            sed -i "s/\(const double mpi0_mc\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_mc;/" "$TARGET_FILE"
+            sed -i "s/\(const double mpi0_mc_err\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_mc_err;/" "$TARGET_FILE"
+            if [[ -n "$mpi0_data" && -n "$mpi0_mc" ]]; then
+                mass_scale=$(echo "scale=8; $mpi0_data / $mpi0_mc" | bc)
+                echo "Updating MASS_SCALE_PI0 = $mass_scale"
+                sed -i "s/\(const double MASS_SCALE_PI0\s*=\s*\)[0-9.eE+-]*;/\1$mass_scale;/" "$TARGET_FILE"
+            fi
+        else
+            echo "Warning: ../pull_scan/massbias_bdt.txt not found. MASS_SCALE_PI0 unchanged."
+        fi
+    else
+        echo "Mass scale correction disabled. Setting MASS_SCALE_PI0=1"
+        sed -i "s/\(const double MASS_SCALE_PI0\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
+    fi
+
+    echo "Pull correction parameters updated."
+
+else
+    echo "No pull corrections are applied!"
+
+    # Reset all corrections to neutral values
+    echo "Setting bias_shift=0, scale_ratio=1, and MASS_SCALE_PI0=1"
+    sed -i "s/\(const double bias_shift\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double bias_shift_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double scale_ratio\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double scale_ratio_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double mpi0_mc\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double mpi0_mc_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double mpi0_data\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double mpi0_data_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double MASS_SCALE_PI0\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
+fi
+
+# ============================================================
+# Result path and directories (unchanged)
+# ============================================================
+result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
 #result_path=/media/bo/Analysis_Disk/
+
 
 ## Initialize the normal conditions
 # Pre-selection
 egammamin=15 # 15, 20
 Rhovmax=4
-Zvmax=10 
+Zvmax=10
 nb_sigma_T_clust=3 # 3, 4
 
 class_header=../header/MyClass.h
 sed -i 's/\(egammamin =\)\(.*\)/\1 '$egammamin';/' $class_header
 sed -i 's/\(Rhovmax =\)\(.*\)/\1 '$Rhovmax';/' $class_header
-sed -i 's/\(Zvmax =\)\(.*\)/\1 '$Zvmax';/' $class_header   
+sed -i 's/\(Zvmax =\)\(.*\)/\1 '$Zvmax';/' $class_header
 sed -i 's/\(nb_sigma_T_clust =\)\(.*\)/\1 '$nb_sigma_T_clust';/' $class_header
 
 # Selection cuts
@@ -28,7 +141,7 @@ Eprompt_max_cut=300
 chi2_cut=20 #43 20
 angle_cut=138 #138 66
 beta_cut=1.98
-deltaE_min=-440 
+deltaE_min=-440
 deltaE_max=-240 #-150
 
 beta_3pi_min=0.23
@@ -79,7 +192,7 @@ Lumi_tot=1724470
 sm_header=../header_bdt/sm_para.h
 sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
-## Samples 
+## Samples
 DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
 #DATA_TYPE=("sig")
 
@@ -96,7 +209,7 @@ log_path=${result_path}/log/
 if [[ -d "$result_path" ]]; then
     echo "${result_path} ..."
     rm -rf $result_path
-fi    
+fi
 
 mkdir ${result_path} # result folder
 mkdir ${input_path} # input root files
@@ -106,7 +219,7 @@ mkdir ${hist_path} # histos
 mkdir ${sfw2d_path} # mc normalization
 mkdir ${sfw1d_path} # mc signal tuning
 mkdir ${omega_path} # omega parameters
-mkdir ${log_path} # log files   
+mkdir ${log_path} # log files
 echo "Results folder is created at ${result_path}"
 
 ## Initializing path_header and log files
@@ -163,7 +276,7 @@ for ((i=0;i<${#DATA_TYPE[@]};++i)); do
 
     # Ensure the sampleFile path matches data_type
     sample_file_name="${input_path}${data_type}"
-    
+
     INPUT_FILE=${sample_path}${data_type}_path
     ROOT_FILE=${input_path}${data_type}
     echo $INPUT_FILE
@@ -189,17 +302,17 @@ EOF
         echo "ERROR: path.h data_type mismatch!" >> ${log_cut}
         exit 1
     fi
-    
+
     ## Input trees
     run_script=run_script.C
-    
+
     echo "void run_script() {" > $run_script
     echo '  gROOT->ProcessLine(".L ../run/MyClass.C");' >> $run_script
     echo '  gROOT->ProcessLine(".L ../run_bdt/Analys_class.C");' >> $run_script
     echo '  gROOT->ProcessLine("Analys_class(rootFile, sampleFile)");' >> $run_script
     echo '}' >> $run_script
     root -l -n -q -b $run_script >> ${log_input} 2>&1 || { echo "ROOT failed at run_script for $data_type"; exit 1; }
-    
+
     ## Selection cuts
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script

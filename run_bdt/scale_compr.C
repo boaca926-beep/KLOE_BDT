@@ -30,7 +30,7 @@
 
 using namespace std;
 
-void resol_compr(const bool &corr = true) {
+void scale_compr(const bool &corr = true) {
 
   cout << "\n========================================" << endl;
   cout << "  COMPARE RESOLUTION RATIO: DATA / SIGNAL" << endl;
@@ -126,7 +126,7 @@ void resol_compr(const bool &corr = true) {
         E_pad.push_back(x_sig);
         ratio_pad.push_back(ratio_val);
         err_pad.push_back(err_ratio);
-        cout << i+1 << ": y_data = " << y_data << ", y_sig = " << y_sig << ": ratio = " << ratio_val << endl;
+        //cout << i+1 << ": y_data = " << y_data << ", y_sig = " << y_sig << ": ratio = " << ratio_val << endl;
         found = true;
         break;
       }
@@ -263,7 +263,7 @@ void resol_compr(const bool &corr = true) {
   txt->SetTextFont(42); // bold
   pt->AddText(Form("Ratio (Data/Signal) = %.3f #pm %.3f", ratio, ratio_err));
   //pt->AddText(Form("Z = %.2f", Z_value));
-  pt->AddText(Form("Fit range: E_{#gamma} = [%.0f, %.0f] MeV", 15.0, 350.0));
+  pt->AddText(Form("Fit range [%.0f, %.0f] MeV", xMinClean, xMaxClean));
   pt->AddText(Form("#chi^{2}/NDF = %.2f", linFit->GetChisquare()/linFit->GetNDF()));
   pt->Draw();
   
@@ -284,17 +284,29 @@ void resol_compr(const bool &corr = true) {
   leg->Draw();
 
   c1->Update();
+
+  std::ofstream myfile;
+  TString myfile_nm = "../pull_scan";
   
   // --- Write the ratio parameters to the scale header ---
-  std::ofstream myfile;
-  TString myfile_nm = "../header_bdt/scale_ratio.h";
-  myfile.open(myfile_nm.Data());
-  myfile << "// Pull ratio of scale extracted from BDT-selected signal MC and data\n";
-  myfile << "// Fitted with Gaussian + chebpoly (pull_scan.C)\n";
-  myfile << "const double scale_ratio = " << ratio << ";\n";
-  myfile << "const double scale_ratio_err = " << ratio_err << ";\n";
-  myfile.close();
+  if (corr) {
+    myfile_nm += "/scale_ratio_corr.txt";
+    myfile.open(myfile_nm.Data());
+    myfile << "// Pull ratio of scale extracted from BDT-selected signal MC and data (Before pull correction)\n";
+    myfile << "// Fitted with Gaussian + chebpoly (pull_scan.C)\n";
+    myfile << "const double scale_ratio = " << ratio << ";\n";
+    myfile << "const double scale_ratio_err = " << ratio_err << ";\n";
+  }
+  else {
+    myfile_nm += "/scale_ratio.txt";
+    myfile.open(myfile_nm.Data());
+    myfile << "// Pull ratio of scale extracted from BDT-selected signal MC and data (Before pull correction)\n";
+    myfile << "// Fitted with Gaussian + chebpoly (pull_scan.C)\n";
+    myfile << "const double scale_ratio = " << ratio << ";\n";
+    myfile << "const double scale_ratio_err = " << ratio_err << ";\n";
+  }
 
+  myfile.close();
   
   cout << "SUMMARY" << "\n"
        << "Average resolution ratio (Data/Signal) = " << ratio << " +/- " << ratio_err << endl;

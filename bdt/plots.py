@@ -1255,8 +1255,8 @@ def plot_roc_improved(y_true, y_score, plot_title="", threshold=None):
     axins.plot(fpr, tpr, color='#1f77b4', lw=2)
     axins.plot([0, 0.2], [0.8, 1], 'k--', lw=1, alpha=0.5)
     axins.grid(True, linestyle=':', alpha=0.4)
-    axins.set_xlabel('FPR', fontsize=10)
-    axins.set_ylabel('TPR', fontsize=10)
+    axins.set_xlabel('FPR', fontsize=16)
+    axins.set_ylabel('TPR', fontsize=16)
     from matplotlib.patches import Rectangle
     rect = Rectangle((0, 0.8), 0.2, 0.2, linewidth=1, edgecolor='gray',
                      facecolor='none', linestyle='--')
@@ -1269,85 +1269,100 @@ def plot_roc_improved(y_true, y_score, plot_title="", threshold=None):
     #plt.tight_layout()
     return fig
 
-def plot_f1_vs_threshold(f1_scores, thresholds, opt_threshold=None, strategy_name='any', fpr_scores=None, fpr_target=0.01):
+def plot_f1_comparison(strategies, thresholds, fpr_target=0.01, title=None):
     """
-    Plot F1 score vs threshold for a given strategy.
-    Optionally overlay FPR on a secondary y-axis if fpr_scores is provided.
+    Plot F1 score vs threshold for multiple strategies on the same axes.
     
-    Args:
-        f1_scores: list of F1 scores for each threshold
-        thresholds: list of threshold values
-        opt_threshold: if None, auto-find max F1; else use given threshold
-        strategy_name: string, e.g., 'any', 'mean', 'min2' (used for labels)
-        fpr_scores: optional list of FPR values for the same thresholds
-        fpr_target: target FPR (default 0.01 = 1%)
+    Parameters:
+    -----------
+    strategies : list of dicts, each with:
+        - 'name' : str
+        - 'f1_scores' : array-like
+        - 'fpr_scores' : array-like (optional) – if provided, FPR is shown on secondary axis
+        - 'color' : str (optional)
+    thresholds : array-like (common for all)
+    fpr_target : float, target FPR (default 0.01 = 1%)
+    title : str, optional
     """
-    f1_scores = np.array(f1_scores)
-    thresholds = np.array(thresholds)
-
-    # Find optimal F1 point
-    if opt_threshold is None:
-        opt_idx = np.argmax(f1_scores)
-        opt_thr = thresholds[opt_idx]
-        opt_f1 = f1_scores[opt_idx]
-    else:
-        opt_idx = np.argmin(np.abs(thresholds - opt_threshold))
-        opt_thr = thresholds[opt_idx]
-        opt_f1 = f1_scores[opt_idx]
-
     fig, ax = plt.subplots(figsize=(10, 7), constrained_layout=True)
-
-    # ---- Primary axis: F1 ----
-    ax.plot(thresholds, f1_scores, 'o-', label=f'F1 ({strategy_name})',
-            color='#1f77b4', linewidth=2.5, markersize=8)
-    ax.plot(opt_thr, opt_f1, 'r*', markersize=18,
-            label=f'Max F1 @ {opt_thr:.2f} (F1={opt_f1:.4f})')
+    
+    # Primary y-axis: F1
     ax.set_xlabel('Threshold', fontsize=16, fontweight='bold')
-    ax.set_ylabel('F1 Score', fontsize=16, fontweight='bold', color='#1f77b4')
-    ax.tick_params(axis='y', labelcolor='#1f77b4')
+    ax.set_ylabel('F1 Score', fontsize=16, fontweight='bold', color='black')
     ax.grid(True, linestyle=':', alpha=0.6)
     ax.set_xlim(0, 1.0)
-
-    # ---- Secondary axis: FPR (if provided) ----
-    if fpr_scores is not None:
+    
+    # Secondary axis for FPR (only if at least one strategy provides non-None fpr_scores)
+    has_fpr = any('fpr_scores' in s and s['fpr_scores'] is not None for s in strategies)
+    ax2 = None
+    if has_fpr:
         ax2 = ax.twinx()
-        fpr_scores = np.array(fpr_scores)
-        ax2.plot(thresholds, fpr_scores * 100, 's-', label=f'FPR ({strategy_name})',
-                 color='#d62728', linewidth=2, markersize=8)
-        ax2.axhline(y=fpr_target*100, color='green', linestyle='--', linewidth=2,
-                    label=f'Target FPR = {fpr_target*100:.0f}%')
         ax2.set_ylabel('False Positive Rate (%)', fontsize=16, fontweight='bold', color='#d62728')
         ax2.tick_params(axis='y', labelcolor='#d62728')
+    
+    # Store handles for legend
+    lines = []
+    labels = []
+    
+    for i, strat in enumerate(strategies):
+        name = strat['name']
+        f1 = np.array(strat['f1_scores'])
+        color = strat.get('color', f'C{i}')
+        marker = strat.get('marker', 'o')
+        
+        # F1 curve
+        line1, = ax.plot(thresholds, f1, marker=marker, linestyle='-', linewidth=2.5,
+                         markersize=8, color=color, label=f'F1 ({name})')
+        lines.append(line1)
+        labels.append(f'F1 ({name})')
+        
+        # Mark maximum F1 point
+        opt_idx = np.argmax(f1)
+        opt_thr = thresholds[opt_idx]
+        opt_f1 = f1[opt_idx]
+        ax.plot(opt_thr, opt_f1, '*', color=color, markersize=18)
+        ax.text(opt_thr + 0.02, opt_f1 - 0.1, f'{name}\n{opt_thr:.2f}', 
+                fontsize=9, color=color)
+        
+        # Optional FPR curve – only if fpr_scores exists and is not None
+        if 'fpr_scores' in strat and strat['fpr_scores'] is not None and ax2 is not None:
+            fpr = np.array(strat['fpr_scores']) * 100
+            line2, = ax2.plot(thresholds, fpr, marker='s', linestyle='--', linewidth=2,
+                              markersize=7, color=color, alpha=0.7,
+                              label=f'FPR ({name})')
+            lines.append(line2)
+            labels.append(f'FPR ({name})')
+            
+            # Mark threshold where FPR drops below target
+            below_target = fpr < (fpr_target * 100)
+            if np.any(below_target):
+                idx_cross = np.argmax(below_target)
+                thr_cross = thresholds[idx_cross]
+                fpr_cross = fpr[idx_cross]
+                ax2.plot(thr_cross, fpr_cross, 'g*', markersize=14)
+                ax2.text(thr_cross + 0.02, fpr_cross + 1, f'FPR<1%', fontsize=9, color='green')
+    
+    # Add horizontal line for target FPR if secondary axis exists
+    if ax2 is not None:
+        ax2.axhline(y=fpr_target*100, color='green', linestyle='--', linewidth=1.5,
+                    alpha=0.5, label=f'Target FPR = {fpr_target*100:.0f}%')
+        ax2.tick_params(axis='both', labelsize=18)
 
-        # Find first threshold where FPR drops below target
-        below_target = fpr_scores < fpr_target
-        if np.any(below_target):
-            idx_cross = np.argmax(below_target)   # first index where FPR < target
-            thr_cross = thresholds[idx_cross]
-            fpr_cross = fpr_scores[idx_cross] * 100
-            ax2.plot(thr_cross, fpr_cross, 'g*', markersize=18,
-                     label=f'FPR < 1% @ {thr_cross:.2f} (FPR={fpr_cross:.2f}%)')
-            # Vertical line
-            ax.axvline(x=thr_cross, color='green', linestyle='--', alpha=0.6, linewidth=1.5)
-            ax.text(thr_cross + 0.02, 0.05, f'FPR target', rotation=90, color='green',
-                    fontsize=10, ha='center', va='bottom')
-
-        # Combine legends from both axes
+    # Combine legends from both axes if needed
+    if ax2 is not None:
         lines1, labels1 = ax.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax.legend(lines1 + lines2, labels1 + labels2, loc='lower left', fontsize=12)
-
+        all_lines = lines1 + lines2
+        all_labels = labels1 + labels2
+        # Remove duplicate label entries (keep only last occurrence)
+        unique = {}
+        for l, lab in zip(all_lines, all_labels):
+            unique[lab] = l
+        ax.legend(unique.values(), unique.keys(), loc='lower left', fontsize=12)
     else:
-        ax.legend(loc='lower left', fontsize=12)
-
-    # Shade plateau region where F1 > 0.975
-    plateau_mask = f1_scores > 0.975
-    if np.any(plateau_mask):
-        first_idx = np.argmax(plateau_mask)
-        last_idx = len(thresholds) - 1 - np.argmax(plateau_mask[::-1])
-        ax.axvspan(thresholds[first_idx], thresholds[last_idx], alpha=0.1,
-                   color='gray', label='F1 plateau (F1 > 0.975)')
-
-    title = f'Event-Level Performance vs Threshold ({strategy_name} strategy)'
+        ax.legend(loc='lower left', fontsize=16)
+    
     plt.title(title, fontsize=18, fontweight='bold')
+    
+    #plt.title(title or 'F1 Score vs Threshold – Strategy Comparison', fontsize=18, fontweight='bold')
     return fig

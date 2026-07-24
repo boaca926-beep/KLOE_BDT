@@ -1,15 +1,11 @@
-// massBias_bdt.C – full code with background subtraction
+// massBias_bdt.C – original version with Breit-Wigner fits (no background subtraction)
+// Update compr_bdt.sh with corresponding tuning_type
+
 #include "../header_method/method.h"
 #include "../header_plot/plot.h"
 
-const TString tuning_type = "tuning";
-const TString tree_file_nm = "../output_bdt_" + tuning_type + "_m3pi_bdt/hist_m3pi_bdt.root";
-
-const TString out_dir = "../massBias_bdt";
-
-const TString var_nm = "IM3pi_7C";
-const TString unit = "[MeV/c^{2}]";
-const TString var_symb = "M_{3#pi}";
+// raw: bdt with pull tuning and energy scale correction (tree_cut_bdt_raw.C)
+// tuning: pull tuning + energy scale correction (tree_cut_bdt_tuning.C)
 
 struct FitResult {
     TString name;
@@ -23,7 +19,15 @@ Double_t breitwigner(Double_t *x, Double_t *par) {
     return par[0] / ((x[0] - par[1]) * (x[0] - par[1]) + par[2] * par[2]);
 }
 
-int massBias_bdt() {
+int BiasM3pi(const TString tuning_type = "tuning",
+                 const TString var_nm = "m3pi_bdt",
+                 const TString var_symb = "M_{3#pi} [MeV/c^{2}]"
+                 ) {
+
+  const TString tree_file_nm = "../" + tuning_type + "_" + var_nm + "/hist.root";
+
+  const TString out_dir = "../BiasM3pi_" + tuning_type;
+  
 
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
@@ -82,8 +86,8 @@ int massBias_bdt() {
   // ------------------------------------------------------------------
 
   const int nb_mass = 2;
-  TH1D *hMassList[nb_mass] = {hist_signal, hist_data};
-  TString massNameList[nb_mass] = {"MC", "Data"};
+  TH1D *hMassList[nb_mass] = {hist_signal, hist_data_sub};
+  TString massNameList[nb_mass] = {"MC", "Data (bkg sub)"};
   int massColor[nb_mass] = {kRed, kRed};
   FitResult massResults[nb_mass];
 
@@ -221,12 +225,12 @@ int massBias_bdt() {
   hist_data_sub->SetMarkerStyle(20);
   hist_data_sub->SetMarkerSize(0.6);
   hist_data_sub->GetYaxis()->SetTitle("Events");
-  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 1.2);
+  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 1.6);
   hist_data_sub->GetYaxis()->CenterTitle();
   hist_data_sub->GetYaxis()->SetTitleSize(0.05);
   hist_data_sub->GetYaxis()->SetTitleOffset(1.4);
   hist_data_sub->GetYaxis()->SetLabelSize(0.04);
-  hist_data_sub->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
+  hist_data_sub->GetXaxis()->SetTitle(var_symb);
   hist_data_sub->GetXaxis()->SetTitleSize(0.05);
   hist_data_sub->GetXaxis()->SetTitleOffset(1.2);
   hist_data_sub->GetXaxis()->SetLabelSize(0.04);

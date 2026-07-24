@@ -307,7 +307,7 @@ void pull_scan(const TString tree_type = "TDATA",
 
   gROOT->GetListOfCanvases()->Delete();
   gErrorIgnoreLevel = kError;
-  TGaxis::SetMaxDigits(4);
+  TGaxis::SetMaxDigits(6);
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
   gStyle->SetErrorX(0.8);
@@ -475,10 +475,12 @@ void pull_scan(const TString tree_type = "TDATA",
     if (ok) {
       E0_LIST[b] = Emin + b * binwidth;
       E1_LIST[b] = Emin + (b+1) * binwidth;
+      /*
       printf("%3d  %6.1f %6.1f  %6d  %7.3f±%-7.3f  %7.3f±%-7.3f  %7.3f\n",
              b, E0_LIST[b], E1_LIST[b],
              bin_entries[b], bin_mean[b], bin_mean_err[b],
              bin_sigma[b], bin_sigma_err[b], bin_chi2ndf[b]);
+      */
     }
   }
 
@@ -513,13 +515,15 @@ void pull_scan(const TString tree_type = "TDATA",
     }
 
     const int nCols = 6;
-    const int nRows = 5;
+    const int nRows = 6;
     const int nPerPage = nCols * nRows;
 
     for (size_t i = 0; i < bins_to_draw.size(); i += nPerPage) {
       c_pdf->Clear();
       c_pdf->Divide(nCols, nRows, 1e-5, 1e-5);
-
+      //c_pdf->Divide(nCols, nRows);
+      //c_pdf->SetTopMargin(0.15);
+    
       for (int j = 0; j < nPerPage && (i+j) < bins_to_draw.size(); ++j) {
         int b = bins_to_draw[i+j];
         TPad *pad = (TPad*)c_pdf->GetPad(j+1);

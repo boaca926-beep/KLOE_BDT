@@ -1,9 +1,31 @@
-// Determine Z-value convergency.
-// Z-value (significance) of pi0 photon energy scale correction
-// Z-value results in Thesis_Syst
-#include "../header/graph.h"
+// ============================================================================
+// Z_plot.C
+//
+// Reads mass bias results from a file (one line per iteration):
+//   iteration  mpi0_data  mpi0_data_err  mpi0_mc  mpi0_mc_err
+// Computes Z = |m_data - m_mc| / sqrt( sigma_data^2 + sigma_mc^2 )
+// Plots Z vs iteration with exponential fit.
+// Stop criterion: Z < 2.
+// Usage:
+//   root -l -q 'Z_plot.C("massbias_iterations.txt")'
+// ============================================================================
 
-void Z_plot() {
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <cmath>
+#include "TFile.h"
+#include "TGraph.h"
+#include "TCanvas.h"
+#include "TF1.h"
+#include "TLegend.h"
+#include "TLine.h"
+#include "TGaxis.h"
+#include "TStyle.h"
+#include "TString.h"
+
+void Z_plot(const TString filename = "../pull_scan/massbias_iterations.txt") {
+
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
@@ -11,152 +33,132 @@ void Z_plot() {
   gStyle->SetErrorX(0.8);
   TH1::SetDefaultSumw2();
 
-  TString tuning_type = "tuning"; //tuning; scaled
-
-  int nb_points = 0;
-  double iter_max = 0.;
-  double *bias = nullptr;
-  double *bias_err = nullptr;
-  double *Z = nullptr;
-  double *iter = nullptr;
-  
-  // Define arrays outside if blocks (static to persist)
-  /*
-  static double bias_tuning[]     = {6.136, 3.88664, 2.47196, 1.57451, 1.01165, 0.646111, 0.408729, 0.267182, 0.16936, 0.1062, 0.0664787};
-  static double bias_err_tuning[] = {0.045, 0.0448303, 0.0447612, 0.0447183, 0.0447282, 0.044718, 0.0447058, 0.044711, 0.0447076, 0.0447043, 0.0447008};
-  static double Z_tuning[]        = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
-  static double iter_tuning[]     = {0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.};
-  */
-
-  static double bias_tuning[]     = {6.20814, 3.95858};
-  static double bias_err_tuning[] = {0.0307955, 0.0307573};
-  static double Z_tuning[]        = {0., 0.};
-  static double iter_tuning[]     = {0., 1.};
-  
-  static double bias_scaled[]     = {-0.580, -0.321, -0.169, -0.0898698, -0.0488806};
-  static double bias_err_scaled[] = {0.045, 0.045, 0.045, 0.044744, 0.0447478};
-  static double Z_scaled[]        = {0., 0., 0., 0., 0.};
-  static double iter_scaled[]     = {0., 1., 2., 3., 4.};
-  
-  if (tuning_type == "tuning") {
-    iter_max=12.0;
-    nb_points = 2;
-    bias = bias_tuning;
-    bias_err = bias_err_tuning;
-    Z = Z_tuning;
-    iter = iter_tuning;
-  }
-  else if (tuning_type == "scaled") {
-    iter_max=5.0;
-    nb_points = 5;
-    bias = bias_scaled;
-    bias_err = bias_err_scaled;
-    Z = Z_scaled;
-    iter = iter_scaled;
-  }
-  
-  // Compute Z values
-  for (int i = 0; i < nb_points; i++) {
-    Z[i] = TMath::Abs(bias[i]) / bias_err[i];
-    std::cout << "Iteration " << iter[i] 
-              << ", bias = " << bias[i] << " +/- " << bias_err[i] 
-              << ", Z = " << Z[i] << std::endl;
+  // ------------------------------------------------------------
+  // Read the data file
+  // ------------------------------------------------------------
+  std::ifstream infile(filename);
+  if (!infile.is_open()) {
+    std::cerr << "ERROR: Cannot open file " << filename << std::endl;
+    return;
   }
 
-  // Calculate zmax AFTER Z values are computed
-  double zmax = Z[0];
-  for (int i = 1; i < nb_points; i++) {
-    if (Z[i] > zmax) zmax = Z[i];
+  std::vector<double> iter_vec, Z_vec, bias_vec, bias_err_vec;
+  double iter, m_data, m_data_err, m_mc, m_mc_err;
+
+  while (infile >> iter >> m_data >> m_data_err >> m_mc >> m_mc_err) {
+    double bias = m_data - m_mc;
+    double bias_err = std::sqrt(m_data_err * m_data_err + m_mc_err * m_mc_err);
+    double Z = std::abs(bias) / bias_err;
+
+    iter_vec.push_back(iter);
+    bias_vec.push_back(bias);
+    bias_err_vec.push_back(bias_err);
+    Z_vec.push_back(Z);
+
+    std::cout << "Iter " << iter 
+              << ": bias = " << bias << " +/- " << bias_err 
+              << ", Z = " << Z << std::endl;
+  }
+  infile.close();
+
+  int nb_points = iter_vec.size();
+  if (nb_points == 0) {
+    std::cerr << "ERROR: No data read from file." << std::endl;
+    return;
   }
 
-  TCanvas *c1 = new TCanvas("c1", "Z-value convergence", 1000, 700);
-  //c1->SetLogy();             // <-- Now log scale works
-  //gPad->SetRightMargin(0.15);
-  gPad->SetLeftMargin(0.15);
-  
-  TGraph *gf_Z = new TGraph(nb_points, iter, Z);
-  TGraph *gf_plot = (TGraph*)gf_Z->Clone("gf_plot");
-  
-  // ---------- Fit ----------
-  TF1 *fit_exp = new TF1("fit_exp", "[0] * exp(-[1] * x)", -0.5, iter_max);
-  fit_exp->SetParameter(0, Z[0]);
+  // ------------------------------------------------------------
+  // Prepare TGraphs
+  // ------------------------------------------------------------
+  TGraph *gZ = new TGraph(nb_points, iter_vec.data(), Z_vec.data());
+  gZ->SetName("gZ");
+
+  // Also create a graph with error bars (optional)
+  TGraphErrors *gZ_err = new TGraphErrors(nb_points, iter_vec.data(), Z_vec.data(),
+                                          0, bias_err_vec.data());
+  gZ_err->SetName("gZ_err");
+
+  // ------------------------------------------------------------
+  // Fit an exponential decay: Z(iter) = Z0 * exp(-k * iter)
+  // ------------------------------------------------------------
+  double max_iter = *std::max_element(iter_vec.begin(), iter_vec.end());
+  double min_iter = *std::min_element(iter_vec.begin(), iter_vec.end());
+
+  TF1 *fit_exp = new TF1("fit_exp", "[0] * exp(-[1] * x)", min_iter - 0.5, max_iter + 0.5);
+  fit_exp->SetParameter(0, Z_vec[0]);
   fit_exp->SetParameter(1, 0.5);
-  gf_Z->Fit(fit_exp, "R");
+  gZ->Fit(fit_exp, "R");
   fit_exp->SetLineColor(kRed);
   fit_exp->SetLineStyle(2);
   fit_exp->SetLineWidth(2);
+
+  // ------------------------------------------------------------
+  // Plotting
+  // ------------------------------------------------------------
+  TCanvas *c1 = new TCanvas("c1", "Z-value convergence", 1000, 700);
+  gPad->SetLeftMargin(0.15);
+  gPad->SetBottomMargin(0.12);
+
+  // Style the graph
+  gZ->SetTitle(";Iteration;Z (significance)");
+  gZ->SetMarkerStyle(20);
+  gZ->SetMarkerSize(1.8);
+  gZ->SetMarkerColor(kBlue);
+  gZ->SetLineColor(kBlue);
+  gZ->SetLineWidth(3);
+
+  // X axis
+  gZ->GetXaxis()->SetLimits(min_iter, max_iter + 0.5);
+  gZ->GetXaxis()->SetNdivisions(15);
+  gZ->GetXaxis()->CenterTitle(true);
+  gZ->GetXaxis()->SetLabelSize(0.045);
+  gZ->GetXaxis()->SetTitleSize(0.05);
   
-  // ---------- Style ----------
-  gf_plot->SetTitle("Z-value convergence;Iteration;Z (significance)");
-  gf_plot->SetMarkerStyle(20);
-  gf_plot->SetMarkerSize(1.8);
-  gf_plot->SetMarkerColor(kBlue);
-  gf_plot->SetLineColor(kBlue);
-  gf_plot->SetLineWidth(3);
-  
-  // ---------- X-axis ----------
-  gf_plot->GetXaxis()->SetLimits(0., iter_max);
-  gf_plot->GetXaxis()->SetNdivisions(15);
-  gf_plot->GetXaxis()->CenterTitle(true);
-  gf_plot->GetXaxis()->SetLabelSize(0.045);
-  gf_plot->GetXaxis()->SetTitleSize(0.05);
-  
-  // ---------- Y-axis (log scale) ----------
-  gf_plot->GetYaxis()->CenterTitle(true);
-  gf_plot->GetYaxis()->SetLabelSize(0.045);
-  gf_plot->GetYaxis()->SetTitleSize(0.05);
-  gf_plot->GetYaxis()->SetNdivisions(505);
-  gf_plot->GetYaxis()->SetRangeUser(0.1, zmax * 1.2);   // min > 0 for log scale
-  
-  // ---------- Threshold Line ----------
-  TLine *lineZ2 = new TLine(0., 2, iter_max, 2.);
+  // Y axis
+  double zmax = *std::max_element(Z_vec.begin(), Z_vec.end());
+  gZ->GetYaxis()->CenterTitle(true);
+  gZ->GetYaxis()->SetLabelSize(0.045);
+  gZ->GetYaxis()->SetTitleSize(0.05);
+  gZ->GetYaxis()->SetNdivisions(505);
+  // Use linear scale; if you want log, uncomment and adjust range
+  // gZ->GetYaxis()->SetRangeUser(0.1, zmax * 1.2);
+  gZ->GetYaxis()->SetRangeUser(0, zmax * 1.2);
+
+  // Draw
+  gZ->Draw("AP");
+  fit_exp->Draw("SAME");
+
+  // Stop criterion line (Z = 2)
+  TLine *lineZ2 = new TLine(min_iter, 2.0, max_iter + 0.5, 2.0);
   lineZ2->SetLineColor(kGray + 2);
   lineZ2->SetLineStyle(2);
   lineZ2->SetLineWidth(2);
-  
-  // ---------- Draw ----------
-  gf_plot->Draw("AP");
-  fit_exp->Draw("SAME");
   lineZ2->Draw("SAME");
 
-  // ---------- Legend ----------
-  TLegend *leg = new TLegend(0.5, 0.6, 0.8, 0.88);
-  //leg->SetHeader("Convergence", "C");
+  // Legend
+  TLegend *leg = new TLegend(0.55, 0.6, 0.85, 0.88);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
-  leg->AddEntry(gf_plot, "Z-value (data)", "PL");
+  leg->AddEntry(gZ, "Z-value (data)", "PL");
   leg->AddEntry(fit_exp, "Exp. fit", "L");
-  leg->AddEntry(lineZ2, "Stop criterion (Z_{0} = 2)", "L");
+  leg->AddEntry(lineZ2, "Stop criterion (Z = 2)", "L");
   leg->Draw();
 
-  // Create directory if needed
-  gSystem->mkdir("../massBias_" + tuning_type, kTRUE);
-  c1->SaveAs("../massBias_" + tuning_type + "/Z_plot.pdf");
+  // ------------------------------------------------------------
+  // Save the plot
+  // ------------------------------------------------------------
+  gSystem->mkdir("../massBias_tuning", kTRUE);
+  c1->SaveAs("../massBias_tuning/Z_plot.pdf");
 
+  // ------------------------------------------------------------
+  // Print fit results
+  // ------------------------------------------------------------
   std::cout << "\n=== Fit Results ===" << std::endl;
-  std::cout << "Amplitude (Z0) = " << fit_exp->GetParameter(0) 
+  std::cout << "Z0 (amplitude) = " << fit_exp->GetParameter(0)
             << " +/- " << fit_exp->GetParError(0) << std::endl;
-  std::cout << "Decay rate (k)  = " << fit_exp->GetParameter(1) 
+  std::cout << "Decay rate k   = " << fit_exp->GetParameter(1)
             << " +/- " << fit_exp->GetParError(1) << std::endl;
-
-  // Calculate width Bias
-  const double width_data = 7.097;
-  const double width_data_err = 0.310;
-
-  const double width_mc_raw = 6.372;
-  const double width_mc_raw_err = 0.064;
-  
-  const double width_mc_tuning = 6.466;
-  const double width_mc_tuning_err = 0.061;
-
-  double width_bias_raw = width_mc_raw - width_data;
-  double width_bias_raw_err = TMath::Sqrt(TMath::Power(width_mc_raw_err, 2) + TMath::Power(width_data_err, 2));
-
-  double width_bias_tuning = width_mc_tuning - width_data;
-  double width_bias_tuning_err = TMath::Sqrt(TMath::Power(width_mc_tuning_err, 2) + TMath::Power(width_data_err, 2));
-
-  cout << "width_bias_raw = " << width_bias_raw << " +/- " << width_bias_raw_err << endl;
-  cout << "width_bias_tuning = " << width_bias_tuning << " +/- " << width_bias_tuning_err << endl;
+  std::cout << "Convergence reached when Z < 2." << std::endl;
 }

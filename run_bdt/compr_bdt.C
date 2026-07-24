@@ -4,7 +4,17 @@
 #include "../header_plot/plot.h"
 //#include "../header_bdt/path.h"    // for outputSfw2D
 
-int compr_bdt() {
+int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
+	      const TString out_dir = "../tuning_false_m_gg_bdt",
+	      const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/sfw2d/",
+	      const TString var_nm = "m_gg_bdt",
+	      const TString var_symb = "M_{#gamma#gamma}",
+	      const TString unit = "",
+	      
+	      const int binsize = 120,
+	      const double var_min = 120,
+	      const double var_max = 150
+) {
 
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
@@ -194,7 +204,7 @@ int compr_bdt() {
   //gSystem->mkdir(out_dir, kTRUE);
 
   // Save histograms (including scaled ones)
-  TString outfile_name = out_dir + "/hist_" + var_nm + ".root";
+  TString outfile_name = out_dir + "/hist.root";
   cout << outfile_name << endl;
   TFile *f_out = new TFile(outfile_name, "recreate");
   Hlist->Write("Hlist", TObject::kSingleKey);
@@ -317,7 +327,7 @@ int compr_bdt() {
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");
   
-  c1->SaveAs(out_dir + "/data_mc_comparison_scaled_" + var_nm + "_bdt.pdf");
+  c1->SaveAs(out_dir + "/comparison_" + var_nm + ".pdf");
   cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << ".pdf" << endl;
   
   delete c1;

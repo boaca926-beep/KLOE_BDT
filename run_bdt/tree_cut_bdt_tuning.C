@@ -1,8 +1,6 @@
 #include "../header_bdt/cut_para.h"
 #include "../header_bdt/energy_shift_tuning_sum.h" 
 //#include "../header_bdt/tuning.h"
-#include "../header_bdt/bias_shift.h"
-#include "../header_bdt/scale_ratio.h" 
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
 #include "../header_bdt/method.h"
@@ -477,8 +475,7 @@ int tree_cut_bdt_tuning() {
     // ARRAYS - Use GetLeaf (SetBranchAddress causes crash!)
     // ============================================================
 
-    cout << MASS_SCALE_PI0 << ", " << alpha_delta << endl;
-    cout << energy_shift_total << "+/-" << energy_shift_total_err << endl;
+    cout << "MASS_SCALE_PI0 = " << MASS_SCALE_PI0  << endl;
     
     // ---------- Event loop ----------
     Long64_t nentries = ALLCHAIN_CUT->GetEntries();

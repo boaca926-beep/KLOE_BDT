@@ -6,7 +6,7 @@ import joblib
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import matplotlib.pyplot as plt
-from plots import plot_roc_improved, plot_event_cm_improved, plot_cm_improved, plot_f1_vs_threshold, plot_event_score_breakdown
+from plots import plot_roc_improved, plot_event_cm_improved, plot_cm_improved, plot_event_score_breakdown, plot_f1_comparison
 from sklearn.metrics import roc_curve, auc
 from config import DATA_DIR, PLOT_APP_DIR, MODEL_DIR
 
@@ -222,9 +222,6 @@ if __name__ == '__main__':
             # ---- Optional: overlay all three strategies ----
             fig_overlay, ax = plt.subplots(figsize=(10, 8))
             for scores, label, color in zip(
-                #[event_scores['max_score'], event_scores['mean_score'], event_scores['min2_score']],
-                #['Max (any)', 'Mean', '2nd Max (min2)'],
-                #['#1f77b4', '#ff7f0e', '#2ca02c']
                 [event_scores['max_score'], event_scores['mean_score']],
                 ['Max (any)', 'Mean'],
                 ['#1f77b4', '#ff7f0e']
@@ -311,26 +308,34 @@ if __name__ == '__main__':
                                              plot_title=f'Pair-level ROC – {data_type}')
             fig_pair_roc.savefig(f'{plot_dir}/event_roc_pair_{data_type}.png', dpi=300, bbox_inches='tight')
             plt.close(fig_pair_roc)
-            
-            # F1 plot 'any'
-            fig_f1_any = plot_f1_vs_threshold(
-                all_f1_any, 
-                thr_list, 
-                strategy_name='any'
+
+            # ---- F1 comparison plot (any vs mean) ----
+            strategies = [
+                {
+                    'name': 'any',
+                    'f1_scores': all_f1_any,
+                    'fpr_scores': None,    # if you have FPR for each threshold, you can compute it
+                    'color': '#1f77b4',
+                    'marker': 'o'
+                },
+                {
+                    'name': 'mean',
+                    'f1_scores': all_f1_mean,
+                    'fpr_scores': None,
+                    'color': '#ff7f0e',
+                    'marker': 's'
+                }
+            ]
+
+            fig_f1_comp = plot_f1_comparison(
+                strategies,
+                thr_list,
+                fpr_target=0.01,
+                #title=f'Event-Level F1 Score vs Threshold – {data_type}'
             )
-            fig_f1_any.savefig(f'{plot_dir}/f1_any.png', dpi=300, bbox_inches='tight')
-            plt.close(fig_f1_any)
-            print(f"✅ Saved F1 vs threshold for 'any' strategy")
-            
-            # F1 plot 'mean'
-            fig_f1_mean = plot_f1_vs_threshold(
-                all_f1_mean,  
-                thr_list, 
-                strategy_name='mean'
-            )
-            fig_f1_mean.savefig(f'{plot_dir}/f1_mean.png', dpi=300, bbox_inches='tight')
-            plt.close(fig_f1_mean)
-            print(f"✅ Saved F1 vs threshold for 'mean' strategy")
+            fig_f1_comp.savefig(f'{plot_dir}/f1_comparison_{data_type}.png', dpi=300, bbox_inches='tight')            
+            plt.close(fig_f1_comp)
+            print(f"✅ Saved F1 comparison plot for 'any' and 'mean' strategies")
 
             # ---- Event-wise score separation plot ----
             fig_event_score = plot_event_score_breakdown(

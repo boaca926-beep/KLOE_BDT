@@ -1,13 +1,13 @@
-const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_norm/cut/tree_pre.root";
-const TString out_dir = "../output_bdt_tuning_pull_E3";
-const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_norm/sfw2d/";
-const TString var_nm = "pull_E3";
-const TString var_symb = "Pull E3";
+const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root";
+const TString out_dir = "../tuning_false_m_gg_bdt";
+const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/sfw2d/";
+const TString var_nm = "m_gg_bdt";
+const TString var_symb = "M_{#gamma#gamma}";
 const TString unit = "";
 
-const int binsize = 200;
-const double var_min = -10;
-const double var_max = 10;
+const int binsize = 120;
+const double var_min = 120;
+const double var_max = 150;
 
 const double IM3pi_min = 720; //760 720
 const double IM3pi_max = 820; //800 620
