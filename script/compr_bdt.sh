@@ -30,22 +30,22 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #BINS=200
 
 ##################################################################
-#VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
-#VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
-#UNIT=("[MeV\/c^{2}]")
-
-#XMIN=(760) #300 600 760 (analysis)
-#XMAX=(800) #1020 1050 800 (analysis)
-#BINS=(100)
-
-##################################################################
-VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-VAR_SYMB=("M_{#gamma#gamma}")
+VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
+VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
 UNIT=("[MeV\/c^{2}]")
 
-XMIN=(120)
-XMAX=(150)
-BINS=(120)
+XMIN=(760) #300 600 760 (analysis)
+XMAX=(800) #1020 1050 800 (analysis)
+BINS=(100)
+
+##################################################################
+#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+#VAR_SYMB=("M_{#gamma#gamma}")
+#UNIT=("[MeV\/c^{2}]")
+
+#XMIN=(120)
+#XMAX=(150)
+#BINS=(120)
 
 ##################################################################
 #VAR_NM="Eprompt_max"

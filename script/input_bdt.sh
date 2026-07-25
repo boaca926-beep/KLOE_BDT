@@ -4,7 +4,7 @@ set -e   # exit immediately if any command fails
 # ============================================================
 # Configuration
 # ============================================================
-sample_size=chain          # norm; small; mini; chain
+sample_size=norm          # norm; small; mini; chain
 sample_path=../path_${sample_size}/
 exp_type=TDATA             # DATA
 tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
@@ -33,6 +33,8 @@ if [ "$pull_status" = true ]; then
 
     # ---------- PULL (BIAS + SCALE) ----------
     if [ "$APPLY_PULL" = true ]; then
+	echo "Energy Pull Tuning is Applied!"
+
         # ---- BIAS ----
         if [[ -f "$SOURCE_BIAS" ]]; then
             bias_shift=$(grep -oP '(?:const\s+double\s+)?bias_shift\s*=\s*\K[0-9.eE+-]+' "$SOURCE_BIAS" | head -1)
@@ -76,6 +78,8 @@ if [ "$pull_status" = true ]; then
 
     # ---------- MASS SCALE ----------
     if [ "$APPLY_MASS_SCALE" = true ]; then
+	echo "Energy Scaling is Applied!"
+
         if [[ -f "../pull_scan/massbias_bdt.txt" ]]; then
             mpi0_data=$(grep -oP 'mpi0_data\s*=\s*\K[0-9.eE+-]+' "../pull_scan/massbias_bdt.txt" | head -1)
             mpi0_data_err=$(grep -oP 'mpi0_data_err\s*=\s*\K[0-9.eE+-]+' "../pull_scan/massbias_bdt.txt" | head -1)

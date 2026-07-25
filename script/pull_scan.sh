@@ -3,7 +3,7 @@
 sample_type=chain
 data_type=bdt
 tuning_type=tuning   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
-pull_status=false
+pull_status=true
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
 input_file_nm="${main_folder}/cut/tree_pre.root";
 #input_file_nm="../../${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}/cut/tree_pre.root"
@@ -69,7 +69,25 @@ echo "All scans completed!"
 
 # Normalize MC mpi0 distribution to data
 echo "Get data mpi0"
-root -l -q -b "../run_bdt/compr_bdt.C(\"$input_file_nm\", \"../tuning_${pull_status}_m_gg_bdt\", \"${outputSfw2D}\", \"m_gg_bdt\", \"M_{#gamma#gamma}\", \"MeV/c^{2}\", 120, 120, 150)"
+
+output_folder="../tuning_${pull_status}_m_gg_bdt"
+
+#check output folder and update output files
+if [[ -d $output_folder ]]; then
+    
+    echo updating $output_folder
+    rm $output_folder/*.pdf
+    rm $output_folder/*.png
+    rm $output_folder/*.root
+    
+else
+    
+    echo root file $output_folder does not exsit;
+    mkdir $output_folder
+    
+fi
+
+root -l -q -b "../run_bdt/compr_bdt.C(\"$input_file_nm\", \"$output_folder\", \"${outputSfw2D}\", \"m_gg_bdt\", \"M_{#gamma#gamma}\", \"MeV/c^{2}\", 120, 120, 150)"
 
 root -l -q -b "../run_bdt/BiasMgg.C(\"tuning_${pull_status}\", \"m_gg_bdt\", \"M_{#gamma#gamma} [MeV/c^{2}]\")"
 

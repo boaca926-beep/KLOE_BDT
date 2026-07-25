@@ -478,18 +478,19 @@ def plot_feature_target_h(target_corr, plot_title):
     ax.set_yticks(range(len(corr_abs)))
     #ax.set_yticklabels(target_corr.index, fontsize=12)
     ax.set_yticklabels([get_label(col) for col in target_corr.index],
-                       rotation=45, ha='right', fontsize=12)
+                       rotation=45, ha='right', fontsize=18)
     
     # Axis labels and title
-    ax.set_xlabel(r'Absolute correlation with true $\pi^{0}$', fontsize=14)
-    ax.set_title(plot_title, fontsize=14)
+    ax.set_xlabel(r'Absolute correlation with true $\pi^{0}$', fontsize=18)
+    ax.set_title(plot_title, fontsize=16)
     ax.grid(True, alpha=0.3, axis='x')
     ax.set_xlim(0, 1)
+    ax.tick_params(axis='both', labelsize=18)
     
     # Add value labels at the end of each bar
     for i, (idx, corr) in enumerate(corr_abs.items()):
         ax.text(corr + 0.01, i, f'{corr:.2f}', 
-                va='center', ha='left', fontsize=10)
+                va='center', ha='left', fontsize=18)
     
     # Invert y-axis to show highest correlation at top
     ax.invert_yaxis()

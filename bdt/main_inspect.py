@@ -191,6 +191,7 @@ if __name__ == '__main__':
                 features = ['cos_theta', 'm_gg', 'e_min_x_angle', 'E3', 'E_asym', 'E_diff', 'E1', 'E2', 'asym_x_angle', 'is_pi0']
                 target_corr = pi0_all_df[features].corr()['is_pi0'].drop('is_pi0') #.sort_values(ascending=False)
                 #sorted_by_abs = target_corr.abs().sort_values(ascending=False)
-                fig_feature_target = plot_feature_target_h(target_corr, rf'Feature Importance: Correlation with true $\pi^{0}$')
+                #rf'Feature Importance: Correlation with true $\pi^{0}$'
+                fig_feature_target = plot_feature_target_h(target_corr, '')
                 fig_feature_target.savefig(f'{plot_dir}/feature_target_correlation_{br_nm}.png', dpi=300, bbox_inches='tight')
                 #plt.close(fig_feature_target)
