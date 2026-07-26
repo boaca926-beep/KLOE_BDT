@@ -208,14 +208,14 @@ void scale_compr(const bool &corr = true) {
   g_res_sig->GetYaxis()->SetLabelSize(0.05);
   g_res_sig->GetYaxis()->SetNdivisions(505);
   // Adjust Y range to show both resolution and ratio (ratio might be around 1)
-  g_res_sig->GetHistogram()->GetYaxis()->SetRangeUser(0.5, 2); // adjust if needed
+  g_res_sig->GetHistogram()->GetYaxis()->SetRangeUser(0.8, 1.5); // adjust if needed
 
   g_res_sig->SetMarkerStyle(20);
   g_res_sig->SetMarkerSize(1.2);
   g_res_sig->SetMarkerColor(kBlue);
   g_res_sig->SetLineColor(kBlue);
   g_res_sig->GetXaxis()->SetTitle("E_{#gamma} (MeV)");
-  g_res_sig->GetYaxis()->SetTitle("Scale (<#sigma_{pull}>)");
+  g_res_sig->GetYaxis()->SetTitle("<#sigma_{pull}>");
   g_res_sig->GetYaxis()->CenterTitle();
   g_res_sig->Draw("AP");
 
@@ -273,7 +273,7 @@ void scale_compr(const bool &corr = true) {
   linFit->Draw("same");
   
   // Legend (moved slightly down to avoid info box)
-  TLegend *leg = new TLegend(0.6, 0.65, 0.9, 0.9);
+  TLegend *leg = new TLegend(0.6, 0.65, 0.85, 0.9);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.03);
@@ -309,7 +309,7 @@ void scale_compr(const bool &corr = true) {
   myfile.close();
   
   cout << "SUMMARY" << "\n"
-       << "Average resolution ratio (Data/Signal) = " << ratio << " +/- " << ratio_err << endl;
+       << "Average relative scale (Data/Signal): alpha = " << ratio << " +/- " << ratio_err << endl;
 
   // ----------------------------------------------------------------------
   // Save outputs

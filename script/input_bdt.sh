@@ -9,12 +9,12 @@ sample_path=../path_${sample_size}/
 exp_type=TDATA             # DATA
 tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
 gsf=1                      # DATA
-pull_status=false          # main switch: false = no corrections, true = apply corrections
+pull_status=true          # main switch: false = no corrections, true = apply corrections
 
 # ------------------- Correction flags -------------------
 # Set these to true/false to independently enable/disable each correction
 APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
-APPLY_MASS_SCALE=true      # apply mass scale (MASS_SCALE_PI0)
+APPLY_MASS_SCALE=false      # apply mass scale (MASS_SCALE_PI0)
 # ---------------------------------------------------------
 
 ## Initialize tuning corrections conditions
@@ -99,7 +99,8 @@ if [ "$pull_status" = true ]; then
         fi
     else
         echo "Mass scale correction disabled. Setting MASS_SCALE_PI0=1"
-        sed -i "s/\(const double MASS_SCALE_PI0\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
+	sed -i "s/\(const double MASS_SCALE_PI0\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
+    
     fi
 
     echo "Pull correction parameters updated."

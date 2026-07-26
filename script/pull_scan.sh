@@ -1,9 +1,10 @@
 #!/bin/bash
 
-sample_type=chain
+sample_type=norm
 data_type=bdt
 tuning_type=tuning   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
-pull_status=true
+pull_status=false
+
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
 input_file_nm="${main_folder}/cut/tree_pre.root";
 #input_file_nm="../../${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}/cut/tree_pre.root"
@@ -27,7 +28,7 @@ output_folder="../pull_scan"
 # Create output folder if it doesn't exist, and clean it
 if [[ -d $output_folder ]]; then
     echo "Updating $output_folder"
-    rm -f $output_folder/*.pdf $output_folder/*.png $output_folder/*.root
+    rm -f $output_folder/*.pdf $output_folder/*.png $output_folder/*.root $output_folder/*.zip $output_folder/*#
 else
     echo "Output folder $output_folder does not exist; creating it."
     mkdir -p $output_folder
@@ -89,10 +90,19 @@ fi
 
 root -l -q -b "../run_bdt/compr_bdt.C(\"$input_file_nm\", \"$output_folder\", \"${outputSfw2D}\", \"m_gg_bdt\", \"M_{#gamma#gamma}\", \"MeV/c^{2}\", 120, 120, 150)"
 
+output_folder="../BiasMgg_tuning_${pull_status}"
+if [[ -d $output_folder ]]; then
+    echo "Updating $output_folder"
+    rm -f $output_folder/*.pdf 
+else
+    echo "$output_folder does not exist; creating it."
+    mkdir -p $output_folder
+fi
+
 root -l -q -b "../run_bdt/BiasMgg.C(\"tuning_${pull_status}\", \"m_gg_bdt\", \"M_{#gamma#gamma} [MeV/c^{2}]\")"
 
 MASSBIAS_BDT="../pull_scan/massbias_bdt.txt"
-TARGET_FILE="../header_bdt/energy_shift_tuning_sum.h"
+#TARGET_FILE="../header_bdt/energy_shift_tuning_sum.h"
 
 if [[ -f "$MASSBIAS_BDT" ]]; then
     mpi0_data=$(grep -oP '(?:const\s+double\s+)?mpi0_data\s*=\s*\K[0-9.eE+-]+' "$MASSBIAS_BDT" | head -1)
@@ -103,13 +113,13 @@ if [[ -f "$MASSBIAS_BDT" ]]; then
     echo "MPI0_MC = $mpi0_mc +/- $mpi0_mc_err"
 fi
 
-echo "Updating $TARGET_FILE with mpi0_data=$mpi0_data, mpi0_data_err=$mpi0_data_err"
-sed -i "s/\(const double mpi0_data\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_data;/" "$TARGET_FILE"
-sed -i "s/\(const double mpi0_data_err\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_data_err;/" "$TARGET_FILE"
+#echo "Updating $TARGET_FILE with mpi0_data=$mpi0_data, mpi0_data_err=$mpi0_data_err"
+#sed -i "s/\(const double mpi0_data\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_data;/" "$TARGET_FILE"
+#sed -i "s/\(const double mpi0_data_err\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_data_err;/" "$TARGET_FILE"
         
-echo "Updating $TARGET_FILE with mpi0_mc=$mpi0_mc, mpi0_mc_err=$mpi0_mc_err"
-sed -i "s/\(const double mpi0_mc\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_mc;/" "$TARGET_FILE"
-sed -i "s/\(const double mpi0_mc_err\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_mc_err;/" "$TARGET_FILE"
+#echo "Updating $TARGET_FILE with mpi0_mc=$mpi0_mc, mpi0_mc_err=$mpi0_mc_err"
+#sed -i "s/\(const double mpi0_mc\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_mc;/" "$TARGET_FILE"
+#sed -i "s/\(const double mpi0_mc_err\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_mc_err;/" "$TARGET_FILE"
 
         
 

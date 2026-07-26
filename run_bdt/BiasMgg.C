@@ -73,7 +73,7 @@ int BiasMgg(const TString tuning_type = "tuning_false",
   // ------------------------------------------------------------------
   const int nb_mass = 2;
   TH1D *hMassList[nb_mass] = {hist_signal, hist_data_sub};
-  TString massNameList[nb_mass] = {"MC", "Data (bkg sub)"};
+  TString massNameList[nb_mass] = {"MC", "Data - Background "};
   int massColor[nb_mass] = {kRed, kRed};
   FitResult massResults[nb_mass];
 
@@ -192,15 +192,17 @@ int BiasMgg(const TString tuning_type = "tuning_false",
       fitFunc->Draw("same");
     }
 
-    TLegend *leg_mass = new TLegend(0.15, 0.75, 0.65, 0.9);
+    TLegend *leg_mass = new TLegend(0.2, 0.75, 0.65, 0.9);
     leg_mass->SetFillStyle(0);
     leg_mass->SetBorderSize(0);
     leg_mass->SetTextSize(0.03);
-    leg_mass->AddEntry(h_mass_copy, Form("%s mass", massNameList[i].Data()), "lep");
+    leg_mass->AddEntry(h_mass_copy, Form("%s ", massNameList[i].Data()), "lep");
     if (fitFunc->GetParameter(1) > fit_min && fitFunc->GetParameter(1) < fit_max) {
+      /*
       leg_mass->AddEntry(fitFunc, Form("Gaus: #mu = %.2f#pm%.2f [MeV], #sigma = %.2f [MeV], #chi^{2}/ndf=%.2f",
                                        massResults[i].mean, massResults[i].mean_err,
-                                       massResults[i].sigma, massResults[i].chi2_ndf), "l");
+                                       massResults[i].sigma, massResults[i].chi2_ndf), "l");*/
+      leg_mass->AddEntry(fitFunc, Form("#mu = %.2f#pm%.2f [MeV], #sigma = %.2f [MeV]", massResults[i].mean, massResults[i].mean_err, massResults[i].sigma), "l");
     } else {
       leg_mass->AddEntry((TObject*)0, "No valid fit", "");
     }
@@ -227,26 +229,47 @@ int BiasMgg(const TString tuning_type = "tuning_false",
 
   double mass_bias = -(massResults[0].mean - massResults[1].mean);
   double mass_bias_err = TMath::Sqrt(TMath::Power(massResults[0].mean_err, 2) + TMath::Power(massResults[1].mean_err, 2));
-  double width_bias = -(massResults[0].sigma - massResults[1].sigma);
-  double width_bias_err = TMath::Sqrt(TMath::Power(massResults[0].sigma_err, 2) + TMath::Power(massResults[1].sigma_err, 2));
+  double width_ratio = massResults[1].sigma / massResults[0].sigma;
+  // ---- correct error propagation for mass ratio ----
+  double R0 = massResults[1].mean / massResults[0].mean;
+  double R0_err = R0 * TMath::Sqrt(
+      TMath::Power(massResults[1].mean_err / massResults[1].mean, 2) +
+      TMath::Power(massResults[0].mean_err / massResults[0].mean, 2)
+  );
+  
+  // ---- correct error propagation for width_ratio ----
+  double width_ratio_err = width_ratio * TMath::Sqrt(
+      TMath::Power(massResults[1].sigma_err / massResults[1].sigma, 2) +
+      TMath::Power(massResults[0].sigma_err / massResults[0].sigma, 2)
+  );
+  // ----------------------------------------------------
   double mass_bias_Z = TMath::Abs(mass_bias) / mass_bias_err;
 
   cout << "mass bias = " << mass_bias << " +/- " << mass_bias_err << "\n"
-       << "width bias = " << width_bias << " +/- " << width_bias_err << "\n";
+       << "R0 = " << R0 << " +/- " << R0_err << "\n"
+       << "width_ratio = " << width_ratio << " +/- " << width_ratio_err << "\n";
 
   // ---- Write residual bias ----
   std::ofstream myfile;
   TString myfile_nm = "../pull_scan/massbias_bdt.txt";
   myfile.open(myfile_nm.Data());
   myfile << "const double mpi0_data = " << massResults[1].mean << ";\n";
-  myfile << "const double mpi0_data_err = " << massResults[1].mean_err << ";\n";
+  myfile << "const double mpi0_data_err = " << massResults[1].mean_err << ";\n\n";
   myfile << "const double mpi0_mc = " << massResults[0].mean << ";\n";
-  myfile << "const double mpi0_mc_err = " << massResults[0].mean_err << ";\n";
-  myfile << "const double energy_shift = " << mass_bias / 2.0 << ";\n";
-  myfile << "const double energy_shift_err = " << mass_bias_err / 2.0 << ";\n";
-  myfile << "const double mass_bias_Z = " << mass_bias_Z << ";\n";
+  myfile << "const double mpi0_mc_err = " << massResults[0].mean_err << ";\n\n";
+  myfile << "const double mass_bias = " << mass_bias << ";\n";
+  myfile << "const double mass_bias_err = " << mass_bias_err << ";\n\n";
+  myfile << "const double mass_bias_Z = " << mass_bias_Z << ";\n\n";
+
+  myfile << "const double R0 = " << R0 << ";\n";
+  myfile << "const double R0_err = " << R0_err << ";\n";
+  
+  myfile << "const double width_ratio = " << width_ratio << ";\n";
+  myfile << "const double width_ratio_err = " << width_ratio_err << ";\n";
+  
   myfile.close();
 
+ 
   // ---- Data/MC comparison plot ----
   TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Background Subtracted)", 900, 900);
   c1->SetBottomMargin(0.15);
@@ -255,7 +278,7 @@ int BiasMgg(const TString tuning_type = "tuning_false",
   hist_data_sub->SetMarkerStyle(20);
   hist_data_sub->SetMarkerSize(0.6);
   hist_data_sub->GetYaxis()->SetTitle("Events");
-  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 1.2);
+  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 1.6);
   hist_data_sub->GetYaxis()->CenterTitle();
   hist_data_sub->GetYaxis()->SetTitleSize(0.05);
   hist_data_sub->GetYaxis()->SetTitleOffset(1.4);
@@ -266,25 +289,26 @@ int BiasMgg(const TString tuning_type = "tuning_false",
   hist_data_sub->GetXaxis()->SetLabelSize(0.04);
   hist_data_sub->GetXaxis()->CenterTitle();
 
-  hist_data_sub->Draw("E1");
+  hist_data_sub->Draw("E0");
   hist_signal->Draw("HIST SAME");
 
-  TPaveText *pt = new TPaveText(0.3, 0.85, 0.85, 0.87, "NDC");
+  TPaveText *pt = new TPaveText(0.3, 0.8, 0.85, 0.89, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
   pt->SetTextSize(0.03);
   pt->SetTextFont(42);
-  pt->AddText(Form("Mass bias = %.3f #pm %.3f [MeV/c^{2}]", -1 * mass_bias, mass_bias_err));
+  pt->AddText(Form("m^{MC}_{0}-m^{Data}_{0} = %.3f #pm %.3f [MeV/c^{2}]", -1 * mass_bias, mass_bias_err));
+  pt->AddText(Form("#Gamma^{Data}_{0}/#Gamma^{MC}_{0} = %.3f #pm %.3f", width_ratio, width_ratio_err));
   pt->Draw();
 
-  TLegend *leg = new TLegend(0.15, 0.7, 0.6, 0.8);
+  TLegend *leg = new TLegend(0.2, 0.65, 0.6, 0.8);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
-  leg->AddEntry(hist_data_sub, "Data (bkg sub)", "lep");
-  leg->AddEntry(hist_signal, "Signal MC", "l");
+  leg->AddEntry(hist_data_sub, "Data - Background", "lep");
+  leg->AddEntry(hist_signal, "Signal", "l");
   leg->Draw();
 
   c1->SaveAs(out_dir + "/data_mc_comparison_bkg_sub.pdf");

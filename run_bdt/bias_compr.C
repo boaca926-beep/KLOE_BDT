@@ -268,14 +268,14 @@ void bias_compr(const bool &corr = true) {
   g_bias_sig->GetYaxis()->SetTitleOffset(1.);
   g_bias_sig->GetYaxis()->SetLabelSize(0.05);
   g_bias_sig->GetYaxis()->SetNdivisions(505);
-  g_bias_sig->GetHistogram()->GetYaxis()->SetRangeUser(-0.5, 1.0);
+  g_bias_sig->GetHistogram()->GetYaxis()->SetRangeUser(-0.9, 1.0);
 
   g_bias_sig->SetMarkerStyle(20);
   g_bias_sig->SetMarkerSize(1.2);
   g_bias_sig->SetMarkerColor(kBlue);
   g_bias_sig->SetLineColor(kBlue);
-  g_bias_sig->GetXaxis()->SetTitle("E_{#gamma} (MeV)");
-  g_bias_sig->GetYaxis()->SetTitle("Bias (<Pull>)");
+  g_bias_sig->GetXaxis()->SetTitle("E_{#gamma} [MeV]");
+  g_bias_sig->GetYaxis()->SetTitle("<E^{rec}_{#gamma}>-<E^{fit}_{#gamma}>");
   g_bias_sig->GetYaxis()->CenterTitle();
   g_bias_sig->Draw("AP");
   // Set X range on the histogram
@@ -341,7 +341,7 @@ void bias_compr(const bool &corr = true) {
   linFit->SetLineWidth(2);
   linFit->Draw("same");
 
-  TLegend *leg_top = new TLegend(0.7, 0.65, 0.9, 0.9);
+  TLegend *leg_top = new TLegend(0.7, 0.65, 0.85, 0.9);
   leg_top->SetFillStyle(0);
   leg_top->SetBorderSize(0);
   leg_top->AddEntry(g_bias_sig, "Signal", "lp");
@@ -484,7 +484,7 @@ void bias_compr(const bool &corr = true) {
   myfile.close();
  
   cout << "SUMMARY" << "\n"
-       << "Average bias shift (data - signal) = " << bias_shift << "+/-" << bias_shift_err << endl;
+       << "Average bias shift (data - signal): beta = " << bias_shift << "+/-" << bias_shift_err << endl;
 
   // ----------------------------------------------------------------------
   // Save outputs
