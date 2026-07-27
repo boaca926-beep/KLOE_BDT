@@ -1,21 +1,32 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-# ============================================================
-# Configuration
-# ============================================================
-sample_size=norm          # norm; small; mini; chain
-sample_path=../path_${sample_size}/
-exp_type=TDATA             # DATA
-tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
-gsf=1                      # DATA
-pull_status=true          # main switch: false = no corrections, true = apply corrections
+# Comment usage I: raw
+#sample_size=chain          # norm; small; mini; chain
+#tuning_type=raw         # raw: no tuning; tuning: tuned + scale
+#pull_status=false          # main switch: false = no corrections, true = apply corrections
+#APPLY_PULL=false            # apply bias shift (mean) + scale ratio (width)
+#APPLY_MASS_SCALE=false      # apply mass scale (MASS_SCALE_PI0)
+ 
 
+# Comment usage II: tuning
+sample_size=norm          # norm; small; mini; chain
+tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
+pull_status=true          # main switch: false = no corrections, true = apply corrections
 # ------------------- Correction flags -------------------
 # Set these to true/false to independently enable/disable each correction
 APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
 APPLY_MASS_SCALE=false      # apply mass scale (MASS_SCALE_PI0)
 # ---------------------------------------------------------
+
+
+# ============================================================
+# Configuration
+# ============================================================
+sample_path=../path_${sample_size}/
+exp_type=TDATA             # DATA
+gsf=1                      # DATA
+
 
 ## Initialize tuning corrections conditions
 # step1: set pull_status to false to get pull correction parameters, input for pull_scan (run only once!)
@@ -126,7 +137,7 @@ fi
 # ============================================================
 result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
 #result_path=/media/bo/Analysis_Disk/
-
+#result_path=/media/bo/Backup/bdt_output/bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
 
 ## Initialize the normal conditions
 # Pre-selection

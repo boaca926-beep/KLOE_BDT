@@ -4,6 +4,7 @@
 #include "../header_plot/plot.h"
 //#include "../header_bdt/path.h"    // for outputSfw2D
 
+/*
 int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
 	      const TString out_dir = "../tuning_false_m_gg_bdt",
 	      const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/sfw2d/",
@@ -15,7 +16,8 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
 	      const double var_min = 120,
 	      const double var_max = 150
 ) {
-
+*/
+int compr_bdt() {
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
@@ -198,7 +200,13 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
 
   hist_nonreson_sc->SetLineColor(kBlue);
   hist_nonreson_sc->SetLineStyle(3);
-  
+
+  // Bkg sum
+  TH1D *hist_bkgsum = (TH1D*)hist_mcsum->Clone("hist_bkgsum");
+  hist_bkgsum->Add(hist_isr3pi_sc, -1.);
+  hist_bkgsum->Add(hist_nonreson_sc, -1.);
+  hist_bkgsum->SetLineColor(37);
+
   // Create output directory
   //TString out_dir = "../output_bdt_" + TString(var_nm);
   //gSystem->mkdir(out_dir, kTRUE);
@@ -220,7 +228,7 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
   f_out->Close();
 
   // ===== SCALED Data/MC Comparison Plot =====
-  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 1200, 700);
+  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 900, 700);
   c1->SetBottomMargin(0.12);
   c1->SetLeftMargin(0.12);
 
@@ -251,16 +259,23 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
   
   hist_data->SetMarkerStyle(20);
   hist_data->SetMarkerSize(0.8);
-  hist_mcsum->Draw("HIST SAME");
-  hist_mcrest_sc->Draw("HIST SAME");
-  hist_ksl_sc->Draw("HIST SAME");
-  hist_omegapi_sc->Draw("HIST SAME");
-  hist_nonreson_sc->Draw("HIST SAME");
-  hist_eeg_sc->Draw("HIST SAME");
+  //hist_mcsum->Draw("HIST SAME");
+  //hist_mcrest_sc->Draw("HIST SAME");
+  //hist_ksl_sc->Draw("HIST SAME");
+  //hist_omegapi_sc->Draw("HIST SAME");
+  //hist_eeg_sc->Draw("HIST SAME");
   hist_isr3pi_sc->Draw("HIST SAME");
+  hist_nonreson_sc->Draw("HIST SAME");
+  hist_bkgsum->Draw("HIST SAME");
 
+  const double mpi0_data = 135.118;
+  Double_t maxVal = hist_data->GetMaximum();
+  cout << "maxVal = " << maxVal << endl;
+  
   //TLine *line = new TLine(var_min, 0, var_max, 0);
-  TLine *line = new TLine(0.28, 0, 0.28, 5e3);
+  //TLine *line = new TLine(0.28, 0, 0.28, 5e3);
+  TLine *line = new TLine(mpi0_data, 0, mpi0_data, maxVal);
+  
   line->SetLineColor(2);
   line->SetLineWidth(2);
   line->SetLineStyle(2);
@@ -268,37 +283,43 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
   
   const double ymax = hist_data->GetMaximum();
   hist_data->GetYaxis()->SetTitle("Events");
-  hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.6);
+  hist_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.8);
+  //hist_data->GetYaxis()->SetRangeUser(3, ymax * 1.6);
   hist_data->GetYaxis()->CenterTitle();
   hist_data->GetYaxis()->SetTitleSize(0.05);
   hist_data->GetYaxis()->SetTitleOffset(1.2);
   hist_data->GetYaxis()->SetLabelSize(0.04);
 
-  TPaveText *pt0 = new TPaveText(0.65, 0.72, 0.85, 0.82, "NDC");
+  TPaveText *pt0 = new TPaveText(0.65, 0.7, 0.85, 0.85, "NDC");
   pt0->SetFillColor(0);
   pt0->SetBorderSize(0);
   pt0->SetTextAlign(12);
   pt0->SetTextSize(0.04);
   pt0->SetTextFont(42);
   pt0->AddText(Form("Purity = %.1f%%", purity * 100.));
-  pt0->Draw();
- 
+  //pt0->Draw();
+
+  gPad->SetLogy();
+
+  line->Draw();
   
-  //TLegend *leg = new TLegend(0.5, 0.35, 0.88, 0.9);
-  TLegend *leg = new TLegend(0.15, 0.35, 0.6, 0.9);
+  //TLegend *leg = new TLegend(0.7, 0.35, 0.9, 0.9);
+  TLegend *leg = new TLegend(0.15, 0.7, 0.9, 0.9);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
-  leg->SetTextSize(0.04);
-  leg->SetNColumns(1);
+  leg->SetTextSize(0.06);
+  leg->SetNColumns(3);
   leg->AddEntry(hist_data, "Data", "lep");
-  leg->AddEntry(hist_mcsum, "MC sum", "l");
+  //leg->AddEntry(hist_mcsum, "MC sum", "l");
+  leg->AddEntry(hist_bkgsum, "Background", "l");
   leg->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma (signal)", "l");
-  leg->AddEntry(hist_nonreson_sc, "Distorted signal", "l");
-  leg->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
-  leg->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
-  leg->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
-  leg->AddEntry(hist_mcrest_sc, "MC Rest", "l");
+  //leg->AddEntry(hist_nonreson_sc, "Mis-recon. signal", "l");
+  //leg->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
+  //leg->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
+  //leg->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
+  //leg->AddEntry(hist_mcrest_sc, "MC Rest", "l");
+  //leg->AddEntry(line, "Threshold", "l");
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->Draw();
@@ -326,8 +347,45 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
   hist_ratio->GetYaxis()->SetNdivisions(505);
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");
+
+  // Prompt plot
+  TCanvas *c2 = new TCanvas("c2", "Data/MC Comparison (Scaled)", 1000, 700);
+  c2->SetBottomMargin(0.12);
+  c2->SetLeftMargin(0.12);
+
+  hist_data->GetXaxis()->SetTitle(var_symb + " " + unit);
+  hist_data->GetXaxis()->SetTitleSize(0.05);
+  hist_data->GetXaxis()->SetTitleOffset(1.1);
+  hist_data->GetXaxis()->SetLabelSize(0.05);
+  hist_data->GetXaxis()->CenterTitle();
+  hist_data->GetYaxis()->SetLabelSize(0.05);
+  hist_data->GetYaxis()->SetTitleSize(0.06);
+  hist_data->GetYaxis()->SetTitleOffset(.8);
   
+  hist_data->Draw("E1");
+  hist_isr3pi_sc->Draw("HIST SAME");
+  //hist_nonreson_sc->Draw("HIST SAME");
+  hist_bkgsum->Draw("HIST SAME");
+  hist_mcsum->Draw("HIST SAME");
+
+  TPaveText *pt = new TPaveText(0.15, 0.65, 0.85, 0.75, "NDC");
+  pt->SetFillColor(0);
+  pt->SetBorderSize(0);
+  pt->SetTextAlign(12);
+  pt->SetTextSize(0.045);
+  pt->SetTextFont(42);
+  pt->AddText(Form("m_{#pi^{0}} = %.2f MeV/c^{2}   BDT-Threshold ('any') = %.2f", mpi0_data, 0.35));
+  
+  //gPad->SetLogy();
+
+  leg->Draw();
+  line->Draw();
+  pt->Draw();
+  
+  // Save plots
   c1->SaveAs(out_dir + "/comparison_" + var_nm + ".pdf");
+  c2->SaveAs(out_dir + "/prompt_comparison_" + var_nm + ".pdf");
+  
   cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << ".pdf" << endl;
   
   delete c1;

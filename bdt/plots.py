@@ -481,7 +481,7 @@ def plot_feature_target_h(target_corr, plot_title):
                        rotation=45, ha='right', fontsize=18)
     
     # Axis labels and title
-    ax.set_xlabel(r'Absolute correlation with true $\pi^{0}$', fontsize=18)
+    ax.set_xlabel(r'Absolute correlation with true $\pi^{0}$', fontsize=18, fontweight='bold', color='black')
     ax.set_title(plot_title, fontsize=16)
     ax.grid(True, alpha=0.3, axis='x')
     ax.set_xlim(0, 1)
@@ -490,7 +490,7 @@ def plot_feature_target_h(target_corr, plot_title):
     # Add value labels at the end of each bar
     for i, (idx, corr) in enumerate(corr_abs.items()):
         ax.text(corr + 0.01, i, f'{corr:.2f}', 
-                va='center', ha='left', fontsize=18)
+                va='center', ha='left', fontsize=18, fontweight='bold', color='black')
     
     # Invert y-axis to show highest correlation at top
     ax.invert_yaxis()
@@ -1198,8 +1198,8 @@ def plot_roc_improved(y_true, y_score, plot_title="", threshold=None):
     ax.plot([0, 1], [0, 1], 'k--', lw=1.5, label='Random classifier')
     
     # Axis labels and title
-    ax.set_xlabel('False Positive Rate (FPR)', fontsize=18, fontweight='bold')
-    ax.set_ylabel('True Positive Rate (TPR)', fontsize=18, fontweight='bold')
+    ax.set_xlabel('False Positive Rate (FPR)', fontsize=20, fontweight='bold', color='black')
+    ax.set_ylabel('True Positive Rate (TPR)', fontsize=20, fontweight='bold', color='black')
     #ax.set_title(plot_title or 'ROC Curve', fontsize=18, fontweight='bold')
     ax.set_title(plot_title, fontsize=18, fontweight='bold')   
     ax.legend(loc='upper right', fontsize=14, framealpha=0.9)
@@ -1288,10 +1288,11 @@ def plot_f1_comparison(strategies, thresholds, fpr_target=0.01, title=None):
     fig, ax = plt.subplots(figsize=(10, 7), constrained_layout=True)
     
     # Primary y-axis: F1
-    ax.set_xlabel('Threshold', fontsize=16, fontweight='bold')
-    ax.set_ylabel('F1 Score', fontsize=16, fontweight='bold', color='black')
+    ax.set_xlabel('Threshold', fontsize=20, fontweight='bold', color='black')
+    ax.set_ylabel('F1 Score', fontsize=20, fontweight='bold', color='black')
     ax.grid(True, linestyle=':', alpha=0.6)
     ax.set_xlim(0, 1.0)
+    ax.tick_params(axis='both', labelsize=18)
     
     # Secondary axis for FPR (only if at least one strategy provides non-None fpr_scores)
     has_fpr = any('fpr_scores' in s and s['fpr_scores'] is not None for s in strategies)

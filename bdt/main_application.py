@@ -231,8 +231,8 @@ if __name__ == '__main__':
                 print(f"auc_val: {label}={auc_val:.3}")
                 ax.plot(fpr, tpr, lw=2, color=color, label=f'{label} (AUC={auc_val:.3f})')
             ax.plot([0, 1], [0, 1], 'k--', lw=1, label='Random')
-            ax.set_xlabel('False Positive Rate', fontsize=20)
-            ax.set_ylabel('True Positive Rate', fontsize=20)
+            ax.set_xlabel('False Positive Rate', fontsize=20, fontweight='bold', color='black')
+            ax.set_ylabel('True Positive Rate', fontsize=20, fontweight='bold', color='black')
             ax.tick_params(axis='both', labelsize=18)
             title=f'Event-wise ROC Comparison – {data_type}'
             ax.set_title('', fontsize=16)
