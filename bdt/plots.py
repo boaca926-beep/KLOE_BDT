@@ -984,7 +984,7 @@ def plot_mass_signal_breakdown(X_test, y_test, y_pred, phys_ch="", plot_title=""
         phys_ch: Physics channel name (for title)
         plot_title: Custom title (overrides default)
     """
-    print("Plotting mass distribution: good signal vs lost signal vs background...")
+    #print("Plotting mass distribution: good signal vs lost signal vs background...")
     
     # --- Split the data ---
     mask_tp = (y_test == 1) & (y_pred == 1)   # Good signal (True Positives)
@@ -1003,16 +1003,18 @@ def plot_mass_signal_breakdown(X_test, y_test, y_pred, phys_ch="", plot_title=""
     n_sig = len(mass_sig)
     
     # --- Create the plot ---
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(14, 8))
     
     # Histogram: Background (light gray, to show the full continuum)
+    # label=f'All Background (n={n_bkg:,})'
     ax.hist(mass_bkg, bins=200, alpha=0.7,
-            label=f'All Background (n={n_bkg:,})',
+            label=f'All Background',
             color='#d3d3d3', edgecolor='gray', linewidth=0.5, histtype='stepfilled')
     
     # Histogram: Correctly identified signal (green, on top of everything)
+    # label=f'Correct Signal (TP) (n={n_sig:,})'
     ax.hist(mass_sig, bins=200, alpha=0.3,
-            label=f'Correct Signal (TP) (n={n_sig:,})',
+            label=f'Signal',
             color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
 
     # Histogram: Wrongly classified signal (red, on top of background)
@@ -1026,13 +1028,14 @@ def plot_mass_signal_breakdown(X_test, y_test, y_pred, phys_ch="", plot_title=""
     #        color='#2ca02c', edgecolor='darkgreen', linewidth=0.5, histtype='stepfilled')
     
     # Vertical line at π⁰ mass
-    ax.axvline(x=135, color='black', linestyle='--', linewidth=1.5, label=r'$\pi^0$ mass (135 MeV)')
+    ax.axvline(x=135, color='black', linestyle='--', linewidth=1.5, label=r'PDG $\pi^0$ mass (135 MeV)')
     
     # Labels and styling
-    ax.set_xlabel(r'$m_{\gamma\gamma}$ [MeV/$c^2$]', fontsize=14)
-    ax.set_ylabel('Events', fontsize=14)
-    ax.set_title(plot_title or f'Mass Distribution Breakdown – {phys_ch}', fontsize=16, fontweight='bold')
-    ax.legend(loc='upper right', fontsize=12)
+    ax.tick_params(axis='both', labelsize=18)
+    ax.set_xlabel(r'$\mathbf{m}_{\boldsymbol{\gamma}\boldsymbol{\gamma}}$ [MeV/$c^2$]', fontsize=20, fontweight='bold')
+    #ax.set_title('', fontsize=16, fontweight='bold')
+    #ax.set_title(plot_title or f'Mass Distribution Breakdown – {phys_ch}', fontsize=16, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=20)
     ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
