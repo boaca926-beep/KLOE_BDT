@@ -3,21 +3,25 @@ set -e   # exit immediately if any command fails
 
 # Comment usage I: raw
 #sample_size=chain          # norm; small; mini; chain
-#tuning_type=raw         # raw: no tuning; tuning: tuned + scale
-#pull_status=false          # main switch: false = no corrections, true = apply corrections
-#APPLY_PULL=false            # apply bias shift (mean) + scale ratio (width)
-#APPLY_MASS_SCALE=false      # apply mass scale (MASS_SCALE_PI0)
+#tuning_type=raw            # raw: no tuning; tuning: tuned + scale
+#pull_status=false          # false = no corrections, true = apply corrections
+#APPLY_PULL=false           # apply bias shift (mean) + scale ratio (width)
+#APPLY_MASS_SCALE=false     # apply mass scale (MASS_SCALE_PI0)
  
 
-# Comment usage II: tuning
-sample_size=norm          # norm; small; mini; chain
+# Comment usage II: pull tuning
+sample_size=norm           # norm; small; mini; chain
 tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
-pull_status=true          # main switch: false = no corrections, true = apply corrections
-# ------------------- Correction flags -------------------
-# Set these to true/false to independently enable/disable each correction
+pull_status=true           # false = no corrections, true = apply corrections
 APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
-APPLY_MASS_SCALE=false      # apply mass scale (MASS_SCALE_PI0)
-# ---------------------------------------------------------
+APPLY_MASS_SCALE=false     # apply mass scale (MASS_SCALE_PI0)
+
+# Comment usage III: pull tuning + energy scaling
+#sample_size=norm           # norm; small; mini; chain
+#tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
+#pull_status=true           # false = no corrections, true = apply corrections
+#APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
+#APPLY_MASS_SCALE=true      # apply mass scale (MASS_SCALE_PI0)
 
 
 # ============================================================
@@ -353,7 +357,7 @@ const TString outputHist = "${hist_path}";
 const TString outputSfw2D = "${sfw2d_path}";
 const TString outputSfw1D = "${sfw1d_path}";
 const TString outputOmega = "${omega_path}";
-const TString data_type = "";
+const TString data_type = "${data_type}";
 const TString exp_type = "${exp_type}";
 double gsf = ${gsf};
 EOF

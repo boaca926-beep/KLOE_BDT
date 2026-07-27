@@ -139,13 +139,15 @@ int tree_cut_bdt_raw() {
     int recon_indx_bdt = 0;
     int isr_recon_quality = 0;
     int total_recon_quality = 0;
- 
+
     // ---------- Output trees ----------
     const int list_size = 13;
     const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI", "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG", "TISR3PI_SIG_PEAK", "TISR3PI_SIG_NON_RESON"};
     TTree *TTList[list_size];
     TCollection* tree_list = new TList;
 
+    Long64_t nb_pre_per_tree[list_size] = {0};
+    
     for (int i = 0; i < list_size; i++) {
         TTList[i] = new TTree(TNM[i], "recreate");
         TTList[i]->SetAutoSave(0);
@@ -304,6 +306,7 @@ int tree_cut_bdt_raw() {
         tree_tmp->Branch("Br_recon_indx_bdt", &recon_indx_bdt, "Br_recon_indx_bdt/I");
         tree_tmp->Branch("Br_isr_recon_quality", &isr_recon_quality, "Br_isr_recon_quality/I");
         tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon_quality/I");
+	
     }
 
     TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
@@ -347,7 +350,24 @@ int tree_cut_bdt_raw() {
     // ---------- Event loop ----------
     Long64_t nentries = ALLCHAIN_CUT->GetEntries();
     cout << "Processing " << nentries << " events" << endl;
+    cout << "data_type = '" << data_type << "'" << endl;
 
+    auto determine_tree_index = [&]() -> int {
+      if (data_type == "exp") return 0;
+      if (data_type == "ufo") return 8;
+      if (data_type == "eeg") return 9;
+      if (data_type == "sig") return 10;
+      if (data_type == "ksl") {
+	if (phid == 0) return 1;
+	if (phid == 1) return 2;
+	if (phid == 2) return 3;
+	if (phid == 3) return (sig_type == 1) ? 4 : 5;
+	if (phid == 5) return (sig_type == 1) ? 6 : 7;
+	return 7;
+      }
+      return -1;
+    };
+    
     for (Long64_t irow = 0; irow < nentries; irow++) {
         ALLCHAIN_CUT->GetEntry(irow);
         if (irow % 100000 == 0) cout << "Event " << irow << endl;
@@ -573,11 +593,17 @@ int tree_cut_bdt_raw() {
         isr_recon_quality = isr_correct ? 1 : 0;
         total_recon_quality = recon_indx_bdt + isr_recon_quality;
 
-        // ---------- Selection cuts ----------
+	// ---------- Selection cuts ----------
+	int idx = determine_tree_index();
+	//cout << "idx = " << idx << endl;
+	if (idx >= 0 && idx < list_size) {
+	  nb_pre_per_tree[idx]++;
+	}
+	
         if (lagvalue_min_7C > chi2_cut) continue;
+	if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
 	if (angle_pi0gam12_bdt > angle_cut) continue;
 	if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
-	if (deltaE < deltaE_min || deltaE > deltaE_max) continue; // suppress rhopi->3pi
 	if (beta_3pi < beta_3pi_min || beta_3pi > beta_3pi_max) continue; // suppress missing MC a1+pi
     	if (bdt_score_max <= bdt_cut) continue; // further suppress KSL and omegapi background
         
@@ -662,6 +688,7 @@ int tree_cut_bdt_raw() {
             } else {
                 TTList[12]->Fill();  // NON‑RESON
             }
+	    
         } else if (data_type == "ksl") {
             if (phid == 0) {
                 TTList[1]->Fill();
@@ -720,6 +747,19 @@ int tree_cut_bdt_raw() {
              << TTList[7]->GetEntries() << " entries" << endl;
     }
 
+    // Save per-channel pre-selection counts as TParameters
+    for (int i = 0; i < list_size; i++) {
+      TString name = TString::Format("nb_pre_%s", TNM[i].Data());
+      TParameter<Long64_t> param(name.Data(), nb_pre_per_tree[i]);
+      param.Write();
+    }
+    
+    // Optional: print them
+    cout << "\nPre-selection counts per channel:\n";
+    for (int i = 0; i < list_size; i++) {
+      cout << "  " << TNM[i] << " : " << nb_pre_per_tree[i] << endl;
+    }
+ 
     f_output->Close();
     f_input->Close();
 

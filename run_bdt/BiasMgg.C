@@ -229,7 +229,8 @@ int BiasMgg(const TString tuning_type = "tuning_false",
 
   double mass_bias = -(massResults[0].mean - massResults[1].mean);
   double mass_bias_err = TMath::Sqrt(TMath::Power(massResults[0].mean_err, 2) + TMath::Power(massResults[1].mean_err, 2));
-  double width_ratio = massResults[1].sigma / massResults[0].sigma;
+  double mass_bias_Z = TMath::Abs(mass_bias) / mass_bias_err;
+
   // ---- correct error propagation for mass ratio ----
   double R0 = massResults[1].mean / massResults[0].mean;
   double R0_err = R0 * TMath::Sqrt(
@@ -237,14 +238,20 @@ int BiasMgg(const TString tuning_type = "tuning_false",
       TMath::Power(massResults[0].mean_err / massResults[0].mean, 2)
   );
   
+  double width_data = massResults[1].sigma;
+  double width_data_err = massResults[1].sigma_err;
+  
+  double width_mc = massResults[0].sigma;
+  double width_mc_err = massResults[0].sigma_err;
+  
   // ---- correct error propagation for width_ratio ----
+  double width_ratio = massResults[1].sigma / massResults[0].sigma;
   double width_ratio_err = width_ratio * TMath::Sqrt(
       TMath::Power(massResults[1].sigma_err / massResults[1].sigma, 2) +
       TMath::Power(massResults[0].sigma_err / massResults[0].sigma, 2)
   );
-  // ----------------------------------------------------
-  double mass_bias_Z = TMath::Abs(mass_bias) / mass_bias_err;
 
+  // ----------------------------------------------------
   cout << "mass bias = " << mass_bias << " +/- " << mass_bias_err << "\n"
        << "R0 = " << R0 << " +/- " << R0_err << "\n"
        << "width_ratio = " << width_ratio << " +/- " << width_ratio_err << "\n";
@@ -258,19 +265,24 @@ int BiasMgg(const TString tuning_type = "tuning_false",
   myfile << "const double mpi0_mc = " << massResults[0].mean << ";\n";
   myfile << "const double mpi0_mc_err = " << massResults[0].mean_err << ";\n\n";
   myfile << "const double mass_bias = " << mass_bias << ";\n";
-  myfile << "const double mass_bias_err = " << mass_bias_err << ";\n\n";
+  myfile << "const double mass_bias_err = " << mass_bias_err << ";\n";
   myfile << "const double mass_bias_Z = " << mass_bias_Z << ";\n\n";
 
   myfile << "const double R0 = " << R0 << ";\n";
-  myfile << "const double R0_err = " << R0_err << ";\n";
+  myfile << "const double R0_err = " << R0_err << ";\n\n";
+
+  myfile << "const double width_data = " << width_data << ";\n";
+  myfile << "const double width_data_err = " << width_data_err << ";\n\n";
+
+  myfile << "const double width_mc = " << width_mc << ";\n";
+  myfile << "const double width_mc_err = " << width_mc_err << ";\n\n";
   
   myfile << "const double width_ratio = " << width_ratio << ";\n";
   myfile << "const double width_ratio_err = " << width_ratio_err << ";\n";
   
   myfile.close();
 
- 
-  // ---- Data/MC comparison plot ----
+  // ---- Optional: Data/MC comparison plot with background‑subtracted data ----
   TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Background Subtracted)", 900, 900);
   c1->SetBottomMargin(0.15);
   c1->SetLeftMargin(0.15);

@@ -17,7 +17,20 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
 	      const double var_max = 150
 ) {
 */
-int compr_bdt() {
+
+int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
+	      const TString out_dir = "../tuning_false_m3pi_bdt",
+	      const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/sfw2d/",
+	      const TString var_nm = "m3pi_bdt",
+	      const TString var_symb = "M_{3#pi}",
+	      const TString unit = "",
+	      
+	      const int binsize = 120,
+	      const double var_min = 760,
+	      const double var_max = 800
+) {
+
+//int compr_bdt() {
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
@@ -259,11 +272,11 @@ int compr_bdt() {
   
   hist_data->SetMarkerStyle(20);
   hist_data->SetMarkerSize(0.8);
-  //hist_mcsum->Draw("HIST SAME");
-  //hist_mcrest_sc->Draw("HIST SAME");
-  //hist_ksl_sc->Draw("HIST SAME");
-  //hist_omegapi_sc->Draw("HIST SAME");
-  //hist_eeg_sc->Draw("HIST SAME");
+  hist_mcsum->Draw("HIST SAME");
+  hist_mcrest_sc->Draw("HIST SAME");
+  hist_ksl_sc->Draw("HIST SAME");
+  hist_omegapi_sc->Draw("HIST SAME");
+  hist_eeg_sc->Draw("HIST SAME");
   hist_isr3pi_sc->Draw("HIST SAME");
   hist_nonreson_sc->Draw("HIST SAME");
   hist_bkgsum->Draw("HIST SAME");
@@ -299,7 +312,7 @@ int compr_bdt() {
   pt0->AddText(Form("Purity = %.1f%%", purity * 100.));
   //pt0->Draw();
 
-  gPad->SetLogy();
+  //gPad->SetLogy();
 
   line->Draw();
   
@@ -311,18 +324,18 @@ int compr_bdt() {
   leg->SetTextSize(0.06);
   leg->SetNColumns(3);
   leg->AddEntry(hist_data, "Data", "lep");
-  //leg->AddEntry(hist_mcsum, "MC sum", "l");
   leg->AddEntry(hist_bkgsum, "Background", "l");
   leg->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma (signal)", "l");
-  //leg->AddEntry(hist_nonreson_sc, "Mis-recon. signal", "l");
-  //leg->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
-  //leg->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
-  //leg->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
-  //leg->AddEntry(hist_mcrest_sc, "MC Rest", "l");
-  //leg->AddEntry(line, "Threshold", "l");
+  leg->AddEntry(hist_nonreson_sc, "Mis-recon. signal", "l");
+  leg->AddEntry(hist_eeg_sc, "e^{+}e^{-}#gamma", "l");
+  leg->AddEntry(hist_omegapi_sc, "#omega#pi^{0}", "l");
+  leg->AddEntry(hist_ksl_sc, "K_{L}K_{S}", "l");
+  leg->AddEntry(hist_mcrest_sc, "MC Rest", "l");
+  leg->AddEntry(hist_mcsum, "MC sum", "l");
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->Draw();
+
   
   // Lower pad - ratio
   TPad *pad2 = (TPad*)c1->cd(2);
@@ -367,7 +380,8 @@ int compr_bdt() {
   //hist_nonreson_sc->Draw("HIST SAME");
   hist_bkgsum->Draw("HIST SAME");
   hist_mcsum->Draw("HIST SAME");
-
+  line->Draw();
+  
   TPaveText *pt = new TPaveText(0.15, 0.65, 0.85, 0.75, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
@@ -377,9 +391,19 @@ int compr_bdt() {
   pt->AddText(Form("m_{#pi^{0}} = %.2f MeV/c^{2}   BDT-Threshold ('any') = %.2f", mpi0_data, 0.35));
   
   //gPad->SetLogy();
-
-  leg->Draw();
-  line->Draw();
+  TLegend *leg1 = new TLegend(0.15, 0.7, 0.9, 0.9);
+  leg1->SetTextFont(132);
+  leg1->SetFillStyle(0);
+  leg1->SetBorderSize(0);
+  leg1->SetTextSize(0.05);
+  leg1->SetNColumns(3);
+  
+  leg1->AddEntry(hist_data, "Data", "lep");
+  leg1->AddEntry(hist_bkgsum, "Background", "l");
+  leg1->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma (signal)", "l");
+  //leg1->AddEntry(line, "Threshold", "l");
+  
+  leg1->Draw();
   pt->Draw();
   
   // Save plots
@@ -388,7 +412,8 @@ int compr_bdt() {
   
   cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << ".pdf" << endl;
   
-  delete c1;
+  //delete c1;
+  delete c2;
   delete leg;
   delete line;
   delete f_out;

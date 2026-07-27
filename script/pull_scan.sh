@@ -68,8 +68,8 @@ root -l -q -b "../run_bdt/scale_compr.C(true)"
 
 echo "All scans completed!"
 
-# Normalize MC mpi0 distribution to data
-echo "Get data mpi0"
+# Normalize MC mpi0 and m3pi distribution to data
+echo "Get mpi0 and m3pi distributions"
 
 output_folder="../tuning_${pull_status}_m_gg_bdt"
 
@@ -80,6 +80,7 @@ if [[ -d $output_folder ]]; then
     rm $output_folder/*.pdf
     rm $output_folder/*.png
     rm $output_folder/*.root
+
     
 else
     
@@ -89,6 +90,28 @@ else
 fi
 
 root -l -q -b "../run_bdt/compr_bdt.C(\"$input_file_nm\", \"$output_folder\", \"${outputSfw2D}\", \"m_gg_bdt\", \"M_{#gamma#gamma}\", \"MeV/c^{2}\", 120, 120, 150)"
+
+output_folder="../tuning_${pull_status}_m3pi_bdt"
+
+#check output folder and update output files
+if [[ -d $output_folder ]]; then
+    
+    echo updating $output_folder
+    rm $output_folder/*.pdf
+    rm $output_folder/*.png
+    rm $output_folder/*.root
+
+    
+else
+    
+    echo root file $output_folder does not exsit;
+    mkdir $output_folder
+    
+fi
+
+root -l -q -b "../run_bdt/compr_bdt.C(\"$input_file_nm\", \"$output_folder\", \"${outputSfw2D}\", \"m3pi_bdt\", \"M_{3#pi}\", \"MeV/c^{2}\", 120, 760, 800)"
+
+# Calculate mpi0 and m3pi bias shift
 
 output_folder="../BiasMgg_tuning_${pull_status}"
 if [[ -d $output_folder ]]; then
@@ -113,13 +136,31 @@ if [[ -f "$MASSBIAS_BDT" ]]; then
     echo "MPI0_MC = $mpi0_mc +/- $mpi0_mc_err"
 fi
 
-#echo "Updating $TARGET_FILE with mpi0_data=$mpi0_data, mpi0_data_err=$mpi0_data_err"
-#sed -i "s/\(const double mpi0_data\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_data;/" "$TARGET_FILE"
-#sed -i "s/\(const double mpi0_data_err\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_data_err;/" "$TARGET_FILE"
-        
-#echo "Updating $TARGET_FILE with mpi0_mc=$mpi0_mc, mpi0_mc_err=$mpi0_mc_err"
-#sed -i "s/\(const double mpi0_mc\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_mc;/" "$TARGET_FILE"
-#sed -i "s/\(const double mpi0_mc_err\s*=\s*\)[0-9.eE+-]*;/\1$mpi0_mc_err;/" "$TARGET_FILE"
+###
+
+output_folder="../BiasM3pi_tuning_${pull_status}"
+if [[ -d $output_folder ]]; then
+    echo "Updating $output_folder"
+    rm -f $output_folder/*.pdf 
+else
+    echo "$output_folder does not exist; creating it."
+    mkdir -p $output_folder
+fi
+
+root -l -q -b "../run_bdt/BiasM3pi.C(\"tuning_${pull_status}\", \"m3pi_bdt\", \"M_{3#pi} [MeV/c^{2}]\")"
+
+MASSBIAS_BDT="../pull_scan/mass3pibias_bdt.txt"
+#TARGET_FILE="../header_bdt/energy_shift_tuning_sum.h"
+
+if [[ -f "$MASSBIAS_BDT" ]]; then
+    m3pi_data=$(grep -oP '(?:const\s+double\s+)?m3pi_data\s*=\s*\K[0-9.eE+-]+' "$MASSBIAS_BDT" | head -1)
+    m3pi_data_err=$(grep -oP '(?:const\s+double\s+)?m3pi_data_err\s*=\s*\K[0-9.eE+-]+' "$MASSBIAS_BDT" | head -1)
+    m3pi_mc=$(grep -oP '(?:const\s+double\s+)?m3pi_mc\s*=\s*\K[0-9.eE+-]+' "$MASSBIAS_BDT" | head -1)
+    m3pi_mc_err=$(grep -oP '(?:const\s+double\s+)?m3pi_mc_err\s*=\s*\K[0-9.eE+-]+' "$MASSBIAS_BDT" | head -1)
+    echo "M3PI_DATA = $m3pi_data +/- $m3pi_data_err"
+    echo "M3PI_MC = $m3pi_mc +/- $m3pi_mc_err"
+    echo "To be completed!"
+fi
 
         
 

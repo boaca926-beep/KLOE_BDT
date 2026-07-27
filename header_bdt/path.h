@@ -1,5 +1,5 @@
-const TString rootFile = "../path_norm/exp_path";
-const TString sampleFile = "../../bdt_tuning_TDATA_norm_true/input/exp";
+const TString rootFile = "../path_norm/sig_path";
+const TString sampleFile = "../../bdt_tuning_TDATA_norm_true/input/sig";
 const TString outputCut = "../../bdt_tuning_TDATA_norm_true/cut/";
 const TString sig_path = "../../bdt_tuning_TDATA_norm_true/input/";
 const TString outputGen = "../../bdt_tuning_TDATA_norm_true/gen/";
@@ -7,7 +7,7 @@ const TString outputHist = "../../bdt_tuning_TDATA_norm_true/hist/";
 const TString outputSfw2D = "../../bdt_tuning_TDATA_norm_true/sfw2d/";
 const TString outputSfw1D = "../../bdt_tuning_TDATA_norm_true/sfw1d/";
 const TString outputOmega = "../../bdt_tuning_TDATA_norm_true/omega_fit/";
-const TString data_type = "exp";
+const TString data_type = "sig";
 const TString exp_type = "TDATA";
 const TString tuning_type = "tuning";
 double gsf = 1;

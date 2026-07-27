@@ -19,7 +19,7 @@ Double_t breitwigner(Double_t *x, Double_t *par) {
     return par[0] / ((x[0] - par[1]) * (x[0] - par[1]) + par[2] * par[2]);
 }
 
-int BiasM3pi(const TString tuning_type = "tuning",
+int BiasM3pi(const TString tuning_type = "tuning_false",
                  const TString var_nm = "m3pi_bdt",
                  const TString var_symb = "M_{3#pi} [MeV/c^{2}]"
                  ) {
@@ -87,7 +87,7 @@ int BiasM3pi(const TString tuning_type = "tuning",
 
   const int nb_mass = 2;
   TH1D *hMassList[nb_mass] = {hist_signal, hist_data_sub};
-  TString massNameList[nb_mass] = {"MC", "Data (bkg sub)"};
+  TString massNameList[nb_mass] = {"MC", "Data - Background"};
   int massColor[nb_mass] = {kRed, kRed};
   FitResult massResults[nb_mass];
 
@@ -174,7 +174,7 @@ int BiasM3pi(const TString tuning_type = "tuning",
     leg_mass->SetBorderSize(0);
     leg_mass->SetTextSize(0.03);
     leg_mass->AddEntry(h_mass_copy, Form("%s 3#pi mass", massNameList[i].Data()), "lep");
-    leg_mass->AddEntry(bw, Form("BW: M = %.2f#pm%.2f [MeV/c^{2}], #Gamma/2 = %.2f [MeV]", massResults[i].mean, massResults[i].mean_err, massResults[i].sigma), "l");
+    leg_mass->AddEntry(bw, Form("BW: m_{#omega} = %.2f#pm%.2f [MeV/c^{2}], #Gamma/2 = %.2f [MeV]", massResults[i].mean, massResults[i].mean_err, massResults[i].sigma), "l");
     leg_mass->Draw();
 
     c_mass->Update();
@@ -198,22 +198,55 @@ int BiasM3pi(const TString tuning_type = "tuning",
   }
   double mass_bias = -(massResults[0].mean - massResults[1].mean);
   double mass_bias_err = TMath::Sqrt(TMath::Power(massResults[0].mean_err, 2) + TMath::Power(massResults[1].mean_err, 2));
+  double mass_bias_Z = TMath::Abs(mass_bias) / mass_bias_err;
+
+  // ---- correct error propagation for mass ratio ----
+  double R0 = massResults[1].mean / massResults[0].mean;
+  double R0_err = R0 * TMath::Sqrt(
+      TMath::Power(massResults[1].mean_err / massResults[1].mean, 2) +
+      TMath::Power(massResults[0].mean_err / massResults[0].mean, 2)
+  );
   
-  double width_bias = -(massResults[0].sigma - massResults[1].sigma);
-  double width_bias_err = TMath::Sqrt(TMath::Power(massResults[0].sigma_err, 2) + TMath::Power(massResults[1].sigma_err, 2));
+  double width_data = massResults[1].sigma;
+  double width_data_err = massResults[1].sigma_err;
+  
+  double width_mc = massResults[0].sigma;
+  double width_mc_err = massResults[0].sigma_err;
 
-  double mass_bias_Z = TMath::Abs(mass_bias) / mass_bias_err; // significance Z value
-
-  cout << "mass bias = " << mass_bias << "+/-" << mass_bias_err << "\n"
-       << "width bias = " << width_bias << "+/-" << width_bias_err << "\n";
-
+  // ---- correct error propagation for width_ratio ----
+  double width_ratio = massResults[1].sigma / massResults[0].sigma;
+  double width_ratio_err = width_ratio * TMath::Sqrt(
+      TMath::Power(massResults[1].sigma_err / massResults[1].sigma, 2) +
+      TMath::Power(massResults[0].sigma_err / massResults[0].sigma, 2)
+  );
+  
+  // ----------------------------------------------------
+  cout << "mass bias = " << mass_bias << " +/- " << mass_bias_err << "\n"
+       << "R0 = " << R0 << " +/- " << R0_err << "\n"
+       << "width_ratio = " << width_ratio << " +/- " << width_ratio_err << "\n";
   // ---- Write residual bias ----
   std::ofstream myfile;
-  TString myfile_nm = "../header_bdt/massbias_bdt.h";
+  TString myfile_nm = "../pull_scan/mass3pibias_bdt.txt";
   myfile.open(myfile_nm.Data());
-  myfile << "const double energy_shift = " << mass_bias / 2.0 << ";\n";
-  myfile << "const double energy_shift_err = " << mass_bias_err / 2.0 << ";\n";
-  myfile << "const double mass_bias_Z = " << mass_bias_Z << ";\n";
+  myfile << "const double m3pi_data = " << massResults[1].mean << ";\n";
+  myfile << "const double m3pi_data_err = " << massResults[1].mean_err << ";\n\n";
+  myfile << "const double m3pi_mc = " << massResults[0].mean << ";\n";
+  myfile << "const double m3pi_mc_err = " << massResults[0].mean_err << ";\n\n";
+  myfile << "const double mass_bias = " << mass_bias << ";\n";
+  myfile << "const double mass_bias_err = " << mass_bias_err << ";\n";
+  myfile << "const double mass_bias_Z = " << mass_bias_Z << ";\n\n";
+
+  myfile << "const double R0 = " << R0 << ";\n";
+  myfile << "const double R0_err = " << R0_err << ";\n\n";
+
+  myfile << "const double width_data = " << width_data << ";\n";
+  myfile << "const double width_data_err = " << width_data_err << ";\n\n";
+
+  myfile << "const double width_mc = " << width_mc << ";\n";
+  myfile << "const double width_mc_err = " << width_mc_err << ";\n\n";
+  
+  myfile << "const double width_ratio = " << width_ratio << ";\n";
+  myfile << "const double width_ratio_err = " << width_ratio_err << ";\n";
     
   myfile.close();
 
@@ -239,13 +272,14 @@ int BiasM3pi(const TString tuning_type = "tuning",
   hist_data_sub->Draw("E1");
   hist_signal->Draw("HIST SAME");
 
-  TPaveText *pt = new TPaveText(0.3, 0.85, 0.85, 0.87, "NDC");
+  TPaveText *pt = new TPaveText(0.3, 0.8, 0.85, 0.89, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
   pt->SetTextSize(0.03);
   pt->SetTextFont(42);
-  pt->AddText(Form("Mass bias = %.3f #pm %.3f [MeV/c^{2}]", -1 * mass_bias, mass_bias_err));
+  pt->AddText(Form("m^{MC}_{#omega}-m^{Data}_{#omega} = %.3f #pm %.3f [MeV/c^{2}]", -1 * mass_bias, mass_bias_err));
+  pt->AddText(Form("#Gamma^{Data}_{#omega}/#Gamma^{MC}_{#omega} = %.3f #pm %.3f", width_ratio, width_ratio_err));
   pt->Draw();
 
   TLegend *leg = new TLegend(0.15, 0.7, 0.6, 0.8);
@@ -253,7 +287,7 @@ int BiasM3pi(const TString tuning_type = "tuning",
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
-  leg->AddEntry(hist_data_sub, "Data (bkg sub)", "lep");
+  leg->AddEntry(hist_data_sub, "Data - Background", "lep");
   leg->AddEntry(hist_signal, "Signal MC", "l");
   leg->Draw();
 
