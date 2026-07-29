@@ -1,4 +1,4 @@
-const TString mainFolder = "/home/bo/Desktop/bdt_tuning_TDATA_chain"; // modify to omega_fit folder, input_bdt.sh
+const TString mainFolder = "/home/bo/Desktop/bdt_tuning_TDATA_norm_true"; // modify to omega_fit folder, input_bdt.sh
 const TString treeFile = mainFolder + "/cut/tree_pre.root";
 const TString sfw2dFile = mainFolder + "/sfw2d/sfw2d.root";
 const TString output_path = "../plots_m3pi_corr/";

@@ -3,7 +3,7 @@
 sample_type=norm
 data_type=bdt
 tuning_type=tuning   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
-pull_status=false
+pull_status=true
 
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
 input_file_nm="${main_folder}/cut/tree_pre.root";

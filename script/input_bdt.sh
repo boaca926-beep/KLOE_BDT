@@ -2,21 +2,28 @@
 set -e   # exit immediately if any command fails
 
 # Comment usage I: raw
-#sample_size=chain          # norm; small; mini; chain
-#tuning_type=raw            # raw: no tuning; tuning: tuned + scale
-#pull_status=false          # false = no corrections, true = apply corrections
-#APPLY_PULL=false           # apply bias shift (mean) + scale ratio (width)
-#APPLY_MASS_SCALE=false     # apply mass scale (MASS_SCALE_PI0)
- 
-
-# Comment usage II: pull tuning
-sample_size=norm           # norm; small; mini; chain
-tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
-pull_status=true           # false = no corrections, true = apply corrections
-APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
+sample_size=chain          # norm; small; mini; chain
+tuning_type=raw            # raw: no tuning; tuning: tuned + scale
+pull_status=false          # false = no corrections, true = apply corrections
+APPLY_PULL=false           # apply bias shift (mean) + scale ratio (width)
 APPLY_MASS_SCALE=false     # apply mass scale (MASS_SCALE_PI0)
+ 
+# Comment usage II: track correction
+#sample_size=norm            # norm; small; mini; chain
+#tuning_type=tuning          # raw: no tuning; tuning: tuned + scale
+#pull_status=false           # false = no corrections, true = apply corrections
+#APPLY_TRACK_SCALE=true      # set to true to apply track momentum scaling
+#APPLY_PULL=false            # apply bias shift (mean) + scale ratio (width)
+#APPLY_MASS_SCALE=false      # apply mass scale (MASS_SCALE_PI0)
 
-# Comment usage III: pull tuning + energy scaling
+# Comment usage III: pull tuning
+#sample_size=norm           # norm; small; mini; chain
+#tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
+#pull_status=true           # false = no corrections, true = apply corrections
+#APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
+#APPLY_MASS_SCALE=true      # apply mass scale (MASS_SCALE_PI0)
+
+# Comment usage IV: pull tuning + energy scaling
 #sample_size=norm           # norm; small; mini; chain
 #tuning_type=tuning         # raw: no tuning; tuning: tuned + scale
 #pull_status=true           # false = no corrections, true = apply corrections
@@ -44,8 +51,9 @@ TARGET_FILE="../header_bdt/energy_shift_tuning_sum.h"
 # Update header based on pull_status and individual flags
 # ============================================================
 if [ "$pull_status" = true ]; then
-    echo "Pull corrections are applied!"
 
+    
+    
     # ---------- PULL (BIAS + SCALE) ----------
     if [ "$APPLY_PULL" = true ]; then
 	echo "Energy Pull Tuning is Applied!"
@@ -121,8 +129,12 @@ if [ "$pull_status" = true ]; then
     echo "Pull correction parameters updated."
 
 else
-    echo "No pull corrections are applied!"
+    echo "No track and pull corrections are applied!"
 
+    # Reset track scale parameters
+    sed -i "s/\(const double track_scale\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
+    sed -i "s/\(const double track_scale_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+    
     # Reset all corrections to neutral values
     echo "Setting bias_shift=0, scale_ratio=1, and MASS_SCALE_PI0=1"
     sed -i "s/\(const double bias_shift\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
@@ -213,8 +225,8 @@ sm_header=../header_bdt/sm_para.h
 sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples
-DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
-#DATA_TYPE=("sig")
+#DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
+DATA_TYPE=("sig")
 
 ## Folders
 input_path=${result_path}/input/

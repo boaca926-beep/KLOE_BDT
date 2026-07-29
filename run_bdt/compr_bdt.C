@@ -18,6 +18,7 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
 ) {
 */
 
+/*
 int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
 	      const TString out_dir = "../tuning_false_m3pi_bdt",
 	      const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/sfw2d/",
@@ -29,8 +30,9 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
 	      const double var_min = 760,
 	      const double var_max = 800
 ) {
+*/
 
-//int compr_bdt() {
+int compr_bdt() {
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);
@@ -241,7 +243,7 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
   f_out->Close();
 
   // ===== SCALED Data/MC Comparison Plot =====
-  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 900, 700);
+  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 1200, 900);
   c1->SetBottomMargin(0.12);
   c1->SetLeftMargin(0.12);
 
@@ -279,15 +281,15 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
   hist_eeg_sc->Draw("HIST SAME");
   hist_isr3pi_sc->Draw("HIST SAME");
   hist_nonreson_sc->Draw("HIST SAME");
-  hist_bkgsum->Draw("HIST SAME");
+  //hist_bkgsum->Draw("HIST SAME");
 
   const double mpi0_data = 135.118;
   Double_t maxVal = hist_data->GetMaximum();
   cout << "maxVal = " << maxVal << endl;
   
-  //TLine *line = new TLine(var_min, 0, var_max, 0);
+  TLine *line = new TLine(var_min, 0, var_max, 0);
   //TLine *line = new TLine(0.28, 0, 0.28, 5e3);
-  TLine *line = new TLine(mpi0_data, 0, mpi0_data, maxVal);
+  //TLine *line = new TLine(mpi0_data, 0, mpi0_data, maxVal);
   
   line->SetLineColor(2);
   line->SetLineWidth(2);
@@ -314,15 +316,15 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
 
   //gPad->SetLogy();
 
-  line->Draw();
+  //line->Draw();
   
   //TLegend *leg = new TLegend(0.7, 0.35, 0.9, 0.9);
-  TLegend *leg = new TLegend(0.15, 0.7, 0.9, 0.9);
+  TLegend *leg = new TLegend(0.15, 0.6, 0.9, 0.9);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
-  leg->SetTextSize(0.06);
-  leg->SetNColumns(3);
+  leg->SetTextSize(0.05);
+  leg->SetNColumns(2);
   leg->AddEntry(hist_data, "Data", "lep");
   leg->AddEntry(hist_bkgsum, "Background", "l");
   leg->AddEntry(hist_isr3pi_sc, "#pi^{+}#pi^{-}#pi^{0}#gamma (signal)", "l");
@@ -361,6 +363,9 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");
 
+  line->Draw();
+  
+  /*
   // Prompt plot
   TCanvas *c2 = new TCanvas("c2", "Data/MC Comparison (Scaled)", 1000, 700);
   c2->SetBottomMargin(0.12);
@@ -405,15 +410,16 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
   
   leg1->Draw();
   pt->Draw();
+  */
   
   // Save plots
   c1->SaveAs(out_dir + "/comparison_" + var_nm + ".pdf");
-  c2->SaveAs(out_dir + "/prompt_comparison_" + var_nm + ".pdf");
+  //c2->SaveAs(out_dir + "/prompt_comparison_" + var_nm + ".pdf");
   
   cout << "Scaled plot saved to: " << out_dir << "/data_mc_comparison_scaled_" << var_nm << ".pdf" << endl;
   
-  //delete c1;
-  delete c2;
+  delete c1;
+  //delete c2;
   delete leg;
   delete line;
   delete f_out;
