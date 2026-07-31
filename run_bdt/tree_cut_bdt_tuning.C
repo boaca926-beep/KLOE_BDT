@@ -88,7 +88,7 @@ int tree_cut_bdt_tuning() {
     double lagvalue_min_7C = 0., deltaE = 0., betapi0 = 0., angle_pi0gam12 = 0.;
     double m02 = 0., mplus2 = 0.;
     double m3pi = 0.;
-    double ppIM = 0.;
+    double ppIM = 0., ppIM_true = 0.;
     double IM3pi_7C = 0., IM3pi_true = 0.;
     double IM_pi0_7C = 0.;
     double Eisr = 0., Epi0_pho1 = 0., Epi0_pho2 = 0.;
@@ -261,6 +261,7 @@ int tree_cut_bdt_tuning() {
         tree_tmp->Branch("Br_mplus2", &mplus2, "Br_mplus2/D");
         tree_tmp->Branch("Br_m02", &m02, "Br_m02/D");
         tree_tmp->Branch("Br_ppIM", &ppIM, "Br_ppIM/D");
+	tree_tmp->Branch("Br_ppIM_true", &ppIM_true, "Br_ppIM_true/D");
         tree_tmp->Branch("Br_Eisr", &Eisr, "Br_Eisr/D");
         tree_tmp->Branch("Br_Epi0_pho1", &Epi0_pho1, "Br_Epi0_pho1/D");
         tree_tmp->Branch("Br_Epi0_pho2", &Epi0_pho2, "Br_Epi0_pho2/D");
@@ -516,6 +517,7 @@ int tree_cut_bdt_tuning() {
         pull_z3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(13);
         pull_t3 = ALLCHAIN_CUT->GetLeaf("Br_PULLIST")->GetValue(14);
 
+	ppIM_true = ALLCHAIN_CUT->GetLeaf("Br_ppIM_true")->GetValue(0);
         ppIM = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(5);
         m02 = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(10);
         mplus2 = ALLCHAIN_CUT->GetLeaf("Br_MASSLIST")->GetValue(11);
@@ -905,9 +907,9 @@ int tree_cut_bdt_tuning() {
         total_recon_quality = recon_indx_bdt + isr_recon_quality;
 
 	// After assigning e1_bdt, e2_bdt, e3_bdt (or after event.photons is updated)
-	// Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
-        
-        // Selection cuts
+	//Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
+
+	// Selection cuts
         if (lagvalue_min_7C > chi2_cut) continue;
         if (angle_pi0gam12_bdt > angle_cut) continue;
         if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
@@ -915,6 +917,9 @@ int tree_cut_bdt_tuning() {
         if (beta_3pi < beta_3pi_min || beta_3pi > beta_3pi_max) continue;
         if (Eprompt_max > Eprompt_max_cut) continue;
         if (bdt_score <= bdt_cut) continue;
+
+	//cout << "Eisr = " << Eisr << ", Epi0_pho1 = " << Epi0_pho1 << ", Epi0_pho2 = " << Epi0_pho2 << ", e1_bdt = " << e1_bdt << ", e2_bdt = " << e2_bdt << ", e3_bdt = " << e3_bdt << endl;
+        
         
         // Fill output trees
         if (data_type == "exp") {

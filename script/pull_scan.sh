@@ -1,9 +1,9 @@
 #!/bin/bash
 
-sample_type=norm
+sample_type=chain
 data_type=bdt
 tuning_type=tuning   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
-pull_status=true
+pull_status=false
 
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
 input_file_nm="${main_folder}/cut/tree_pre.root";
@@ -17,11 +17,9 @@ echo "========================================"
 echo -e "\nPull scan ... using ${main_folder}"
 
 # Define trees and sample types
-TREES_DATA=("TDATA")
-SAMPLES_DATA=("Data")
-
 TREES_MC=("TISR3PI_SIG_PEAK")
 SAMPLES_MC=("Signal")
+
 
 output_folder="../pull_scan"
 
@@ -47,6 +45,9 @@ for ((i=0; i<${#TREES_MC[@]}; ++i)); do
     
 done
 
+TREES_DATA=("TDATA")
+SAMPLES_DATA=("Data")
+
 # Loop over trees and run the macro for DATA
 for ((i=0; i<${#TREES_DATA[@]}; ++i)); do
     tree=${TREES_DATA[i]}
@@ -68,25 +69,23 @@ root -l -q -b "../run_bdt/scale_compr.C(true)"
 
 echo "All scans completed!"
 
+#================================================
 # Normalize MC mpi0 and m3pi distribution to data
+#================================================
+
 echo "Get mpi0 and m3pi distributions"
 
 output_folder="../tuning_${pull_status}_m_gg_bdt"
 
 #check output folder and update output files
 if [[ -d $output_folder ]]; then
-    
     echo updating $output_folder
     rm $output_folder/*.pdf
     rm $output_folder/*.png
     rm $output_folder/*.root
-
-    
 else
-    
     echo root file $output_folder does not exsit;
     mkdir $output_folder
-    
 fi
 
 root -l -q -b "../run_bdt/compr_bdt.C(\"$input_file_nm\", \"$output_folder\", \"${outputSfw2D}\", \"m_gg_bdt\", \"M_{#gamma#gamma}\", \"MeV/c^{2}\", 120, 120, 150)"
@@ -95,23 +94,20 @@ output_folder="../tuning_${pull_status}_m3pi_bdt"
 
 #check output folder and update output files
 if [[ -d $output_folder ]]; then
-    
     echo updating $output_folder
     rm $output_folder/*.pdf
     rm $output_folder/*.png
     rm $output_folder/*.root
-
-    
 else
-    
     echo root file $output_folder does not exsit;
     mkdir $output_folder
-    
 fi
 
 root -l -q -b "../run_bdt/compr_bdt.C(\"$input_file_nm\", \"$output_folder\", \"${outputSfw2D}\", \"m3pi_bdt\", \"M_{3#pi}\", \"MeV/c^{2}\", 120, 760, 800)"
 
-# Calculate mpi0 and m3pi bias shift
+#================================================
+# Calculate mpi0 bias shift
+#================================================
 
 output_folder="../BiasMgg_tuning_${pull_status}"
 if [[ -d $output_folder ]]; then
@@ -136,7 +132,10 @@ if [[ -f "$MASSBIAS_BDT" ]]; then
     echo "MPI0_MC = $mpi0_mc +/- $mpi0_mc_err"
 fi
 
-###
+    
+#================================================
+# Calculate mpi0 bias shift
+#================================================
 
 output_folder="../BiasM3pi_tuning_${pull_status}"
 if [[ -d $output_folder ]]; then
