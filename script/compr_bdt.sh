@@ -1,10 +1,10 @@
 #!/bin/bash
 
 compr=../header_bdt/compr.h
-sample_type=norm
 data_type=bdt
 tuning_type=tuning #raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
-tuning_status=true
+sample_type=chain
+tuning_status=false
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
@@ -55,15 +55,6 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #XMIN=(100)
 #XMAX=(170)
 #BINS=(200)
-
-##################################################################
-#VAR_NM="Eprompt_max"
-#VAR_SYMB="E^{max}_{#gamma}"
-#UNIT=""
-
-#XMIN=150
-#XMAX=500
-#BINS=200
 
 ##################################################################
 #VAR_NM="betapi0_bdt"

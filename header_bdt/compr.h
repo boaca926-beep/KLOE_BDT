@@ -1,6 +1,6 @@
-const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_norm_true/cut/tree_pre.root";
-const TString out_dir = "../tuning_true_ppIM";
-const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_norm_true/sfw2d/";
+const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root";
+const TString out_dir = "../tuning_false_ppIM";
+const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/sfw2d/";
 const TString var_nm = "ppIM";
 const TString var_symb = "M_{trk}";
 const TString unit = "[MeV/c^{2}]";

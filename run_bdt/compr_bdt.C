@@ -148,7 +148,7 @@ int compr_bdt() {
         return (N == 0.0) ? 0.0 : Nd * fra / N;
       };
       
-      scale_eeg     = eeg_sfw * 2.; //getscale(nb_data_sum, feeg,     nb_eeg_sum);
+      scale_eeg     = eeg_sfw; //getscale(nb_data_sum, feeg,     nb_eeg_sum);
       scale_isr3pi  = isr3pi_sfw; //getscale(nb_data_sum, fisr3pi,  nb_isr3pi_sum);
       scale_omegapi = omegapi_sfw; //getscale(nb_data_sum, fomegapi, nb_omegapi_sum);
       scale_nonReson= nonReson_sfw; //getscale(nb_data_sum, fnonReson, nb_nonReson_sum);
@@ -156,7 +156,7 @@ int compr_bdt() {
       scale_mcrest  = mcrest_sfw; //getscale(nb_data_sum, fmcrest,  nb_mcrest_sum);
       
       cout << "\n=== Scaling factors from SFW2D ===" << endl;
-      cout << "scale_eeg = " << scale_eeg << ", eeg_sfw = " << eeg_sfw * 2. << endl;
+      cout << "scale_eeg = " << scale_eeg << ", eeg_sfw = " << eeg_sfw << endl;
       cout << "scale_isr3pi = " << scale_isr3pi << ", isr3pi_sfw = " << isr3pi_sfw << endl;
       cout << "scale_omegapi = " << scale_omegapi << ", omegapi_sfw = " << omegapi_sfw << endl;
       cout << "scale_nonReson = " << scale_nonReson << ", nonReson_sfw = " << nonReson_sfw << endl;
@@ -270,10 +270,10 @@ int compr_bdt() {
   pad1->SetBottomMargin(0.01);
   pad1->SetLeftMargin(0.12);
 
-  hist_data->Draw("E1");
-  
   hist_data->SetMarkerStyle(20);
   hist_data->SetMarkerSize(0.8);
+  
+  hist_data->Draw("E1");
   hist_mcsum->Draw("HIST SAME");
   hist_mcrest_sc->Draw("HIST SAME");
   hist_ksl_sc->Draw("HIST SAME");
@@ -281,6 +281,7 @@ int compr_bdt() {
   hist_eeg_sc->Draw("HIST SAME");
   hist_isr3pi_sc->Draw("HIST SAME");
   hist_nonreson_sc->Draw("HIST SAME");
+
   //hist_bkgsum->Draw("HIST SAME");
 
   const double mpi0_data = 135.118;

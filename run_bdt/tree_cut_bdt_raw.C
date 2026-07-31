@@ -112,6 +112,7 @@ int tree_cut_bdt_raw() {
     int pho_indx[3], EPI0NTMC[4];
     
     // BDT‑specific variables (reco)
+    double bdt_score = 0.;
     double bdt_score_max = 0.;
     double bdt_score_mean = 0.;
     double e1_bdt = 0., e2_bdt = 0., e3_bdt = 0.;
@@ -140,6 +141,7 @@ int tree_cut_bdt_raw() {
     int isr_recon_quality = 0;
     int total_recon_quality = 0;
 
+    
     // ---------- Output trees ----------
     const int list_size = 13;
     const TString TNM[list_size] = {"TDATA", "TOMEGAPI", "TKPM", "TKSL", "T3PIGAM", "TRHOPI", "TETAGAM", "TBKGREST", "TUFO", "TEEG", "TISR3PI_SIG", "TISR3PI_SIG_PEAK", "TISR3PI_SIG_NON_RESON"};
@@ -254,6 +256,7 @@ int tree_cut_bdt_raw() {
         // BDT branches
 	tree_tmp->Branch("Br_bdt_score_mean", &bdt_score_mean, "Br_bdt_score_mean/D");
         tree_tmp->Branch("Br_bdt_score_max", &bdt_score_max, "Br_bdt_score_max/D");
+	tree_tmp->Branch("Br_bdt_score", &bdt_score, "Br_bdt_score/D");
         tree_tmp->Branch("Br_e1_bdt", &e1_bdt, "Br_e1_bdt/D");
         tree_tmp->Branch("Br_e1_bdt_true", &e1_bdt_true, "Br_e1_bdt_true/D");
         tree_tmp->Branch("Br_e2_bdt", &e2_bdt, "Br_e2_bdt/D");
@@ -306,7 +309,6 @@ int tree_cut_bdt_raw() {
         tree_tmp->Branch("Br_recon_indx_bdt", &recon_indx_bdt, "Br_recon_indx_bdt/I");
         tree_tmp->Branch("Br_isr_recon_quality", &isr_recon_quality, "Br_isr_recon_quality/I");
         tree_tmp->Branch("Br_total_recon_quality", &total_recon_quality, "Br_total_recon_quality/I");
-	
     }
 
     TLorentzVector pi0gam1, pi0gam2, isrgam, trkplus, trkmin;
@@ -452,10 +454,10 @@ int tree_cut_bdt_raw() {
         m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
         evnt_tot++;
-        Eprompt_max = 0.;
-        if (Eisr > Eprompt_max) Eprompt_max = Eisr;
-        if (Epi0_pho1 > Eprompt_max) Eprompt_max = Epi0_pho1;
-        if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
+        //Eprompt_max = 0.;
+        //if (Eisr > Eprompt_max) Eprompt_max = Eisr;
+        //if (Epi0_pho1 > Eprompt_max) Eprompt_max = Epi0_pho1;
+        //if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
 
         // ---------- BDT evaluation ----------
         EventData event;
@@ -512,6 +514,7 @@ int tree_cut_bdt_raw() {
         betapi0_bdt = (pi0_bdt.Vect()).Mag() / pi0_bdt.E();
         bdt_score_max = result.max_score;
 	bdt_score_mean = result.mean_scores;
+	bdt_score = result.score;
 
         // Generator‑level true
         TLorentzVector piplus_gen, piminus_gen, pi0_gen;
@@ -670,8 +673,10 @@ int tree_cut_bdt_raw() {
         // ============================================================
 
 	// Recalculate Eprompt_max from BDT-selected photons
-	Eprompt_max = std::max({pho_E1, pho_E2, pho_E3});
- 
+	//Eprompt_max = std::max({pho_E1, pho_E2, pho_E3});
+
+	Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
+	
 	if (Eprompt_max > Eprompt_max_cut) continue;
 	
         // ---------- Fill output trees ----------
@@ -747,19 +752,20 @@ int tree_cut_bdt_raw() {
              << TTList[7]->GetEntries() << " entries" << endl;
     }
 
-    // Save per-channel pre-selection counts as TParameters
-    for (int i = 0; i < list_size; i++) {
-      TString name = TString::Format("nb_pre_%s", TNM[i].Data());
-      TParameter<Long64_t> param(name.Data(), nb_pre_per_tree[i]);
-      param.Write();
-    }
     
     // Optional: print them
-    cout << "\nPre-selection counts per channel:\n";
+    //cout << "\nPre-selection counts per channel:\n";
+    //for (int i = 0; i < list_size; i++) {
+    //  cout << "  " << TNM[i] << " : " << nb_pre_per_tree[i] << endl;
+    //}
+
+    // Attach pre‑selection counts to each tree as TNamed in GetUserInfo()
     for (int i = 0; i < list_size; i++) {
-      cout << "  " << TNM[i] << " : " << nb_pre_per_tree[i] << endl;
+      TString name = TString::Format("%lld", nb_pre_per_tree[i]);
+      TNamed *nb = new TNamed("nb_pre", name.Data());
+      TTList[i]->GetUserInfo()->Add(nb);
     }
- 
+    
     f_output->Close();
     f_input->Close();
 

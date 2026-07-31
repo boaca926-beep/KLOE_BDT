@@ -82,6 +82,8 @@ int tree_cut_bdt_tuning() {
     TMVA::Experimental::RBDT bdt("BDT_pi0", BDT_MODEL_PATH);
     cout << "✓ BDT model loaded from " << BDT_MODEL_PATH << endl;
 
+    gRandom->SetSeed(12345);
+    
     // ---------- Variables ----------
     double lagvalue_min_7C = 0., deltaE = 0., betapi0 = 0., angle_pi0gam12 = 0.;
     double m02 = 0., mplus2 = 0.;
@@ -551,7 +553,8 @@ int tree_cut_bdt_tuning() {
         angle_trk_neutral = trksum.Angle(neutralsum.Vect())*TMath::RadToDeg();
         m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
-        // Maximum prompt photon energy before pull tuning
+        // Maximum prompt photon energy before bdt and pull tuning
+	// Effective of etagam suppression
         Eprompt_max = std::max({Eisr, Epi0_pho1, Epi0_pho2});
         
         // Photons are sorted by energies
@@ -671,9 +674,56 @@ int tree_cut_bdt_tuning() {
 	// where alpha = scale_ratio; beta = bias_data - alpha * bias_sig
 	// Assume bias_sig close to zero, beta = bias_shift
 	// Solving for E_corr: E_corr = (1 - alpha)E_raw + alpha*E_fit - beta*sigma_denom
+
+	const double M_PION = 139.57061;  // MeV/c^2
+	cout << "track_smearing = " << track_smearing << ", track_scale = " << track_scale << endl;
+
+	// Smearing factor: random Gaussian with mean 1, width track_smearing
+	double smear_plus = gRandom->Gaus(1.0, track_smearing);
+	double smear_minus = gRandom->Gaus(1.0, track_smearing);
  
 	// ---- Apply corrections ----
         if (data_type == "sig") {
+
+	  // Correct pi+
+	  double p_plus_mag = sqrt(ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
+	  if (p_plus_mag > 0) {
+	    ppl_px *= track_scale;
+	    ppl_py *= track_scale;
+	    ppl_pz *= track_scale;
+
+	    ppl_px *= smear_plus;
+	    ppl_py *= smear_plus;
+	    ppl_pz *= smear_plus;
+
+	    ppl_E = sqrt(M_PION*M_PION + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
+	  }
+
+	  // Correct pi-
+	  double p_minus_mag = sqrt(pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
+	  if (p_minus_mag > 0) {
+	    pmi_px *= track_scale;
+	    pmi_py *= track_scale;
+	    pmi_pz *= track_scale;
+
+	    pmi_px *= smear_minus;
+	    pmi_py *= smear_minus;
+	    pmi_pz *= smear_minus;
+    
+	    pmi_E = sqrt(M_PION*M_PION + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
+	  }
+
+	  // ---- Update the event structure ----
+	  event.tracks[0][0] = ppl_E;
+	  event.tracks[0][1] = ppl_px;
+	  event.tracks[0][2] = ppl_py;
+	  event.tracks[0][3] = ppl_pz;
+	  
+	  event.tracks[1][0] = pmi_E;
+	  event.tracks[1][1] = pmi_px;
+	  event.tracks[1][2] = pmi_py;
+	  event.tracks[1][3] = pmi_pz;
+ 
 	  //const double delta_e1_bdt = bias_E12 * resol_E12;  
 	  //const double bias_MeV_E3 = bias_E3 * resol_E3;
 
@@ -756,8 +806,8 @@ int tree_cut_bdt_tuning() {
 	  py3_bdt = py3_fit;
 	  pz3_bdt = pz3_fit;
         }
-        
-        m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
+
+	m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
         m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
         
         TLorentzVector pi0gam1_bdt, pi0gam2_bdt;
@@ -854,14 +904,17 @@ int tree_cut_bdt_tuning() {
         isr_recon_quality = isr_correct ? 1 : 0;
         total_recon_quality = recon_indx_bdt + isr_recon_quality;
 
+	// After assigning e1_bdt, e2_bdt, e3_bdt (or after event.photons is updated)
+	// Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
+        
         // Selection cuts
         if (lagvalue_min_7C > chi2_cut) continue;
         if (angle_pi0gam12_bdt > angle_cut) continue;
         if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
         if (deltaE < deltaE_min || deltaE > deltaE_max) continue;
         if (beta_3pi < beta_3pi_min || beta_3pi > beta_3pi_max) continue;
-        if (bdt_score <= bdt_cut) continue;
         if (Eprompt_max > Eprompt_max_cut) continue;
+        if (bdt_score <= bdt_cut) continue;
         
         // Fill output trees
         if (data_type == "exp") {

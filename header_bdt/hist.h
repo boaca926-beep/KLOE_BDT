@@ -3,7 +3,7 @@ TFile *f_gen = new TFile(outputGen + "tree_gen.root");
 
 //cout << f_gen -> GetName() << endl;
 
-const double eeg_lsf = 2.;
+const double eeg_lsf = 1.;
 const double mass_sigma_nb = 1;
 const double sfw2d_sigma_nb = 1;
 
@@ -169,7 +169,7 @@ void fillHist() {
     TH2D * h2d_tmp_non_reson = new TH2D("h2d_sfw_" + objnm_tree + "_non_reson", "", ppIM_bin, ppIM_min, ppIM_max, Eisr_bin, Eisr_min, Eisr_max);
     h2d_tmp_non_reson -> Sumw2();
     */
-
+    
     TH2D * h2d_tmp = new TH2D("h2d_sfw_" + objnm_tree, "", angle_bin, angle_min, angle_max, mgg_bin, mgg_min, mgg_max);
     h2d_tmp -> Sumw2();
 

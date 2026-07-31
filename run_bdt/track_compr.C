@@ -115,10 +115,10 @@ int track_compr(const TString tuning_type = "tuning_false",
     TH1D *h_mass_copy = (TH1D*)h_mass->Clone(Form("h_mass_%s", massNameList[i].Data()));
     h_mass_copy->SetDirectory(0);
 
+    h_mass_copy->GetXaxis()->SetRangeUser(300, 650); // avoid tail effects
     double mass_mean = h_mass_copy->GetMean();
     double mass_rms = h_mass_copy->GetRMS();
 
-    h_mass_copy->GetXaxis()->SetRangeUser(300, 650); // avoid tail effects
     double quantile = 0.5;
     double val;
     
@@ -157,14 +157,28 @@ int track_compr(const TString tuning_type = "tuning_false",
   }
 
   // ---- Write track scale ----
+  //sigma²_data=sigma²_MC + (s * mu_MC)²
+  double track_scale = massResults[1].median / massResults[0].median;
+  double track_scale_err = 0.0;
+
+  double track_smearing     = TMath::Sqrt(TMath::Power(massResults[1].rms, 2) - TMath::Power(massResults[0].rms, 2)) / massResults[0].median;
+  double track_smearing_err = 0.0;
+
+  //cout << track_smearing << endl;
+
+  
   std::ofstream myfile;
   TString myfile_nm = "../pull_scan/track_scale.txt";
   myfile.open(myfile_nm.Data());
-  myfile << "const double track_scale = " << massResults[1].median / massResults[0].median << ";\n";
-  myfile << "const double track_scale_err = " << 0.0 << ";\n";
+  myfile << "const double track_scale = " << track_scale << ";\n";
+  myfile << "const double track_scale_err = " << track_scale_err << ";\n";
+  myfile << "const double track_smearing = " << track_smearing << ";\n";
+  myfile << "const double track_smearing_err = " << track_smearing_err << ";\n";
   
   myfile.close();
 
+  cout << "Comparison plot saved to: ../pull_scan/track_sale.txt" << endl;
+  
   // Plots
   TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Background Subtracted)", 900, 900);
   c1->SetBottomMargin(0.15);
@@ -173,7 +187,7 @@ int track_compr(const TString tuning_type = "tuning_false",
   hist_data_sub->SetMarkerStyle(20);
   hist_data_sub->SetMarkerSize(0.6);
   hist_data_sub->GetYaxis()->SetTitle("Events");
-  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 1.6);
+  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 2.5);
   hist_data_sub->GetYaxis()->CenterTitle();
   hist_data_sub->GetYaxis()->SetTitleSize(0.05);
   hist_data_sub->GetYaxis()->SetTitleOffset(1.4);
@@ -187,8 +201,22 @@ int track_compr(const TString tuning_type = "tuning_false",
   hist_data_sub->Draw("E1");
   hist_signal->Draw("HIST SAME");
 
+  TPaveText *pt = new TPaveText(0.18, 0.7, 0.85, 0.89, "NDC");
+  pt->SetFillColor(0);
+  pt->SetBorderSize(0);
+  pt->SetTextAlign(12);
+  pt->SetTextSize(0.03);
+  pt->SetTextFont(42);
+  pt->AddText(Form("Median_{MC} = %.3f   Median_{Data} = %.3f [MeV/c^{2}]", massResults[0].median, massResults[1].median));
+  pt->AddText(Form("RMS_{MC} = %.3f   RMS_{Data} = %.3f [MeV/c^{2}]", massResults[0].rms, massResults[1].rms));
+  pt->AddText(Form("#alpha^{trk}_{smear} = %.3f  #beta^{trk}_{smear} = %.3f", track_scale, track_smearing));
+  
+  //pt->AddText(Form("#Gamma^{Data}_{#omega}/#Gamma^{MC}_{#omega} = %.3f #pm %.3f", width_ratio, width_ratio_err));
+  pt->Draw();
+
   c1->SaveAs(out_dir + "/data_mc_comparison_bkg_sub_ppIM.pdf");
   cout << "Comparison plot saved to: " << out_dir << "/data_mc_comparison_bkg_sub_ppIM.pdf" << endl;
+  
 
   delete c1;
   
