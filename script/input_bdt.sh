@@ -2,7 +2,7 @@
 set -e   # exit immediately if any command fails
 
 # Comment usage I: uncorrected
-sample_size=chain           # norm; small; mini; chain
+sample_size=norm           # norm; small; mini; chain
 tuning_type=tuning          # switch no tuning; tuning: tuned + scale
 APPLY_TRACK_SCALE=false     # set to true to apply track momentum scaling
 pull_status=false           # false = no corrections, true = apply corrections
