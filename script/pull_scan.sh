@@ -11,7 +11,7 @@ input_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
 
 echo "========================================"
-echo "PULL SCAN"
+echo "PULL SCAN" 
 echo "========================================"
 
 echo -e "\nPull scan ... using ${main_folder}"

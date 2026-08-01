@@ -3,12 +3,18 @@
 //
 // Fits residual distributions for invariant mass of pi+p- system in mass bins.
 // Options:
-//   - MC signal: bins by true mass (ppIM_true), fits (ppIM_rec - ppIM_true) -> resolution vs true mass
-//   - Data:      bins by reconstructed mass (ppIM), uses histogram mean & RMS -> mean & RMS vs reco mass
+//   - MC signal: fits (ppIM_rec - ppIM_true) -> gives bias & resolution
+//   - Data:      uses histogram mean & RMS of ppIM_rec -> gives mean mass & RMS
 // Usage:
 //   .x trackmass_scan.C("TISR3PI_SIG_PEAK", "Signal", "pull", true, "gausPoly")
 //   .x trackmass_scan.C("TDATA", "Data", "pull", true, "gausPoly")
 // If sample_type == "Data" (case-insensitive), data mode is forced.
+// Options for fit_model:
+//   "gausPoly"    : Gaussian + linear polynomial (default)
+//   "doubleGaus"  : Double Gaussian (core + tail)
+//   "crystalBall" : Crystal Ball (asymmetric tail)
+//   "gausCheb2"   : Gaussian + 2nd-order polynomial (Chebyshev-like)
+
 // ============================================================================
 
 #include <TFile.h>
@@ -35,7 +41,7 @@ using namespace std;
 bool fitHist(TH1D *h, double &mean, double &sigma,
              double &mean_err, double &sigma_err,
              double &core_amp, double &fit_min, double &fit_max,
-             double &chi2ndf, const TString &model = "gausPoly") {
+             double &chi2ndf, const TString &model = "crystalBall") {
   if (!h || h->GetEntries() < 500) return false;
 
   double xmin = h->GetXaxis()->GetXmin();
@@ -217,7 +223,7 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
   h->SetLineColor(kBlue);
 
   h->GetXaxis()->SetNdivisions(505);
-  h->GetXaxis()->SetTitle(isMC ? "Pull (MeV)" : "M_{#pi#pi} (MeV)");
+  h->GetXaxis()->SetTitle(isMC ? "M^{Data}_{#pi#pi} - M^{true}_{#pi#pi} (MeV/c^{2})" : "M_{#pi#pi} (MeV/c^{2})");
   h->GetXaxis()->SetTitleSize(0.06);
   h->GetYaxis()->SetTitleSize(0.06);
   h->GetXaxis()->SetLabelSize(0.07);
@@ -234,7 +240,7 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
   core->SetLineColor(kRed);
   core->SetLineWidth(1);
 
-  TPaveText *pt = new TPaveText(0.65, 0.6, 0.95, 0.9, "NDC");
+  TPaveText *pt = new TPaveText(0.67, 0.55, 0.95, 0.85, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
@@ -255,7 +261,7 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
   ptBin->SetBorderSize(0);
   ptBin->SetTextAlign(12);
   ptBin->SetTextSize(0.07);
-  ptBin->AddText(Form("Bin %d: [%.0f-%.0f] MeV", bin, mass_min, mass_max));
+  ptBin->AddText(Form("Bin %d: [%.0f-%.0f] MeV/c^{2}", bin, mass_min, mass_max));
   ptBin->Draw();
 
   TLegend *leg = new TLegend(0.15, 0.60, 0.5, 0.8);
@@ -274,10 +280,23 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
                     const TString sample_type = "Signal",
                     const TString fit_type = "pull",
                     bool draw_bins = true,
-                    const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
-                    const TString fit_model = "gausPoly",
+                    //const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
+		    const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_norm_false/cut/tree_pre.root",
+                    const TString fit_model = "gausPoly", //gausCheb2, gausPoly 
                     const TString pull_type = "old")
 {
+
+/*
+void trackmass_scan(const TString tree_type = "TDATA",
+                    const TString sample_type = "Data",
+                    const TString fit_type = "pull",
+                    bool draw_bins = true,
+                    const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
+                    const TString fit_model = "gausPoly",
+                    const TString pull_type = "")
+{
+*/
+
   TString pdf_name = Form("../trackmass_scan/bin_histograms_%s_%s.pdf", tree_type.Data(), pull_type.Data());
 
   TString root_name = "";
@@ -325,13 +344,15 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
   // Determine if we are in MC or data mode
   // ----------------------------------------------------------------------
   bool isMC = true;
+  // If sample_type contains "Data" (case-insensitive), force data mode
   if (sample_type.Contains("Data", TString::kIgnoreCase)) {
     isMC = false;
     cout << "✓ Sample type is Data: using histogram mean & RMS of ppIM distribution" << endl;
   } else {
+    // Otherwise, auto-detect based on branch existence
     if (INPUT_TREE->GetBranch("Br_ppIM_true") != nullptr) {
       isMC = true;
-      cout << "✓ MC tree detected: binning by true mass (Br_ppIM_true) and fitting residual distribution" << endl;
+      cout << "✓ MC tree detected: will fit pull distribution (ppIM - ppIM_true)" << endl;
     } else {
       isMC = false;
       cout << "✓ Data tree (no truth branch): using histogram mean & RMS of ppIM distribution" << endl;
@@ -349,19 +370,18 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
 
   TH1D *h_overall = new TH1D("h_overall", "", 200, isMC ? -10. : 250., isMC ? 10. : 650.);
   if (isMC) {
-    h_overall->SetTitle("Residual distribution (M_{reco} - M_{true})");
+    h_overall->SetTitle("Pull distribution (ppIM - ppIM_true)");
   } else {
     h_overall->SetTitle("M_{#pi#pi} distribution (data)");
   }
 
-  // Binning in the variable used for binning
+  // Binning in reconstructed mass
   const double mass_min = 260.;
   const double mass_max = 650.;
-  const double binwidth = 2 * 5.6;   // 11.2 MeV/c² (adjust as needed)
+  const double binwidth = 2 * 5.6;   // 11.2 MeV/c²
   const int nbins = (int)((mass_max - mass_min) / binwidth);
-  cout << "Binning in " << (isMC ? "true M_{#pi#pi}" : "reconstructed M_{#pi#pi}") 
-       << ": [" << mass_min << ", " << mass_max << "] MeV, "
-       << "bins: " << nbins << ", width: " << binwidth << " MeV" << endl;
+  cout << "Binning in M_{#pi#pi}: [" << mass_min << ", " << mass_max << "] MeV/c^{2}, "
+       << "bins: " << nbins << ", width: " << binwidth << " MeV/c^{2}" << endl;
 
   vector<TH1D*> hist_hists(nbins);
   vector<double> bin_center(nbins);
@@ -372,6 +392,7 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
   vector<double> bin_chi2ndf(nbins);
   vector<int> bin_entries(nbins);
 
+  // Set histogram range appropriately
   double hmin = isMC ? -5.0 : 250.0;
   double hmax = isMC ?  5.0 : 650.0;
 
@@ -401,20 +422,19 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
   for (Long64_t irow = 0; irow < nentries; ++irow) {
     INPUT_TREE->GetEntry(irow);
 
-    double binVar;
+    // Determine quantity to histogram
     double value;
     if (isMC) {
-      binVar = ppIM_true;
-      value = ppIM - ppIM_true;
+      value = ppIM - ppIM_true;   // pull
     } else {
-      binVar = ppIM;
-      value = ppIM;
+      value = ppIM;               // reconstructed mass
     }
 
     h_overall->Fill(value);
 
-    if (binVar >= mass_min && binVar < mass_max) {
-      int b = (int)((binVar - mass_min) / binwidth);
+    // Fill per‑bin histograms based on ppIM (reconstructed mass)
+    if (ppIM >= mass_min && ppIM < mass_max) {
+      int b = (int)((ppIM - mass_min) / binwidth);
       if (b >= 0 && b < nbins) {
         hist_hists[b]->Fill(value);
         bin_entries[b]++;
@@ -428,7 +448,7 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
   // Per‑bin analysis
   cout << "\n=== Per‑bin results (" << (isMC ? "fit" : "mean & RMS") << ") ===" << endl;
   if (isMC) {
-    cout << "Bin  M_true0 (MeV) M_true1 (MeV)  Entries  Mean ± err  Sigma ± err  χ²/NDF" << endl;
+    cout << "Bin  M0 (MeV/c²) M1 (MeV/c²)  Entries  Mean ± err  Sigma ± err  χ²/NDF" << endl;
   } else {
     cout << "Bin  M0 (MeV/c²) M1 (MeV/c²)  Entries  Mean ± err  RMS ± err" << endl;
   }
@@ -440,6 +460,7 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
     bool ok = false;
 
     if (isMC) {
+      // Fit for MC (pull distribution)
       ok = fitHist(hist_hists[b], bin_mean[b], bin_sigma[b],
                    bin_mean_err[b], bin_sigma_err[b],
                    bin_core_amp[b], bin_fit_min[b], bin_fit_max[b],
@@ -453,12 +474,14 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
                bin_sigma[b], bin_sigma_err[b], bin_chi2ndf[b]);
       }
     } else {
+      // Data: use histogram statistics
       if (bin_entries[b] >= 500) {
         bin_mean[b] = hist_hists[b]->GetMean();
         bin_sigma[b] = hist_hists[b]->GetRMS();
-        bin_mean_err[b] = hist_hists[b]->GetMeanError();
+        bin_mean_err[b] = hist_hists[b]->GetMeanError(); // standard error of mean
+        // Approximate RMS error (for Gaussian): RMS / sqrt(2*N)
         bin_sigma_err[b] = (bin_entries[b] > 0) ? bin_sigma[b] / sqrt(2.0 * bin_entries[b]) : 0;
-        bin_chi2ndf[b] = 0;
+        bin_chi2ndf[b] = 0; // not applicable
         ok = true;
         M0_LIST[b] = mass_min + b * binwidth;
         M1_LIST[b] = mass_min + (b+1) * binwidth;
@@ -468,6 +491,8 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
                bin_sigma[b], bin_sigma_err[b]);
       }
     }
+
+    // If not ok, keep zeros and skip from TGraphs later.
   }
 
   // Build TGraphs
@@ -478,12 +503,9 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
 
   int point = 0;
   for (int b = 0; b < nbins; ++b) {
-    bool valid = false;
-    if (isMC) {
-      valid = (bin_entries[b] >= 500 && bin_sigma[b] > 0.001 && bin_sigma_err[b] > 0);
-    } else {
-      valid = (bin_entries[b] >= 500 && bin_sigma[b] > 0);
-    }
+    // For MC, we require fit success (ok); for data we require entries>=500.
+    bool valid = (isMC) ? (bin_entries[b] >= 500 && bin_sigma[b] > 0.001 && bin_sigma_err[b] > 0)
+                         : (bin_entries[b] >= 500 && bin_sigma[b] > 0);
     if (valid) {
       g_bias->SetPoint(point, bin_center[b], bin_mean[b]);
       g_bias->SetPointError(point, 0, bin_mean_err[b]);
@@ -536,6 +558,7 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
   // ----------------------------------------------------------------------
   // Summary canvases
   // ----------------------------------------------------------------------
+  // Overall distribution
   TCanvas *c2 = new TCanvas("c2", "Distribution", 900, 700);
   gPad->SetBottomMargin(0.12);
   gPad->SetLeftMargin(0.15);
@@ -548,23 +571,25 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
   h_overall->GetYaxis()->SetRangeUser(0.01, 1.6 * h_overall->GetMaximum());
   h_overall->Draw("hist");
 
+  // Resolution vs mass
   TCanvas *c3 = new TCanvas("c3", "Resolution vs mass", 900, 700);
   gPad->SetBottomMargin(0.12);
   gPad->SetLeftMargin(0.15);
   g_sigma->SetMarkerStyle(20);
   g_sigma->SetMarkerSize(1.2);
-  g_sigma->GetXaxis()->SetTitle(isMC ? "M_{#pi#pi}^{true} (MeV/c^{2})" : "M_{#pi#pi}^{reco} (MeV/c^{2})");
+  g_sigma->GetXaxis()->SetTitle("M_{#pi#pi} (MeV/c^{2})");
   g_sigma->GetYaxis()->SetTitle(isMC ? "Resolution (sigma) [MeV]" : "RMS [MeV]");
   g_sigma->GetXaxis()->CenterTitle();
   g_sigma->GetYaxis()->CenterTitle();
   g_sigma->Draw("AP");
 
+  // Bias/Mean vs mass
   TCanvas *c4 = new TCanvas("c4", "Mean vs mass", 900, 700);
   gPad->SetBottomMargin(0.12);
   gPad->SetLeftMargin(0.15);
   g_bias->SetMarkerStyle(20);
   g_bias->SetMarkerSize(1.2);
-  g_bias->GetXaxis()->SetTitle(isMC ? "M_{#pi#pi}^{true} (MeV/c^{2})" : "M_{#pi#pi}^{reco} (MeV/c^{2})");
+  g_bias->GetXaxis()->SetTitle("M_{#pi#pi} (MeV/c^{2})");
   g_bias->GetYaxis()->SetTitle(isMC ? "Bias (Mean residual) [MeV]" : "Mean M_{#pi#pi} [MeV]");
   g_bias->GetXaxis()->CenterTitle();
   g_bias->GetYaxis()->CenterTitle();
