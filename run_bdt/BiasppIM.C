@@ -37,10 +37,10 @@ struct FitResult {
   int entries;
 };
 
-int track_compr(const TString tuning_type = "tuning_false",
-		const TString var_nm = "ppIM",
-		const TString var_symb = "M_{trk} [MeV/c^{2}]"
-		) {
+int BiasppIM(const TString tuning_type = "tuning_false",
+	     const TString var_nm = "ppIM",
+	     const TString var_symb = "M_{trk} [MeV/c^{2}]"
+	     ) {
 
   const TString tree_file_nm = "../" + tuning_type + "_" + var_nm + "/hist.root";
 
@@ -137,7 +137,7 @@ int track_compr(const TString tuning_type = "tuning_false",
     for (int i = 1; i <= h_mass_copy->GetNbinsX(); ++i) {
       double x = h_mass_copy->GetBinCenter(i);
       double y = h_mass_copy->GetBinContent(i);
-      std::cout << x << "\t" << y << std::endl;
+      //std::cout << x << "\t" << y << std::endl;
     }
     
   }
@@ -187,7 +187,7 @@ int track_compr(const TString tuning_type = "tuning_false",
   hist_data_sub->SetMarkerStyle(20);
   hist_data_sub->SetMarkerSize(0.6);
   hist_data_sub->GetYaxis()->SetTitle("Events");
-  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 2.5);
+  hist_data_sub->GetYaxis()->SetRangeUser(0.01, hist_data_sub->GetMaximum() * 1.6);
   hist_data_sub->GetYaxis()->CenterTitle();
   hist_data_sub->GetYaxis()->SetTitleSize(0.05);
   hist_data_sub->GetYaxis()->SetTitleOffset(1.4);
@@ -209,10 +209,19 @@ int track_compr(const TString tuning_type = "tuning_false",
   pt->SetTextFont(42);
   pt->AddText(Form("Median_{MC} = %.3f   Median_{Data} = %.3f [MeV/c^{2}]", massResults[0].median, massResults[1].median));
   pt->AddText(Form("RMS_{MC} = %.3f   RMS_{Data} = %.3f [MeV/c^{2}]", massResults[0].rms, massResults[1].rms));
-  pt->AddText(Form("#alpha^{trk}_{smear} = %.3f  #beta^{trk}_{smear} = %.3f", track_scale, track_smearing));
+  //pt->AddText(Form("#alpha^{trk}_{smear} = %.3f  #beta^{trk}_{smear} = %.3f", track_scale, track_smearing));
   
   //pt->AddText(Form("#Gamma^{Data}_{#omega}/#Gamma^{MC}_{#omega} = %.3f #pm %.3f", width_ratio, width_ratio_err));
   pt->Draw();
+
+  TLegend *leg = new TLegend(0.2, 0.7, 0.7, 0.9);
+  leg->SetTextFont(132);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
+  leg->SetTextSize(0.04);
+  leg->AddEntry(hist_data_sub, "Data - Background", "lep");
+  leg->AddEntry(hist_signal, "Signal MC", "l");
+  //leg->Draw();
 
   c1->SaveAs(out_dir + "/data_mc_comparison_bkg_sub_ppIM.pdf");
   cout << "Comparison plot saved to: " << out_dir << "/data_mc_comparison_bkg_sub_ppIM.pdf" << endl;

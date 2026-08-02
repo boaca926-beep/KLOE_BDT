@@ -282,7 +282,7 @@ int BiasM3pi(const TString tuning_type = "tuning_false",
   pt->AddText(Form("#Gamma^{Data}_{#omega}/#Gamma^{MC}_{#omega} = %.3f #pm %.3f", width_ratio, width_ratio_err));
   pt->Draw();
 
-  TLegend *leg = new TLegend(0.15, 0.7, 0.6, 0.8);
+  TLegend *leg = new TLegend(0.2, 0.7, 0.7, 0.8);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);

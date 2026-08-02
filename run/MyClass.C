@@ -364,6 +364,11 @@ void MyClass::Main()
 
   ALLCHAIN_CUT.Branch("Br_pho_indx", &pho_indx_save, "Br_pho_indx[3]/I");
   ALLCHAIN_CUT.Branch("Br_EPI0NTMC_save", &EPI0NTMC_save, "Br_EPI0NTMC_save[4]/I");
+
+  ALLCHAIN_CUT.Branch("Br_bpx", &bpx, "Br_bpx/D");
+  ALLCHAIN_CUT.Branch("Br_bpy", &bpy, "Br_bpy/D");
+  ALLCHAIN_CUT.Branch("Br_bpz", &bpz, "Br_bpz/D");
+  ALLCHAIN_CUT.Branch("Br_bene", &bene, "Br_bene/D");
   
   ///
   if (fChain == 0) return;

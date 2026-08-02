@@ -1,9 +1,9 @@
 // Track corrections
-const double track_scale = 1.0;
-const double track_scale_err = 0.0;
+//const double track_scale = 1.0;
+//const double track_scale_err = 0.0;
 
-const double track_smearing     = 0.0;
-const double track_smearing_err = 0.0;
+//const double track_smearing     = 0.0;
+//const double track_smearing_err = 0.0;
 
 // Photon corrections
 const double bias_shift = 0.0;

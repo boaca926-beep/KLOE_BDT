@@ -243,7 +243,7 @@ int compr_bdt() {
   f_out->Close();
 
   // ===== SCALED Data/MC Comparison Plot =====
-  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 1200, 900);
+  TCanvas *c1 = new TCanvas("c1", "Data/MC Comparison (Scaled)", 900, 900);
   c1->SetBottomMargin(0.12);
   c1->SetLeftMargin(0.12);
 
@@ -305,6 +305,7 @@ int compr_bdt() {
   hist_data->GetYaxis()->SetTitleSize(0.05);
   hist_data->GetYaxis()->SetTitleOffset(1.2);
   hist_data->GetYaxis()->SetLabelSize(0.04);
+  hist_data->GetYaxis()->SetLabelOffset(10.);
 
   TPaveText *pt0 = new TPaveText(0.65, 0.7, 0.85, 0.85, "NDC");
   pt0->SetFillColor(0);

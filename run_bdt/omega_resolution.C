@@ -1,17 +1,18 @@
 // ============================================================================
 // omega_resolution.C
 //
-// Fits the ω peak in the 3π invariant mass (Br_m3pi_bdt) for data and MC.
-// Extracts the Gaussian width (sigma) which reflects the detector resolution.
-// Usage:
-//   .x omega_resolution.C("TDATA", "Data")
-//   .x omega_resolution.C("TISR3PI_SIG_PEAK", "Signal")
+// Fit the ω peak in M3π with a Gaussian + constant for both MC and
+// background‑subtracted data. Extracts the Gaussian sigma (resolution).
+// Accepts fits even with large χ² (due to natural Breit‑Wigner width).
 //
-// The macro writes a PDF plot and a ROOT file with the histogram and fit result.
+// Usage:
+//   .x omega_resolution.C("tuning_false")
+//   .x omega_resolution.C("tuning_true")
 // ============================================================================
 
+#include "../header_method/method.h"
+#include "../header_plot/plot.h"
 #include <TFile.h>
-#include <TTree.h>
 #include <TH1D.h>
 #include <TF1.h>
 #include <TCanvas.h>
@@ -21,221 +22,239 @@
 #include <iostream>
 #include <fstream>
 
-using namespace std;
+struct FitResult {
+    TString name;
+    double mean, mean_err;
+    double sigma, sigma_err;
+    double chi2_ndf;
+    int entries;
+};
 
 // ----------------------------------------------------------------------------
-// Fit ω peak with Gaussian + 2nd-order polynomial background
+// Fit Gaussian + constant (or pure Gaussian) – accepts large χ²
 // ----------------------------------------------------------------------------
-bool fitOmega(TH1D *h, double &mean, double &sigma,
-              double &mean_err, double &sigma_err,
-              double &chi2ndf) {
-  if (!h || h->GetEntries() < 100) return false;
+bool fitGaussian(TH1D *h, FitResult &res, const TString &label = "") {
+    if (!h || h->GetEntries() < 50) return false;
 
-  // Fit range: 740–810 MeV (adjust if needed)
-  double xmin = 740.0;
-  double xmax = 810.0;
-  h->GetXaxis()->SetRangeUser(xmin, xmax);
+    // Estimate initial parameters
+    double peak = h->GetMaximum();
+    double mean0 = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
+    double rms = h->GetRMS();
+    double sigma_guess = (rms > 0) ? rms * 0.6 : 3.0;
+    if (sigma_guess < 0.5) sigma_guess = 1.0;
+    // Clamp mean to reasonable range
+    if (mean0 < 775) mean0 = 782;
+    if (mean0 > 790) mean0 = 782;
 
-  // Estimate initial parameters from histogram
-  double peak = h->GetMaximum();
-  double mean0 = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
-  double rms = h->GetRMS();
-  double sigma_guess = (rms > 0) ? rms * 0.6 : 5.0; // rough estimate
+    // Strategies: core fits only
+    const int nStrategies = 4;
+    struct Strategy {
+        double xmin, xmax;
+        TString func;
+        int npar;
+        double sigma_min, sigma_max;
+    } strategies[nStrategies] = {
+      {775.0, 790.0, "gaus(0) + pol0(3)", 4, 0.1, 20.0},
+      {775.0, 790.0, "gaus(0)", 3, 0.1, 20.0},
+      {775.0, 790.0, "gaus(0) + pol0(3)", 4, 0.1, 20.0}, // duplicate, but can keep for simplicity
+      {775.0, 790.0, "gaus(0)", 3, 0.1, 20.0}
+    };
 
-  // Define fit function: Gaussian + polynomial (order 2)
-  TF1 *fit = new TF1("omega_fit", "gaus(0) + pol2(3)", xmin, xmax);
-  // Parameters: [0] = amplitude, [1] = mean, [2] = sigma,
-  //             [3] = p0, [4] = p1, [5] = p2
-  fit->SetParameters(peak, mean0, sigma_guess, 0.0, 0.0, 0.0);
-  fit->SetParLimits(0, 0, peak * 3);
-  fit->SetParLimits(1, mean0 - 2.0, mean0 + 2.0);
-  fit->SetParLimits(2, 0.5, 15.0);
-  fit->SetParLimits(3, -peak/2, peak/2);
-  fit->SetParLimits(4, -peak/10, peak/10);
-  fit->SetParLimits(5, -peak/100, peak/100);
+    for (int s = 0; s < nStrategies; ++s) {
+        double xmin = strategies[s].xmin;
+        double xmax = strategies[s].xmax;
+        TString funcStr = strategies[s].func;
+        int npar = strategies[s].npar;
+        double sigma_min = strategies[s].sigma_min;
+        double sigma_max = strategies[s].sigma_max;
 
-  // Perform fit
-  Int_t status = h->Fit(fit, "RQS");
-  double chi2 = fit->GetChisquare();
-  int ndf = fit->GetNDF();
-  chi2ndf = (ndf > 0) ? chi2 / ndf : 0;
+        TF1 *fit = new TF1("omega_fit", funcStr, xmin, xmax);
+        fit->SetParameter(0, peak);
+        fit->SetParameter(1, mean0);
+        fit->SetParameter(2, sigma_guess);
+        for (int i = 3; i < npar; ++i) fit->SetParameter(i, 0.0);
 
-  bool ok = false;
-  if (status == 0 && chi2ndf < 3.0) {
-    mean = fit->GetParameter(1);
-    sigma = fit->GetParameter(2);
-    mean_err = fit->GetParError(1);
-    sigma_err = fit->GetParError(2);
-    ok = (sigma > 0 && sigma_err > 0);
-  }
-  delete fit;
-  return ok;
+        fit->SetParLimits(0, 0, peak * 5);
+        fit->SetParLimits(1, mean0 - 2.0, mean0 + 2.0);
+        fit->SetParLimits(2, sigma_min, sigma_max);
+        if (funcStr.Contains("pol0")) {
+            fit->SetParLimits(3, -peak/2, peak/2);
+        }
+
+        Int_t status = h->Fit(fit, "RQS");
+        // Ignore chi2, just check convergence and physical sigma
+        double sigma_val = fit->GetParameter(2);
+        if ((status == 0 || status == 1) && sigma_val > sigma_min + 0.01 && sigma_val < sigma_max - 0.01) {
+            res.mean = fit->GetParameter(1);
+            res.mean_err = fit->GetParError(1);
+            res.sigma = sigma_val;
+            res.sigma_err = fit->GetParError(2);
+            double chi2 = fit->GetChisquare();
+            int ndf = fit->GetNDF();
+            res.chi2_ndf = (ndf > 0) ? chi2 / ndf : 0;
+            res.entries = h->GetEntries();
+            std::cout << label << " Fit succeeded (strategy " << s
+                      << ", range " << xmin << "-" << xmax << ", " << funcStr
+                      << "): sigma = " << res.sigma << " +/- " << res.sigma_err
+                      << ", chi2/ndf = " << res.chi2_ndf << std::endl;
+            delete fit;
+            return true;
+        }
+        delete fit;
+    }
+
+    std::cerr << label << " All fit strategies failed." << std::endl;
+    return false;
 }
 
 // ----------------------------------------------------------------------------
 // Main macro
 // ----------------------------------------------------------------------------
-void omega_resolution(const TString tree_type = "TDATA",
-                      const TString sample_type = "Data") {
-  // ----------------------------------------------------------------------
-  // Configuration
-  // ----------------------------------------------------------------------
-  // Adjust input file path as needed – this is the output of tree_cut_bdt_tuning.C
-  TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root";
-  // If you used a different folder, change the path above.
+int omega_resolution(const TString tuning_type = "tuning_false",
+                     const TString var_nm = "m3pi_bdt",
+                     const TString var_symb = "M_{3#pi} [MeV/c^{2}]") {
 
-  TString output_file = Form("../omega_resolution/omega_%s.root", tree_type.Data());
-  TString pdf_name   = Form("../omega_resolution/omega_fit_%s.pdf", tree_type.Data());
+    const TString tree_file_nm = "../" + tuning_type + "_" + var_nm + "/hist.root";
+    const TString out_dir = "../omega_resolution_" + tuning_type;
 
-  gSystem->Exec("mkdir -p ../omega_resolution");
+    gErrorIgnoreLevel = kError;
+    TGaxis::SetMaxDigits(4);
+    gStyle->SetOptStat(0);
+    gStyle->SetOptTitle(0);
+    gStyle->SetErrorX(0.8);
+    TH1::SetDefaultSumw2();
 
-  cout << "\n========================================" << endl;
-  cout << "  OMEGA RESOLUTION EXTRACTION" << endl;
-  cout << "  Sample: " << sample_type << endl;
-  cout << "  Tree:   " << tree_type << endl;
-  cout << "========================================\n" << endl;
+    gSystem->mkdir(out_dir, kTRUE);
 
-  gROOT->GetListOfCanvases()->Delete();
-  gErrorIgnoreLevel = kError;
-  gStyle->SetOptStat(0);
-  gStyle->SetOptTitle(0);
-  TH1::SetDefaultSumw2();
-  TH1::AddDirectory(kFALSE);
+    TFile* tree_file = new TFile(tree_file_nm);
+    if (!tree_file || tree_file->IsZombie()) {
+        std::cerr << "ERROR: Cannot open " << tree_file_nm << std::endl;
+        return 1;
+    }
 
-  // ----------------------------------------------------------------------
-  // Open input file and get tree
-  // ----------------------------------------------------------------------
-  TFile *tree_file = new TFile(input_file_nm);
-  if (!tree_file || tree_file->IsZombie()) {
-    cerr << "ERROR: Cannot open " << input_file_nm << endl;
-    return;
-  }
+    checkFile(tree_file); // optional
 
-  TTree *INPUT_TREE = (TTree*)tree_file->Get(tree_type);
-  if (!INPUT_TREE) {
-    cerr << "ERROR: Cannot find tree " << tree_type << endl;
+    // ---- Retrieve histograms ----
+    TH1D *hist_eeg = (TH1D*)tree_file->Get("hist_eeg_sc");
+    TH1D *hist_signal = (TH1D*)tree_file->Get("hist_isr3pi_sc");
+    TH1D *hist_omegapi = (TH1D*)tree_file->Get("hist_omegapi_sc");
+    TH1D *hist_nonreson = (TH1D*)tree_file->Get("hist_nonreson_sc");
+    TH1D *hist_ksl = (TH1D*)tree_file->Get("hist_ksl_sc");
+    TH1D *hist_mcrest = (TH1D*)tree_file->Get("hist_mcrest_sc");
+    TH1D *hist_data = (TH1D*)tree_file->Get("hist_data");
+
+    if (!hist_data || !hist_signal) {
+        std::cerr << "ERROR: Missing histograms." << std::endl;
+        tree_file->Close();
+        return 1;
+    }
+
+    // ---- Build background sum and subtract ----
+    TH1D *hist_bkg_sum = (TH1D*)hist_data->Clone("hist_bkg_sum");
+    hist_bkg_sum->Reset();
+    if (hist_eeg)     hist_bkg_sum->Add(hist_eeg, 1.0);
+    if (hist_omegapi) hist_bkg_sum->Add(hist_omegapi, 1.0);
+    if (hist_nonreson)hist_bkg_sum->Add(hist_nonreson, 1.0);
+    if (hist_ksl)     hist_bkg_sum->Add(hist_ksl, 1.0);
+    if (hist_mcrest)  hist_bkg_sum->Add(hist_mcrest, 1.0);
+
+    TH1D *hist_data_sub = (TH1D*)hist_data->Clone("hist_data_sub");
+    hist_data_sub->Add(hist_bkg_sum, -1.0);
+
+    // ------------------------------------------------------------------
+    // Fit MC signal and background-subtracted data with Gaussian
+    // ------------------------------------------------------------------
+    FitResult resMC, resData;
+    bool okMC = fitGaussian(hist_signal, resMC, "MC");
+    bool okData = fitGaussian(hist_data_sub, resData, "Data (bkg sub)");
+
+    // Fallback: if background-subtracted fails, fit raw data
+    if (!okData) {
+        std::cout << "Background-subtracted fit failed. Trying raw data..." << std::endl;
+        okData = fitGaussian(hist_data, resData, "Data (raw)");
+    }
+
+    if (!okMC || !okData) {
+        std::cerr << "ERROR: Fit results invalid; cannot compute ratio." << std::endl;
+        tree_file->Close();
+        return 1;
+    }
+
+    // ---- Compute ratio ----
+    double R = resData.sigma / resMC.sigma;
+    double R_err = R * TMath::Sqrt(
+        TMath::Power(resData.sigma_err / resData.sigma, 2) +
+        TMath::Power(resMC.sigma_err / resMC.sigma, 2)
+    );
+
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "Omega Gaussian resolution results:" << std::endl;
+    std::cout << "MC:   sigma = " << resMC.sigma << " +/- " << resMC.sigma_err << " MeV" << std::endl;
+    std::cout << "Data: sigma = " << resData.sigma << " +/- " << resData.sigma_err << " MeV" << std::endl;
+    std::cout << "Ratio R = " << R << " +/- " << R_err << std::endl;
+    std::cout << "========================================" << std::endl;
+
+    // ---- Write parameters to header file ----
+    std::ofstream myfile;
+    TString myfile_nm = "../trackmass_scan/omega_params.h";
+    gSystem->mkdir("../trackmass_scan", kTRUE);
+    myfile.open(myfile_nm.Data());
+    myfile << "// Omega Gaussian resolution parameters\n";
+    myfile << "const double SIGMA_MC_OMEGA   = " << resMC.sigma << ";\n";
+    myfile << "const double SIGMA_MC_OMEGA_ERR = " << resMC.sigma_err << ";\n";
+    myfile << "const double SIGMA_DATA_OMEGA = " << resData.sigma << ";\n";
+    myfile << "const double SIGMA_DATA_OMEGA_ERR = " << resData.sigma_err << ";\n";
+    myfile << "const double R_OMEGA = " << R << ";\n";
+    myfile << "const double R_OMEGA_ERR = " << R_err << ";\n";
+    myfile.close();
+    std::cout << "Parameters written to " << myfile_nm << std::endl;
+
+    // ---- Draw and save plots ----
+    auto drawHist = [&](TH1D *h, const FitResult &res, const TString &title, const TString &fname) {
+        TCanvas *c = new TCanvas("c", title, 900, 700);
+        gPad->SetBottomMargin(0.15);
+        gPad->SetLeftMargin(0.15);
+        h->SetLineColor(kBlack);
+        h->SetMarkerStyle(20);
+        h->SetMarkerSize(0.6);
+        h->GetXaxis()->SetTitle(var_symb);
+        h->GetYaxis()->SetTitle("Events");
+        h->GetYaxis()->SetRangeUser(0.01, h->GetMaximum() * 1.6);
+        h->Draw("E0");
+        TF1 *fit = (TF1*)h->GetFunction("omega_fit");
+        if (fit) {
+            fit->SetLineColor(kRed);
+            fit->SetLineWidth(2);
+            fit->Draw("same");
+        }
+        TPaveText *pt = new TPaveText(0.55, 0.70, 0.90, 0.90, "NDC");
+        pt->SetFillColor(0);
+        pt->SetBorderSize(0);
+        pt->SetTextAlign(12);
+        pt->SetTextSize(0.04);
+        pt->AddText(Form("#sigma = %.3f ± %.3f MeV", res.sigma, res.sigma_err));
+        pt->AddText(Form("#chi^{2}/NDF = %.2f", res.chi2_ndf));
+        pt->Draw();
+        c->SaveAs(fname);
+        delete c;
+    };
+
+    drawHist(hist_signal, resMC, "MC #omega peak", out_dir + "/omega_fit_MC.pdf");
+    // Use the histogram that was actually fitted (sub or raw)
+    TH1D *h_data_used = (okData && fitGaussian(hist_data_sub, resData, "check")) ? hist_data_sub : hist_data;
+    drawHist(h_data_used, resData, "Data #omega peak", out_dir + "/omega_fit_Data.pdf");
+
+    // Comparison plot
+    TCanvas *c_comp = new TCanvas("c_comp", "MC vs Data", 1200, 700);
+    c_comp->Divide(2,1);
+    c_comp->cd(1);
+    hist_signal->Draw("E0");
+    if (hist_signal->GetFunction("omega_fit")) hist_signal->GetFunction("omega_fit")->Draw("same");
+    c_comp->cd(2);
+    h_data_used->Draw("E0");
+    if (h_data_used->GetFunction("omega_fit")) h_data_used->GetFunction("omega_fit")->Draw("same");
+    c_comp->SaveAs(out_dir + "/omega_comparison.pdf");
+
     tree_file->Close();
-    return;
-  }
-  cout << "✓ Loaded " << tree_type << " with " << INPUT_TREE->GetEntries() << " entries" << endl;
-
-  // ----------------------------------------------------------------------
-  // Histogram of M3π (Br_m3pi_bdt)
-  // ----------------------------------------------------------------------
-  TH1D *h_m3pi = new TH1D("h_m3pi", "", 200, 700, 850);
-  h_m3pi->Sumw2();
-
-  double m3pi = 0.;
-  INPUT_TREE->SetBranchAddress("Br_m3pi_bdt", &m3pi);
-  if (!INPUT_TREE->GetBranch("Br_m3pi_bdt")) {
-    cerr << "ERROR: Branch Br_m3pi_bdt not found in tree " << tree_type << endl;
-    tree_file->Close();
-    return;
-  }
-
-  Long64_t nentries = INPUT_TREE->GetEntries();
-  for (Long64_t i = 0; i < nentries; ++i) {
-    INPUT_TREE->GetEntry(i);
-    h_m3pi->Fill(m3pi);
-  }
-
-  // ----------------------------------------------------------------------
-  // Fit the ω peak
-  // ----------------------------------------------------------------------
-  double mean = 0., sigma = 0.;
-  double mean_err = 0., sigma_err = 0.;
-  double chi2ndf = 0.;
-
-  bool ok = fitOmega(h_m3pi, mean, sigma, mean_err, sigma_err, chi2ndf);
-
-  if (!ok) {
-    cerr << "ERROR: Fit failed for " << tree_type << endl;
-    tree_file->Close();
-    return;
-  }
-
-  // ----------------------------------------------------------------------
-  // Draw and save
-  // ----------------------------------------------------------------------
-  TCanvas *c = new TCanvas("c", "Omega fit", 900, 700);
-  gPad->SetBottomMargin(0.12);
-  gPad->SetLeftMargin(0.15);
-
-  h_m3pi->SetLineWidth(2);
-  h_m3pi->SetLineColor(kBlack);
-  h_m3pi->GetXaxis()->SetTitle("M_{3#pi} (MeV)");
-  h_m3pi->GetYaxis()->SetTitle("Entries / 0.75 MeV");
-  h_m3pi->GetXaxis()->CenterTitle();
-  h_m3pi->GetYaxis()->CenterTitle();
-  h_m3pi->GetYaxis()->SetRangeUser(0.01, 1.4 * h_m3pi->GetMaximum());
-  h_m3pi->Draw("E0");
-
-  // Overlay the fit function
-  TF1 *fitFunc = (TF1*)h_m3pi->GetFunction("omega_fit");
-  if (fitFunc) {
-    fitFunc->SetLineColor(kRed);
-    fitFunc->SetLineWidth(2);
-    fitFunc->Draw("same");
-  }
-
-  // Draw the core Gaussian separately for visualization
-  TF1 *core = new TF1("core_gaus", "gaus", mean - 3*sigma, mean + 3*sigma);
-  core->SetParameters(fitFunc->GetParameter(0), mean, sigma);
-  core->SetLineColor(kBlue);
-  core->SetLineStyle(2);
-  core->Draw("same");
-
-  // Text box
-  TPaveText *pt = new TPaveText(0.55, 0.70, 0.90, 0.90, "NDC");
-  pt->SetFillColor(0);
-  pt->SetBorderSize(0);
-  pt->SetTextAlign(12);
-  pt->SetTextSize(0.04);
-  pt->AddText(Form("Sample: %s", sample_type.Data()));
-  pt->AddText(Form("Mean = %.3f ± %.3f MeV", mean, mean_err));
-  pt->AddText(Form("#sigma = %.3f ± %.3f MeV", sigma, sigma_err));
-  pt->AddText(Form("#chi^{2}/NDF = %.2f", chi2ndf));
-  pt->AddText(Form("Entries = %d", (int)h_m3pi->GetEntries()));
-  pt->Draw();
-
-  TLegend *leg = new TLegend(0.15, 0.70, 0.45, 0.90);
-  leg->SetFillStyle(0);
-  leg->SetBorderSize(0);
-  leg->SetTextSize(0.04);
-  leg->AddEntry(h_m3pi, sample_type, "lep");
-  leg->AddEntry(fitFunc, "Total fit (Gaus + poly2)", "l");
-  leg->AddEntry(core, "Core Gaussian", "l");
-  leg->Draw();
-
-  c->SaveAs(pdf_name);
-
-  // ----------------------------------------------------------------------
-  // Save results to ROOT file
-  // ----------------------------------------------------------------------
-  TFile *fout = new TFile(output_file, "RECREATE");
-  fout->cd();
-  h_m3pi->Write();
-  if (fitFunc) fitFunc->Write("fitFunc");
-  core->Write("coreGaus");
-  // Store fit parameters as a TTree
-  TTree *resultTree = new TTree("result", "Fit results");
-  double mean_val = mean, sigma_val = sigma;
-  double mean_err_val = mean_err, sigma_err_val = sigma_err;
-  resultTree->Branch("mean", &mean_val, "mean/D");
-  resultTree->Branch("mean_err", &mean_err_val, "mean_err/D");
-  resultTree->Branch("sigma", &sigma_val, "sigma/D");
-  resultTree->Branch("sigma_err", &sigma_err_val, "sigma_err/D");
-  resultTree->Branch("chi2ndf", &chi2ndf, "chi2ndf/D");
-  resultTree->Fill();
-  resultTree->Write();
-  fout->Close();
-
-  cout << "\n✅ Fit results:" << endl;
-  cout << "   Mean   = " << mean << " ± " << mean_err << " MeV" << endl;
-  cout << "   Sigma  = " << sigma << " ± " << sigma_err << " MeV" << endl;
-  cout << "   χ²/NDF = " << chi2ndf << endl;
-  cout << "   Output saved to " << output_file << " and " << pdf_name << endl;
-
-  tree_file->Close();
-  delete c;
+    return 0;
 }

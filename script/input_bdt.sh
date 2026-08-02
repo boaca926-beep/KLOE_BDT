@@ -1,35 +1,65 @@
 #!/bin/bash
 set -e   # exit immediately if any command fails
 
-# Comment usage I: uncorrected
-sample_size=norm           # norm; small; mini; chain
-tuning_type=tuning          # switch no tuning; tuning: tuned + scale
-APPLY_TRACK_SCALE=false     # set to true to apply track momentum scaling
-pull_status=false           # false = no corrections, true = apply corrections
-APPLY_PULL=false            # apply bias shift (mean) + scale ratio (width)
-APPLY_MASS_SCALE=false      # apply mass scale (MASS_SCALE_PI0)
+# =========================================================================
+#  INPUT_BDT.SH – CONFIGURATION CASES
+# =========================================================================
+#
+#  This script controls which corrections are applied in the analysis.
+#  Four main cases are supported:
+#
+#  ----------------------------------------------------------------------
+#  CASE 1: UNCORRECTED (raw)
+#  ----------------------------------------------------------------------
+#   tuning_type = raw
+#   (pull_status, APPLY_PULL, APPLY_MASS_SCALE are ignored)
+#   → Uses tree_cut_bdt_raw.C: no track bias, no track smearing,
+#     no photon mass scale, no photon pull corrections.
+#
+#  ----------------------------------------------------------------------
+#  CASE 2: ONLY TRACK CORRECTIONS
+#  ----------------------------------------------------------------------
+#   tuning_type = tuning
+#   pull_status   = false
+#   APPLY_PULL    = false
+#   APPLY_MASS_SCALE = false
+#   → Uses tree_cut_bdt_tuning.C: applies track bias correction
+#     (from BIAS_P1) and mass‑dependent smearing (from logistic fit
+#     and R_OMEGA). Photon corrections are disabled.
+#
+#  ----------------------------------------------------------------------
+#  CASE 3: TRACK + PHOTON PULL CORRECTIONS
+#  ----------------------------------------------------------------------
+#   tuning_type = tuning
+#   pull_status   = true
+#   APPLY_PULL    = true
+#   APPLY_MASS_SCALE = false
+#   → Track corrections (as in Case 2) PLUS photon bias shift
+#     (bias_shift) and width scaling (scale_ratio).
+#
+#  ----------------------------------------------------------------------
+#  CASE 4: ALL CORRECTIONS (TRACK + PHOTON PULL + MASS SCALE)
+#  ----------------------------------------------------------------------
+#   tuning_type = tuning
+#   pull_status   = true
+#   APPLY_PULL    = true
+#   APPLY_MASS_SCALE = true
+#   → All corrections: track bias/smearing + photon pull + π⁰ mass scale.
+#
+# =========================================================================
 
-# Comment usage II: track correction
-#sample_size=norm            # norm; small; mini; chain
-#tuning_type=tuning          # tuning: tuned + scale
-#pull_status=false           # false = no corrections, true = apply corrections
-#APPLY_TRACK_SCALE=true      # set to true to apply track momentum scaling
-#APPLY_PULL=false            # apply bias shift (mean) + scale ratio (width)
-#APPLY_MASS_SCALE=false      # apply mass scale (MASS_SCALE_PI0)
+# ============================================================
+# Choose which macro to run:
+#   tuning_type = raw   -> uses tree_cut_bdt_raw.C (no corrections at all)
+#   tuning_type = tuning -> uses tree_cut_bdt_tuning.C (track bias + smearing always applied)
+# ============================================================
+sample_size=chain           # norm; small; mini; chain
+tuning_type=raw          # raw or tuning
 
-# Comment usage III: pull tuning
-#sample_size=norm           # norm; small; mini; chain
-#tuning_type=tuning         # tuning: tuned + scale
-#pull_status=true           # false = no corrections, true = apply corrections
-#APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
-#APPLY_MASS_SCALE=true      # apply mass scale (MASS_SCALE_PI0)
-
-# Comment usage IV: pull tuning + energy scaling
-#sample_size=norm           # norm; small; mini; chain
-#tuning_type=tuning         # tuning: tuned + scale
-#pull_status=true           # false = no corrections, true = apply corrections
-#APPLY_PULL=true            # apply bias shift (mean) + scale ratio (width)
-#APPLY_MASS_SCALE=true      # apply mass scale (MASS_SCALE_PI0)
+# Photon corrections (only effective when tuning_type = tuning)
+pull_status=false           # false = no photon corrections, true = apply
+APPLY_PULL=false            # bias shift (mean) + scale ratio (width)
+APPLY_MASS_SCALE=false      # mass scale (MASS_SCALE_PI0)
 
 
 # ============================================================
@@ -39,57 +69,19 @@ sample_path=../path_${sample_size}/
 exp_type=TDATA             # DATA
 gsf=1                      # DATA
 
-
-## Initialize tuning corrections conditions
-# step1: set pull_status to false to get pull correction parameters, input for pull_scan (run only once!)
-# step2: set pull_status to true to apply pull corrections (always on for analysis)
-
-SOURCE_BIAS="../pull_scan/bias_shift.txt"
-SOURCE_SCALE="../pull_scan/scale_ratio.txt"   # adjust if your file is scale_ratio_corr.txt
-TARGET_FILE="../header_bdt/energy_shift_tuning_sum.h"
-
-# ---------- TRACK SCALE ----------
-if [ "$APPLY_TRACK_SCALE" = true ]; then
-    echo "Track correction is Applied!"
-    
-    SOURCE_TRACK="../pull_scan/track_scale.txt"
-    if [[ -f "$SOURCE_TRACK" ]]; then
-        track_scale=$(grep -oP '(?:const\s+double\s+)?track_scale\s*=\s*\K[0-9.eE+-]+' "$SOURCE_TRACK" | head -1)
-        track_scale_err=$(grep -oP '(?:const\s+double\s+)?track_scale_err\s*=\s*\K[0-9.eE+-]+' "$SOURCE_TRACK" | head -1)
-	track_smearing=$(grep -oP '(?:const\s+double\s+)?track_smearing\s*=\s*\K[0-9.eE+-]+' "$SOURCE_TRACK" | head -1)
-        track_smearing_err=$(grep -oP '(?:const\s+double\s+)?track_smearing_err\s*=\s*\K[0-9.eE+-]+' "$SOURCE_TRACK" | head -1)
-	
-    else
-        echo "Warning: $SOURCE_TRACK not found. Using default track_scale=1.0"
-        track_scale=1.0
-        track_scale_err=0.0
-    fi
-    
-    if [[ -n "$track_scale" ]]; then
-        echo "Updating $TARGET_FILE with track_scale=$track_scale, track_scale_err=$track_scale_err"
-        sed -i "s/\(const double track_scale\s*=\s*\)[0-9.eE+-]*;/\1$track_scale;/" "$TARGET_FILE"
-        sed -i "s/\(const double track_scale_err\s*=\s*\)[0-9.eE+-]*;/\1$track_scale_err;/" "$TARGET_FILE"
-    else
-        echo "Error: Could not extract track scale from $SOURCE_TRACK"
-    fi
-
-    if [[ -n "$track_smearing" ]]; then
-        echo "Updating $TARGET_FILE with track_smearing=$track_smearing, track_smearing_err=$track_smearing_err"
-        sed -i "s/\(const double track_smearing\s*=\s*\)[0-9.eE+-]*;/\1$track_smearing;/" "$TARGET_FILE"
-        sed -i "s/\(const double track_smearing_err\s*=\s*\)[0-9.eE+-]*;/\1$track_smearing_err;/" "$TARGET_FILE"
-    else
-        echo "Error: Could not extract track smearing from $SOURCE_TRACK"
-    fi
-    
-else
-    echo "Track scaling disabled. Setting track_scale=1"
-    sed -i "s/\(const double track_scale\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
-    sed -i "s/\(const double track_scale_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
-    sed -i "s/\(const double track_smearing\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
-    sed -i "s/\(const double track_smearing_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
+# ---------- Photon correction parameters (if enabled) ----------
+if [ "$pull_status" = true ]; then
+    SOURCE_BIAS="../pull_scan/bias_shift.txt"
+    SOURCE_SCALE="../pull_scan/scale_ratio.txt"
 fi
 
+TARGET_FILE="../header_bdt/energy_shift_tuning_sum.h"
 
+if [ "$tuning_type" = raw ]; then
+    echo "Uncorrected dataset!"
+else
+    echo "Track corrections are applied!"
+fi
 
 # ============================================================
 # Update header based on pull_status and individual flags
@@ -98,7 +90,7 @@ if [ "$pull_status" = true ]; then
 
     # ---------- PULL (BIAS + SCALE) ----------
     if [ "$APPLY_PULL" = true ]; then
-	echo "Energy Pull Tuning is Applied!"
+        echo "Energy Pull Tuning is Applied!"
 
         # ---- BIAS ----
         if [[ -f "$SOURCE_BIAS" ]]; then
@@ -143,7 +135,7 @@ if [ "$pull_status" = true ]; then
 
     # ---------- MASS SCALE ----------
     if [ "$APPLY_MASS_SCALE" = true ]; then
-	echo "Energy Scaling is Applied!"
+        echo "Energy Scaling is Applied!"
 
         if [[ -f "../pull_scan/massbias_bdt.txt" ]]; then
             mpi0_data=$(grep -oP 'mpi0_data\s*=\s*\K[0-9.eE+-]+' "../pull_scan/massbias_bdt.txt" | head -1)
@@ -164,17 +156,14 @@ if [ "$pull_status" = true ]; then
         fi
     else
         echo "Mass scale correction disabled. Setting MASS_SCALE_PI0=1"
-	sed -i "s/\(const double MASS_SCALE_PI0\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
-    
+        sed -i "s/\(const double MASS_SCALE_PI0\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
     fi
 
     echo "Pull correction parameters updated."
 
 else
-    echo "No pull corrections are applied!"
-
-    # Reset all corrections to neutral values
-    echo "Setting bias_shift=0, scale_ratio=1, and MASS_SCALE_PI0=1"
+    echo "No photon corrections are applied!"
+    # Reset all photon corrections to neutral values
     sed -i "s/\(const double bias_shift\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
     sed -i "s/\(const double bias_shift_err\s*=\s*\)[0-9.eE+-]*;/\10.0;/" "$TARGET_FILE"
     sed -i "s/\(const double scale_ratio\s*=\s*\)[0-9.eE+-]*;/\11.0;/" "$TARGET_FILE"
@@ -187,11 +176,9 @@ else
 fi
 
 # ============================================================
-# Result path and directories (unchanged)
+# Result path and directories
 # ============================================================
 result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
-#result_path=/media/bo/Analysis_Disk/
-#result_path=/media/bo/Backup/bdt_output/bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
 
 ## Initialize the normal conditions
 # Pre-selection
@@ -264,7 +251,7 @@ sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples
 DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
-#DATA_TYPE=("sig")
+#DATA_TYPE=("eeg")
 
 ## Folders
 input_path=${result_path}/input/
@@ -349,7 +336,7 @@ for ((i=0;i<${#DATA_TYPE[@]};++i)); do
 
     INPUT_FILE=${sample_path}${data_type}_path
     ROOT_FILE=${input_path}${data_type}
-    echo $INPUT_FILE
+    echo "INPUT_FILE: $INPUT_FILE"
 
     cat > "$path_header" <<EOF
 const TString rootFile = "${INPUT_FILE}";
@@ -386,10 +373,17 @@ EOF
     ## Selection cuts
     tree_cut_script=tree_cut_script.C
     echo '#include <iostream>' > $tree_cut_script
-    echo "void tree_cut_script() {" >> $tree_cut_script
-    echo "gROOT->ProcessLine(\".L ../run_bdt/tree_cut_bdt_${tuning_type}.C\");" >> $tree_cut_script
-    echo "gROOT->ProcessLine(\"tree_cut_bdt_${tuning_type}()\");" >> $tree_cut_script
-    echo '}' >> $tree_cut_script
+    if [ "$tuning_type" = "raw" ]; then
+        echo "void tree_cut_script() {" >> $tree_cut_script
+        echo "gROOT->ProcessLine(\".L ../run_bdt/tree_cut_bdt_raw.C\");" >> $tree_cut_script
+        echo "gROOT->ProcessLine(\"tree_cut_bdt_raw()\");" >> $tree_cut_script
+        echo '}' >> $tree_cut_script
+    else
+        echo "void tree_cut_script() {" >> $tree_cut_script
+        echo "gROOT->ProcessLine(\".L ../run_bdt/tree_cut_bdt_${tuning_type}.C\");" >> $tree_cut_script
+        echo "gROOT->ProcessLine(\"tree_cut_bdt_${tuning_type}()\");" >> $tree_cut_script
+        echo '}' >> $tree_cut_script
+    fi
     root -l -n -q -b $tree_cut_script >> ${log_cut} 2>&1 || { echo "ROOT failed at tree_cut_script for $data_type"; exit 1; }
 done
 echo "Selection cuts applied!"
