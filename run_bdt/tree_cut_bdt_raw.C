@@ -454,10 +454,11 @@ int tree_cut_bdt_raw() {
         m3pi = (pi0gam1 + pi0gam2 + trkplus + trkmin).M();
 
         evnt_tot++;
-        //Eprompt_max = 0.;
-        //if (Eisr > Eprompt_max) Eprompt_max = Eisr;
-        //if (Epi0_pho1 > Eprompt_max) Eprompt_max = Epi0_pho1;
-        //if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
+
+	Eprompt_max = 0.;
+        if (Eisr > Eprompt_max) Eprompt_max = Eisr;
+        if (Epi0_pho1 > Eprompt_max) Eprompt_max = Epi0_pho1;
+        if (Epi0_pho2 > Eprompt_max) Eprompt_max = Epi0_pho2;
 
         // ---------- BDT evaluation ----------
         EventData event;
@@ -675,7 +676,7 @@ int tree_cut_bdt_raw() {
 	// Recalculate Eprompt_max from BDT-selected photons
 	//Eprompt_max = std::max({pho_E1, pho_E2, pho_E3});
 
-	Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
+	//Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
 	
 	if (Eprompt_max > Eprompt_max_cut) continue;
 	

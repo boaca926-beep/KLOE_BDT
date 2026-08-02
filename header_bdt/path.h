@@ -1,5 +1,5 @@
-const TString rootFile = "../path_chain/sig_path";
-const TString sampleFile = "../../bdt_raw_TDATA_chain_false/input/sig";
+const TString rootFile = "../path_chain/exp_path";
+const TString sampleFile = "../../bdt_raw_TDATA_chain_false/input/exp";
 const TString outputCut = "../../bdt_raw_TDATA_chain_false/cut/";
 const TString sig_path = "../../bdt_raw_TDATA_chain_false/input/";
 const TString outputGen = "../../bdt_raw_TDATA_chain_false/gen/";
@@ -7,7 +7,7 @@ const TString outputHist = "../../bdt_raw_TDATA_chain_false/hist/";
 const TString outputSfw2D = "../../bdt_raw_TDATA_chain_false/sfw2d/";
 const TString outputSfw1D = "../../bdt_raw_TDATA_chain_false/sfw1d/";
 const TString outputOmega = "../../bdt_raw_TDATA_chain_false/omega_fit/";
-const TString data_type = "sig";
+const TString data_type = "exp";
 const TString exp_type = "TDATA";
 const TString tuning_type = "raw";
 double gsf = 1;
