@@ -37,7 +37,7 @@ struct FitResult {
   int entries;
 };
 
-int BiasppIM(const TString tuning_type = "tuning_false",
+int BiasppIM(const TString tuning_type = "tuning_false", //raw_false, tuning_false
 	     const TString var_nm = "ppIM",
 	     const TString var_symb = "M_{trk} [MeV/c^{2}]"
 	     ) {
@@ -201,7 +201,8 @@ int BiasppIM(const TString tuning_type = "tuning_false",
   hist_data_sub->Draw("E1");
   hist_signal->Draw("HIST SAME");
 
-  TPaveText *pt = new TPaveText(0.18, 0.7, 0.85, 0.89, "NDC");
+  TPaveText *pt = new TPaveText(0.2, 0.8, 0.85, 0.89, "NDC");
+  //TPaveText *pt = new TPaveText(0.18, 0.7, 0.85, 0.89, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
@@ -214,14 +215,14 @@ int BiasppIM(const TString tuning_type = "tuning_false",
   //pt->AddText(Form("#Gamma^{Data}_{#omega}/#Gamma^{MC}_{#omega} = %.3f #pm %.3f", width_ratio, width_ratio_err));
   pt->Draw();
 
-  TLegend *leg = new TLegend(0.2, 0.7, 0.7, 0.9);
+  TLegend *leg = new TLegend(0.2, 0.7, 0.7, 0.8);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
   leg->AddEntry(hist_data_sub, "Data - Background", "lep");
   leg->AddEntry(hist_signal, "Signal MC", "l");
-  //leg->Draw();
+  leg->Draw();
 
   c1->SaveAs(out_dir + "/data_mc_comparison_bkg_sub_ppIM.pdf");
   cout << "Comparison plot saved to: " << out_dir << "/data_mc_comparison_bkg_sub_ppIM.pdf" << endl;

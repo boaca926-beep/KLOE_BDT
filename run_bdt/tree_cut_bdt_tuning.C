@@ -195,7 +195,7 @@ int tree_cut_bdt_tuning() {
   int isrgam_indx = 0, pi0gam1_indx = 0, pi0gam2_indx = 0;
   
   // ---------- Beam variables ----------
-  double bpx = 0., bpy = 0., bpz = 0., bene = 0.;   // <-- ADDED
+  float bpx = 0., bpy = 0., bpz = 0., bene = 0.;   // <-- ADDED
   
   // ---------- Output trees ----------
   const int list_size = 13;
@@ -765,6 +765,7 @@ int tree_cut_bdt_tuning() {
       // ---- Recompute deltaE using beam vector ----
       TLorentzVector beamVec; beamVec.SetPxPyPzE(bpx, bpy, bpz, bene);
       deltaE = compute_deltaE(trkplus, trkmin, beamVec, M_PION_CONST);  // <-- MODIFIED
+      cout << "(bpx, bpy, bpz, bene) = (" << bpx << ", " << bpy << ", " << bpz << ", " << bene << ")\n";
       
       // The rest of the photon corrections (e1_bdt, etc.) remain unchanged.
       // ... (existing code for photon corrections)

@@ -600,7 +600,7 @@ int tree_cut_bdt_raw() {
 	// ---------- Selection cuts ----------
 	int idx = determine_tree_index();
 	//cout << "idx = " << idx << endl;
-	if (idx >= 0 && idx < list_size) {
+	if (idx >= 0 && idx < list_size) { // events after pre-selection
 	  nb_pre_per_tree[idx]++;
 	}
 	

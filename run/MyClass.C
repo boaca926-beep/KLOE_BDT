@@ -354,6 +354,14 @@ void MyClass::Main()
   ALLCHAIN_CUT.Branch("Br_isrgam_indx", &isrgam_indx, "Br_isrgam_indx/I");
   ALLCHAIN_CUT.Branch("Br_pi0gam1_indx", &pi0gam1_indx, "Br_pi0gam1_indx/I");
   ALLCHAIN_CUT.Branch("Br_pi0gam2_indx", &pi0gam2_indx, "Br_pi0gam2_indx/I");
+
+  ALLCHAIN_CUT.Branch("Br_pho_indx", &pho_indx_save, "Br_pho_indx[3]/I");
+  ALLCHAIN_CUT.Branch("Br_EPI0NTMC_save", &EPI0NTMC_save, "Br_EPI0NTMC_save[4]/I");
+
+  ALLCHAIN_CUT.Branch("Br_bpx", &bpx, "Br_bpx/F");
+  ALLCHAIN_CUT.Branch("Br_bpy", &bpy, "Br_bpy/F");
+  ALLCHAIN_CUT.Branch("Br_bpz", &bpz, "Br_bpz/F");
+  ALLCHAIN_CUT.Branch("Br_bene", &bene, "Br_bene/F");
   
   //
   TTree ALLCHAIN_TEST ("ALLCHAIN_TEST", "recreate"); ALLCHAIN_TEST.SetAutoSave(0);
@@ -362,13 +370,7 @@ void MyClass::Main()
   ALLCHAIN_TEST.Branch("Br_IMisrpho_miss", &IMisrpho_miss, "Br_IMisrpho_miss/D");
   ALLCHAIN_TEST.Branch("Br_angle_ppl_3piboost", &angle_ppl_3piboost, "Br_angle_ppl_3piboost/D");
 
-  ALLCHAIN_CUT.Branch("Br_pho_indx", &pho_indx_save, "Br_pho_indx[3]/I");
-  ALLCHAIN_CUT.Branch("Br_EPI0NTMC_save", &EPI0NTMC_save, "Br_EPI0NTMC_save[4]/I");
-
-  ALLCHAIN_CUT.Branch("Br_bpx", &bpx, "Br_bpx/D");
-  ALLCHAIN_CUT.Branch("Br_bpy", &bpy, "Br_bpy/D");
-  ALLCHAIN_CUT.Branch("Br_bpz", &bpz, "Br_bpz/D");
-  ALLCHAIN_CUT.Branch("Br_bene", &bene, "Br_bene/D");
+  
   
   ///
   if (fChain == 0) return;
@@ -1756,7 +1758,9 @@ void MyClass::Main()
     EPI0NTMC_save[1] = pi0gam2_ntmc;
     EPI0NTMC_save[2] = isrgam1_ntmc;
     EPI0NTMC_save[3] = isrgam2_ntmc;
-    
+
+    //cout << "(bpx, bpy, bpz, bene) = (" << bpx << ", " << bpy << ", " << bpz << ", " << bene << ")\n";
+      
     ALLCHAIN_CUT.Fill();
   }
   

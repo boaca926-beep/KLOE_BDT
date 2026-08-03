@@ -19,7 +19,7 @@ Double_t breitwigner(Double_t *x, Double_t *par) {
     return par[0] / ((x[0] - par[1]) * (x[0] - par[1]) + par[2] * par[2]);
 }
 
-int BiasM3pi(const TString tuning_type = "tuning_false",
+int BiasM3pi(const TString tuning_type = "raw_false", //raw_false, tuning_false
 	     const TString var_nm = "m3pi_bdt",
 	     const TString var_symb = "M_{3#pi} [MeV/c^{2}]"
 	     ) {
@@ -272,7 +272,7 @@ int BiasM3pi(const TString tuning_type = "tuning_false",
   hist_data_sub->Draw("E1");
   hist_signal->Draw("HIST SAME");
 
-  TPaveText *pt = new TPaveText(0.3, 0.8, 0.85, 0.89, "NDC");
+  TPaveText *pt = new TPaveText(0.2, 0.8, 0.85, 0.89, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
@@ -282,6 +282,7 @@ int BiasM3pi(const TString tuning_type = "tuning_false",
   pt->AddText(Form("#Gamma^{Data}_{#omega}/#Gamma^{MC}_{#omega} = %.3f #pm %.3f", width_ratio, width_ratio_err));
   pt->Draw();
 
+  //TLegend *leg = new TLegend(0.2, 0.7, 0.7, 0.9);
   TLegend *leg = new TLegend(0.2, 0.7, 0.7, 0.8);
   leg->SetTextFont(132);
   leg->SetFillStyle(0);
