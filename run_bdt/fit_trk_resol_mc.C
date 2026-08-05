@@ -62,13 +62,13 @@ void fit_trk_resol_mc() {
     // Parameters: [0]=low, [1]=h0, [2]=h1, [3]=k, [4]=M0, [5]=Mref
     // We fix Mref = 500 MeV (middle of the plateau region)
     const Double_t Mref = 500.0;
-    TF1 *func = new TF1("logistic_linear", logistic_linear, 260, 620, 6);
+    TF1 *func = new TF1("logistic_linear", logistic_linear, 200, 620, 6);
     func->SetParameters(0.4, 1.1, 0.0, 0.05, 350.0, Mref);
     func->SetParLimits(0, 0.0, 0.8);    // low
     func->SetParLimits(1, 0.8, 1.5);    // h0 (plateau at Mref)
     func->SetParLimits(2, -0.01, 0.01); // h1 (slope)
     func->SetParLimits(3, 0.01, 0.3);   // k
-    func->SetParLimits(4, 300, 420);    // M0
+    //func->SetParLimits(4, 200, 420);    // M0
     // Par[5] is fixed: we keep it fixed in the fit by not setting a limit and just letting it be the given value
 
     // Perform fit
@@ -90,11 +90,11 @@ void fit_trk_resol_mc() {
     double chi2ndf = (ndf > 0) ? chi2 / ndf : 0;
 
     std::cout << "\n=== Modified logistic fit results (linear plateau) ===" << std::endl;
-    std::cout << "low  = " << low << " +/- " << low_err << " MeV" << std::endl;
-    std::cout << "h0   = " << h0 << " +/- " << h0_err << " MeV (plateau at Mref = " << Mref << " MeV)" << std::endl;
-    std::cout << "h1   = " << h1 << " +/- " << h1_err << " MeV/MeV" << std::endl;
-    std::cout << "k    = " << k << " +/- " << k_err << " 1/MeV" << std::endl;
-    std::cout << "M0   = " << M0 << " +/- " << M0_err << " MeV" << std::endl;
+    std::cout << "low  = " << low << " +/- " << low_err << " MeV/c^{2}" << std::endl;
+    std::cout << "h0   = " << h0 << " +/- " << h0_err << " MeV/c^{2} (plateau at Mref = " << Mref << " MeV)" << std::endl;
+    std::cout << "h1   = " << h1 << " +/- " << h1_err << std::endl;
+    std::cout << "k    = " << k << " +/- " << k_err << " 1/MeV/c^{2}" << std::endl;
+    std::cout << "M0   = " << M0 << " +/- " << M0_err << " MeV/c^{2}" << std::endl;
     std::cout << "chi2/ndf = " << chi2ndf << std::endl;
 
     // ----------------------------------------------------------------------
@@ -165,10 +165,10 @@ void fit_trk_resol_mc() {
     g_origin->GetXaxis()->SetTitleSize(0.05);
     g_origin->GetXaxis()->SetTitleSize(0.05);
     g_origin->GetXaxis()->SetTitleOffset(1);
-    g_origin->GetYaxis()->SetTitle("#sigma [MeV/c^{2}]");
+    g_origin->GetYaxis()->SetTitle("#sigma_{MC} [MeV/c^{2}]");
     g_origin->GetXaxis()->CenterTitle();
     g_origin->GetYaxis()->CenterTitle();
-    g_origin->GetYaxis()->SetRangeUser(0.01, 2.);
+    g_origin->GetYaxis()->SetRangeUser(0., 2.2);
     g_origin->Draw("AP");
 
     func->SetLineColor(kRed);
@@ -178,7 +178,7 @@ void fit_trk_resol_mc() {
     // Draw the standard logistic fit for comparison (dashed)
     logistic_std->SetLineColor(kGreen + 2);
     logistic_std->SetLineStyle(2);
-    //logistic_std->Draw("same");
+    logistic_std->Draw("same");
 
     // Draw a horizontal line at the plateau value at Mref (h0)
     TF1 *plateauLine = new TF1("plateauLine", "[0]", 260, 620);
@@ -192,21 +192,21 @@ void fit_trk_resol_mc() {
     leg->SetBorderSize(0);
     leg->SetTextSize(0.04);
     leg->AddEntry(g, "MC resolution", "lep");
-    //leg->AddEntry(func, "Logistic + linear plateau", "l");
+    leg->AddEntry(func, "Logistic + linear plateau", "l");
     leg->AddEntry(logistic_std, "Standard logistic", "l");
     leg->AddEntry(plateauLine, Form("h0 (at M_ref=%.0f) = %.3f MeV/c^{2}", Mref, h0), "l");
     leg->Draw();
 
-    TPaveText *pt = new TPaveText(0.45, 0.15, 0.7, 0.50, "NDC");
+    TPaveText *pt = new TPaveText(0.45, 0.15, 0.7, 0.45, "NDC");
     pt->SetFillColor(0);
     pt->SetBorderSize(0);
     pt->SetTextAlign(12);
     pt->SetTextSize(0.03);
-    pt->AddText(Form("low  = %.3f #pm %.3f MeV", low, low_err));
-    pt->AddText(Form("h0   = %.3f #pm %.3f MeV", h0, h0_err));
+    pt->AddText(Form("low  = %.3f #pm %.3f MeV/c^{2}", low, low_err));
+    pt->AddText(Form("h0   = %.3f #pm %.3f MeV/c^{2}", h0, h0_err));
     pt->AddText(Form("h1   = %.3f #pm %.3f ", h1, h1_err));
-    pt->AddText(Form("k    = %.3f #pm %.3f 1/MeV", k, k_err));
-    pt->AddText(Form("M0   = %.1f #pm %.1f MeV", M0, M0_err));
+    pt->AddText(Form("k    = %.3f #pm %.3f 1/MeV/c^{2}", k, k_err));
+    pt->AddText(Form("M_{0}   = %.1f #pm %.1f MeV/c^{2}", M0, M0_err));
     pt->AddText(Form("#chi^{2}/NDF = %.2f", chi2ndf));
     pt->Draw();
 

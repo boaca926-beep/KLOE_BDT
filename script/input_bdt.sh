@@ -54,7 +54,7 @@ set -e   # exit immediately if any command fails
 #   tuning_type = tuning -> uses tree_cut_bdt_tuning.C (track bias + smearing always applied)
 # ============================================================
 sample_size=norm           # norm; small; mini; chain
-tuning_type=raw          # raw or tuning
+tuning_type=tuning          # raw or tuning
 
 # Photon corrections (only effective when tuning_type = tuning)
 pull_status=false           # false = no photon corrections, true = apply

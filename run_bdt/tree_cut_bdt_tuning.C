@@ -708,24 +708,44 @@ int tree_cut_bdt_tuning() {
     // Solving for E_corr: E_corr = (1 - alpha)E_raw + alpha*E_fit - beta*sigma_denom
 
     const double M_PION_CONST = 139.57061;  // MeV/c^2
-    
+
     // ---- Apply corrections ----
     if (data_type == "sig") {
-      // 1. Bias correction: scale momenta by (1 - BIAS_P1)
-      const double scale = 1.0 - BIAS_P1;
-      ppl_px *= scale;
-      ppl_py *= scale;
-      ppl_pz *= scale;
-      ppl_E = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
-      
-      pmi_px *= scale;
-      pmi_py *= scale;
-      pmi_pz *= scale;
-      pmi_E = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
-
-      // 2. Mass-dependent smearing
       double M_true = ppIM_true; // true dipion mass
+    
+      if (M_true > 0) {
+	double s = M_true / (M_true + BIAS_P0 + BIAS_P1 * M_true);
+	
+	// Safety: clamp to reasonable range (prevents pathological low-mass extrapolation)
+	if (s < 0.90) s = 0.90;
+	if (s > 1.10) s = 1.10;
+	
+	ppl_px *= s;
+	ppl_py *= s;
+	ppl_pz *= s;
+	ppl_E = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
+	
+	pmi_px *= s;
+	pmi_py *= s;
+	pmi_pz *= s;
+	pmi_E = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
+      }
+      else {// Fallback: if true mass is unphysical (should not happen for signal), apply constant scale
+	// 1. Bias correction: scale momenta by (1 - BIAS_P1)
+	const double scale = 1.0 - BIAS_P1;
+	ppl_px *= scale;
+	ppl_py *= scale;
+	ppl_pz *= scale;
+	ppl_E = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
+	
+	pmi_px *= scale;
+	pmi_py *= scale;
+	pmi_pz *= scale;
+	pmi_E = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
+      }
       
+      // 2. Mass-dependent smearing
+
       // MC resolution from logistic (linear plateau variant)
       double high = H0 + H1 * (M_true - MREF);
       double sigma_mc = SIGMA_LOW + (high - SIGMA_LOW) / (1.0 + exp(-K * (M_true - M0)));
@@ -765,7 +785,7 @@ int tree_cut_bdt_tuning() {
       // ---- Recompute deltaE using beam vector ----
       TLorentzVector beamVec; beamVec.SetPxPyPzE(bpx, bpy, bpz, bene);
       deltaE = compute_deltaE(trkplus, trkmin, beamVec, M_PION_CONST);  // <-- MODIFIED
-      cout << "(bpx, bpy, bpz, bene) = (" << bpx << ", " << bpy << ", " << bpz << ", " << bene << ")\n";
+      //cout << "(bpx, bpy, bpz, bene) = (" << bpx << ", " << bpy << ", " << bpz << ", " << bene << ")\n";
       
       // The rest of the photon corrections (e1_bdt, etc.) remain unchanged.
       // ... (existing code for photon corrections)

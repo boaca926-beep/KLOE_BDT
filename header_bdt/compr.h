@@ -1,6 +1,6 @@
-const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root";
-const TString out_dir = "../tuning_false_deltaE";
-const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/sfw2d/";
+const TString tree_file_nm = "/home/bo/Desktop/bdt_raw_TDATA_norm_false/cut/tree_pre.root";
+const TString out_dir = "../raw_false_deltaE";
+const TString outputSfw2D = "/home/bo/Desktop/bdt_raw_TDATA_norm_false/sfw2d/";
 const TString var_nm = "deltaE";
 const TString var_symb = "E_{diff}";
 const TString unit = "[MeV]";

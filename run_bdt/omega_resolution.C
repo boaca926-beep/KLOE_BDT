@@ -56,7 +56,7 @@ bool fitGaussian(TH1D *h, FitResult &res, const TString &label = "") {
     } strategies[nStrategies] = {
       {775.0, 790.0, "gaus(0) + pol0(3)", 4, 0.1, 20.0},
       {775.0, 790.0, "gaus(0)", 3, 0.1, 20.0},
-      {775.0, 790.0, "gaus(0) + pol0(3)", 4, 0.1, 20.0}, // duplicate, but can keep for simplicity
+      {775.0, 790.0, "gaus(0) + pol0(3)", 4, 0.1, 20.0},
       {775.0, 790.0, "gaus(0)", 3, 0.1, 20.0}
     };
 
@@ -110,7 +110,7 @@ bool fitGaussian(TH1D *h, FitResult &res, const TString &label = "") {
 // ----------------------------------------------------------------------------
 // Main macro
 // ----------------------------------------------------------------------------
-int omega_resolution(const TString tuning_type = "tuning_false",
+int omega_resolution(const TString tuning_type = "raw_false",
                      const TString var_nm = "m3pi_bdt",
                      const TString var_symb = "M_{3#pi} [MeV/c^{2}]") {
 
@@ -166,12 +166,16 @@ int omega_resolution(const TString tuning_type = "tuning_false",
     // ------------------------------------------------------------------
     FitResult resMC, resData;
     bool okMC = fitGaussian(hist_signal, resMC, "MC");
+
+    // Try background-subtracted first
     bool okData = fitGaussian(hist_data_sub, resData, "Data (bkg sub)");
+    TH1D *h_data_used = (okData) ? hist_data_sub : nullptr;
 
     // Fallback: if background-subtracted fails, fit raw data
     if (!okData) {
         std::cout << "Background-subtracted fit failed. Trying raw data..." << std::endl;
         okData = fitGaussian(hist_data, resData, "Data (raw)");
+        if (okData) h_data_used = hist_data;
     }
 
     if (!okMC || !okData) {
@@ -209,7 +213,7 @@ int omega_resolution(const TString tuning_type = "tuning_false",
     myfile.close();
     std::cout << "Parameters written to " << myfile_nm << std::endl;
 
-    // ---- Draw and save plots ----
+    // ---- Draw and save individual plots ----
     auto drawHist = [&](TH1D *h, const FitResult &res, const TString &title, const TString &fname) {
         TCanvas *c = new TCanvas("c", title, 900, 700);
         gPad->SetBottomMargin(0.15);
@@ -227,12 +231,13 @@ int omega_resolution(const TString tuning_type = "tuning_false",
             fit->SetLineWidth(2);
             fit->Draw("same");
         }
-        TPaveText *pt = new TPaveText(0.55, 0.70, 0.90, 0.90, "NDC");
+        TPaveText *pt = new TPaveText(0.35, 0.65, 0.85, 0.85, "NDC");
         pt->SetFillColor(0);
         pt->SetBorderSize(0);
         pt->SetTextAlign(12);
         pt->SetTextSize(0.04);
-        pt->AddText(Form("#sigma = %.3f ± %.3f MeV", res.sigma, res.sigma_err));
+	cout << res.sigma << endl;
+        pt->AddText(Form("#sigma = %.3f #pm %.3f MeV/c^{2}", res.sigma, res.sigma_err));
         pt->AddText(Form("#chi^{2}/NDF = %.2f", res.chi2_ndf));
         pt->Draw();
         c->SaveAs(fname);
@@ -240,20 +245,77 @@ int omega_resolution(const TString tuning_type = "tuning_false",
     };
 
     drawHist(hist_signal, resMC, "MC #omega peak", out_dir + "/omega_fit_MC.pdf");
-    // Use the histogram that was actually fitted (sub or raw)
-    TH1D *h_data_used = (okData && fitGaussian(hist_data_sub, resData, "check")) ? hist_data_sub : hist_data;
     drawHist(h_data_used, resData, "Data #omega peak", out_dir + "/omega_fit_Data.pdf");
 
-    // Comparison plot
-    TCanvas *c_comp = new TCanvas("c_comp", "MC vs Data", 1200, 700);
-    c_comp->Divide(2,1);
-    c_comp->cd(1);
-    hist_signal->Draw("E0");
-    if (hist_signal->GetFunction("omega_fit")) hist_signal->GetFunction("omega_fit")->Draw("same");
-    c_comp->cd(2);
-    h_data_used->Draw("E0");
-    if (h_data_used->GetFunction("omega_fit")) h_data_used->GetFunction("omega_fit")->Draw("same");
+    // ---- Comparison plot: MC vs Data overlaid (raw yields, no normalization) ----
+    TCanvas *c_comp = new TCanvas("c_comp", "MC vs Data #omega peak", 900, 900);
+    gPad->SetBottomMargin(0.15);
+    gPad->SetLeftMargin(0.15);
+
+    // Clone histograms (without scaling) to avoid modifying originals
+    TH1D *h_mc_draw = (TH1D*)hist_signal->Clone("h_mc_draw");
+    TH1D *h_data_draw = (TH1D*)h_data_used->Clone("h_data_draw");
+
+    // Set styles for MC (black markers)
+    h_mc_draw->SetMarkerColor(kBlue);
+    h_mc_draw->SetLineColor(kBlue);
+    h_mc_draw->SetMarkerStyle(20);
+    h_mc_draw->SetMarkerSize(0.8);
+
+    // Set styles for Data (blue markers)
+    h_data_draw->SetMarkerColor(kBlack);
+    h_data_draw->SetLineColor(kBlack);
+    h_data_draw->SetMarkerStyle(21);
+    h_data_draw->SetMarkerSize(0.8);
+
+    // Set Y range to cover the maximum of both histograms
+    double y_max = TMath::Max(h_mc_draw->GetMaximum(), h_data_draw->GetMaximum());
+    h_mc_draw->SetMarkerStyle(20);
+    h_mc_draw->SetMarkerSize(0.6);
+    h_mc_draw->GetYaxis()->SetTitle("Events");
+    h_mc_draw->GetYaxis()->SetRangeUser(0.01, y_max * 1.2);
+    h_mc_draw->GetYaxis()->CenterTitle();
+    h_mc_draw->GetYaxis()->SetTitleSize(0.05);
+    h_mc_draw->GetYaxis()->SetTitleOffset(1.4);
+    h_mc_draw->GetYaxis()->SetLabelSize(0.04);
+    h_mc_draw->GetXaxis()->SetTitle(var_symb);
+    h_mc_draw->GetXaxis()->SetTitleSize(0.05);
+    h_mc_draw->GetXaxis()->SetTitleOffset(1.2);
+    h_mc_draw->GetXaxis()->SetLabelSize(0.04);
+    h_mc_draw->GetXaxis()->CenterTitle();
+    
+    // Draw MC first, then Data on top
+    h_mc_draw->Draw("hist");
+    h_data_draw->Draw("E0 same");
+
+    // Retrieve fit functions (raw amplitudes, no scaling)
+    TF1 *fit_mc = (TF1*)hist_signal->GetFunction("omega_fit")->Clone("fit_mc_clone");
+    if (fit_mc) {
+        fit_mc->SetLineColor(kRed);
+        fit_mc->SetLineWidth(2);
+        fit_mc->Draw("same");
+    }
+
+    TF1 *fit_data = (TF1*)h_data_used->GetFunction("omega_fit")->Clone("fit_data_clone");
+    if (fit_data) {
+        fit_data->SetLineColor(kGreen + 2);
+        fit_data->SetLineWidth(2);
+        fit_data->Draw("same");
+    }
+
+    // Legend with sigma values
+    TLegend *leg = new TLegend(0.40, 0.65, 0.7, 0.85);
+    leg->SetFillColor(0);
+    leg->SetBorderSize(0);
+    leg->SetTextSize(0.035);
+    leg->AddEntry(h_mc_draw, "MC", "lep");
+    leg->AddEntry(h_data_draw, "Data (bkg sub)", "lep");
+    leg->AddEntry(fit_mc, Form("MC #sigma = %.3f MeV", resMC.sigma), "l");
+    leg->AddEntry(fit_data, Form("Data #sigma = %.3f MeV", resData.sigma), "l");
+    leg->Draw();
+
     c_comp->SaveAs(out_dir + "/omega_comparison.pdf");
+    delete c_comp;
 
     tree_file->Close();
     return 0;

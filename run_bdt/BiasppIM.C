@@ -37,9 +37,9 @@ struct FitResult {
   int entries;
 };
 
-int BiasppIM(const TString tuning_type = "tuning_false", //raw_false, tuning_false
+int BiasppIM(const TString tuning_type = "raw_false", //raw_false, tuning_false
 	     const TString var_nm = "ppIM",
-	     const TString var_symb = "M_{trk} [MeV/c^{2}]"
+	     const TString var_symb = "M_{2#pi} [MeV/c^{2}]"
 	     ) {
 
   const TString tree_file_nm = "../" + tuning_type + "_" + var_nm + "/hist.root";

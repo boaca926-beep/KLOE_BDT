@@ -23,7 +23,7 @@ int tree_cut_raw(){
   double beta_3pi;
   double m02 = 0., mplus2 = 0.;
   double m3pi = 0.;
-  double ppIM = 0.;
+  double ppIM = 0., ppIM_true = 0.;
   double Emax_clust = 0.;
   double IM3pi_7C = 0., IM3pi_true = 0.;
   double IM_pi0_7C = 0.;
@@ -145,6 +145,7 @@ int tree_cut_raw(){
     tree_tmp -> Branch("Br_mplus2", &mplus2, "Br_mplus2/D");
     tree_tmp -> Branch("Br_m02", &m02, "Br_m02/D");
     tree_tmp -> Branch("Br_ppIM", &ppIM, "Br_ppIM/D");
+    tree_tmp -> Branch("Br_ppIM_true", &ppIM_true, "Br_ppIM_true/D");
     tree_tmp -> Branch("Br_Emax_clust", &Emax_clust, "Br_Emax_clust/D");
     tree_tmp -> Branch("Br_Eisr", &Eisr, "Br_Eisr/D");
     tree_tmp -> Branch("Br_Epi0_pho1", &Epi0_pho1, "Br_Epi0_pho1/D");
@@ -261,6 +262,8 @@ int tree_cut_raw(){
     deltaE = ALLCHAIN_CUT -> GetLeaf("Br_ENERGYLIST") -> GetValue(2); 
     angle_pi0gam12 = ALLCHAIN_CUT -> GetLeaf("Br_ANGLELIST") -> GetValue(0);
     betapi0 = ALLCHAIN_CUT -> GetLeaf("Br_betapi0") -> GetValue(0);
+
+    ppIM_true = ALLCHAIN_CUT->GetLeaf("Br_ppIM_true")->GetValue(0);
     ppIM = ALLCHAIN_CUT -> GetLeaf("Br_MASSLIST") -> GetValue(5);
     m02 = ALLCHAIN_CUT -> GetLeaf("Br_MASSLIST") -> GetValue(10);
     mplus2 = ALLCHAIN_CUT -> GetLeaf("Br_MASSLIST") -> GetValue(11);

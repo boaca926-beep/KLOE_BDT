@@ -216,14 +216,14 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
   pad->cd();
   gPad->SetBottomMargin(0.15);
   gPad->SetLeftMargin(0.13);
-  gPad->SetRightMargin(0.02);
+  gPad->SetRightMargin(0.035);
   gPad->SetTopMargin(0.02);
 
   h->SetLineWidth(1);
   h->SetLineColor(kBlue);
 
   h->GetXaxis()->SetNdivisions(505);
-  h->GetXaxis()->SetTitle(isMC ? "M^{Data}_{#pi#pi} - M^{true}_{#pi#pi} (MeV/c^{2})" : "M_{#pi#pi} (MeV/c^{2})");
+  h->GetXaxis()->SetTitle(isMC ? "M^{Data}_{2#pi} - M^{true}_{2#pi} (MeV/c^{2})" : "M_{2#pi} (MeV/c^{2})");
   h->GetXaxis()->SetTitleSize(0.06);
   h->GetYaxis()->SetTitleSize(0.06);
   h->GetXaxis()->SetLabelSize(0.07);
@@ -267,7 +267,7 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
   TLegend *leg = new TLegend(0.15, 0.60, 0.5, 0.8);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
-  leg->SetTextSize(0.04);
+  leg->SetTextSize(0.05);
   leg->AddEntry(h, sample_type, "lep");
   if (isMC) leg->AddEntry(core, "Core Gaussian", "l");
   leg->Draw();
@@ -280,8 +280,8 @@ void trackmass_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
                     const TString sample_type = "Signal",
                     const TString fit_type = "pull",
                     bool draw_bins = true,
-                    //const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
-		    const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_norm_false/cut/tree_pre.root",
+                    const TString input_file_nm = "/home/bo/Desktop/bdt_raw_TDATA_norm_false/cut/tree_pre.root",
+		    //const TString input_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_norm_false/cut/tree_pre.root",
                     const TString fit_model = "gausPoly", //gausCheb2, gausPoly 
                     const TString pull_type = "old")
 {
@@ -297,7 +297,7 @@ void trackmass_scan(const TString tree_type = "TDATA",
 {
 */
 
-  TString pdf_name = Form("../trackmass_scan/bin_histograms_%s_%s.pdf", tree_type.Data(), pull_type.Data());
+  TString pdf_name = Form("../trackmass_scan/bin_histograms_%s_track_%s.pdf", tree_type.Data(), pull_type.Data());
 
   TString root_name = "";
   if (pull_type == "new") {
@@ -372,7 +372,7 @@ void trackmass_scan(const TString tree_type = "TDATA",
   if (isMC) {
     h_overall->SetTitle("Pull distribution (ppIM - ppIM_true)");
   } else {
-    h_overall->SetTitle("M_{#pi#pi} distribution (data)");
+    h_overall->SetTitle("M_{2#pi} distribution (data)");
   }
 
   // Binning in reconstructed mass
@@ -380,7 +380,7 @@ void trackmass_scan(const TString tree_type = "TDATA",
   const double mass_max = 650.;
   const double binwidth = 2 * 5.6;   // 11.2 MeV/c²
   const int nbins = (int)((mass_max - mass_min) / binwidth);
-  cout << "Binning in M_{#pi#pi}: [" << mass_min << ", " << mass_max << "] MeV/c^{2}, "
+  cout << "Binning in M_{2#pi}: [" << mass_min << ", " << mass_max << "] MeV/c^{2}, "
        << "bins: " << nbins << ", width: " << binwidth << " MeV/c^{2}" << endl;
 
   vector<TH1D*> hist_hists(nbins);
@@ -393,8 +393,8 @@ void trackmass_scan(const TString tree_type = "TDATA",
   vector<int> bin_entries(nbins);
 
   // Set histogram range appropriately
-  double hmin = isMC ? -5.0 : 250.0;
-  double hmax = isMC ?  5.0 : 650.0;
+  double hmin = isMC ? -10.0 : 250.0;
+  double hmax = isMC ?  10.0 : 650.0;
 
   for (int b = 0; b < nbins; ++b) {
     double lo = mass_min + b * binwidth;
@@ -526,11 +526,11 @@ void trackmass_scan(const TString tree_type = "TDATA",
 
     vector<int> bins_to_draw;
     for (int b = 0; b < nbins; ++b) {
-      if (bin_entries[b] >= 100) bins_to_draw.push_back(b);
+      if (bin_entries[b] >= 500) bins_to_draw.push_back(b);
     }
 
     const int nCols = 6;
-    const int nRows = 6;
+    const int nRows = 5;
     const int nPerPage = nCols * nRows;
 
     for (size_t i = 0; i < bins_to_draw.size(); i += nPerPage) {
@@ -541,6 +541,7 @@ void trackmass_scan(const TString tree_type = "TDATA",
         int b = bins_to_draw[i+j];
         TPad *pad = (TPad*)c_pdf->GetPad(j+1);
         pad->cd();
+	
         drawBinHistInPad(hist_hists[b], b, bin_mean[b], bin_sigma[b],
                          bin_core_amp[b], bin_fit_min[b], bin_fit_max[b],
                          M0_LIST[b], M1_LIST[b],
@@ -564,7 +565,7 @@ void trackmass_scan(const TString tree_type = "TDATA",
   gPad->SetLeftMargin(0.15);
   h_overall->SetLineWidth(2);
   h_overall->SetLineColor(4);
-  h_overall->GetXaxis()->SetTitle(isMC ? "Pull (MeV)" : "M_{#pi#pi} (MeV)");
+  h_overall->GetXaxis()->SetTitle(isMC ? "Pull (MeV)" : "M_{2#pi} (MeV)");
   h_overall->GetYaxis()->SetTitle("Entries");
   h_overall->GetXaxis()->CenterTitle();
   h_overall->GetYaxis()->CenterTitle();
@@ -577,7 +578,7 @@ void trackmass_scan(const TString tree_type = "TDATA",
   gPad->SetLeftMargin(0.15);
   g_sigma->SetMarkerStyle(20);
   g_sigma->SetMarkerSize(1.2);
-  g_sigma->GetXaxis()->SetTitle("M_{#pi#pi} (MeV/c^{2})");
+  g_sigma->GetXaxis()->SetTitle("M_{2#pi} (MeV/c^{2})");
   g_sigma->GetYaxis()->SetTitle(isMC ? "Resolution (sigma) [MeV]" : "RMS [MeV]");
   g_sigma->GetXaxis()->CenterTitle();
   g_sigma->GetYaxis()->CenterTitle();
@@ -589,8 +590,8 @@ void trackmass_scan(const TString tree_type = "TDATA",
   gPad->SetLeftMargin(0.15);
   g_bias->SetMarkerStyle(20);
   g_bias->SetMarkerSize(1.2);
-  g_bias->GetXaxis()->SetTitle("M_{#pi#pi} (MeV/c^{2})");
-  g_bias->GetYaxis()->SetTitle(isMC ? "Bias (Mean residual) [MeV]" : "Mean M_{#pi#pi} [MeV]");
+  g_bias->GetXaxis()->SetTitle("M_{2#pi} (MeV/c^{2})");
+  g_bias->GetYaxis()->SetTitle(isMC ? "Bias (Mean residual) [MeV]" : "Mean M_{2#pi} [MeV]");
   g_bias->GetXaxis()->CenterTitle();
   g_bias->GetYaxis()->CenterTitle();
   g_bias->Draw("AP");

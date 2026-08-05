@@ -150,7 +150,7 @@ void fit_trk_bias_mc() {
     g_orig->GetYaxis()->SetTitleSize(0.05);
     g_orig->GetYaxis()->SetTitleOffset(.8);
     g_orig->GetYaxis()->SetTitle("Bias (Mean residual) [MeV/c^{2}]");
-    g_orig->GetXaxis()->SetTitle("M_{#pi#pi}^{true} [MeV/c^{2}]");
+    g_orig->GetXaxis()->SetTitle("M_{2#pi}^{true} [MeV/c^{2}]");
     g_orig->GetXaxis()->SetTitleSize(0.05);
     g_orig->GetXaxis()->SetTitleSize(0.05);
     g_orig->GetXaxis()->SetTitleOffset(1);
@@ -189,8 +189,8 @@ void fit_trk_bias_mc() {
     pt->SetBorderSize(0);
     pt->SetTextAlign(12);
     pt->SetTextSize(0.03);
-    pt->AddText(Form("a = %.3f #pm %.3f MeV", p0_fit, p0_err));
-    pt->AddText(Form("b = %.3f #pm %.3f MeV/MeV", p1_fit, p1_err));
+    pt->AddText(Form("a = %.4f #pm %.4f MeV/c^{2}", p0_fit, p0_err));
+    pt->AddText(Form("b = %.4f #pm %.4f ", p1_fit, p1_err));
     pt->AddText(Form("#chi^{2}/NDF = %.2f", chi2ndf));
     pt->Draw();
 
