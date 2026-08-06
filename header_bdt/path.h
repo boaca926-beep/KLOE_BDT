@@ -1,5 +1,5 @@
-const TString rootFile = "../path_norm/ksl_path";
-const TString sampleFile = "../../bdt_tuning_TDATA_norm_false/input/ksl";
+const TString rootFile = "../path_norm/ufo_path";
+const TString sampleFile = "../../bdt_tuning_TDATA_norm_false/input/ufo";
 const TString outputCut = "../../bdt_tuning_TDATA_norm_false/cut/";
 const TString sig_path = "../../bdt_tuning_TDATA_norm_false/input/";
 const TString outputGen = "../../bdt_tuning_TDATA_norm_false/gen/";
@@ -7,7 +7,6 @@ const TString outputHist = "../../bdt_tuning_TDATA_norm_false/hist/";
 const TString outputSfw2D = "../../bdt_tuning_TDATA_norm_false/sfw2d/";
 const TString outputSfw1D = "../../bdt_tuning_TDATA_norm_false/sfw1d/";
 const TString outputOmega = "../../bdt_tuning_TDATA_norm_false/omega_fit/";
-const TString data_type = "ksl";
+const TString data_type = "ufo";
 const TString exp_type = "TDATA";
-const TString tuning_type = "tuning";
 double gsf = 1;

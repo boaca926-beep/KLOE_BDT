@@ -231,7 +231,7 @@ int omega_resolution(const TString tuning_type = "raw_false",
             fit->SetLineWidth(2);
             fit->Draw("same");
         }
-        TPaveText *pt = new TPaveText(0.35, 0.65, 0.85, 0.85, "NDC");
+        TPaveText *pt = new TPaveText(0.2, 0.65, 0.85, 0.85, "NDC");
         pt->SetFillColor(0);
         pt->SetBorderSize(0);
         pt->SetTextAlign(12);
@@ -304,16 +304,19 @@ int omega_resolution(const TString tuning_type = "raw_false",
     }
 
     // Legend with sigma values
-    TLegend *leg = new TLegend(0.40, 0.65, 0.7, 0.85);
+    TLegend *leg = new TLegend(0.20, 0.65, 0.7, 0.85);
     leg->SetFillColor(0);
     leg->SetBorderSize(0);
     leg->SetTextSize(0.035);
     leg->AddEntry(h_mc_draw, "MC", "lep");
     leg->AddEntry(h_data_draw, "Data (bkg sub)", "lep");
-    leg->AddEntry(fit_mc, Form("MC #sigma = %.3f MeV", resMC.sigma), "l");
-    leg->AddEntry(fit_data, Form("Data #sigma = %.3f MeV", resData.sigma), "l");
+    leg->AddEntry(fit_mc, Form("MC #sigma = %.3f #pm %.3f MeV/c^{2}", resMC.sigma, resMC.sigma_err), "l");
+    leg->AddEntry(fit_data, Form("Data #sigma = %.3f #pm %.3f MeV/c^{2}", resData.sigma, resData.sigma_err), "l");
     leg->Draw();
 
+    //pt->AddText(Form("#sigma = %.3f #pm %.3f MeV/c^{2}", res.sigma, res.sigma_err));
+    //pt->AddText(Form("#chi^{2}/NDF = %.2f", res.chi2_ndf));
+        
     c_comp->SaveAs(out_dir + "/omega_comparison.pdf");
     delete c_comp;
 

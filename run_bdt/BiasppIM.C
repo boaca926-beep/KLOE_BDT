@@ -37,7 +37,7 @@ struct FitResult {
   int entries;
 };
 
-int BiasppIM(const TString tuning_type = "raw_false", //raw_false, tuning_false
+int BiasppIM(const TString tuning_type = "tuning_false", //raw_false, tuning_false
 	     const TString var_nm = "ppIM",
 	     const TString var_symb = "M_{2#pi} [MeV/c^{2}]"
 	     ) {

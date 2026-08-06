@@ -360,7 +360,7 @@ int compr_bdt() {
   hist_ratio->GetYaxis()->SetTitleSize(0.12);
   hist_ratio->GetYaxis()->SetTitleOffset(0.5);
   hist_ratio->GetYaxis()->SetLabelSize(0.08);
-  hist_ratio->GetYaxis()->SetRangeUser(-5., 5.);
+  hist_ratio->GetYaxis()->SetRangeUser(-10., 10.);
   hist_ratio->GetYaxis()->SetNdivisions(505);
   hist_ratio->GetYaxis()->CenterTitle();
   hist_ratio->Draw("EP");

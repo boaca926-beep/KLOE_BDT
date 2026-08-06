@@ -19,7 +19,7 @@ Double_t breitwigner(Double_t *x, Double_t *par) {
     return par[0] / ((x[0] - par[1]) * (x[0] - par[1]) + par[2] * par[2]);
 }
 
-int BiasM3pi(const TString tuning_type = "raw_false", //raw_false, tuning_false
+int BiasM3pi(const TString tuning_type = "tuning_false", //raw_false, tuning_false
 	     const TString var_nm = "m3pi_bdt",
 	     const TString var_symb = "M_{3#pi} [MeV/c^{2}]"
 	     ) {

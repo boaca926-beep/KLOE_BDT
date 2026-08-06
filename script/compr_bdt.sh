@@ -2,7 +2,7 @@
 
 compr=../header_bdt/compr.h
 data_type=bdt
-tuning_type=raw #raw: kinematic fitted; tuning: signal 3pi mass resolution correction 
+tuning_type=tuning #raw: kinematic fitted; tuning: signal 3pi mass resolution correction 
 sample_type=norm
 tuning_status=false #true: false: kineamtic fitted or track correction; true: track correction and pi0 decay photon energy correction (energy bias correction + energy scale correction)
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
@@ -39,13 +39,13 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #BINS=200
 
 ##################################################################
-#VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
-#VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
-#UNIT=("[MeV\/c^{2}]")
+VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
+VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
+UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(760) #300 600 760 (analysis)
-#XMAX=(800) #1020 1050 800 (analysis)
-#BINS=(100)
+XMIN=(760) #300 600 760 (analysis)
+XMAX=(800) #1020 1050 800 (analysis)
+BINS=(100)
 
 ##################################################################
 #VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
@@ -129,13 +129,13 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #BINS=(100) #120
 
 ##################################################################
-VAR_NM=("deltaE")
-VAR_SYMB=("E_{diff}")
-UNIT=("[MeV]")
+#VAR_NM=("deltaE")
+#VAR_SYMB=("E_{diff}")
+#UNIT=("[MeV]")
 
-XMIN=(-460) #-700, -500
-XMAX=(-220) #-200, 50
-BINS=(150) #150, 550 
+#XMIN=(-460) #-700, -500
+#XMAX=(-220) #-200, 50
+#BINS=(150) #150, 550 
 
 ##################################################################
 #VAR_NM="ppIM"
