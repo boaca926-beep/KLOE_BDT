@@ -326,10 +326,10 @@ void bias_compr(const bool &corr = true) {
   pt->SetTextAlign(12);
   pt->SetTextSize(0.04);
   pt->SetTextFont(42);
-  TText *txt = pt->AddText(tuning_status);
-  txt->SetTextColor(kBlue); // or any color
+  //TText *txt = pt->AddText(tuning_status);
+  TText *txt = pt->AddText(Form("Bias shift = %.3f #pm %.3f", bias_shift, bias_shift_err));
+  //txt->SetTextColor(kBlue); // or any color
   txt->SetTextFont(42); // bold
-  pt->AddText(Form("Bias shift = %.3f #pm %.3f", bias_shift, bias_shift_err));
   //pt->AddText(Form("Z = %.2f", Z_value));
   pt->AddText(Form("Fit range [%.0f, %.0f] MeV", xMinClean, xMaxClean));
   pt->AddText(Form("#chi^{2}/NDF = %.2f", linFit->GetChisquare()/linFit->GetNDF()));

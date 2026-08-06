@@ -1,8 +1,8 @@
 #!/bin/bash
 
-sample_type=chain
+sample_type=norm
 data_type=bdt
-tuning_type=tuning   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
+tuning_type=raw   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
 pull_status=false
 
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
@@ -31,29 +31,16 @@ else
     mkdir -p $output_folder
 fi
 
-# Loop over trees and run the macro for MC
-for ((i=0; i<${#TREES_MC[@]}; ++i)); do
-    tree=${TREES_MC[i]}
-    sample=${SAMPLES_MC[i]}
-    echo "Processing $tree ($sample)"
-    
-    # Run ROOT in batch mode, passing arguments to trackmass_scan.C
-    root -l -q -b "../run_bdt/trackmass_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"crystalBall\", \"old\")" # old pull
-
-    #root -l -q -b "../run_bdt/trackmass_scan(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"crystalBall\", \"new\")" # new pull
-    
-done
-
-TREES_DATA=("TDATA")
-SAMPLES_DATA=("Data")
+TREES=("TISR3PI_SIG_PEAK")
+SAMPLES=("Signal")
 
 # Loop over trees and run the macro for DATA
-for ((i=0; i<${#TREES_DATA[@]}; ++i)); do
-    tree=${TREES_DATA[i]}
-    sample=${SAMPLES_DATA[i]}
+for ((i=0; i<${#TREES[@]}; ++i)); do
+    tree=${TREES[i]}
+    sample=${SAMPLES[i]}
     echo "Processing $tree ($sample)"
     
     # Run ROOT in batch mode, passing arguments to pull_scan.C
-    root -l -q -b "../run_bdt/trackmass_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"crystalBall\", \"old\")" # old pull
+    root -l -q -b "../run_bdt/trackmass_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"gausPoly\", \"old\")" # old pull
 
 done

@@ -268,7 +268,7 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
   TLegend *leg = new TLegend(0.15, 0.60, 0.5, 0.8);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
-  leg->SetTextSize(0.04);
+  leg->SetTextSize(0.05);
   leg->AddEntry(h, sample_type, "lep");
   leg->AddEntry(core, "Core Gaussian", "l");
   leg->Draw();
@@ -511,7 +511,7 @@ void pull_scan(const TString tree_type = "TDATA",
 
     vector<int> bins_to_draw;
     for (int b = 0; b < nbins; ++b) {
-      if (bin_entries[b] >= 100) bins_to_draw.push_back(b);
+      if (bin_entries[b] >= 1000) bins_to_draw.push_back(b);
     }
 
     const int nCols = 6;

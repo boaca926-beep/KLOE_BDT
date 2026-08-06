@@ -4,7 +4,6 @@
 #include "../header_plot/plot.h"
 //#include "../header_bdt/path.h"    // for outputSfw2D
 
-/*
 int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
 	      const TString out_dir = "../tuning_false_m_gg_bdt",
 	      const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/sfw2d/",
@@ -16,7 +15,6 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
 	      const double var_min = 120,
 	      const double var_max = 150
 ) {
-*/
 
 /*
 int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_chain_false/cut/tree_pre.root",
@@ -32,7 +30,7 @@ int compr_bdt(const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_TDATA_ch
 ) {
 */
 
-int compr_bdt() {
+//int compr_bdt() {
   gErrorIgnoreLevel = kError;
   TGaxis::SetMaxDigits(4);
   gStyle->SetOptStat(0);

@@ -6,11 +6,11 @@
 //const double track_smearing_err = 0.0;
 
 // Photon corrections
-const double bias_shift = 0.0;
-const double bias_shift_err = 0.0;
+const double bias_shift = 0.0332566;
+const double bias_shift_err = 0.00344756;
 
-const double scale_ratio = 1.0;
-const double scale_ratio_err = 0.0;
+const double scale_ratio = 1.00732;
+const double scale_ratio_err = 0.00457665;
 
 const double mpi0_data = 0.0;
 const double mpi0_data_err = 0.0;

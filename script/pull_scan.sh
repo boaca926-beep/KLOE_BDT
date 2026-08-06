@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sample_type=chain
+sample_type=norm
 data_type=bdt
 tuning_type=tuning   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
 pull_status=false
@@ -39,9 +39,9 @@ for ((i=0; i<${#TREES_MC[@]}; ++i)); do
     #echo "Processing $tree ($sample)"
     
     # Run ROOT in batch mode, passing arguments to pull_scan.C
-    root -l -q -b "../run_bdt/pull_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"crystalBall\", \"old\")" # old pull
+    root -l -q -b "../run_bdt/pull_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"gausPoly\", \"old\")" # old pull
 
-    root -l -q -b "../run_bdt/pull_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"crystalBall\", \"new\")" # new pull
+    root -l -q -b "../run_bdt/pull_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"gausPoly\", \"new\")" # new pull
     
 done
 
