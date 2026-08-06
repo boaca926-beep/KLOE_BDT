@@ -323,9 +323,9 @@ int BiasMgg(const TString tuning_type = "tuning_false",
   leg->AddEntry(hist_signal, "Signal", "l");
   leg->Draw();
 
-  c1->SaveAs(out_dir + "/data_mc_comparison_bkg_sub.pdf");
-  cout << "Comparison plot saved to: " << out_dir << "/data_mc_comparison_bkg_sub.pdf" << endl;
-  cout << "Parameter mpi0 saved to: " << myfile_nm << "\n";
+  c1->SaveAs(out_dir + "/data_mc_comparison_bkg_sub_mgg.pdf");
+  cout << "Comparison plot saved to: " << out_dir << "/data_mc_comparison_bkg_sub_mgg.pdf" << endl;
+  //cout << "Parameter mpi0 saved to: " << myfile_nm << "\n";
 
   delete c1;
   delete leg;

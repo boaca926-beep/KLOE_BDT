@@ -2,7 +2,7 @@
 
 sample_type=norm
 data_type=bdt
-tuning_type=tuning   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
+tuning_type=tuning   # raw: kinematic fitted; tuning: track correction + pi0 decay photon (pull bias correction + scale correction)
 pull_status=false
 
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
@@ -134,7 +134,7 @@ fi
 
     
 #================================================
-# Calculate mpi0 bias shift
+# Calculate scaling factor
 #================================================
 
 output_folder="../BiasM3pi_tuning_${pull_status}"

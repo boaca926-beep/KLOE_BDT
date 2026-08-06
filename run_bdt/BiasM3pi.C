@@ -293,7 +293,7 @@ int BiasM3pi(const TString tuning_type = "tuning_false", //raw_false, tuning_fal
   leg->Draw();
 
   c1->SaveAs(out_dir + "/data_mc_comparison_bkg_sub_m3pi_bdt.pdf");
-  cout << "Comparison plot saved to: " << out_dir << "/data_mc_comparison_bkg_sub.pdf" << endl;
+  cout << "Comparison plot saved to: " << out_dir << "/data_mc_comparison_bkg_sub_m3pi_bdt.pdf" << endl;
 
   delete c1;
   delete leg;
