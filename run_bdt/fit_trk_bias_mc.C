@@ -18,16 +18,16 @@
 #include <iostream>
 #include <fstream>
 
-void fit_trk_bias_mc() {
+int fit_trk_bias_mc(const TString input_file="../trackmass_scan/pull_scan_TISR3PI_SIG_PEAK.root") {
 
     // ----------------------------------------------------------------------
     // Input file (output from trackmass_scan on TISR3PI_SIG_PEAK)
     // ----------------------------------------------------------------------
-    TString input_file = "../trackmass_scan/pull_scan_TISR3PI_SIG_PEAK.root";
+    //const TString input_file = "../trackmass_scan/" + root_file + ".root";
     TFile *f = TFile::Open(input_file);
     if (!f || f->IsZombie()) {
         std::cerr << "ERROR: Cannot open " << input_file << std::endl;
-        return;
+        return 1;
     }
 
     // Get the bias TGraph (g_bias_vs_M)
@@ -35,7 +35,7 @@ void fit_trk_bias_mc() {
     if (!g_orig) {
         std::cerr << "ERROR: TGraph 'g_bias_vs_M' not found." << std::endl;
         f->Close();
-        return;
+        return 1;
     }
 
     // Also get the resolution TGraph to apply quality cuts
@@ -43,7 +43,7 @@ void fit_trk_bias_mc() {
     if (!g_sigma) {
         std::cerr << "ERROR: TGraph 'g_resolution_vs_M' not found." << std::endl;
         f->Close();
-        return;
+        return 1;
     }
 
     // ----------------------------------------------------------------------
@@ -77,7 +77,7 @@ void fit_trk_bias_mc() {
     if (n_good < 5) {
         std::cerr << "ERROR: Too few good points after quality cut." << std::endl;
         f->Close();
-        return;
+        return 1;
     }
 
     TGraphErrors *g = new TGraphErrors(n_good, x_good.data(), y_good.data(),
@@ -199,4 +199,6 @@ void fit_trk_bias_mc() {
 
     f->Close();
     delete c;
+
+    return 0;
 }

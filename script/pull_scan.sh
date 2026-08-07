@@ -112,7 +112,7 @@ root -l -q -b "../run_bdt/compr_bdt.C(\"$input_file_nm\", \"$output_folder\", \"
 output_folder="../BiasMgg_tuning_${pull_status}"
 if [[ -d $output_folder ]]; then
     echo "Updating $output_folder"
-    rm -f $output_folder/*.pdf 
+    rm -f $output_folder/*.pdf $output_folder/*.h $output_folder/*.root
 else
     echo "$output_folder does not exist; creating it."
     mkdir -p $output_folder

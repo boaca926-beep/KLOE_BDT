@@ -314,9 +314,19 @@ int omega_resolution(const TString tuning_type = "raw_false",
     leg->AddEntry(fit_data, Form("Data #sigma = %.3f #pm %.3f MeV/c^{2}", resData.sigma, resData.sigma_err), "l");
     leg->Draw();
 
+    TPaveText *pt1 = new TPaveText(0.2, 0.6, 0.85, 0.65, "NDC");
+    pt1->SetFillColor(0);
+    pt1->SetBorderSize(0);
+    pt1->SetTextAlign(12);
+    pt1->SetTextSize(0.04);
+	
+    pt1->AddText(Form("R_{#omega} = %.3f #pm %.3f", R, R_err));
+    
     //pt->AddText(Form("#sigma = %.3f #pm %.3f MeV/c^{2}", res.sigma, res.sigma_err));
     //pt->AddText(Form("#chi^{2}/NDF = %.2f", res.chi2_ndf));
-        
+
+    pt1->Draw();
+    
     c_comp->SaveAs(out_dir + "/omega_comparison.pdf");
     delete c_comp;
 

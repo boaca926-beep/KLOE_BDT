@@ -25,7 +25,7 @@ SAMPLES_MC=("Signal")
 # Create output folder if it doesn't exist, and clean it
 if [[ -d $output_folder ]]; then
     echo "Updating $output_folder"
-    rm -f $output_folder/*.pdf $output_folder/*.png $output_folder/*.root $output_folder/*.zip $output_folder/*#
+    rm -f $output_folder/*.pdf $output_folder/*.h $output_folder/*.png $output_folder/*.root $output_folder/*.zip $output_folder/*#
 else
     echo "Output folder $output_folder does not exist; creating it."
     mkdir -p $output_folder
@@ -44,3 +44,9 @@ for ((i=0; i<${#TREES[@]}; ++i)); do
     root -l -q -b "../run_bdt/trackmass_scan.C(\"$tree\", \"$sample\", \"pull\", true, \"$input_file_nm\", \"gausPoly\", \"old\")" # old pull
 
 done
+
+#================================================
+# Track bias correction
+#================================================
+input_file="../trackmass_scan/pull_scan_TISR3PI_SIG_PEAK.root"
+root -l -q -b "../run_bdt/fit_trk_bias_mc.C(\"${input_file}\")"

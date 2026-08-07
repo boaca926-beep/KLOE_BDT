@@ -178,7 +178,8 @@ fi
 # ============================================================
 # Result path and directories
 # ============================================================
-result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
+#result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
+result_path=/media/bo/Backup/bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
 
 ## Initialize the normal conditions
 # Pre-selection
