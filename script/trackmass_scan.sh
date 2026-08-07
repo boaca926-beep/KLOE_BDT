@@ -5,7 +5,8 @@ data_type=bdt
 tuning_type=raw   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
 pull_status=false
 
-main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
+main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
+#main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
 input_file_nm="${main_folder}/cut/tree_pre.root";
 #input_file_nm="../../${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}/cut/tree_pre.root"
 outputSfw2D="${main_folder}/sfw2d/";
@@ -50,3 +51,41 @@ done
 #================================================
 input_file="../trackmass_scan/pull_scan_TISR3PI_SIG_PEAK.root"
 root -l -q -b "../run_bdt/fit_trk_bias_mc.C(\"${input_file}\")"
+
+#================================================
+# Track resolution correction
+#================================================
+root -l -q -b "../run_bdt/fit_trk_resol_mc.C(\"${input_file}\")"
+
+#================================================
+# Normalize m3pi distribution to data
+#================================================
+
+echo "Get normalized m3pi distributions"
+
+output_folder="../${tuning_type}_${pull_status}_m3pi_bdt"
+
+#check output folder and update output files
+if [[ -d $output_folder ]]; then
+    echo updating $output_folder
+    rm $output_folder/*.pdf
+    rm $output_folder/*.png
+    rm $output_folder/*.root
+else
+    echo root file $output_folder does not exsit;
+    mkdir $output_folder
+fi
+
+root -l -q -b "../run_bdt/compr_bdt.C(\"${input_file_nm}\", \"$output_folder\", \"${outputSfw2D}\", \"m3pi_bdt\", \"M_{3#pi}\", \"MeV/c^{2}\", 120, 760, 800)"
+
+#================================================
+# Get R_omega ratio
+#================================================
+
+echo "Get R_omega ratio"
+
+output_folder="../trackmass_scan"
+
+root -l -q -b "../run_bdt/omega_resolution.C(\"raw_false\", \"m3pi_bdt\", \"M_{3#pi} [MeV/c^{2}]\")"
+
+

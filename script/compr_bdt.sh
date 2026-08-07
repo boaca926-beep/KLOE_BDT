@@ -3,9 +3,11 @@
 compr=../header_bdt/compr.h
 data_type=bdt
 tuning_type=tuning #raw: kinematic fitted; tuning: signal 3pi mass resolution correction 
-sample_type=norm
+sample_type=chain
 tuning_status=true #true: false: kineamtic fitted or track correction; true: track correction and pi0 decay photon energy correction (energy bias correction + energy scale correction)
 main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
+#main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}_pull"
+
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
 
@@ -39,13 +41,13 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #BINS=200
 
 ##################################################################
-VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
-VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
+#VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(760) #300 600 760 (analysis)
-XMAX=(800) #1020 1050 800 (analysis)
-BINS=(100)
+#XMIN=(760) #300 600 760 (analysis)
+#XMAX=(800) #1020 1050 800 (analysis)
+#BINS=(100)
 
 ##################################################################
 #VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
@@ -147,13 +149,13 @@ BINS=(100)
 #BINS=150
 
 ##################################################################
-#VAR_NM="bdt_score"
-#VAR_SYMB="BDT value"
-#UNIT=""
+VAR_NM="bdt_score"
+VAR_SYMB="BDT value"
+UNIT=""
 
-#XMIN=0
-#XMAX=1
-#BINS=150
+XMIN=0
+XMAX=1
+BINS=150
 
 ##################################################################
 #VAR_NM="e_asym"

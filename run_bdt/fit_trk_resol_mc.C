@@ -35,23 +35,23 @@ Double_t logistic_linear(Double_t *x, Double_t *par) {
     return par[0] + (high - par[0]) / denom;
 }
 
-void fit_trk_resol_mc() {
+int fit_trk_resol_mc(const TString input_file = "../trackmass_scan/pull_scan_TISR3PI_SIG_PEAK.root") {
 
     // ----------------------------------------------------------------------
     // Input file (output from trackmass_scan on TISR3PI_SIG_PEAK)
     // ----------------------------------------------------------------------
-    TString input_file = "../trackmass_scan/pull_scan_TISR3PI_SIG_PEAK.root";
+    //TString input_file = "../trackmass_scan/pull_scan_TISR3PI_SIG_PEAK.root";
     TFile *f = TFile::Open(input_file);
     if (!f || f->IsZombie()) {
         std::cerr << "ERROR: Cannot open " << input_file << std::endl;
-        return;
+        return 1;
     }
 
     TGraphErrors *g = (TGraphErrors*)f->Get("g_resolution_vs_M");
     if (!g) {
         std::cerr << "ERROR: TGraph 'g_resolution_vs_M' not found." << std::endl;
         f->Close();
-        return;
+        return 1;
     }
 
     TGraphErrors *g_origin = (TGraphErrors*)g->Clone();
@@ -215,4 +215,6 @@ void fit_trk_resol_mc() {
 
     f->Close();
     delete c;
+
+    return 0;
 }

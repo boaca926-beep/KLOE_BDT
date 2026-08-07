@@ -178,8 +178,8 @@ fi
 # ============================================================
 # Result path and directories
 # ============================================================
-#result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
-result_path=/media/bo/Backup/bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
+result_path=../../bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
+#result_path=/media/bo/Backup/bdt_${tuning_type}_${exp_type}_${sample_size}_${pull_status}
 
 ## Initialize the normal conditions
 # Pre-selection
@@ -252,7 +252,7 @@ sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples
 DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
-#DATA_TYPE=("sig")
+#DATA_TYPE=("eeg")
 
 ## Folders
 input_path=${result_path}/input/
