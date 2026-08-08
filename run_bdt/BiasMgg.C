@@ -12,7 +12,7 @@ struct FitResult {
     int entries;
 };
 
-int BiasMgg(const TString tuning_type = "tuning_false",
+int BiasMgg(const TString tuning_type = "tuning_true", // tuning_false, raw_false, tuning_true
             const TString var_nm = "m_gg_bdt",
             const TString var_symb = "M_{#gamma#gamma} [MeV/c^{2}]"
             ) {

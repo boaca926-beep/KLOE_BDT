@@ -59,7 +59,7 @@ tuning_type=tuning          # raw or tuning
 # Photon corrections (only effective when tuning_type = tuning)
 pull_status=true           # false = no photon corrections, true = apply
 APPLY_PULL=true            # bias shift (mean) + scale ratio (width)
-APPLY_MASS_SCALE=false      # mass scale (MASS_SCALE_PI0)
+APPLY_MASS_SCALE=true      # mass scale (MASS_SCALE_PI0)
 
 
 # ============================================================
