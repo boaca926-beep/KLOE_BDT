@@ -2,9 +2,9 @@
 
 #include "../header_method/method.h"
 
-struct Result {
+struct Results {
   TString name;
-  double width_max;
+  double max_glob, x_glob;
 };
 
 int weight_compr(const TString input_folder = "/home/bo/Desktop/KLOE_BDT/plots_m3pi_corr/") {
@@ -27,7 +27,7 @@ int weight_compr(const TString input_folder = "/home/bo/Desktop/KLOE_BDT/plots_m
   TH1D *hHistList[nb_files];
   TString fileNameList[nb_files] = {"raw", "track", "pull"};
   int ColorList[nb_files] = {kBlack, kRed, kGreen};
-  Result Results[nb_files];
+  Results WeightResults[nb_files];
 
   for (int i = 0; i < nb_files; i++) {
 
@@ -50,6 +50,23 @@ int weight_compr(const TString input_folder = "/home/bo/Desktop/KLOE_BDT/plots_m
     //cout << hist->GetName() << endl;
     hHistList[i] = hist;
 
+    double max_val = hist->GetMaximum();
+    int bin_max = hist->GetMaximumBin();
+    double x_at_max = hist->GetBinCenter(bin_max);
+    
+    double min_val = hist->GetMinimum();
+    int bin_min = hist->GetMinimumBin();
+    double x_at_min = hist->GetBinCenter(bin_min);
+
+    double max_glob = std::max({TMath::Abs(max_val), TMath::Abs(min_val)});
+    double x_glob = (TMath::Abs(max_val) >= TMath::Abs(min_val)) ? x_at_max : x_at_min;
+    
+    cout << fileNameList[i] << ", max = " << max_val << " at " << x_at_max << ", min = " << min_val << " at " << x_at_min << ", global max = " << max_glob << " at " << x_glob << endl;
+
+    WeightResults[i].name = fileNameList[i];
+    WeightResults[i].max_glob = max_glob;
+    WeightResults[i].x_glob = x_glob;
+    
   }
 
   // Draw histos
@@ -96,7 +113,7 @@ int weight_compr(const TString input_folder = "/home/bo/Desktop/KLOE_BDT/plots_m
   h_weight_pull->Draw("same hist");
   line_weight->Draw();
 
-  TLegend *leg = new TLegend(0.5, 0.65, 0.85, 0.85);
+  TLegend *leg = new TLegend(0.6, 0.7, 0.85, 0.9);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.04);
@@ -105,6 +122,32 @@ int weight_compr(const TString input_folder = "/home/bo/Desktop/KLOE_BDT/plots_m
   leg->AddEntry(h_weight_track, "Track correction", "l");
   leg->AddEntry(h_weight_pull, "Pull correction", "l");
   leg->Draw();
+
+  // Find overall maximum weight and its x-position
+  double overall_max = -1e9;
+  double overall_x = 0;
+  for (int i = 0; i < nb_files; i++) {
+    if (WeightResults[i].max_glob > overall_max) {
+      overall_max = WeightResults[i].max_glob;
+      overall_x = WeightResults[i].x_glob;
+    }
+  }
+
+  double reduce_weight = TMath::Abs(WeightResults[0].max_glob - WeightResults[2].max_glob) / WeightResults[0].max_glob * 100.;
+  
+  cout << "raw max weight = " << WeightResults[0].max_glob << "\n"
+       << "pull max weight = " << WeightResults[2].max_glob << "\n";
+  
+  TPaveText *pt = new TPaveText(0.2, 0.8, 0.35, 0.89, "NDC");
+  pt->SetFillColor(0);
+  pt->SetBorderSize(0);
+  pt->SetTextAlign(12);
+  pt->SetTextSize(0.04);
+  pt->SetTextFont(42);
+  //pt->AddText(Form("Maximum weight = %.3f at #pm %.3f", overall_max, overall_x));
+  pt->AddText(Form("Maximum weight reduced by  %.1f%s", reduce_weight, "%"));
+  
+  pt->Draw();
 
   c->SaveAs(out_dir + "weight_compr.pdf");
 

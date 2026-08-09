@@ -656,7 +656,7 @@ void omega_fit_bdt() {
   h_signal_final->SetLineStyle(1);
   // -----------------------------------------------------
 
-  TCanvas *c2 = new TCanvas("c2", "Pure ω peak (all backgrounds subtracted)", 1200, 700);
+  TCanvas *c2 = new TCanvas("c2", "Pure omega peak (all backgrounds subtracted)", 1200, 700);
   c2->cd();
   gPad->SetBottomMargin(0.12);
   gPad->SetLeftMargin(0.12);
