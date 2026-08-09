@@ -7,6 +7,7 @@ sample_type=norm
 tuning_status=true #true: false: kineamtic fitted or track correction; true: track correction and pi0 decay photon energy correction (energy bias correction + energy scale correction)
 #main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
 main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}_pull" #after pull correction
+#main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}_corrected" #after all corrections
 
 tree_file_nm="${main_folder}/cut/tree_pre.root";
 outputSfw2D="${main_folder}/sfw2d/";
@@ -41,22 +42,22 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #BINS=200
 
 ##################################################################
-VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
-VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
-UNIT=("[MeV\/c^{2}]")
-
-XMIN=(760) #300 600 760 (analysis)
-XMAX=(800) #1020 1050 800 (analysis)
-BINS=(100)
-
-##################################################################
-#VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
-#VAR_SYMB=("M_{#gamma#gamma}")
+#VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
+#VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
 #UNIT=("[MeV\/c^{2}]")
 
-#XMIN=(100)
-#XMAX=(170)
-#BINS=(200)
+#XMIN=(760) #300 600 760 (analysis)
+#XMAX=(800) #1020 1050 800 (analysis)
+#BINS=(100)
+
+##################################################################
+VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
+VAR_SYMB=("M_{#gamma#gamma}")
+UNIT=("[MeV\/c^{2}]")
+
+XMIN=(100)
+XMAX=(170)
+BINS=(200)
 
 ##################################################################
 #VAR_NM="betapi0_bdt"

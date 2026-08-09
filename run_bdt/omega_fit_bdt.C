@@ -413,53 +413,49 @@ void omega_fit_bdt() {
   h_mc_total->SetLineStyle(1);
   h_mc_total->SetLineWidth(2);
 
+  // ================================================================
+  // 12. Calculate mass bias from mean difference (FIXED)
+  // ================================================================
+  // Use PURE PEAK MC (no distorted component) and data after
+  // subtracting the distorted component – this gives the true
+  // detector energy shift for the ω resonance.
   // ------------------------------------------------------------------
-  // 12. Calculate mass bias from mean difference (no BW fit)
-  // ------------------------------------------------------------------
-  // Use RAW MC for mass bias (same as massBias_bdt.C)
-  TH1D *h_mc_raw = makeScaledHist("TISR3PI_SIG_PEAK", isr3pi_sfw);
-  if (!h_mc_raw) {
-    std::cerr << "ERROR: Cannot load raw MC for mass bias" << std::endl;
+  TH1D *h_mc_peak = makeScaledHist("TISR3PI_SIG_PEAK", isr3pi_sfw);
+  if (!h_mc_peak) {
+    std::cerr << "ERROR: Cannot load peak MC for mass bias" << std::endl;
     return;
   }
-  h_mc_raw->SetDirectory(0);
+  h_mc_peak->SetDirectory(0);
 
-  TH1D *h_nonReson_raw = makeScaledHist("TISR3PI_SIG_NON_RESON", nonReson_sfw);
-  h_nonReson_raw->SetDirectory(0);
-
-  // Combine raw signal (peak + non-resonant) for mass bias
-  TH1D *h_signal_raw = (TH1D*)h_mc_raw->Clone("h_signal_raw");
-  h_signal_raw->Add(h_nonReson_raw, 1.0);
-  h_signal_raw->SetDirectory(0);
-
-  // Create background-subtracted data (remove non-resonant signal)
+  // Data with distorted signal removed (already created as h_data_bw)
   TH1D *h_data_bw = (TH1D*)h_data_isr->Clone("h_data_bw");
-  h_data_bw->Add(h_nonReson, -1.0);
+  h_data_bw->Add(h_background, -1.0);   // subtract distorted from data
   h_data_bw->SetDirectory(0);
 
   // Define peak range for mean calculation
   double mass_low = 760;
   double mass_high = 810;
 
-  // Calculate means in peak region
-  // ---- Set axis range for mean/RMS calculation ----
-  h_signal_raw->GetXaxis()->SetRangeUser(mass_low, mass_high);
+  // Set axis range for mean/RMS calculation
+  h_mc_peak->GetXaxis()->SetRangeUser(mass_low, mass_high);
   h_data_bw->GetXaxis()->SetRangeUser(mass_low, mass_high);
   
-  double mc_mean = h_signal_raw->GetMean();
+  double mc_mean = h_mc_peak->GetMean();
   double data_mean = h_data_bw->GetMean();
-  double mc_rms = h_signal_raw->GetRMS();
+  double mc_rms = h_mc_peak->GetRMS();
   double data_rms = h_data_bw->GetRMS();
   
-  // Reset axis range after calculation (optional)
-  h_signal_raw->GetXaxis()->SetRange();
+  // Reset axis range after calculation
+  h_mc_peak->GetXaxis()->SetRange();
   h_data_bw->GetXaxis()->SetRange();
 
-  // Mass bias
-  double mass_bias = -(mc_mean - data_mean);
+  // Mass bias (energy shift): data - MC? Usually shift = MC - Data,
+  // but we want the correction to apply to MC to match data.
+  // The sign: if MC mean > data mean, MC needs to be shifted down.
+  double mass_bias = -(mc_mean - data_mean);  // same as data_mean - mc_mean
 
   cout << "\n========================================" << endl;
-  cout << "Mass Bias from Mean Difference:" << endl;
+  cout << "Mass Bias from Mean Difference (FIXED)" << endl;
   cout << "========================================" << endl;
   cout << "MC mean    = " << mc_mean << " +/- " << mc_rms << " MeV/c^2" << endl;
   cout << "Data mean  = " << data_mean << " +/- " << data_rms << " MeV/c^2" << endl;
@@ -467,11 +463,11 @@ void omega_fit_bdt() {
   cout << "mass bias  = " << mass_bias << " MeV/c^2" << endl;
   cout << "========================================" << endl;
 
-  // ---- Optional: Plot MC vs Data comparison ----
+  // ---- Plot MC vs Data comparison ----
   TCanvas *c_bias = new TCanvas("c_bias", "Mass Bias from Mean Difference", 800, 600);
   c_bias->cd();
 
-  TH1D *h_mc_norm = (TH1D*)h_signal_raw->Clone("h_mc_norm");
+  TH1D *h_mc_norm = (TH1D*)h_mc_peak->Clone("h_mc_norm");
   TH1D *h_data_norm = (TH1D*)h_data_bw->Clone("h_data_norm");
   h_mc_norm->Scale(1.0 / h_mc_norm->Integral());
   h_data_norm->Scale(1.0 / h_data_norm->Integral());
@@ -492,7 +488,7 @@ void omega_fit_bdt() {
   leg_bias->SetFillStyle(0);
   leg_bias->SetBorderSize(0);
   leg_bias->AddEntry(h_data_norm, "Data (bkg sub)", "lep");
-  leg_bias->AddEntry(h_mc_norm, "MC (raw)", "l");
+  leg_bias->AddEntry(h_mc_norm, "MC (peak only)", "l");
   leg_bias->Draw();
 
   TPaveText *pt_bias = new TPaveText(0.15, 0.8, 0.5, 0.9, "NDC");
@@ -519,7 +515,8 @@ void omega_fit_bdt() {
   myfile.close();
 
   cout << "Saved mass bias to: " << myfile_nm << endl;
- 
+  // ================================================================
+
   // ------------------------------------------------------------------
   // 13. Pull distribution (full range)
   // ------------------------------------------------------------------
@@ -585,7 +582,7 @@ void omega_fit_bdt() {
   pt0->SetTextSize(0.04);
   pt0->SetTextFont(42);
   pt0->AddText(Form("#chi^{2}/ndf = %.2f", chi2_ndf));
-  pt0->AddText(Form("Mass bias = %.2f [MeV/c^{2}]", TMath::Abs(mass_bias)));
+  //pt0->AddText(Form("Mass bias = %.2f [MeV/c^{2}]", TMath::Abs(mass_bias)));
   pt0->AddText(Form("Purity = %.1f%%", updated_purity * 100.));
   pt0->Draw();
 
@@ -620,7 +617,7 @@ void omega_fit_bdt() {
   h_pull->GetYaxis()->SetTitleSize(0.2);
   h_pull->GetYaxis()->SetTitleOffset(0.2);
   h_pull->GetYaxis()->SetLabelSize(0.1);
-  h_pull->GetYaxis()->SetRangeUser(-5, 5);
+  h_pull->GetYaxis()->SetRangeUser(-2, 2);
   h_pull->GetYaxis()->SetNdivisions(505);
   h_pull->GetXaxis()->CenterTitle();
   h_pull->GetYaxis()->CenterTitle();
@@ -635,12 +632,15 @@ void omega_fit_bdt() {
   c->SaveAs(output_path + "omega_combined_fit.pdf");
 
   // ------------------------------------------------------------------
-  // 15. Background-subtracted ω signal
+  // 15. Background-subtracted ω signal (with h_signal_final drawn)
   // ------------------------------------------------------------------
+  // Subtract fixed physics backgrounds and distorted signal
   h_signal_data->Add(h_eeg, -1.0);
   h_signal_data->Add(h_omegapi, -1.0);
   h_signal_data->Add(h_ksl, -1.0);
   h_signal_data->Add(h_mcrest, -1.0);
+  h_signal_data->Add(h_background, -1.0);
+  // Note: h_background is the fitted tail, so data points do NOT contain the tail
   
   for (int bin = 1; bin <= h_signal_data->GetNbinsX(); ++bin) {
     if (h_signal_data->GetBinContent(bin) < 0) {
@@ -648,10 +648,18 @@ void omega_fit_bdt() {
     }
   }
   
-  TCanvas *c2 = new TCanvas("c2", "Background-subtracted ω signal", 1200, 700);
+  // ----- Create h_signal_final (peak + distorted) -----
+  TH1D *h_signal_final = (TH1D*) h_signal->Clone("h_signal_final");
+  h_signal_final->Add(h_background, 1.0);
+  h_signal_final->SetLineColor(kRed);
+  h_signal_final->SetLineWidth(2);
+  h_signal_final->SetLineStyle(1);
+  // -----------------------------------------------------
+
+  TCanvas *c2 = new TCanvas("c2", "Pure ω peak (all backgrounds subtracted)", 1200, 700);
   c2->cd();
-  gPad->SetBottomMargin(0.15);
-  gPad->SetLeftMargin(0.15);
+  gPad->SetBottomMargin(0.12);
+  gPad->SetLeftMargin(0.12);
  
   h_signal_data->SetMarkerStyle(20);
   h_signal_data->SetMarkerSize(0.6);
@@ -663,8 +671,10 @@ void omega_fit_bdt() {
   h_signal_data->GetXaxis()->SetTitleSize(0.05);
   h_signal_data->GetXaxis()->SetTitleOffset(0.8);
   h_signal_data->GetXaxis()->SetLabelSize(0.04);
- 
+
+  const double ymax = h_signal_data->GetMaximum();
   h_signal_data->GetYaxis()->SetTitle(Form("Events / [%.1f MeV/c^{2}]", bin_width));
+  h_signal_data->GetYaxis()->SetRangeUser(0.01, ymax * 1.8);
   h_signal_data->GetYaxis()->CenterTitle();
   h_signal_data->GetYaxis()->SetTitleSize(0.05);
   h_signal_data->GetYaxis()->SetTitleOffset(1.2);
@@ -673,16 +683,14 @@ void omega_fit_bdt() {
   
   h_signal_data->Draw("E1");
   
-  // Add all MC signal components after re-weighting
-  TH1D *h_signal_final = (TH1D*) h_signal->Clone("h_signal_final");
-  h_signal_final->Add(h_background, 1.0);
-  h_signal_final->SetLineColor(kRed);
-    
-  h_signal->Draw("hist same");
-  h_background->Draw("hist same");
-  h_signal_final->Draw("hist same");
+  // Draw the total fitted signal (peak + distorted)
+  //h_signal_final->Draw("hist same");
   
-  TPaveText *pt = new TPaveText(0.7, 0.7, 0.85, 0.8, "NDC");
+  // Optionally draw the individual components (peak and distorted)
+  h_signal->Draw("hist same");
+  // h_background->Draw("hist same"); // optional
+  
+  TPaveText *pt = new TPaveText(0.65, 0.75, 0.85, 0.85, "NDC");
   pt->SetFillColor(0);
   pt->SetBorderSize(0);
   pt->SetTextAlign(12);
@@ -692,14 +700,14 @@ void omega_fit_bdt() {
   pt->AddText(Form("#chi^{2}/ndf = %.2f", chi2_ndf));
   pt->Draw();
 
-  TLegend *leg2 = new TLegend(0.2, 0.7, 0.5, 0.9);
+  TLegend *leg2 = new TLegend(0.15, 0.65, 0.5, 0.9);
   leg2->SetFillStyle(0);
   leg2->SetBorderSize(0);
   leg2->SetTextSize(0.04);
-  leg2->AddEntry(h_signal_data, "Data - all backgrounds", "lep");
-  leg2->AddEntry(h_signal, "Fitted #omega peak (signal)", "l");
-  leg2->AddEntry(h_background, "Distorted signal", "l");
-  leg2->AddEntry(h_signal_final, "Signal", "l");
+  leg2->AddEntry(h_signal_data, "Data - all background (pure peak)", "lep");
+  //leg2->AddEntry(h_signal_final, "Fitted total signal (peak + distort)", "l");
+  leg2->AddEntry(h_signal, "Fitted peak only", "l");
+  // leg2->AddEntry(h_background, "Fitted distorted", "l");
   leg2->Draw();
   
   c2->Update();
@@ -719,11 +727,20 @@ void omega_fit_bdt() {
   line_weight->SetLineWidth(2);
   
   TCanvas *c_weight = new TCanvas("c_weight", "Correction weights", 800, 600);
+  gPad->SetBottomMargin(0.12);
+  gPad->SetLeftMargin(0.12);
+
+  h_weight_smooth->GetXaxis()->SetNdivisions(505);
   h_weight_smooth->SetTitle("Correction weight for ISR3pi");
   h_weight_smooth->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
   h_weight_smooth->GetYaxis()->SetTitle("Weight");
+  h_weight_smooth->GetXaxis()->CenterTitle();
+  h_weight_smooth->GetXaxis()->SetTitleSize(0.05);
+  h_weight_smooth->GetXaxis()->SetTitleOffset(0.8);
+  h_weight_smooth->GetXaxis()->SetLabelSize(0.04);
   h_weight_smooth->SetLineColor(kBlue);
   h_weight_smooth->SetLineWidth(2);
+
   h_weight_smooth->Draw();
   line_weight->Draw("same");
   c_weight->SaveAs(output_path + "omega_correction_weights.pdf");
@@ -738,6 +755,7 @@ void omega_fit_bdt() {
   h_nonReson->Write();
   h_signal->Write();
   h_background->Write();
+  h_signal_final->Write();
   h_weight_smooth->Write();
   h_mc_total->Write();
   h_pull->Write();
@@ -757,6 +775,7 @@ void omega_fit_bdt() {
   if (h_pull) delete h_pull;
   if (h_signal_data) delete h_signal_data;
   if (h_mc_total) delete h_mc_total;
+  if (h_signal_final) delete h_signal_final;
 
   if (fsfw2d) {
     fsfw2d->Close();
