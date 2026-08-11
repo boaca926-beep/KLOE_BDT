@@ -1,7 +1,8 @@
 // modify to omega_fit folder, input_bdt.sh
 //const TString mainFolder = "/media/bo/Backup/bdt_output/bdt_raw_TDATA_norm_false"; // kinematic fit
-//const TString mainFolder = "/media/bo/Backup/bdt_output/bdt_tuning_TDATA_norm_false"; // track correction
-const TString mainFolder = "/media/bo/Backup/bdt_output/bdt_tuning_TDATA_norm_true_pull"; // pull correction
+const TString mainFolder = "/media/bo/Backup/bdt_output/bdt_tuning_TDATA_chain_false_trk"; // track correction
+//const TString mainFolder = "/media/bo/Backup/bdt_output/bdt_tuning_TDATA_norm_true_pull"; // pull correction
+//const TString mainFolder = "/media/bo/Backup/bdt_output/bdt_tuning_TDATA_norm_true_corr"; // final correction
 
 const TString treeFile = mainFolder + "/cut/tree_pre.root";
 const TString sfw2dFile = mainFolder + "/sfw2d/sfw2d.root";

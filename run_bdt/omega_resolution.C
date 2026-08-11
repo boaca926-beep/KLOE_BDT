@@ -110,7 +110,7 @@ bool fitGaussian(TH1D *h, FitResult &res, const TString &label = "") {
 // ----------------------------------------------------------------------------
 // Main macro
 // ----------------------------------------------------------------------------
-int omega_resolution(const TString tuning_type = "raw_false",
+int omega_resolution(const TString tuning_type = "tuning_true", //raw_false, tuning_true
                      const TString var_nm = "m3pi_bdt",
                      const TString var_symb = "M_{3#pi} [MeV/c^{2}]") {
 
@@ -192,10 +192,11 @@ int omega_resolution(const TString tuning_type = "raw_false",
 				 );
   
   std::cout << "\n========================================" << std::endl;
-  std::cout << "Omega Gaussian resolution results:" << std::endl;
+  std::cout << "Omega Gaussian resolution results: " << std::endl;
   std::cout << "MC:   sigma = " << resMC.sigma << " +/- " << resMC.sigma_err << " MeV" << std::endl;
   std::cout << "Data: sigma = " << resData.sigma << " +/- " << resData.sigma_err << " MeV" << std::endl;
   std::cout << "Ratio R = " << R << " +/- " << R_err << std::endl;
+  
   std::cout << "========================================" << std::endl;
   
   // ---- Write parameters to header file ----
@@ -204,10 +205,14 @@ int omega_resolution(const TString tuning_type = "raw_false",
   gSystem->mkdir("../trackmass_scan", kTRUE);
   myfile.open(myfile_nm.Data());
   myfile << "// Omega Gaussian resolution parameters\n";
+  myfile << "// R_OMEGA uncorrected: 1.11316 +/ 0.0506154; R_OMEGA uncorrected: 1.01426 +/- 0.0479111" << std::endl;
+  
   myfile << "const double SIGMA_MC_OMEGA   = " << resMC.sigma << ";\n";
   myfile << "const double SIGMA_MC_OMEGA_ERR = " << resMC.sigma_err << ";\n";
   myfile << "const double SIGMA_DATA_OMEGA = " << resData.sigma << ";\n";
   myfile << "const double SIGMA_DATA_OMEGA_ERR = " << resData.sigma_err << ";\n";
+  myfile << "//const double R_OMEGA = 1.11316 * 1.01426;\n";
+  myfile << "//const double R_OMEGA_ERR = 0.07402;\n";
   myfile << "const double R_OMEGA = " << R << ";\n";
   myfile << "const double R_OMEGA_ERR = " << R_err << ";\n";
   myfile.close();

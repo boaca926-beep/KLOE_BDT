@@ -679,10 +679,27 @@ void MyClass::Main()
       
       
     }// end looping over clusters
+    
     Emax_clust = Emax_clust_tmp;
     Esum_clust = Esum_clust_tmp;
     //cout << "promptnb = " << promptnb << "\n";
-      
+
+    // ================================================================
+    // APPLY RAW PHOTON ENERGY SCALE CORRECTION
+    // ================================================================
+    // Derived from IM_pi0_nofit data/MC ratio:
+    //   R0 = mpi0_data_raw / mpi0_mc_raw = 1.01418
+    // This corrects the global calorimeter energy scale for all photons.
+    const double MASS_SCALE_RAW = 1.01418;
+    if (kineid != -999) { // MC only
+      for (int i = 0; i < promptnb; i++) {
+        E_list[i] *= MASS_SCALE_RAW;
+      }
+    }
+    // Data (kineid == -999) is left untouched
+
+    // ================================================================
+    
     /// track info
     TVectorD trkvect(3);
     trkvect = Getpiontrnb();

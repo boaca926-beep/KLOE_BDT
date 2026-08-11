@@ -84,7 +84,7 @@ int tree_cut_bdt_raw() {
     double m3pi = 0.;
     double ppIM = 0., ppIM_true = 0.;
     double IM3pi_7C = 0., IM3pi_true = 0.;
-    double IM_pi0_7C = 0.;
+    double IM_pi0_7C = 0., IM_pi0_nofit = 0.;
     double Eisr = 0., Epi0_pho1 = 0., Epi0_pho2 = 0.;
     double pull_E1 = 0., pull_x1 = 0., pull_y1 = 0., pull_z1 = 0., pull_t1 = 0.;
     double pull_E2 = 0., pull_x2 = 0., pull_y2 = 0., pull_z2 = 0., pull_t2 = 0.;
@@ -241,7 +241,8 @@ int tree_cut_bdt_raw() {
         tree_tmp->Branch("Br_IM3pi_7C", &IM3pi_7C, "Br_IM3pi_7C/D");
         tree_tmp->Branch("Br_IM3pi_true", &IM3pi_true, "Br_IM3pi_true/D");
         tree_tmp->Branch("Br_IM_pi0_7C", &IM_pi0_7C, "Br_IM_pi0_7C/D");
-        tree_tmp->Branch("Br_mplus2", &mplus2, "Br_mplus2/D");
+	tree_tmp->Branch("Br_IM_pi0_nofit", &IM_pi0_nofit, "Br_IM_pi0_nofit/D");
+    	tree_tmp->Branch("Br_mplus2", &mplus2, "Br_mplus2/D");
         tree_tmp->Branch("Br_m02", &m02, "Br_m02/D");
         tree_tmp->Branch("Br_ppIM", &ppIM, "Br_ppIM/D");
 	tree_tmp->Branch("Br_ppIM_true", &ppIM_true, "Br_ppIM_true/D");
@@ -438,7 +439,8 @@ int tree_cut_bdt_raw() {
 
         IM3pi_7C = ALLCHAIN_CUT->GetLeaf("Br_IM3pi_7C")->GetValue(0);
         IM_pi0_7C = ALLCHAIN_CUT->GetLeaf("Br_IM_pi0_7C")->GetValue(0);
-        IM3pi_true = ALLCHAIN_CUT->GetLeaf("Br_IM3pi_true")->GetValue(0);
+	IM_pi0_nofit = ALLCHAIN_CUT->GetLeaf("Br_IM_pi0_nofit")->GetValue(0);
+	IM3pi_true = ALLCHAIN_CUT->GetLeaf("Br_IM3pi_true")->GetValue(0);
         Eisr = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(0);
         Epi0_pho1 = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(1);
         Epi0_pho2 = ALLCHAIN_CUT->GetLeaf("Br_ENERGYLIST")->GetValue(3);

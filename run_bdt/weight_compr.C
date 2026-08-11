@@ -16,7 +16,8 @@ int weight_compr(const TString input_folder = "/home/bo/Desktop/KLOE_BDT/plots_m
   gStyle->SetErrorX(0.8);
   TH1::SetDefaultSumw2();
 
-  const TString out_dir = "../weight_compr/";
+  //const TString out_dir = "../weight_compr/";
+  const TString out_dir = "../plots_m3pi_corr/";
 
   // ---- Ensure output directory exists ----
   gSystem->mkdir(out_dir, kTRUE);
@@ -88,23 +89,24 @@ int weight_compr(const TString input_folder = "/home/bo/Desktop/KLOE_BDT/plots_m
   line_weight->SetLineStyle(2);
   line_weight->SetLineWidth(2);
   
-  TCanvas *c = new TCanvas("c_weight", "Signal MC 3#pi Mass Weight Distribution", 1200, 700);
+  TCanvas *c = new TCanvas("c_weight", "Signal MC 3pi Mass Weight Distribution", 1200, 700);
 
-  gPad->SetBottomMargin(0.15);
-  gPad->SetLeftMargin(0.15);
+  gPad->SetBottomMargin(0.12);
+  gPad->SetLeftMargin(0.12);
   
   h_weight_raw->SetMarkerStyle(20);
   h_weight_raw->SetMarkerSize(0.6);
-  h_weight_raw->GetXaxis()->SetNdivisions(505);
+  h_weight_raw->GetYaxis()->SetNdivisions(505);
   h_weight_raw->GetYaxis()->SetTitle("Weight");
   h_weight_raw->GetYaxis()->SetRangeUser(0.01, h_weight_raw->GetMaximum() * 1.6);
   h_weight_raw->GetYaxis()->CenterTitle();
   h_weight_raw->GetYaxis()->SetTitleSize(0.05);
-  h_weight_raw->GetYaxis()->SetTitleOffset(1.4);
+  h_weight_raw->GetYaxis()->SetTitleOffset(1);
   h_weight_raw->GetYaxis()->SetLabelSize(0.04);
+  h_weight_raw->GetXaxis()->SetNdivisions(505);
   h_weight_raw->GetXaxis()->SetTitle("M_{3#pi} [MeV/c^{2}]");
   h_weight_raw->GetXaxis()->SetTitleSize(0.05);
-  h_weight_raw->GetXaxis()->SetTitleOffset(1.2);
+  h_weight_raw->GetXaxis()->SetTitleOffset(1.);
   h_weight_raw->GetXaxis()->SetLabelSize(0.04);
   h_weight_raw->GetXaxis()->CenterTitle();
   

@@ -12,11 +12,18 @@ struct FitResult {
     int entries;
 };
 
-int BiasMgg(const TString tuning_type = "tuning_true", // tuning_false, raw_false, tuning_true
+int BiasMgg(const TString tuning_type = "tuning_false", // tuning_false, raw_false, tuning_true
             const TString var_nm = "m_gg_bdt",
             const TString var_symb = "M_{#gamma#gamma} [MeV/c^{2}]"
             ) {
-  
+
+/*
+int BiasMgg(const TString tuning_type = "raw_false", // raw photon correction
+            const TString var_nm = "IM_pi0_nofit",
+            const TString var_symb = "M^{rec}_{#gamma#gamma} [MeV/c^{2}]"
+            ) {
+*/
+
   const TString tree_file_nm = "../" + tuning_type + "_" + var_nm + "/hist.root";
   const TString out_dir = "../BiasMgg_" + tuning_type;
 
@@ -258,7 +265,14 @@ int BiasMgg(const TString tuning_type = "tuning_true", // tuning_false, raw_fals
 
   // ---- Write residual bias ----
   std::ofstream myfile;
-  TString myfile_nm = "../pull_scan/massbias_bdt.txt";
+  TString myfile_nm = "";
+  if (var_nm == "IM_pi0_nofit") {
+    myfile_nm = "../pull_scan/massbias_bdt_raw.txt";
+  }
+  else {
+    myfile_nm = "../pull_scan/massbias_bdt.txt";
+  }
+
   myfile.open(myfile_nm.Data());
   myfile << "const double mpi0_data = " << massResults[1].mean << ";\n";
   myfile << "const double mpi0_data_err = " << massResults[1].mean_err << ";\n\n";

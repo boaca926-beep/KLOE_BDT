@@ -1,11 +1,11 @@
 #!/bin/bash
 
-sample_type=norm
+sample_type=chain
 data_type=bdt
 tuning_type=raw   # raw: kinematic fitted; tuning: kinematic fitted + pi0 decay photon (pull bias correction + scale correction)
 pull_status=false
 
-main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
+main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}_corr"
 #main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
 input_file_nm="${main_folder}/cut/tree_pre.root";
 #input_file_nm="../../${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}/cut/tree_pre.root"
