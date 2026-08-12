@@ -714,7 +714,8 @@ int tree_cut_bdt_tuning() {
     // ---- Apply corrections ----
     if (data_type == "sig") {
       double M_true = ppIM_true; // true dipion mass
-    
+
+      /*
       if (M_true > 0) {
 	double s = M_true / (M_true + BIAS_P0 + BIAS_P1 * M_true);
 	
@@ -783,6 +784,7 @@ int tree_cut_bdt_tuning() {
       trkplus.SetPxPyPzE(ppl_px, ppl_py, ppl_pz, ppl_E);
       trkmin.SetPxPyPzE(pmi_px, pmi_py, pmi_pz, pmi_E);
       ppIM = compute_dipion_mass(event.tracks);   // recompute corrected dipion mass
+      */
       
       // ---- Recompute deltaE using beam vector ----
       TLorentzVector beamVec; beamVec.SetPxPyPzE(bpx, bpy, bpz, bene);
