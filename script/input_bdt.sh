@@ -251,8 +251,8 @@ sm_header=../header_bdt/sm_para.h
 sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples
-DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
-#DATA_TYPE=("eeg")
+#DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
+DATA_TYPE=("sig")
 
 ## Folders
 input_path=${result_path}/input/

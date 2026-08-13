@@ -190,7 +190,10 @@ int tree_cut_bdt_tuning() {
   int recon_indx_bdt = 0;
   int isr_recon_quality = 0;
   int total_recon_quality = 0;
-  
+
+  double delta_smear = 0.;   
+  double scale_smear = 0.;   
+ 
   // ---- Mapping indices from fit order to original cluster order ----
   int isrgam_indx = 0, pi0gam1_indx = 0, pi0gam2_indx = 0;
   
@@ -214,6 +217,9 @@ int tree_cut_bdt_tuning() {
   TIter treeliter(tree_list);
   while ((treeout = treeliter.Next()) != 0) {
     TTree* tree_tmp = dynamic_cast<TTree*>(treeout);
+    tree_tmp->Branch("Br_delta_smear", &delta_smear, "Br_delta_smear/D");
+    tree_tmp->Branch("Br_scale_smear", &scale_smear, "Br_scale_smear/D");
+    
     tree_tmp->Branch("Br_ppl_E", &ppl_E, "Br_ppl_E/D");
     tree_tmp->Branch("Br_ppl_px", &ppl_px, "Br_ppl_px/D");
     tree_tmp->Branch("Br_ppl_py", &ppl_py, "Br_ppl_py/D");
@@ -715,10 +721,10 @@ int tree_cut_bdt_tuning() {
     if (data_type == "sig") {
       double M_true = ppIM_true; // true dipion mass
 
+      // post-fit track smearing start
       if (M_true > 0) {
 	double s = M_true / (M_true + BIAS_P0 + BIAS_P1 * M_true);
 
-	// post-fit track smearing start
 	// Safety: clamp to reasonable range (prevents pathological low-mass extrapolation)
 	if (s < 0.90) s = 0.90;
 	if (s > 1.10) s = 1.10;
@@ -768,6 +774,20 @@ int tree_cut_bdt_tuning() {
       
       pmi_px *= smear_minus; pmi_py *= smear_minus; pmi_pz *= smear_minus;
       pmi_E  = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
+
+      // DEBUG: print for a few events
+      static int dbg_count = 0;
+      if (dbg_count < 10) {
+	cout << "Post-fit correction applied: M_true = " << M_true 
+	     << ", s = " << s 
+	     << ", delta = " << delta 
+	     << ", smear_plus = " << smear_plus
+	     << ", smear_minus = " << smear_minus << endl;
+	dbg_count++;
+      }
+
+      delta_smear = delta;
+      scale_smear = s;
       
       // ---- Update the event structure ----
       event.tracks[0][0] = ppl_E;

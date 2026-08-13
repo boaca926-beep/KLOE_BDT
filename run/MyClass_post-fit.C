@@ -1,4 +1,4 @@
-//Pre-fit track correction implemented
+//Pre-fit track correction is NOT implemented
 #define MyClass_cxx
 #include "../header/MyClass.h"
 #include "TMatrixD.h"
@@ -9,10 +9,6 @@
 #include "TDecompSVD.h"
 #include <sstream>
 #include "TError.h"
-
-#include "../trackmass_scan/mc_bias_params.h"      // BIAS_P0, BIAS_P1
-#include "../trackmass_scan/mc_resolution_params.h" // H0, H1, K, M0, SIGMA_LOW, MREF
-#include "../trackmass_scan/omega_params.h"        // R_OMEGA
 
 void MyClass::Main()
 {
@@ -852,82 +848,6 @@ void MyClass::Main()
     TVectorD sigma2vectorkinfit_min_7C(Row), pullkinfit(Row);
     TVectorD sigma2vectorRaw(Row);
 
-    /*
-    // ================================================================
-    // PRE‑FIT TRACK CORRECTION (Bias + Smearing) for MC only
-    // ================================================================
-    if (kineid != -999) {  // MC only
-      // Get reconstructed track 4‑vectors from current track parameters
-      TLorentzVector track_minus = Gettrack4vectorkinfit(trkindx1);   // negative pion
-      TLorentzVector track_plus  = Gettrack4vectorkinfit(trkindx2);   // positive pion
-      
-      double M_true = ppIM_true;   // true dipion mass (available from MC truth)
-      
-      if (M_true > 0) {
-	// ----- 1. Bias correction -----
-        double s = M_true / (M_true + BIAS_P0 + BIAS_P1 * M_true);
-        track_plus  *= s;
-        track_minus *= s;
-	
-        // ----- 2. Mass‑dependent smearing -----
-        double high = H0 + H1 * (M_true - MREF);
-        double sigma_mc = SIGMA_LOW + (high - SIGMA_LOW) / (1.0 + exp(-K * (M_true - M0)));
-        double sigma_data = R_OMEGA * sigma_mc;
-        double delta = sigma_data / M_true;
-        double smear_plus  = 1.0 + gRandom->Gaus(0.0, delta);
-        double smear_minus = 1.0 + gRandom->Gaus(0.0, delta);
-        track_plus  *= smear_plus;
-        track_minus *= smear_minus;
-	//std::cout << "delta = " << delta << ", smear_plus = " << smear_plus << ", smear_minus = " << smear_minus << std::endl;
-      }
-      else {
-        // Fallback: constant scale (1 - BIAS_P1)
-        const double scale = 1.0 - BIAS_P1;
-        track_plus  *= scale;
-        track_minus *= scale;
-      }
-      
-      // ----- Convert corrected 4‑vectors back to track parameters -----
-      // Overwrite curpca, cotpca, phipca for the two tracks
-      // so that the 7C fit uses the corrected values.
-      
-      // For track 1 (pion minus, trkindx1)
-      double original_curv1 = curpca[trkindx1];
-      double original_cot1 = cotpca[trkindx1];
-      double original_phi1 = phipca[trkindx1];
-	
-      double px1 = track_minus.Px();
-      double py1 = track_minus.Py();
-      double pz1 = track_minus.Pz();
-      double pt1 = sqrt(px1*px1 + py1*py1);
-      if (pt1 > 1e-6) {
-        double curv1 = (curpca[trkindx1] > 0 ? 1.0 : -1.0) * 1000.0 / pt1;  // preserve charge sign
-        double cot1 = pz1 / pt1;
-        double phi1 = atan2(py1, px1);
-        curpca[trkindx1] = curv1;
-        cotpca[trkindx1] = cot1;
-        phipca[trkindx1] = phi1;
-	//cout << "Before: curpca[" << trkindx1 << "] = " << original_curv1 << ", after: " << curv1 << endl;
-    
-      }
-      
-      // For track 2 (pion plus, trkindx2)
-      double px2 = track_plus.Px();
-      double py2 = track_plus.Py();
-      double pz2 = track_plus.Pz();
-      double pt2 = sqrt(px2*px2 + py2*py2);
-      if (pt2 > 1e-6) {
-        double curv2 = (curpca[trkindx2] > 0 ? 1.0 : -1.0) * 1000.0 / pt2;
-        double cot2 = pz2 / pt2;
-        double phi2 = atan2(py2, px2);
-        curpca[trkindx2] = curv2;
-        cotpca[trkindx2] = cot2;
-        phipca[trkindx2] = phi2;
-      }
-    }
-    // Now the 7C fit will use the corrected track parameters.
-    */
-    
     for (int nr1 = 0; nr1 < promptnb - 2; nr1 ++) {// select 3 photon loop
       for (int nr2 = nr1 + 1; nr2 < promptnb - 1; nr2 ++) {
 	for (int nr3 = nr2 + 1; nr3 < promptnb; nr3 ++) {
@@ -2077,7 +1997,7 @@ TVectorD MyClass::Gfunc_7C(TVectorD etavector, int rownb, TLorentzVector beam, i
   TVectorD vector(rownb);
   //double Beam_E=benergy;
   //beam.Print();
-  
+
   double r1sq=0., r2sq=0., r3sq=0., pp1sq=0., pp2sq=0.;
   double r1=0., r2=0., r3=0., px1=0., px2=0., px3=0., py1=0., py2=0., py3=0., pz1=0., pz2=0., pz3=0.;
   double Epp1=0., Epp2=0., pp1=0., pp2=0., ppx1=0., ppx2=0., ppy1=0., ppy2=0., ppz1=0., ppz2=0., pp1tran=0., pp2tran=0.;
@@ -2122,9 +2042,6 @@ TVectorD MyClass::Gfunc_7C(TVectorD etavector, int rownb, TLorentzVector beam, i
 
   curv1=curpca[indtr1], cotan1=cotpca[indtr1], phi1=phipca[indtr1];
   curv2=curpca[indtr2], cotan2=cotpca[indtr2], phi2=phipca[indtr2];
-  // Inside Gfunc_7C, after reading curv1, cotan1, phi1
-  //std::cout << "Gfunc reads: curv1 = " << curv1 << ", cotan1 = " << cotan1 << ", phi1 = " << phi1 << std::endl;
-
   //cout << "curv1 = " << curv1 << ", cotan1 = " << cotan1 << endl;
   //cout << "curv2 = " << curv2 << ", cotan2 = " << cotan2 << endl;
   //cout<<cotan2-cotpca[indtr2]<<endl;
