@@ -54,7 +54,7 @@ set -e   # exit immediately if any command fails
 #   tuning_type = tuning -> uses tree_cut_bdt_tuning.C (track bias + smearing always applied)
 # ============================================================
 sample_size=chain           # norm; small; mini; chain
-tuning_type=tuning          # raw or tuning
+tuning_type=tuning_post_fit  # raw or tuning or tuning_post_fit
 
 # Photon corrections (only effective when tuning_type = tuning)
 pull_status=false           # false = no photon corrections, true = apply
@@ -251,8 +251,8 @@ sm_header=../header_bdt/sm_para.h
 sed -i 's/\(const double Lumi_tot =\)\(.*\)/\1 '$Lumi_tot';/' $sm_header
 
 ## Samples
-#DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
-DATA_TYPE=("sig")
+DATA_TYPE=("sig" "ksl" "exp" "eeg" "ufo")
+#DATA_TYPE=("sig")
 
 ## Folders
 input_path=${result_path}/input/

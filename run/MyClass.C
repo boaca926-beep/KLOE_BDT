@@ -19,6 +19,9 @@ void MyClass::Main()
 
   gErrorIgnoreLevel = kFatal; //kFatal;
 
+  // Fix random seed for reproducible pre‑fit smearing
+  gRandom->SetSeed(42);   // or any fixed number
+  
   cout << "PROCESSING ..." << endl;
   int sig_type = -1;
   int bkg_indx = -1;
@@ -1343,6 +1346,7 @@ void MyClass::Main()
     // masses
     trkmass = Trkmass(TLVector_ppl, TLVector_pmi);
     ppIM = (TLVector_ppl + TLVector_pmi).M();
+    h_ppIM_analysis->Fill(ppIM);
     //betapi0 = (TLVector_pi0gg12_kinfit7C.Vect()).Mag() / TLVector_pi0gg12_kinfit7C.E();
     ppIM_beta = ((TLVector_ppl + TLVector_pmi).Vect()).Mag() / (TLVector_ppl + TLVector_pmi).E();
     //(TLVector_pi0pho1_kinfit7C + TLVector_pi0pho2_kinfit7C + TLVector_ppl + TLVector_pmi).M();

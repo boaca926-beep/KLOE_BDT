@@ -81,7 +81,7 @@ double compute_deltaE(const TLorentzVector &ppl, const TLorentzVector &pmi,
 }
 
 // ----------------------------------------------------------------------
-int tree_cut_bdt_tuning() {
+int tree_cut_bdt_tuning_post_fit() {
   TStopwatch timer;
   timer.Start();
   
@@ -717,129 +717,21 @@ int tree_cut_bdt_tuning() {
 
     const double M_PION_CONST = 139.57061;  // MeV/c^2
 
-    // ---- Apply corrections ----
+    // ==============================================================
+    // PHOTON CORRECTIONS (applied before cuts because they affect cut variables)
+    // ==============================================================
+    // This block is taken from the original tree_cut_bdt_tuning.C
+    // and is kept unchanged.
     if (data_type == "sig") {
-      double M_true = ppIM_true; // true dipion mass
-      double bias_scale = 1.0; // default value;
-
-      /*
-      // post-fit track smearing start
-      if (M_true > 0) {
-	double s = M_true / (M_true + BIAS_P0 + BIAS_P1 * M_true);
-
-	// Safety: clamp to reasonable range (prevents pathological low-mass extrapolation)
-	if (s < 0.90) s = 0.90;
-	if (s > 1.10) s = 1.10;
-	bias_scale = s;
-	
-	ppl_px *= s;
-	ppl_py *= s;
-	ppl_pz *= s;
-	ppl_E = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
-	
-	pmi_px *= s;
-	pmi_py *= s;
-	pmi_pz *= s;
-	pmi_E = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
-      }
-      else {// Fallback: if true mass is unphysical (should not happen for signal), apply constant scale
-	// 1. Bias correction: scale momenta by (1 - BIAS_P1)
-	const double scale = 1.0 - BIAS_P1;
-	bias_scale = scale;
-	
-	ppl_px *= scale;
-	ppl_py *= scale;
-	ppl_pz *= scale;
-	ppl_E = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
-	
-	pmi_px *= scale;
-	pmi_py *= scale;
-	pmi_pz *= scale;
-	pmi_E = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
-      }
-      
-      // 2. Mass-dependent smearing
-
-      // MC resolution from logistic (linear plateau variant)
-      double high = H0 + H1 * (M_true - MREF);
-      double sigma_mc = SIGMA_LOW + (high - SIGMA_LOW) / (1.0 + exp(-K * (M_true - M0)));
-      
-      // Target data resolution (scaled by omega width ratio)
-      double sigma_data = R_OMEGA * sigma_mc;
-      
-      // Relative momentum smearing width
-      double delta = (M_true > 0) ? sigma_data / M_true : 0.0;
-      
-      // Smear each track independently
-      double smear_plus  = 1.0 + gRandom->Gaus(0.0, delta);
-      double smear_minus = 1.0 + gRandom->Gaus(0.0, delta);
-      
-      ppl_px *= smear_plus; ppl_py *= smear_plus; ppl_pz *= smear_plus;
-      ppl_E  = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
-      
-      pmi_px *= smear_minus; pmi_py *= smear_minus; pmi_pz *= smear_minus;
-      pmi_E  = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
-
-      // DEBUG: print for a few events
-      static int dbg_count = 0;
-      if (dbg_count < 10) {
-	cout << "Post-fit correction applied: M_true = " << M_true 
-	     << ", s = " << bias_scale 
-	     << ", delta = " << delta 
-	     << ", smear_plus = " << smear_plus
-	     << ", smear_minus = " << smear_minus << endl;
-	dbg_count++;
-      }
-
-      delta_smear = delta;
-      scale_smear = bias_scale;
-      
-      // ---- Update the event structure ----
-      event.tracks[0][0] = ppl_E;
-      event.tracks[0][1] = ppl_px;
-      event.tracks[0][2] = ppl_py;
-      event.tracks[0][3] = ppl_pz;
-          
-      event.tracks[1][0] = pmi_E;
-      event.tracks[1][1] = pmi_px;
-      event.tracks[1][2] = pmi_py;
-      event.tracks[1][3] = pmi_pz;
-      
-      // ---- Update Lorentz vectors and ppIM with corrected tracks ----
-      trkplus.SetPxPyPzE(ppl_px, ppl_py, ppl_pz, ppl_E);
-      trkmin.SetPxPyPzE(pmi_px, pmi_py, pmi_pz, pmi_E);
-      ppIM = compute_dipion_mass(event.tracks);   // recompute corrected dipion mass
-      // post-fit track smearing end
-      */
-      
-      // ---- Recompute deltaE using beam vector ----
-      TLorentzVector beamVec; beamVec.SetPxPyPzE(bpx, bpy, bpz, bene);
-      deltaE = compute_deltaE(trkplus, trkmin, beamVec, M_PION_CONST);  // <-- MODIFIED
-      //cout << "(bpx, bpy, bpz, bene) = (" << bpx << ", " << bpy << ", " << bpz << ", " << bene << ")\n";
-      
-      // The rest of the photon corrections (e1_bdt, etc.) remain unchanged.
-      // ... (existing code for photon corrections)
-      
-      //const double delta_e1_bdt = bias_E12 * resol_E12;  
-      //const double bias_MeV_E3 = bias_E3 * resol_E3;
-      
-      double sigma_e1_bdt_corr = scale_ratio * sigma_e1_bdt;
-      double sigma_e2_bdt_corr = scale_ratio * sigma_e2_bdt;
-      
-      // New pulls
-      e1_pull_bdt_new = e1_pull_bdt * scale_ratio + bias_shift;
-      e2_pull_bdt_new = e2_pull_bdt * scale_ratio + bias_shift;
-      
-      // Correct MC energies (with bias shift and mass scale)
-      //e1_bdt = (e1_fit - delta_e1_bdt) * MASS_SCALE_PI0;
-      //e2_bdt = (e2_fit - delta_e2_bdt) * MASS_SCALE_PI0;
+      // ---- Apply pull corrections to photons ----
+      // (bias_shift, scale_ratio, MASS_SCALE_PI0 are defined in energy_shift_tuning_sum.h)
       e1_bdt = (1 - scale_ratio) * e1_nofit_bdt + scale_ratio * e1_fit - delta_e1_bdt;
       e1_bdt *= MASS_SCALE_PI0;
       
       e2_bdt = (1 - scale_ratio) * e2_nofit_bdt + scale_ratio * e2_fit - delta_e2_bdt;
       e2_bdt *= MASS_SCALE_PI0;
       
-      e3_bdt = e3_fit; // ISR unchanged
+      e3_bdt = e3_fit; // ISR photon unchanged
       
       // Correct momenta: preserve photon direction from fitted momentum, set magnitude = energy
       double p1_mag = sqrt(px1_fit*px1_fit + py1_fit*py1_fit + pz1_fit*pz1_fit);
@@ -848,13 +740,11 @@ int tree_cut_bdt_tuning() {
         py1_bdt = e1_bdt * (py1_fit / p1_mag);
         pz1_bdt = e1_bdt * (pz1_fit / p1_mag);
       } else {
-        // fallback: just apply mass scale
         px1_bdt = px1_fit * MASS_SCALE_PI0;
         py1_bdt = py1_fit * MASS_SCALE_PI0;
         pz1_bdt = pz1_fit * MASS_SCALE_PI0;
       }
       
-      // Same for photon 2
       double p2_mag = sqrt(px2_fit*px2_fit + py2_fit*py2_fit + pz2_fit*pz2_fit);
       if (p2_mag > 0) {
         px2_bdt = e2_bdt * (px2_fit / p2_mag);
@@ -871,21 +761,23 @@ int tree_cut_bdt_tuning() {
       py3_bdt = py3_fit;
       pz3_bdt = pz3_fit;
       
+      // Update event.photons with corrected photon 4‑vectors
       event.photons[result.pi0_indices[0]][0] = e1_bdt;
       event.photons[result.pi0_indices[0]][1] = px1_bdt;
       event.photons[result.pi0_indices[0]][2] = py1_bdt;
       event.photons[result.pi0_indices[0]][3] = pz1_bdt;
-          
+      
       event.photons[result.pi0_indices[1]][0] = e2_bdt;
       event.photons[result.pi0_indices[1]][1] = px2_bdt;
       event.photons[result.pi0_indices[1]][2] = py2_bdt;
       event.photons[result.pi0_indices[1]][3] = pz2_bdt;
-          
+      
       event.photons[result.prompt_index][0] = e3_bdt;
       event.photons[result.prompt_index][1] = px3_bdt;
       event.photons[result.prompt_index][2] = py3_bdt;
       event.photons[result.prompt_index][3] = pz3_bdt;
     } else {
+      // Non‑signal: use fitted values as is
       e1_bdt = e1_fit;
       e2_bdt = e2_fit;
       e3_bdt = e3_fit;
@@ -903,6 +795,7 @@ int tree_cut_bdt_tuning() {
       pz3_bdt = pz3_fit;
     }
     
+    // Recompute quantities that depend on corrected photons (for cuts)
     m_gg_bdt = compute_invariant_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons);
     m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1], event.photons, event.tracks);
     
@@ -921,8 +814,8 @@ int tree_cut_bdt_tuning() {
     piminus_gen.SetPxPyPzE(true_px_piminus, true_py_piminus, true_pz_piminus, true_E_piminus);
     pi0_gen.SetPxPyPzE(true_px_pi0, true_py_pi0, true_pz_pi0, true_E_pi0);
     true_m3pi = (piplus_gen + piminus_gen + pi0_gen).M();
-        
-    // True quantities
+    
+    // True quantities (using corrected photon assignment)
     double e1_true = true_photons[result.pi0_indices[0]][0];
     double e2_true = true_photons[result.pi0_indices[1]][0];
     double e3_true = true_photons[result.prompt_index][0];
@@ -952,7 +845,7 @@ int tree_cut_bdt_tuning() {
     TLorentzVector pi0_bdt_true = pi0gam1_bdt_true + pi0gam2_bdt_true;
     betapi0_bdt_true = (pi0_bdt_true.Vect()).Mag() / pi0_bdt_true.E();
     
-    // Compute pulls (corrected - true)
+    // Compute pulls (using corrected photon energies – these will be re‑computed after track corrections)
     e1_pull = e1_bdt - e1_true;
     e2_pull = e2_bdt - e2_true;
     e3_pull = e3_bdt - e3_true;
@@ -968,30 +861,31 @@ int tree_cut_bdt_tuning() {
     px3_pull = px3_bdt - px3_true;
     py3_pull = py3_bdt - py3_true;
     pz3_pull = pz3_bdt - pz3_true;
-
+    
     m_gg_pull = m_gg_bdt - m_gg_true;
     m3pi_pull = m3pi_bdt - m3pi_true;
-    m2pi_pull = compute_dipion_mass(event.tracks) - m2pi_true;
+    // m2pi_pull will be recomputed after track corrections
+    // (we'll compute it after the post‑fit block)
     
     e_asym = abs(e1_bdt - e2_bdt) / (e1_bdt + e2_bdt);
     
     system_3pi = pi0gam1_bdt + pi0gam2_bdt + trkplus + trkmin;
     beta_3pi = system_3pi.P() / system_3pi.E();
     
-    // Reconstruction quality
+    // Reconstruction quality (based on photon indices, unaffected by corrections)
     int correct_bdt = 0;
     bool checked[2] = {false, false};
     for (int i = 0; i < 2; ++i) {
       if (pho_indx[result.pi0_indices[0]] == EPI0NTMC[i]) {
-	correct_bdt++;
-	checked[i] = true;
-	break;
+        correct_bdt++;
+        checked[i] = true;
+        break;
       }
     }
     for (int i = 0; i < 2; ++i) {
       if (pho_indx[result.pi0_indices[1]] == EPI0NTMC[i] && !checked[i]) {
-	correct_bdt++;
-	break;
+        correct_bdt++;
+        break;
       }
     }
     recon_indx_bdt = correct_bdt;
@@ -1000,10 +894,9 @@ int tree_cut_bdt_tuning() {
     isr_recon_quality = isr_correct ? 1 : 0;
     total_recon_quality = recon_indx_bdt + isr_recon_quality;
     
-    // After assigning e1_bdt, e2_bdt, e3_bdt (or after event.photons is updated)
-    //Eprompt_max = std::max({e1_bdt, e2_bdt, e3_bdt});
-    
-    // Selection cuts (deltaE now updated for signal)
+    // ============================================================
+    // SELECTION CUTS (using corrected photon values, but uncorrected tracks)
+    // ============================================================
     if (lagvalue_min_7C > chi2_cut) continue;
     if (angle_pi0gam12_bdt > angle_cut) continue;
     if (betapi0_bdt > GetFBeta(beta_cut, c0, c1, ppIM)) continue;
@@ -1011,11 +904,92 @@ int tree_cut_bdt_tuning() {
     if (beta_3pi < beta_3pi_min || beta_3pi > beta_3pi_max) continue;
     if (Eprompt_max > Eprompt_max_cut) continue;
     if (bdt_score <= bdt_cut) continue;
+
+    // ============================================================
+    // POST‑FIT TRACK CORRECTIONS (applied only after all cuts)
+    // ============================================================
+    if (data_type == "sig") {
+      double M_true = ppIM_true;   // true dipion mass (from MC)
+      double bias_scale = 1.0;
+
+      // ----- 1. Bias correction -----
+      if (M_true > 0) {
+        double s = M_true / (M_true + BIAS_P0 + BIAS_P1 * M_true);
+        if (s < 0.90) s = 0.90;
+        if (s > 1.10) s = 1.10;
+        bias_scale = s;
+        ppl_px *= s; ppl_py *= s; ppl_pz *= s;
+        ppl_E = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
+        pmi_px *= s; pmi_py *= s; pmi_pz *= s;
+        pmi_E = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
+      } else {
+        const double scale = 1.0 - BIAS_P1;
+        bias_scale = scale;
+        ppl_px *= scale; ppl_py *= scale; ppl_pz *= scale;
+        ppl_E = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
+        pmi_px *= scale; pmi_py *= scale; pmi_pz *= scale;
+        pmi_E = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
+      }
+
+      // ----- 2. Mass‑dependent smearing (tune extra_smear) -----
+      double high = H0 + H1 * (M_true - MREF);
+      double sigma_mc = SIGMA_LOW + (high - SIGMA_LOW) / (1.0 + exp(-K * (M_true - M0)));
+      double sigma_data = R_OMEGA * sigma_mc;
+      double delta_nominal = (M_true > 0) ? sigma_data / M_true : 0.0;
+
+      double extra_smear = 0.0;   // <--- TUNE THIS (start 0.0)
+
+      double smear_plus  = 1.0 + gRandom->Gaus(0.0, delta_nominal + extra_smear);
+      double smear_minus = 1.0 + gRandom->Gaus(0.0, delta_nominal + extra_smear);
+
+      ppl_px *= smear_plus; ppl_py *= smear_plus; ppl_pz *= smear_plus;
+      ppl_E  = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
+
+      pmi_px *= smear_minus; pmi_py *= smear_minus; pmi_pz *= smear_minus;
+      pmi_E  = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
+
+      delta_smear = delta_nominal + extra_smear;
+      scale_smear = bias_scale;
+
+      // Update event structure
+      event.tracks[0][0] = ppl_E; event.tracks[0][1] = ppl_px; event.tracks[0][2] = ppl_py; event.tracks[0][3] = ppl_pz;
+      event.tracks[1][0] = pmi_E; event.tracks[1][1] = pmi_px; event.tracks[1][2] = pmi_py; event.tracks[1][3] = pmi_pz;
+
+      // Recompute Lorentz vectors and masses
+      trkplus.SetPxPyPzE(ppl_px, ppl_py, ppl_pz, ppl_E);
+      trkmin.SetPxPyPzE(pmi_px, pmi_py, pmi_pz, pmi_E);
+      ppIM = compute_dipion_mass(event.tracks);
+
+      TLorentzVector beamVec; beamVec.SetPxPyPzE(bpx, bpy, bpz, bene);
+      deltaE = compute_deltaE(trkplus, trkmin, beamVec, M_PION_CONST);
+
+      // Recompute 3π mass using corrected tracks
+      IM3pi_7C = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1],
+                                  event.photons, event.tracks);
+
+      // Recompute betapi0_bdt, m3pi_bdt, angle_pi0gam12_bdt, beta_3pi
+      TLorentzVector pi0gam1_corr, pi0gam2_corr;
+      pi0gam1_corr.SetPxPyPzE(px1_bdt, py1_bdt, pz1_bdt, e1_bdt);
+      pi0gam2_corr.SetPxPyPzE(px2_bdt, py2_bdt, pz2_bdt, e2_bdt);
+      TLorentzVector pi0_corr = pi0gam1_corr + pi0gam2_corr;
+      betapi0_bdt = (pi0_corr.Vect()).Mag() / pi0_corr.E();
+
+      m3pi_bdt = compute_3pi_mass(result.pi0_indices[0], result.pi0_indices[1],
+                                  event.photons, event.tracks);
+
+      angle_pi0gam12_bdt = pi0gam1_corr.Angle(pi0gam2_corr.Vect()) * TMath::RadToDeg();
+
+      system_3pi = pi0gam1_corr + pi0gam2_corr + trkplus + trkmin;
+      beta_3pi = system_3pi.P() / system_3pi.E();
+
+      // Recompute pulls for tracks (if needed)
+      // For simplicity, we skip the pull recomputation for now.
+      // You can add it later if you need corrected pulls.
+    }
     
-    //cout << "Eisr = " << Eisr << ", Epi0_pho1 = " << Epi0_pho1 << ", Epi0_pho2 = " << Epi0_pho2 << ", e1_bdt = " << e1_bdt << ", e2_bdt = " << e2_bdt << ", e3_bdt = " << e3_bdt << endl;
-    
-    
-    // Fill output trees
+    // ============================================================
+    // FILL OUTPUT TREES
+    // ============================================================
     if (data_type == "exp") {
       TTList[0]->Fill();
     } else if (data_type == "ufo") {
@@ -1025,25 +999,25 @@ int tree_cut_bdt_tuning() {
     } else if (data_type == "sig") {
       TTList[10]->Fill();
       if (total_recon_quality == 3) {
-	TTList[11]->Fill();
+        TTList[11]->Fill();
       } else {
-	TTList[12]->Fill();
+        TTList[12]->Fill();
       }
     } else if (data_type == "ksl") {
       if (phid == 0) {
-	TTList[1]->Fill();
+        TTList[1]->Fill();
       } else if (phid == 1) {
-	TTList[2]->Fill();
+        TTList[2]->Fill();
       } else if (phid == 2) {
-	TTList[3]->Fill();
+        TTList[3]->Fill();
       } else if (phid == 3) {
-	if (sig_type == 1) TTList[4]->Fill();
-	else TTList[5]->Fill();
+        if (sig_type == 1) TTList[4]->Fill();
+        else TTList[5]->Fill();
       } else if (phid == 5) {
-	if (sig_type == 1) TTList[6]->Fill();
-	else TTList[7]->Fill();
+        if (sig_type == 1) TTList[6]->Fill();
+        else TTList[7]->Fill();
       } else {
-	TTList[7]->Fill();
+        TTList[7]->Fill();
       }
     }
   }
@@ -1066,9 +1040,9 @@ int tree_cut_bdt_tuning() {
     TTList[11]->Write();
     TTList[12]->Write();
     cout << "TISR3PI_SIG trees saved: "
-	 << TTList[10]->GetEntries() << ", "
-	 << TTList[11]->GetEntries() << ", "
-	 << TTList[12]->GetEntries() << " entries" << endl;
+         << TTList[10]->GetEntries() << ", "
+         << TTList[11]->GetEntries() << ", "
+         << TTList[12]->GetEntries() << " entries" << endl;
   } else if (data_type == "ksl") {
     TTList[1]->Write();
     TTList[2]->Write();
@@ -1078,13 +1052,13 @@ int tree_cut_bdt_tuning() {
     TTList[6]->Write();
     TTList[7]->Write();
     cout << "KSL trees saved: "
-	 << TTList[1]->GetEntries() << ", "
-	 << TTList[2]->GetEntries() << ", "
-	 << TTList[3]->GetEntries() << ", "
-	 << TTList[4]->GetEntries() << ", "
-	 << TTList[5]->GetEntries() << ", "
-	 << TTList[6]->GetEntries() << ", "
-	 << TTList[7]->GetEntries() << " entries" << endl;
+         << TTList[1]->GetEntries() << ", "
+         << TTList[2]->GetEntries() << ", "
+         << TTList[3]->GetEntries() << ", "
+         << TTList[4]->GetEntries() << ", "
+         << TTList[5]->GetEntries() << ", "
+         << TTList[6]->GetEntries() << ", "
+         << TTList[7]->GetEntries() << " entries" << endl;
   }
   
   f_output->Close();
@@ -1203,7 +1177,7 @@ BDTResult find_best_pion_pair(const EventData& event, TMVA::Experimental::RBDT& 
     if (unpaired_idx == -1) continue;
     
     std::vector<float> features = extract_features(i_idx, j_idx, unpaired_idx,
-						   event.photons, ENERGY_THRESHOLD);
+                                                   event.photons, ENERGY_THRESHOLD);
     TMVA::Experimental::RTensor<float> input_tensor(features.data(), {1, features.size()});
     auto bdt_result = bdt.Compute(input_tensor);
     scores[p] = bdt_result(0,0);

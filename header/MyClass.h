@@ -414,7 +414,8 @@ public :
   TH1D *hmpi0_iden, *hmpi0_sel, *hrecon_typeI, *hIM3pi, *hIM3pi_bkg_indx_rest, *hIM3pi_bkg_indx0, *hprompt_distr, *hstr_distr, *hTof_clust, *hRhov, *hZv;
   TH1D *h_iv_ip, *h_iv_indx;
   TH1D *h_iv_ip_1, *h_iv_indx_1;
-  TH1D *h_ppIM_orig, *h_ppIM_corr, *h_delta_prefit, *h_bias_scale;
+  TH1D *h_ppIM_orig, *h_ppIM_corr, *h_ppIM_analysis;
+  TH1D *h_delta_prefit, *h_bias_scale;
   
   TH2D *hsmearmatr_clust, *hsmearmatr_trk, *hsmearmatr_typeI, *hsmearmatr_typeII, *herror_type, *h_nv_ip, *h_nv_ip_1, *h_xpca, *h_ypca, *h_zpca;
 };
@@ -477,6 +478,8 @@ MyClass::MyClass(TTree *tree) : fChain(0)
 
    h_ppIM_orig = new TH1D("h_ppIM_orig", "ppIM before correction; M_{2#pi} [MeV]", 150, 200, 650);
    h_ppIM_corr = new TH1D("h_ppIM_corr", "ppIM after pre-fit; M_{2#pi} [MeV]", 150, 200, 650);
+   h_ppIM_analysis = new TH1D("h_ppIM_analysis", "ppIM used in analysis; M_{2#pi} [MeV]", 150, 200, 650);
+   
    h_delta_prefit = new TH1D("h_delta_prefit", "delta (pre-fit); delta", 100, 0.001, 0.0045);
    h_bias_scale = new TH1D("h_bias_scale", "Bias scale factor s; s; Entries", 100, 0.998, 1.0);
       
