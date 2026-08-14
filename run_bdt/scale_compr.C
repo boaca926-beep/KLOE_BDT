@@ -30,7 +30,8 @@
 
 using namespace std;
 
-void scale_compr(const bool &corr = true) {
+//void scale_compr(const bool &corr = true) {
+void scale_compr(const bool &corr = false) {
 
   cout << "\n========================================" << endl;
   cout << "  COMPARE RESOLUTION RATIO: DATA / SIGNAL" << endl;

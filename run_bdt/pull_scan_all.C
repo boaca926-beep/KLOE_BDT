@@ -15,6 +15,7 @@
 // Usage:
 //   .x pull_scan.C("TISR3PI_SIG_PEAK", "Signal", "pull", true, "gausCheb2")
 // PDF output: side‑by‑side (16 histograms per page) in a 4x4 grid.
+// Modified to include ALL THREE photons (including ISR).
 // ============================================================================
 
 #include <TFile.h>
@@ -277,13 +278,13 @@ void drawBinHistInPad(TH1D *h, int bin, double mean, double sigma,
 // ----------------------------------------------------------------------------
 // Main macro
 // ----------------------------------------------------------------------------
-void pull_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
-               const TString sample_type = "Signal",
-               const TString fit_type = "pull",
-               bool draw_bins = true,
-	       const TString input_file_nm = "/media/bo/Backup/bdt_output/bdt_tuning_TDATA_chain_false_trk/cut/tree_pre.root",
-	       const TString fit_model = "gausPoly",
-	       const TString pull_type = "old")
+void pull_scan_all(const TString tree_type = "TISR3PI_SIG_PEAK", //"TISR3PI_SIG_PEAK"
+		   const TString sample_type = "Signal", //"Signal
+		   const TString fit_type = "pull",
+		   bool draw_bins = true,
+		   const TString input_file_nm = "/media/bo/Backup/bdt_output/bdt_tuning_TDATA_norm_false/cut/tree_pre.root",
+		   const TString fit_model = "gausPoly",
+		   const TString pull_type = "old")
 {
   TString pdf_name = Form("../pull_scan/bin_histograms_%s_%s.pdf", tree_type.Data(), pull_type.Data());
 
@@ -298,7 +299,7 @@ void pull_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
   gSystem->Exec("mkdir -p ../pull_scan");
   
   cout << "\n========================================" << endl;
-  cout << "  PULL SCAN (π⁰ photons only)" << endl;
+  cout << "  PULL SCAN (ALL THREE PHOTONS)" << endl;
   cout << "  Sample: " << sample_type << endl;
   cout << "  Tree:   " << tree_type << endl;
   cout << "  Fit type: " << fit_type << endl;
@@ -333,12 +334,12 @@ void pull_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
   TFile *fout = new TFile(root_name, "RECREATE");
   fout->cd();
 
-  // Merged TTree
+  // Merged TTree (now 3 photons)
   TTree *EPhoTree = new TTree("EPhoTree", "merged branches");
-  double EPho_fit[2], EPho_nofit[2], EPho_value[2];
-  EPhoTree->Branch("EPho_fit", EPho_fit, "EPho_fit[2]/D");
-  EPhoTree->Branch("EPho_nofit", EPho_nofit, "EPho_nofit[2]/D");
-  EPhoTree->Branch("EPho_value", EPho_value, "EPho_value[2]/D");
+  double EPho_fit[3], EPho_nofit[3], EPho_value[3];
+  EPhoTree->Branch("EPho_fit", EPho_fit, "EPho_fit[3]/D");
+  EPhoTree->Branch("EPho_nofit", EPho_nofit, "EPho_nofit[3]/D");
+  EPhoTree->Branch("EPho_value", EPho_value, "EPho_value[3]/D");
 
   TH1D *h_phoE = new TH1D("h_phoE", "", 300, 0., 350.);
   TH1D *h_pull = new TH1D("h_pull", "", 200, -10, 10);
@@ -374,67 +375,55 @@ void pull_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
     bin_entries[b] = 0;
   }
 
-  // Branch addresses
-  double e1_fit=0, e2_fit=0;
-  double sigma_e1=0, sigma_e2=0;
-  double sigma_denom_e1=0., sigma_denom_e2=0.;
-  double e1_nofit=0, e2_nofit=0;
-  double e1_pull=0, e2_pull=0;
-  double e1_pull_new=0, e2_pull_new=0;
+  // Branch addresses for all THREE photons
+  double e1_fit=0, e2_fit=0, e3_fit=0;
+  double sigma_denom_e1=0., sigma_denom_e2=0., sigma_denom_e3=0.;
+  double e1_nofit=0, e2_nofit=0, e3_nofit=0;
+  double e1_pull=0, e2_pull=0, e3_pull=0;
+  double e1_pull_new=0, e2_pull_new=0, e3_pull_new=0;
   double m_gg_bdt = 0.;
   
   INPUT_TREE->SetBranchAddress("Br_e1_fit", &e1_fit);
   INPUT_TREE->SetBranchAddress("Br_e2_fit", &e2_fit);
+  INPUT_TREE->SetBranchAddress("Br_e3_fit", &e3_fit);          // ADDED
 
   INPUT_TREE->SetBranchAddress("Br_sigma_denom_e1", &sigma_denom_e1);
   INPUT_TREE->SetBranchAddress("Br_sigma_denom_e2", &sigma_denom_e2);
+  INPUT_TREE->SetBranchAddress("Br_sigma_denom_e3", &sigma_denom_e3); // ADDED
   
-  INPUT_TREE->SetBranchAddress("Br_sigma_e1_bdt", &sigma_e1);
-  INPUT_TREE->SetBranchAddress("Br_sigma_e2_bdt", &sigma_e2);
   INPUT_TREE->SetBranchAddress("Br_e1_nofit_bdt", &e1_nofit);
   INPUT_TREE->SetBranchAddress("Br_e2_nofit_bdt", &e2_nofit);
+  INPUT_TREE->SetBranchAddress("Br_e3_nofit_bdt", &e3_nofit); // ADDED
+
   INPUT_TREE->SetBranchAddress("Br_e1_pull_bdt", &e1_pull);
   INPUT_TREE->SetBranchAddress("Br_e2_pull_bdt", &e2_pull);
-  INPUT_TREE->SetBranchAddress("Br_e1_pull_bdt_new", &e1_pull_new);
-  INPUT_TREE->SetBranchAddress("Br_e2_pull_bdt_new", &e2_pull_new);
-  INPUT_TREE->SetBranchAddress("Br_m_gg_bdt", &m_gg_bdt);
+  INPUT_TREE->SetBranchAddress("Br_e3_pull_bdt", &e3_pull); // ADDED
+
+  //INPUT_TREE->SetBranchAddress("Br_e1_pull_bdt_new", &e1_pull_new);
+  //INPUT_TREE->SetBranchAddress("Br_e2_pull_bdt_new", &e2_pull_new);
+  //INPUT_TREE->SetBranchAddress("Br_e3_pull_bdt_new", &e3_pull_new); // ADDED
+
+  INPUT_TREE->SetBranchAddress("Br_m_gg_bdt", &m_gg_bdt); // not used
 
   // Loop over events
   Long64_t nentries = INPUT_TREE->GetEntries();
   for (Long64_t irow = 0; irow < nentries; ++irow) {
     INPUT_TREE->GetEntry(irow);
-    double fit[2]  = {e1_fit, e2_fit};
-    double nofit[2] = {e1_nofit, e2_nofit};
-    double sigma[2] = {sigma_denom_e1, sigma_denom_e2};
-    double pull[2] = {e1_pull, e2_pull};
-    double pull_new[2] = {e1_pull_new, e2_pull_new};
+    double fit[3]  = {e1_fit, e2_fit, e3_fit};
+    double nofit[3] = {e1_nofit, e2_nofit, e3_nofit};
+    double sigma[3] = {sigma_denom_e1, sigma_denom_e2, sigma_denom_e3};
+    double pull[3] = {e1_pull, e2_pull, e3_pull};
+    double pull_new[3] = {e1_pull_new, e2_pull_new, e3_pull_new};
     
-    for (int ip = 0; ip < 2; ++ip) {
+    for (int ip = 0; ip < 3; ++ip) {
       EPho_fit[ip]   = fit[ip];
       EPho_nofit[ip] = nofit[ip];
       if (fit_type == "pull") {
-
-	if (pull_type == "new") {
-	  EPho_value[ip] = pull_new[ip];   // corrected pull (only valid for signal)
-	} else {
-	  EPho_value[ip] = pull[ip];       // original pull (valid for both)
-	}
-
-	//EPho_value[ip] = pull_new[ip]; // new pull
-	
-	//EPho_value[ip] = (nofit[ip] - fit[ip]) / sigma[ip];
-	/*
-	if (TMath::Abs(EPho_value[0] - e1_pull) > 1e-3) {
-	  cout << "Event " << irow 
-	       << ": nofit=" << nofit[0] 
-	       << ", fit=" << fit[0] 
-	       << ", sigma=" << sigma[0] 
-	       << ", computed=" << EPho_value[0] 
-	       << ", stored=" << e1_pull 
-	       << endl;
-	}
-	*/
-	
+        if (pull_type == "new") {
+          EPho_value[ip] = pull_new[ip];   // corrected pull (only valid for signal)
+        } else {
+          EPho_value[ip] = pull[ip];       // original pull (valid for both)
+        }
       } else if (fit_type == "rawdiff") {
         EPho_value[ip] = nofit[ip] - fit[ip];
       } else if (fit_type == "ratio") {
@@ -448,7 +437,7 @@ void pull_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
     }
     EPhoTree->Fill();
 
-    for (int ip = 0; ip < 2; ++ip) {
+    for (int ip = 0; ip < 3; ++ip) {
       double Ef = fit[ip];
       if (Ef <= 0) continue;
       double value = EPho_value[ip];
@@ -475,12 +464,6 @@ void pull_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
     if (ok) {
       E0_LIST[b] = Emin + b * binwidth;
       E1_LIST[b] = Emin + (b+1) * binwidth;
-      /*
-      printf("%3d  %6.1f %6.1f  %6d  %7.3f±%-7.3f  %7.3f±%-7.3f  %7.3f\n",
-             b, E0_LIST[b], E1_LIST[b],
-             bin_entries[b], bin_mean[b], bin_mean_err[b],
-             bin_sigma[b], bin_sigma_err[b], bin_chi2ndf[b]);
-      */
     }
   }
 
@@ -521,9 +504,6 @@ void pull_scan(const TString tree_type = "TISR3PI_SIG_PEAK",
     for (size_t i = 0; i < bins_to_draw.size(); i += nPerPage) {
       c_pdf->Clear();
       c_pdf->Divide(nCols, nRows, 1e-5, 1e-5);
-      //c_pdf->Divide(nCols, nRows);
-      //c_pdf->SetTopMargin(0.15);
-    
       for (int j = 0; j < nPerPage && (i+j) < bins_to_draw.size(); ++j) {
         int b = bins_to_draw[i+j];
         TPad *pad = (TPad*)c_pdf->GetPad(j+1);

@@ -30,8 +30,8 @@
 
 using namespace std;
 
-//void bias_compr(const bool &corr = false) {
-void bias_compr(const bool &corr = true) {
+void bias_compr(const bool &corr = false) {
+//void bias_compr(const bool &corr = true) {
 
   cout << "\n========================================" << endl;
   cout << "  COMPARE BIAS: DATA vs SIGNAL" << endl;
