@@ -5,8 +5,10 @@ data_type=bdt
 tuning_type=tuning   # raw: kinematic fitted; tuning: track correction + pi0 decay photon (pull bias correction + scale correction)
 pull_status=false
 
+main_folder="/home/bo/Desktop/SANITY-CHECK-PPIM-RESOLUTION/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
+
 #main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
-main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}_trk" # after track correction, with pull_status=false
+#main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}_trk" # after track correction, with pull_status=false
 #main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}_pull" # after pull correciton, wiht pull_status=true
 
 input_file_nm="${main_folder}/cut/tree_pre.root";
@@ -64,7 +66,6 @@ done
 # Before pull tuning
 root -l -q -b "../run_bdt/bias_compr.C(false)" 
 root -l -q -b "../run_bdt/scale_compr.C(false)"
-
 # After pull tuning
 root -l -q -b "../run_bdt/bias_compr.C(true)" 
 root -l -q -b "../run_bdt/scale_compr.C(true)"

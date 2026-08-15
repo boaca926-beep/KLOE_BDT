@@ -942,7 +942,7 @@ def plot_event_cm_improved(event_results, data_type):
     ax.set_xticks([0, 1], minor=False)
     ax.set_yticks([0, 1], minor=False)
     
-    ax.set_xlabel('Predicted', fontsize=20, fontweight='bold')
+    ax.set_xlabel('Predicted (BDT-selected)', fontsize=20, fontweight='bold')
     ax.set_ylabel('True', fontsize=20, fontweight='bold')
 
     max_count = cm.max()

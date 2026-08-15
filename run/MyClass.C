@@ -855,7 +855,6 @@ void MyClass::Main()
     TVectorD sigma2vectorkinfit_min_7C(Row), pullkinfit(Row);
     TVectorD sigma2vectorRaw(Row);
 
-    /*
     // ================================================================
     // PRE‑FIT TRACK CORRECTION (Bias + Smearing) for MC only
     // ================================================================
@@ -952,7 +951,6 @@ void MyClass::Main()
       }
     }
     // Now the 7C fit will use the corrected track parameters.
-    */
     
     for (int nr1 = 0; nr1 < promptnb - 2; nr1 ++) {// select 3 photon loop
       for (int nr2 = nr1 + 1; nr2 < promptnb - 1; nr2 ++) {

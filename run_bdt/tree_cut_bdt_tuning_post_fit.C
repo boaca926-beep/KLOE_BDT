@@ -3,7 +3,7 @@
 #include "../trackmass_scan/mc_resolution_params.h"
 #include "../trackmass_scan/omega_params.h"
 #include "../header_bdt/energy_shift_tuning_sum.h" 
-//#include "../header_bdt/tuning.h"
+#include "../header_bdt/track_tuning_params.h"
 #include "../header_bdt/sm_para.h"
 #include "../header_bdt/path.h"
 #include "../header_bdt/method.h"
@@ -179,7 +179,7 @@ int tree_cut_bdt_tuning_post_fit() {
   
   // Pull variables
   double e1_pull_bdt = 0., e2_pull_bdt = 0., e3_pull_bdt = 0.;
-  double e1_pull_bdt_new = 0., e2_pull_bdt_new = 0.;
+  double e1_pull_bdt_new = 0., e2_pull_bdt_new = 0., e3_pull_bdt_new = 0.;
   double e1_pull = 0., e2_pull = 0., e3_pull = 0.;
   double px1_pull = 0., py1_pull = 0., pz1_pull = 0.;
   double px2_pull = 0., py2_pull = 0., pz2_pull = 0.;
@@ -193,7 +193,8 @@ int tree_cut_bdt_tuning_post_fit() {
 
   double delta_smear = 0.;   
   double scale_smear = 0.;   
- 
+  double extra_smear_branch = 0.;
+  
   // ---- Mapping indices from fit order to original cluster order ----
   int isrgam_indx = 0, pi0gam1_indx = 0, pi0gam2_indx = 0;
   
@@ -219,7 +220,7 @@ int tree_cut_bdt_tuning_post_fit() {
     TTree* tree_tmp = dynamic_cast<TTree*>(treeout);
     tree_tmp->Branch("Br_delta_smear", &delta_smear, "Br_delta_smear/D");
     tree_tmp->Branch("Br_scale_smear", &scale_smear, "Br_scale_smear/D");
-    
+    tree_tmp->Branch("Br_extra_smear", &extra_smear_branch, "Br_extra_smear/D");  
     tree_tmp->Branch("Br_ppl_E", &ppl_E, "Br_ppl_E/D");
     tree_tmp->Branch("Br_ppl_px", &ppl_px, "Br_ppl_px/D");
     tree_tmp->Branch("Br_ppl_py", &ppl_py, "Br_ppl_py/D");
@@ -281,6 +282,7 @@ int tree_cut_bdt_tuning_post_fit() {
     tree_tmp->Branch("Br_e3_pull_bdt", &e3_pull_bdt, "Br_e3_pull_bdt/D");
     tree_tmp->Branch("Br_e1_pull_bdt_new", &e1_pull_bdt_new, "Br_e1_pull_bdt_new/D");
     tree_tmp->Branch("Br_e2_pull_bdt_new", &e2_pull_bdt_new, "Br_e2_pull_bdt_new/D");
+    tree_tmp->Branch("Br_e3_pull_bdt_new", &e3_pull_bdt_new, "Br_e3_pull_bdt_new/D");
     tree_tmp->Branch("Br_sig_type", &sig_type, "Br_sig_type/I");
     tree_tmp->Branch("Br_bkg_indx", &bkg_indx, "Br_bkg_indx/I");
     tree_tmp->Branch("Br_recon_indx", &recon_indx, "Br_recon_indx/I");
@@ -520,7 +522,9 @@ int tree_cut_bdt_tuning_post_fit() {
   
   // ---------- Event loop ----------
   Long64_t nentries = ALLCHAIN_CUT->GetEntries();
-  cout << "Processing " << nentries << " events" << endl;
+  Long64_t n_max = 5000;   // <--- LIMIT FOR TUNING
+  if (nentries > n_max) nentries = n_max;
+  cout << "Processing " << nentries << " events (tuning mode)" << endl;
   
   for (Long64_t irow = 0; irow < nentries; irow++) {
     ALLCHAIN_CUT->GetEntry(irow);
@@ -708,6 +712,7 @@ int tree_cut_bdt_tuning_post_fit() {
     
     e1_pull_bdt_new = 0.;
     e2_pull_bdt_new = 0.;
+    e3_pull_bdt_new = 0.;
     
     // Full transformation of the pull distribution to match data exactly
     // Pull_corr = alpha * Pull + beta
@@ -912,6 +917,7 @@ int tree_cut_bdt_tuning_post_fit() {
       double M_true = ppIM_true;   // true dipion mass (from MC)
       double bias_scale = 1.0;
 
+      /*
       // ----- 1. Bias correction -----
       if (M_true > 0) {
         double s = M_true / (M_true + BIAS_P0 + BIAS_P1 * M_true);
@@ -930,27 +936,43 @@ int tree_cut_bdt_tuning_post_fit() {
         pmi_px *= scale; pmi_py *= scale; pmi_pz *= scale;
         pmi_E = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
       }
-
+      */
+      
       // ----- 2. Mass‑dependent smearing (tune extra_smear) -----
+      /*
       double high = H0 + H1 * (M_true - MREF);
       double sigma_mc = SIGMA_LOW + (high - SIGMA_LOW) / (1.0 + exp(-K * (M_true - M0)));
       double sigma_data = R_OMEGA * sigma_mc;
       double delta_nominal = (M_true > 0) ? sigma_data / M_true : 0.0;
 
       double extra_smear = 0.0;   // <--- TUNE THIS (start 0.0)
+      */
+      
+      // Apply ONLY extra_smear – no mass-dependent resolution
+      double smear_plus  = 1.0 + gRandom->Gaus(0.0, EXTRA_SMEAR);
+      double smear_minus = 1.0 + gRandom->Gaus(0.0, EXTRA_SMEAR);
 
-      double smear_plus  = 1.0 + gRandom->Gaus(0.0, delta_nominal + extra_smear);
-      double smear_minus = 1.0 + gRandom->Gaus(0.0, delta_nominal + extra_smear);
-
-      ppl_px *= smear_plus; ppl_py *= smear_plus; ppl_pz *= smear_plus;
+      // Protect against unphysical smearing (clamp to reasonable range)
+      if (smear_plus < 0.80) smear_plus = 0.80;
+      if (smear_plus > 1.20) smear_plus = 1.20;
+      if (smear_minus < 0.80) smear_minus = 0.80;
+      if (smear_minus > 1.20) smear_minus = 1.20;
+  
+      ppl_px *= smear_plus;
+      ppl_py *= smear_plus;
+      ppl_pz *= smear_plus;
       ppl_E  = sqrt(M_PION_CONST*M_PION_CONST + ppl_px*ppl_px + ppl_py*ppl_py + ppl_pz*ppl_pz);
 
       pmi_px *= smear_minus; pmi_py *= smear_minus; pmi_pz *= smear_minus;
       pmi_E  = sqrt(M_PION_CONST*M_PION_CONST + pmi_px*pmi_px + pmi_py*pmi_py + pmi_pz*pmi_pz);
 
-      delta_smear = delta_nominal + extra_smear;
-      scale_smear = bias_scale;
+      //delta_smear = delta_nominal + extra_smear;
+      //scale_smear = bias_scale;
 
+      delta_smear = EXTRA_SMEAR;   // Store the smearing value used
+      scale_smear = 1.0;           // Bias correction is disabled
+      extra_smear_branch = EXTRA_SMEAR;
+      
       // Update event structure
       event.tracks[0][0] = ppl_E; event.tracks[0][1] = ppl_px; event.tracks[0][2] = ppl_py; event.tracks[0][3] = ppl_pz;
       event.tracks[1][0] = pmi_E; event.tracks[1][1] = pmi_px; event.tracks[1][2] = pmi_py; event.tracks[1][3] = pmi_pz;
@@ -986,6 +1008,7 @@ int tree_cut_bdt_tuning_post_fit() {
       // For simplicity, we skip the pull recomputation for now.
       // You can add it later if you need corrected pulls.
     }
+    // POST‑FIT TRACK CORRECTIONS ENDS
     
     // ============================================================
     // FILL OUTPUT TREES
