@@ -46,13 +46,13 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #BINS=200
 
 ##################################################################
-VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
-VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
-UNIT=("[MeV\/c^{2}]")
+#VAR_NM=("m3pi_bdt") #"m3pi_bdt", "IM3pi_7C"
+#VAR_SYMB=("M_{3#pi} [MeV\/c^{2}]")
+#UNIT=("[MeV\/c^{2}]")
 
-XMIN=(760) #300 600 760 (analysis)
-XMAX=(800) #1020 1050 800 (analysis)
-BINS=(100)
+#XMIN=(760) #300 600 760 (analysis)
+#XMAX=(800) #1020 1050 800 (analysis)
+#BINS=(100)
 
 ##################################################################
 #VAR_NM=("m_gg_bdt") # "IM_pi0_7C", "m_gg_bdt"
@@ -136,13 +136,13 @@ BINS=(100)
 #BINS=(100) #120
 
 ##################################################################
-#VAR_NM=("angle_trk_neutral")
-#VAR_SYMB=("#angle_{trk_neutral}")
-#UNIT=("[#circ]")
+VAR_NM=("angle_trk_neutral")
+VAR_SYMB=("#angle_{trk_neutral}")
+UNIT=("[#circ]")
 
-#XMIN=(150) #20
-#XMAX=(180) #140
-#BINS=(100) #120
+XMIN=(150) #20
+XMAX=(180) #140
+BINS=(100) #120
 
 ##################################################################
 #VAR_NM=("deltaE")

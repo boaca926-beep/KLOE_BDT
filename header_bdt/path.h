@@ -1,5 +1,5 @@
-const TString rootFile = "../path_chain/sig_path";
-const TString sampleFile = "../../bdt_tuning_post_fit_TDATA_chain_true/input/sig";
+const TString rootFile = "../path_chain/ksl_path";
+const TString sampleFile = "../../bdt_tuning_post_fit_TDATA_chain_true/input/ksl";
 const TString outputCut = "../../bdt_tuning_post_fit_TDATA_chain_true/cut/";
 const TString sig_path = "../../bdt_tuning_post_fit_TDATA_chain_true/input/";
 const TString outputGen = "../../bdt_tuning_post_fit_TDATA_chain_true/gen/";
@@ -7,7 +7,7 @@ const TString outputHist = "../../bdt_tuning_post_fit_TDATA_chain_true/hist/";
 const TString outputSfw2D = "../../bdt_tuning_post_fit_TDATA_chain_true/sfw2d/";
 const TString outputSfw1D = "../../bdt_tuning_post_fit_TDATA_chain_true/sfw1d/";
 const TString outputOmega = "../../bdt_tuning_post_fit_TDATA_chain_true/omega_fit/";
-const TString data_type = "sig";
+const TString data_type = "ksl";
 const TString exp_type = "TDATA";
 const TString tuning_type = "tuning_post_fit";
 double gsf = 1;
