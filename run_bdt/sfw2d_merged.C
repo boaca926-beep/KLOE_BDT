@@ -159,7 +159,7 @@ int sfw2d_merged() {
   h2d_sfw_MCREST->Add(h2d_sfw_TKPM, 1.0);
   h2d_sfw_MCREST->Add(h2d_sfw_TRHOPI, 1.0);
   h2d_sfw_MCREST->Add(h2d_sfw_TETAGAM, 1.0);
-  //h2d_sfw_MCREST->Add(h2d_sfw_TISR3PI_SIG_non_reson, 1.0);  // ← Merge non-resonant here
+  h2d_sfw_MCREST->Add(h2d_sfw_TISR3PI_SIG_non_reson, 1.0);  // ← Merge non-resonant here
   h2d_sfw_MCREST->SetName("h2d_sfw_MCREST");
 
   // Build MCSUM for validation (all MC components)

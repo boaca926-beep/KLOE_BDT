@@ -876,7 +876,8 @@ void MyClass::Main()
         double s = M_true / (M_true + BIAS_P0 + BIAS_P1 * M_true);
         track_plus  *= s;
         track_minus *= s;
-	
+
+	/*
         // ----- 2. Mass‑dependent smearing -----
         double high = H0 + H1 * (M_true - MREF);
         double sigma_mc = SIGMA_LOW + (high - SIGMA_LOW) / (1.0 + exp(-K * (M_true - M0)));
@@ -901,7 +902,7 @@ void MyClass::Main()
 	       << ", smear_minus = " << smear_minus << endl;
 	  dbg_count++;
 	}
-	
+	*/
       }
       else {
         // Fallback: constant scale (1 - BIAS_P1)

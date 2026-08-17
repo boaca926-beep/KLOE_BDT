@@ -1,1 +1,1 @@
-const double energy_shift = 1.31757;
+const double energy_shift = 1.31583;

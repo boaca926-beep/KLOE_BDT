@@ -2,10 +2,10 @@
 
 sample_type=chain
 data_type=bdt
-tuning_type=tuning   # raw: kinematic fitted; tuning: track correction + pi0 decay photon (pull bias correction + scale correction)
+tuning_type=tuning_post_fit   # raw: kinematic fitted; tuning: track correction + pi0 decay photon (pull bias correction + scale correction)
 pull_status=false
 
-main_folder="/home/bo/Desktop/SANITY-CHECK-PPIM-RESOLUTION/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
+main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
 
 #main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}"
 #main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${pull_status}_trk" # after track correction, with pull_status=false

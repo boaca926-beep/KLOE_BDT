@@ -19,7 +19,7 @@ Double_t breitwigner(Double_t *x, Double_t *par) {
     return par[0] / ((x[0] - par[1]) * (x[0] - par[1]) + par[2] * par[2]);
 }
 
-int BiasM3pi(const TString tuning_type = "tuning_false", //raw_false, tuning_false
+int BiasM3pi(const TString tuning_type = "tuning_post_fit_true", //raw_false, tuning_false
 	     const TString var_nm = "m3pi_bdt",
 	     const TString var_symb = "M_{3#pi} [MeV/c^{2}]"
 	     ) {
@@ -51,7 +51,7 @@ int BiasM3pi(const TString tuning_type = "tuning_false", //raw_false, tuning_fal
   TH1D *hist_eeg = (TH1D*)tree_file->Get("hist_eeg_sc");
   TH1D *hist_signal = (TH1D*)tree_file->Get("hist_isr3pi_sc");
   TH1D *hist_omegapi = (TH1D*)tree_file->Get("hist_omegapi_sc");
-  TH1D *hist_nonreson = (TH1D*)tree_file->Get("hist_nonreson_sc");
+  //TH1D *hist_nonreson = (TH1D*)tree_file->Get("hist_nonreson_sc");
   TH1D *hist_ksl = (TH1D*)tree_file->Get("hist_ksl_sc");
   TH1D *hist_mcrest = (TH1D*)tree_file->Get("hist_mcrest_sc");
   TH1D *hist_data = (TH1D*)tree_file->Get("hist_data");
@@ -61,7 +61,9 @@ int BiasM3pi(const TString tuning_type = "tuning_false", //raw_false, tuning_fal
     tree_file->Close();
     return 1;
   }
-  if (!hist_signal || !hist_eeg || !hist_omegapi || !hist_nonreson || !hist_ksl || !hist_mcrest) {
+  //if (!hist_signal || !hist_eeg || !hist_omegapi || !hist_nonreson || !hist_ksl || !hist_mcrest) {
+  if (!hist_signal || !hist_eeg || !hist_omegapi || !hist_ksl || !hist_mcrest) {
+  
     cerr << "ERROR: MC histogram not found!" << endl;
     tree_file->Close();
     return 1;
@@ -73,7 +75,7 @@ int BiasM3pi(const TString tuning_type = "tuning_false", //raw_false, tuning_fal
   // Add backgrounds with optional scaling (set to 1.0 for now)
   if (hist_eeg) hist_bkg_sum->Add(hist_eeg, 1.0);
   if (hist_omegapi) hist_bkg_sum->Add(hist_omegapi, 1.0);
-  if (hist_nonreson) hist_bkg_sum->Add(hist_nonreson, 1.0);
+  //if (hist_nonreson) hist_bkg_sum->Add(hist_nonreson, 1.0);
   if (hist_ksl) hist_bkg_sum->Add(hist_ksl, 1.0);
   if (hist_mcrest) hist_bkg_sum->Add(hist_mcrest, 1.0);
 

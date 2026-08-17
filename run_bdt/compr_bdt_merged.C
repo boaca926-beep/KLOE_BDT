@@ -154,11 +154,11 @@ int compr_bdt_merged() {
   hist_mcsum->SetLineColor(kRed);
   
   // Create output directory
-  TString out_dir = "../output_" + TString(var_nm);
-  gSystem->mkdir(out_dir, kTRUE);
+  //TString out_dir = "../output_" + TString(var_nm);
+  //gSystem->mkdir(out_dir, kTRUE);
 
   // Save histograms
-  TString outfile_name = out_dir + "/hist_" + var_nm + "_merged.root";
+  TString outfile_name = out_dir + "/hist.root";
   TFile *f_out = new TFile(outfile_name, "recreate");
   Hlist->Write("Hlist", TObject::kSingleKey);
   hist_eeg_sc->Write();
@@ -167,6 +167,8 @@ int compr_bdt_merged() {
   hist_ksl_sc->Write();
   hist_mcrest_sc->Write();
   hist_mcsum->Write();
+  hist_data->Write();
+  
   f_out->Close();
 
   // ===== SCALED Data/MC Comparison Plot =====

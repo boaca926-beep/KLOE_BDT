@@ -4,8 +4,9 @@ compr=../header_bdt/compr.h
 sample_type=chain
 data_type=bdt
 tuning_type=tuning_post_fit #raw: kinematic fitted after track correction; tuning: signal 3pi mass resolution correction 
-tuning_status=false #true: false: kineamtic fitted or track correction; true: track correction and pi0 decay photon energy correction (energy bias correction + energy scale correction)
-main_folder="/home/bo/Desktop/SANITY-CHECK-PPIM-RESOLUTION/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}_trk"
+tuning_status=true #true: false: kineamtic fitted or track correction; true: track correction and pi0 decay photon energy correction (energy bias correction + energy scale correction)
+#main_folder="/home/bo/Desktop/SANITY-CHECK-PPIM-RESOLUTION/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
+main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
 
 #main_folder="/home/bo/Desktop/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"
 #main_folder="/media/bo/Backup/bdt_output/${data_type}_${tuning_type}_TDATA_${sample_type}_${tuning_status}"

@@ -1,6 +1,6 @@
-const TString tree_file_nm = "/home/bo/Desktop/SANITY-CHECK-PPIM-RESOLUTION/bdt_tuning_post_fit_TDATA_chain_false_trk/cut/tree_pre.root";
-const TString out_dir = "../tuning_post_fit_false_m3pi_bdt";
-const TString outputSfw2D = "/home/bo/Desktop/SANITY-CHECK-PPIM-RESOLUTION/bdt_tuning_post_fit_TDATA_chain_false_trk/sfw2d/";
+const TString tree_file_nm = "/home/bo/Desktop/bdt_tuning_post_fit_TDATA_chain_true/cut/tree_pre.root";
+const TString out_dir = "../tuning_post_fit_true_m3pi_bdt";
+const TString outputSfw2D = "/home/bo/Desktop/bdt_tuning_post_fit_TDATA_chain_true/sfw2d/";
 const TString var_nm = "m3pi_bdt";
 const TString var_symb = "M_{3#pi} [MeV/c^{2}]";
 const TString unit = "[MeV/c^{2}]";

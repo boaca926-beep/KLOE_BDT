@@ -1,0 +1,12 @@
+const double OMEGA_MEAN_DATA = 783.931;
+const double OMEGA_MEAN_DATA_ERR = 0.118929;
+const double OMEGA_MEAN_MC = 783.914;
+const double OMEGA_MEAN_MC_ERR = 0.0167907;
+const double OMEGA_MASS_BIAS = -0.0161742;
+const double OMEGA_MASS_BIAS_ERR = 0.120108;
+const double OMEGA_WIDTH_DATA = 6.39692;
+const double OMEGA_WIDTH_DATA_ERR = 0.139157;
+const double OMEGA_WIDTH_MC = 5.17621;
+const double OMEGA_WIDTH_MC_ERR = 0.0156428;
+const double OMEGA_WIDTH_RATIO = 0.809173;
+const double OMEGA_WIDTH_RATIO_ERR = 0.0177716;
