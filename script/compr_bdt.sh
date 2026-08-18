@@ -82,13 +82,13 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #BINS=150
 
 ##################################################################
-#VAR_NM="lagvalue_min_7C"
-#VAR_SYMB="#chi^{2}_{7C}"
-#UNIT=""
+VAR_NM="lagvalue_min_7C"
+VAR_SYMB="#chi^{2}_{7C}"
+UNIT=""
 
-#XMIN=0
-#XMAX=20
-#BINS=100
+XMIN=0
+XMAX=20
+BINS=100
 
 ##################################################################
 #VAR_NM=("pvalue")
@@ -136,13 +136,13 @@ echo -e "\nPlotting histo comparison ... from ${main_folder}"
 #BINS=(100) #120
 
 ##################################################################
-VAR_NM=("angle_trk_neutral")
-VAR_SYMB=("#angle_{trk_neutral}")
-UNIT=("[#circ]")
+#VAR_NM=("angle_trk_neutral")
+#VAR_SYMB=("#angle_{trk_neutral}")
+#UNIT=("[#circ]")
 
-XMIN=(150) #20
-XMAX=(180) #140
-BINS=(100) #120
+#XMIN=(150) #20
+#XMAX=(180) #140
+#BINS=(100) #120
 
 ##################################################################
 #VAR_NM=("deltaE")

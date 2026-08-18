@@ -9,6 +9,6 @@ const double EXTRA_SMEAR = 0.0;       // No extra track smearing
 // ============================================================
 // DIRECT 3π MASS SMEARING (applied after all corrections)
 // ============================================================
-const double EXTRA_MASS_SMEAR = 0.95;  // MeV/c², tune to match data m3pi RMS
+const double EXTRA_MASS_SMEAR = 1.00;  // MeV/c², tune to match data m3pi RMS
 
 #endif
